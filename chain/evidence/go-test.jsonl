@@ -1,0 +1,711 @@
+{"Time":"2026-09-29T18:16:20.301118+01:00","Action":"start","Package":"github.com/nus-gang/cosmo-dex/chain/cmd/contract-runner"}
+{"Time":"2026-09-29T18:16:20.301186+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/cmd/contract-runner","Output":"?   \tgithub.com/nus-gang/cosmo-dex/chain/cmd/contract-runner\t[no test files]\n"}
+{"Time":"2026-09-29T18:16:20.3012+01:00","Action":"skip","Package":"github.com/nus-gang/cosmo-dex/chain/cmd/contract-runner","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.439428+01:00","Action":"start","Package":"github.com/nus-gang/cosmo-dex/chain/contract"}
+{"Time":"2026-09-29T18:16:20.623312+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors"}
+{"Time":"2026-09-29T18:16:20.623388+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors","Output":"=== RUN   TestSignatureVectors\n"}
+{"Time":"2026-09-29T18:16:20.62562+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order"}
+{"Time":"2026-09-29T18:16:20.625628+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order","Output":"=== RUN   TestSignatureVectors/order\n"}
+{"Time":"2026-09-29T18:16:20.626444+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order","Output":"--- PASS: TestSignatureVectors/order (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.626458+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.626463+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel"}
+{"Time":"2026-09-29T18:16:20.626466+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel","Output":"=== RUN   TestSignatureVectors/cancel\n"}
+{"Time":"2026-09-29T18:16:20.627111+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel","Output":"--- PASS: TestSignatureVectors/cancel (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.627117+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.62712+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet"}
+{"Time":"2026-09-29T18:16:20.627123+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet","Output":"=== RUN   TestSignatureVectors/wallet\n"}
+{"Time":"2026-09-29T18:16:20.62751+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet","Output":"--- PASS: TestSignatureVectors/wallet (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.627515+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.627518+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_message_bit"}
+{"Time":"2026-09-29T18:16:20.627521+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_message_bit","Output":"=== RUN   TestSignatureVectors/order_message_bit\n"}
+{"Time":"2026-09-29T18:16:20.627675+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_message_bit","Output":"--- PASS: TestSignatureVectors/order_message_bit (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.627679+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_message_bit","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.627691+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_signature_bit"}
+{"Time":"2026-09-29T18:16:20.627706+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_signature_bit","Output":"=== RUN   TestSignatureVectors/order_signature_bit\n"}
+{"Time":"2026-09-29T18:16:20.627824+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_signature_bit","Output":"--- PASS: TestSignatureVectors/order_signature_bit (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.627833+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_signature_bit","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.627836+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_other_public_key"}
+{"Time":"2026-09-29T18:16:20.627839+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_other_public_key","Output":"=== RUN   TestSignatureVectors/order_other_public_key\n"}
+{"Time":"2026-09-29T18:16:20.627971+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_other_public_key","Output":"--- PASS: TestSignatureVectors/order_other_public_key (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.627979+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_other_public_key","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.627982+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_truncated_signature"}
+{"Time":"2026-09-29T18:16:20.627985+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_truncated_signature","Output":"=== RUN   TestSignatureVectors/order_truncated_signature\n"}
+{"Time":"2026-09-29T18:16:20.627988+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_truncated_signature","Output":"--- PASS: TestSignatureVectors/order_truncated_signature (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.62799+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_truncated_signature","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.627993+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_nonempty_context"}
+{"Time":"2026-09-29T18:16:20.627996+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_nonempty_context","Output":"=== RUN   TestSignatureVectors/order_nonempty_context\n"}
+{"Time":"2026-09-29T18:16:20.628134+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_nonempty_context","Output":"--- PASS: TestSignatureVectors/order_nonempty_context (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.628143+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_nonempty_context","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.628147+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_other_domain"}
+{"Time":"2026-09-29T18:16:20.62815+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_other_domain","Output":"=== RUN   TestSignatureVectors/order_other_domain\n"}
+{"Time":"2026-09-29T18:16:20.62829+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_other_domain","Output":"--- PASS: TestSignatureVectors/order_other_domain (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.628295+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_other_domain","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.628298+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel_message_bit"}
+{"Time":"2026-09-29T18:16:20.628305+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel_message_bit","Output":"=== RUN   TestSignatureVectors/cancel_message_bit\n"}
+{"Time":"2026-09-29T18:16:20.628437+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel_message_bit","Output":"--- PASS: TestSignatureVectors/cancel_message_bit (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.628441+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel_message_bit","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.628444+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel_signature_bit"}
+{"Time":"2026-09-29T18:16:20.628447+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel_signature_bit","Output":"=== RUN   TestSignatureVectors/cancel_signature_bit\n"}
+{"Time":"2026-09-29T18:16:20.628581+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel_signature_bit","Output":"--- PASS: TestSignatureVectors/cancel_signature_bit (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.628586+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel_signature_bit","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.628589+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel_other_public_key"}
+{"Time":"2026-09-29T18:16:20.628601+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel_other_public_key","Output":"=== RUN   TestSignatureVectors/cancel_other_public_key\n"}
+{"Time":"2026-09-29T18:16:20.628726+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel_other_public_key","Output":"--- PASS: TestSignatureVectors/cancel_other_public_key (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.628731+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel_other_public_key","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.628734+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel_truncated_signature"}
+{"Time":"2026-09-29T18:16:20.628737+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel_truncated_signature","Output":"=== RUN   TestSignatureVectors/cancel_truncated_signature\n"}
+{"Time":"2026-09-29T18:16:20.62874+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel_truncated_signature","Output":"--- PASS: TestSignatureVectors/cancel_truncated_signature (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.628742+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel_truncated_signature","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.628745+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel_nonempty_context"}
+{"Time":"2026-09-29T18:16:20.628748+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel_nonempty_context","Output":"=== RUN   TestSignatureVectors/cancel_nonempty_context\n"}
+{"Time":"2026-09-29T18:16:20.628878+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel_nonempty_context","Output":"--- PASS: TestSignatureVectors/cancel_nonempty_context (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.628883+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel_nonempty_context","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.62889+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel_other_domain"}
+{"Time":"2026-09-29T18:16:20.628892+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel_other_domain","Output":"=== RUN   TestSignatureVectors/cancel_other_domain\n"}
+{"Time":"2026-09-29T18:16:20.629027+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel_other_domain","Output":"--- PASS: TestSignatureVectors/cancel_other_domain (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.629032+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/cancel_other_domain","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.629035+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet_message_bit"}
+{"Time":"2026-09-29T18:16:20.629037+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet_message_bit","Output":"=== RUN   TestSignatureVectors/wallet_message_bit\n"}
+{"Time":"2026-09-29T18:16:20.629173+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet_message_bit","Output":"--- PASS: TestSignatureVectors/wallet_message_bit (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.629178+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet_message_bit","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.629181+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet_signature_bit"}
+{"Time":"2026-09-29T18:16:20.629184+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet_signature_bit","Output":"=== RUN   TestSignatureVectors/wallet_signature_bit\n"}
+{"Time":"2026-09-29T18:16:20.629306+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet_signature_bit","Output":"--- PASS: TestSignatureVectors/wallet_signature_bit (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.629311+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet_signature_bit","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.629315+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet_other_public_key"}
+{"Time":"2026-09-29T18:16:20.629319+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet_other_public_key","Output":"=== RUN   TestSignatureVectors/wallet_other_public_key\n"}
+{"Time":"2026-09-29T18:16:20.62947+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet_other_public_key","Output":"--- PASS: TestSignatureVectors/wallet_other_public_key (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.629475+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet_other_public_key","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.629478+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet_truncated_signature"}
+{"Time":"2026-09-29T18:16:20.62948+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet_truncated_signature","Output":"=== RUN   TestSignatureVectors/wallet_truncated_signature\n"}
+{"Time":"2026-09-29T18:16:20.629483+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet_truncated_signature","Output":"--- PASS: TestSignatureVectors/wallet_truncated_signature (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.629486+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet_truncated_signature","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.629495+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet_nonempty_context"}
+{"Time":"2026-09-29T18:16:20.629497+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet_nonempty_context","Output":"=== RUN   TestSignatureVectors/wallet_nonempty_context\n"}
+{"Time":"2026-09-29T18:16:20.629625+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet_nonempty_context","Output":"--- PASS: TestSignatureVectors/wallet_nonempty_context (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.62963+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet_nonempty_context","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.629632+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet_other_domain"}
+{"Time":"2026-09-29T18:16:20.629635+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet_other_domain","Output":"=== RUN   TestSignatureVectors/wallet_other_domain\n"}
+{"Time":"2026-09-29T18:16:20.629787+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet_other_domain","Output":"--- PASS: TestSignatureVectors/wallet_other_domain (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.629794+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/wallet_other_domain","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.629799+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_1"}
+{"Time":"2026-09-29T18:16:20.629802+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_1","Output":"=== RUN   TestSignatureVectors/order_field_1\n"}
+{"Time":"2026-09-29T18:16:20.629985+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_1","Output":"--- PASS: TestSignatureVectors/order_field_1 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.629994+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_1","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.629997+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_2"}
+{"Time":"2026-09-29T18:16:20.629999+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_2","Output":"=== RUN   TestSignatureVectors/order_field_2\n"}
+{"Time":"2026-09-29T18:16:20.63015+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_2","Output":"--- PASS: TestSignatureVectors/order_field_2 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.630155+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_2","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.630158+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_3"}
+{"Time":"2026-09-29T18:16:20.630161+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_3","Output":"=== RUN   TestSignatureVectors/order_field_3\n"}
+{"Time":"2026-09-29T18:16:20.630319+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_3","Output":"--- PASS: TestSignatureVectors/order_field_3 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.630326+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_3","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.630329+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_4"}
+{"Time":"2026-09-29T18:16:20.630336+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_4","Output":"=== RUN   TestSignatureVectors/order_field_4\n"}
+{"Time":"2026-09-29T18:16:20.630484+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_4","Output":"--- PASS: TestSignatureVectors/order_field_4 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.630491+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_4","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.630494+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_5"}
+{"Time":"2026-09-29T18:16:20.630496+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_5","Output":"=== RUN   TestSignatureVectors/order_field_5\n"}
+{"Time":"2026-09-29T18:16:20.630637+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_5","Output":"--- PASS: TestSignatureVectors/order_field_5 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.630644+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_5","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.630647+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_6"}
+{"Time":"2026-09-29T18:16:20.63065+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_6","Output":"=== RUN   TestSignatureVectors/order_field_6\n"}
+{"Time":"2026-09-29T18:16:20.630789+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_6","Output":"--- PASS: TestSignatureVectors/order_field_6 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.630796+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_6","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.630799+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_7"}
+{"Time":"2026-09-29T18:16:20.630802+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_7","Output":"=== RUN   TestSignatureVectors/order_field_7\n"}
+{"Time":"2026-09-29T18:16:20.630943+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_7","Output":"--- PASS: TestSignatureVectors/order_field_7 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.630948+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_7","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.63095+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_8"}
+{"Time":"2026-09-29T18:16:20.630953+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_8","Output":"=== RUN   TestSignatureVectors/order_field_8\n"}
+{"Time":"2026-09-29T18:16:20.631093+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_8","Output":"--- PASS: TestSignatureVectors/order_field_8 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.631098+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_8","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.6311+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_9"}
+{"Time":"2026-09-29T18:16:20.631103+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_9","Output":"=== RUN   TestSignatureVectors/order_field_9\n"}
+{"Time":"2026-09-29T18:16:20.631226+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_9","Output":"--- PASS: TestSignatureVectors/order_field_9 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.631231+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_9","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.631234+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_10"}
+{"Time":"2026-09-29T18:16:20.631241+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_10","Output":"=== RUN   TestSignatureVectors/order_field_10\n"}
+{"Time":"2026-09-29T18:16:20.631393+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_10","Output":"--- PASS: TestSignatureVectors/order_field_10 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.631401+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_10","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.631404+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_11"}
+{"Time":"2026-09-29T18:16:20.631406+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_11","Output":"=== RUN   TestSignatureVectors/order_field_11\n"}
+{"Time":"2026-09-29T18:16:20.631584+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_11","Output":"--- PASS: TestSignatureVectors/order_field_11 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.631591+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_11","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.631594+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_12"}
+{"Time":"2026-09-29T18:16:20.631605+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_12","Output":"=== RUN   TestSignatureVectors/order_field_12\n"}
+{"Time":"2026-09-29T18:16:20.63187+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_12","Output":"--- PASS: TestSignatureVectors/order_field_12 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.631875+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_12","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.631882+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_13"}
+{"Time":"2026-09-29T18:16:20.631885+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_13","Output":"=== RUN   TestSignatureVectors/order_field_13\n"}
+{"Time":"2026-09-29T18:16:20.632067+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_13","Output":"--- PASS: TestSignatureVectors/order_field_13 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.632078+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_13","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.632083+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_14"}
+{"Time":"2026-09-29T18:16:20.632086+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_14","Output":"=== RUN   TestSignatureVectors/order_field_14\n"}
+{"Time":"2026-09-29T18:16:20.632264+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_14","Output":"--- PASS: TestSignatureVectors/order_field_14 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.63227+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_14","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.632274+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_15"}
+{"Time":"2026-09-29T18:16:20.632277+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_15","Output":"=== RUN   TestSignatureVectors/order_field_15\n"}
+{"Time":"2026-09-29T18:16:20.632463+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_15","Output":"--- PASS: TestSignatureVectors/order_field_15 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.632468+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_15","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.632471+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_16"}
+{"Time":"2026-09-29T18:16:20.632473+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_16","Output":"=== RUN   TestSignatureVectors/order_field_16\n"}
+{"Time":"2026-09-29T18:16:20.632647+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_16","Output":"--- PASS: TestSignatureVectors/order_field_16 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.632653+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_16","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.632656+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_17"}
+{"Time":"2026-09-29T18:16:20.632659+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_17","Output":"=== RUN   TestSignatureVectors/order_field_17\n"}
+{"Time":"2026-09-29T18:16:20.632829+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_17","Output":"--- PASS: TestSignatureVectors/order_field_17 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.632834+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors/order_field_17","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.632838+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors","Output":"--- PASS: TestSignatureVectors (0.01s)\n"}
+{"Time":"2026-09-29T18:16:20.632841+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSignatureVectors","Elapsed":0.01}
+{"Time":"2026-09-29T18:16:20.63285+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors"}
+{"Time":"2026-09-29T18:16:20.632853+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors","Output":"=== RUN   TestWireVectors\n"}
+{"Time":"2026-09-29T18:16:20.633121+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/canonical-order"}
+{"Time":"2026-09-29T18:16:20.633127+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/canonical-order","Output":"=== RUN   TestWireVectors/canonical-order\n"}
+{"Time":"2026-09-29T18:16:20.633139+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/canonical-order","Output":"--- PASS: TestWireVectors/canonical-order (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.633145+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/canonical-order","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.633156+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/duplicate-version"}
+{"Time":"2026-09-29T18:16:20.633159+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/duplicate-version","Output":"=== RUN   TestWireVectors/duplicate-version\n"}
+{"Time":"2026-09-29T18:16:20.633165+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/duplicate-version","Output":"--- PASS: TestWireVectors/duplicate-version (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.633168+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/duplicate-version","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.633172+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/nonminimal-version"}
+{"Time":"2026-09-29T18:16:20.633175+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/nonminimal-version","Output":"=== RUN   TestWireVectors/nonminimal-version\n"}
+{"Time":"2026-09-29T18:16:20.63318+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/nonminimal-version","Output":"--- PASS: TestWireVectors/nonminimal-version (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.633193+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/nonminimal-version","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.633199+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/missing-version"}
+{"Time":"2026-09-29T18:16:20.633202+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/missing-version","Output":"=== RUN   TestWireVectors/missing-version\n"}
+{"Time":"2026-09-29T18:16:20.633213+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/missing-version","Output":"--- PASS: TestWireVectors/missing-version (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.633219+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/missing-version","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.633224+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/unknown-tag"}
+{"Time":"2026-09-29T18:16:20.633227+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/unknown-tag","Output":"=== RUN   TestWireVectors/unknown-tag\n"}
+{"Time":"2026-09-29T18:16:20.63325+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/unknown-tag","Output":"--- PASS: TestWireVectors/unknown-tag (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.633257+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/unknown-tag","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.63326+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/wrong-wire-version"}
+{"Time":"2026-09-29T18:16:20.633264+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/wrong-wire-version","Output":"=== RUN   TestWireVectors/wrong-wire-version\n"}
+{"Time":"2026-09-29T18:16:20.63327+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/wrong-wire-version","Output":"--- PASS: TestWireVectors/wrong-wire-version (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.633275+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/wrong-wire-version","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.633279+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/out-of-order"}
+{"Time":"2026-09-29T18:16:20.633287+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/out-of-order","Output":"=== RUN   TestWireVectors/out-of-order\n"}
+{"Time":"2026-09-29T18:16:20.633303+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/out-of-order","Output":"--- PASS: TestWireVectors/out-of-order (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.633309+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/out-of-order","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.633312+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/truncated"}
+{"Time":"2026-09-29T18:16:20.633315+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/truncated","Output":"=== RUN   TestWireVectors/truncated\n"}
+{"Time":"2026-09-29T18:16:20.633342+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/truncated","Output":"--- PASS: TestWireVectors/truncated (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.633349+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/truncated","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.63382+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/TransferStableV1-valid"}
+{"Time":"2026-09-29T18:16:20.633827+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/TransferStableV1-valid","Output":"=== RUN   TestWireVectors/TransferStableV1-valid\n"}
+{"Time":"2026-09-29T18:16:20.633832+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/TransferStableV1-valid","Output":"--- PASS: TestWireVectors/TransferStableV1-valid (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.633837+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/TransferStableV1-valid","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.633842+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/TransferStableV1-missing"}
+{"Time":"2026-09-29T18:16:20.633845+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/TransferStableV1-missing","Output":"=== RUN   TestWireVectors/TransferStableV1-missing\n"}
+{"Time":"2026-09-29T18:16:20.633859+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/TransferStableV1-missing","Output":"--- PASS: TestWireVectors/TransferStableV1-missing (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.633865+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/TransferStableV1-missing","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.633868+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/TransferStableV1-duplicate"}
+{"Time":"2026-09-29T18:16:20.633871+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/TransferStableV1-duplicate","Output":"=== RUN   TestWireVectors/TransferStableV1-duplicate\n"}
+{"Time":"2026-09-29T18:16:20.633876+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/TransferStableV1-duplicate","Output":"--- PASS: TestWireVectors/TransferStableV1-duplicate (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.633883+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/TransferStableV1-duplicate","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.633888+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/TransferStableV1-nonminimal"}
+{"Time":"2026-09-29T18:16:20.633891+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/TransferStableV1-nonminimal","Output":"=== RUN   TestWireVectors/TransferStableV1-nonminimal\n"}
+{"Time":"2026-09-29T18:16:20.633908+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/TransferStableV1-nonminimal","Output":"--- PASS: TestWireVectors/TransferStableV1-nonminimal (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.633913+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/TransferStableV1-nonminimal","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.633916+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/TransferStableV1-atoms-15"}
+{"Time":"2026-09-29T18:16:20.633919+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/TransferStableV1-atoms-15","Output":"=== RUN   TestWireVectors/TransferStableV1-atoms-15\n"}
+{"Time":"2026-09-29T18:16:20.633924+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/TransferStableV1-atoms-15","Output":"--- PASS: TestWireVectors/TransferStableV1-atoms-15 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.63393+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/TransferStableV1-atoms-15","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.633934+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/TransferStableV1-atoms-17"}
+{"Time":"2026-09-29T18:16:20.633937+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/TransferStableV1-atoms-17","Output":"=== RUN   TestWireVectors/TransferStableV1-atoms-17\n"}
+{"Time":"2026-09-29T18:16:20.633942+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/TransferStableV1-atoms-17","Output":"--- PASS: TestWireVectors/TransferStableV1-atoms-17 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.633946+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/TransferStableV1-atoms-17","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.633951+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/BatchReceiptV1-valid"}
+{"Time":"2026-09-29T18:16:20.633954+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/BatchReceiptV1-valid","Output":"=== RUN   TestWireVectors/BatchReceiptV1-valid\n"}
+{"Time":"2026-09-29T18:16:20.633975+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/BatchReceiptV1-valid","Output":"--- PASS: TestWireVectors/BatchReceiptV1-valid (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.633983+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/BatchReceiptV1-valid","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.633987+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/BatchReceiptV1-missing"}
+{"Time":"2026-09-29T18:16:20.633992+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/BatchReceiptV1-missing","Output":"=== RUN   TestWireVectors/BatchReceiptV1-missing\n"}
+{"Time":"2026-09-29T18:16:20.634252+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/BatchReceiptV1-missing","Output":"--- PASS: TestWireVectors/BatchReceiptV1-missing (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.63426+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/BatchReceiptV1-missing","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.634264+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/BatchReceiptV1-duplicate"}
+{"Time":"2026-09-29T18:16:20.634267+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/BatchReceiptV1-duplicate","Output":"=== RUN   TestWireVectors/BatchReceiptV1-duplicate\n"}
+{"Time":"2026-09-29T18:16:20.634378+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/BatchReceiptV1-duplicate","Output":"--- PASS: TestWireVectors/BatchReceiptV1-duplicate (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.634392+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/BatchReceiptV1-duplicate","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.634396+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/BatchReceiptV1-nonminimal"}
+{"Time":"2026-09-29T18:16:20.6344+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/BatchReceiptV1-nonminimal","Output":"=== RUN   TestWireVectors/BatchReceiptV1-nonminimal\n"}
+{"Time":"2026-09-29T18:16:20.634404+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/BatchReceiptV1-nonminimal","Output":"--- PASS: TestWireVectors/BatchReceiptV1-nonminimal (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.634408+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors/BatchReceiptV1-nonminimal","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.634412+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors","Output":"--- PASS: TestWireVectors (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.634416+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestWireVectors","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.634419+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors"}
+{"Time":"2026-09-29T18:16:20.634422+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors","Output":"=== RUN   TestMessageVectors\n"}
+{"Time":"2026-09-29T18:16:20.634793+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer"}
+{"Time":"2026-09-29T18:16:20.634804+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer","Output":"=== RUN   TestMessageVectors/transfer\n"}
+{"Time":"2026-09-29T18:16:20.634853+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer","Output":"--- PASS: TestMessageVectors/transfer (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.634862+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.634865+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer-change-sender"}
+{"Time":"2026-09-29T18:16:20.634868+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer-change-sender","Output":"=== RUN   TestMessageVectors/transfer-change-sender\n"}
+{"Time":"2026-09-29T18:16:20.634878+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer-change-sender","Output":"--- PASS: TestMessageVectors/transfer-change-sender (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.634882+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer-change-sender","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.634886+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer-change-recipient"}
+{"Time":"2026-09-29T18:16:20.634889+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer-change-recipient","Output":"=== RUN   TestMessageVectors/transfer-change-recipient\n"}
+{"Time":"2026-09-29T18:16:20.634908+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer-change-recipient","Output":"--- PASS: TestMessageVectors/transfer-change-recipient (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.634928+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer-change-recipient","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.634931+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer-change-payment_id"}
+{"Time":"2026-09-29T18:16:20.634934+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer-change-payment_id","Output":"=== RUN   TestMessageVectors/transfer-change-payment_id\n"}
+{"Time":"2026-09-29T18:16:20.634938+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer-change-payment_id","Output":"--- PASS: TestMessageVectors/transfer-change-payment_id (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.634941+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer-change-payment_id","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.634945+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer-change-amount_atoms"}
+{"Time":"2026-09-29T18:16:20.634948+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer-change-amount_atoms","Output":"=== RUN   TestMessageVectors/transfer-change-amount_atoms\n"}
+{"Time":"2026-09-29T18:16:20.634967+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer-change-amount_atoms","Output":"--- PASS: TestMessageVectors/transfer-change-amount_atoms (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.634971+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer-change-amount_atoms","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.634975+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer-change-policy_version"}
+{"Time":"2026-09-29T18:16:20.634978+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer-change-policy_version","Output":"=== RUN   TestMessageVectors/transfer-change-policy_version\n"}
+{"Time":"2026-09-29T18:16:20.634991+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer-change-policy_version","Output":"--- PASS: TestMessageVectors/transfer-change-policy_version (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.634996+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer-change-policy_version","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.634999+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt"}
+{"Time":"2026-09-29T18:16:20.635002+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt","Output":"=== RUN   TestMessageVectors/receipt\n"}
+{"Time":"2026-09-29T18:16:20.635019+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt","Output":"--- PASS: TestMessageVectors/receipt (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635023+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635026+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt-change-chain_id"}
+{"Time":"2026-09-29T18:16:20.635029+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt-change-chain_id","Output":"=== RUN   TestMessageVectors/receipt-change-chain_id\n"}
+{"Time":"2026-09-29T18:16:20.635044+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt-change-chain_id","Output":"--- PASS: TestMessageVectors/receipt-change-chain_id (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635053+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt-change-chain_id","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635056+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt-change-genesis_hash"}
+{"Time":"2026-09-29T18:16:20.635059+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt-change-genesis_hash","Output":"=== RUN   TestMessageVectors/receipt-change-genesis_hash\n"}
+{"Time":"2026-09-29T18:16:20.635065+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt-change-genesis_hash","Output":"--- PASS: TestMessageVectors/receipt-change-genesis_hash (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635075+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt-change-genesis_hash","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635085+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt-change-market_id"}
+{"Time":"2026-09-29T18:16:20.635088+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt-change-market_id","Output":"=== RUN   TestMessageVectors/receipt-change-market_id\n"}
+{"Time":"2026-09-29T18:16:20.635092+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt-change-market_id","Output":"--- PASS: TestMessageVectors/receipt-change-market_id (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635096+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt-change-market_id","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635101+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt-change-batch_seq"}
+{"Time":"2026-09-29T18:16:20.635105+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt-change-batch_seq","Output":"=== RUN   TestMessageVectors/receipt-change-batch_seq\n"}
+{"Time":"2026-09-29T18:16:20.63511+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt-change-batch_seq","Output":"--- PASS: TestMessageVectors/receipt-change-batch_seq (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635114+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt-change-batch_seq","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635117+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt-change-batch_id"}
+{"Time":"2026-09-29T18:16:20.63512+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt-change-batch_id","Output":"=== RUN   TestMessageVectors/receipt-change-batch_id\n"}
+{"Time":"2026-09-29T18:16:20.635134+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt-change-batch_id","Output":"--- PASS: TestMessageVectors/receipt-change-batch_id (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635138+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt-change-batch_id","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635141+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt-change-batch_hash"}
+{"Time":"2026-09-29T18:16:20.635144+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt-change-batch_hash","Output":"=== RUN   TestMessageVectors/receipt-change-batch_hash\n"}
+{"Time":"2026-09-29T18:16:20.635156+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt-change-batch_hash","Output":"--- PASS: TestMessageVectors/receipt-change-batch_hash (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.63516+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/receipt-change-batch_hash","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635163+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer-zero"}
+{"Time":"2026-09-29T18:16:20.635166+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer-zero","Output":"=== RUN   TestMessageVectors/transfer-zero\n"}
+{"Time":"2026-09-29T18:16:20.635182+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer-zero","Output":"--- PASS: TestMessageVectors/transfer-zero (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635186+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors/transfer-zero","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635189+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors","Output":"--- PASS: TestMessageVectors (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635192+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestMessageVectors","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635197+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors"}
+{"Time":"2026-09-29T18:16:20.6352+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors","Output":"=== RUN   TestAmountVectors\n"}
+{"Time":"2026-09-29T18:16:20.635274+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/0"}
+{"Time":"2026-09-29T18:16:20.63528+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/0","Output":"=== RUN   TestAmountVectors/0\n"}
+{"Time":"2026-09-29T18:16:20.635283+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/0","Output":"--- PASS: TestAmountVectors/0 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635287+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/0","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635293+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/1"}
+{"Time":"2026-09-29T18:16:20.635295+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/1","Output":"=== RUN   TestAmountVectors/1\n"}
+{"Time":"2026-09-29T18:16:20.635299+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/1","Output":"--- PASS: TestAmountVectors/1 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635303+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/1","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635306+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/2"}
+{"Time":"2026-09-29T18:16:20.635309+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/2","Output":"=== RUN   TestAmountVectors/2\n"}
+{"Time":"2026-09-29T18:16:20.635314+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/2","Output":"--- PASS: TestAmountVectors/2 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635317+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/2","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635321+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/3"}
+{"Time":"2026-09-29T18:16:20.63533+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/3","Output":"=== RUN   TestAmountVectors/3\n"}
+{"Time":"2026-09-29T18:16:20.635334+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/3","Output":"--- PASS: TestAmountVectors/3 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635337+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/3","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.63534+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/4"}
+{"Time":"2026-09-29T18:16:20.635343+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/4","Output":"=== RUN   TestAmountVectors/4\n"}
+{"Time":"2026-09-29T18:16:20.635346+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/4","Output":"--- PASS: TestAmountVectors/4 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635351+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/4","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635354+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/5"}
+{"Time":"2026-09-29T18:16:20.635357+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/5","Output":"=== RUN   TestAmountVectors/5\n"}
+{"Time":"2026-09-29T18:16:20.63536+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/5","Output":"--- PASS: TestAmountVectors/5 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635363+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/5","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635365+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/6"}
+{"Time":"2026-09-29T18:16:20.635368+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/6","Output":"=== RUN   TestAmountVectors/6\n"}
+{"Time":"2026-09-29T18:16:20.635371+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/6","Output":"--- PASS: TestAmountVectors/6 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635374+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/6","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635377+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/7"}
+{"Time":"2026-09-29T18:16:20.63538+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/7","Output":"=== RUN   TestAmountVectors/7\n"}
+{"Time":"2026-09-29T18:16:20.635383+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/7","Output":"--- PASS: TestAmountVectors/7 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635386+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/7","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635389+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/8"}
+{"Time":"2026-09-29T18:16:20.635393+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/8","Output":"=== RUN   TestAmountVectors/8\n"}
+{"Time":"2026-09-29T18:16:20.635396+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/8","Output":"--- PASS: TestAmountVectors/8 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635399+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/8","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635409+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/9"}
+{"Time":"2026-09-29T18:16:20.635413+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/9","Output":"=== RUN   TestAmountVectors/9\n"}
+{"Time":"2026-09-29T18:16:20.635418+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/9","Output":"--- PASS: TestAmountVectors/9 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635421+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/9","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635424+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/10"}
+{"Time":"2026-09-29T18:16:20.635426+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/10","Output":"=== RUN   TestAmountVectors/10\n"}
+{"Time":"2026-09-29T18:16:20.635431+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/10","Output":"--- PASS: TestAmountVectors/10 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635434+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/10","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635437+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/11"}
+{"Time":"2026-09-29T18:16:20.635439+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/11","Output":"=== RUN   TestAmountVectors/11\n"}
+{"Time":"2026-09-29T18:16:20.635442+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/11","Output":"--- PASS: TestAmountVectors/11 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635445+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/11","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635448+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/12"}
+{"Time":"2026-09-29T18:16:20.635451+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/12","Output":"=== RUN   TestAmountVectors/12\n"}
+{"Time":"2026-09-29T18:16:20.635454+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/12","Output":"--- PASS: TestAmountVectors/12 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635457+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/12","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635466+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/13"}
+{"Time":"2026-09-29T18:16:20.635469+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/13","Output":"=== RUN   TestAmountVectors/13\n"}
+{"Time":"2026-09-29T18:16:20.635472+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/13","Output":"--- PASS: TestAmountVectors/13 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635475+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/13","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635477+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/14"}
+{"Time":"2026-09-29T18:16:20.63548+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/14","Output":"=== RUN   TestAmountVectors/14\n"}
+{"Time":"2026-09-29T18:16:20.635483+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/14","Output":"--- PASS: TestAmountVectors/14 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635486+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/14","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635493+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/15"}
+{"Time":"2026-09-29T18:16:20.635495+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/15","Output":"=== RUN   TestAmountVectors/15\n"}
+{"Time":"2026-09-29T18:16:20.635499+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/15","Output":"--- PASS: TestAmountVectors/15 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635502+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/15","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635505+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/16"}
+{"Time":"2026-09-29T18:16:20.635507+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/16","Output":"=== RUN   TestAmountVectors/16\n"}
+{"Time":"2026-09-29T18:16:20.63551+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/16","Output":"--- PASS: TestAmountVectors/16 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635513+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors/16","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635516+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors","Output":"--- PASS: TestAmountVectors (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635519+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestAmountVectors","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635522+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies"}
+{"Time":"2026-09-29T18:16:20.635524+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies","Output":"=== RUN   TestPolicies\n"}
+{"Time":"2026-09-29T18:16:20.635588+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/S08-999"}
+{"Time":"2026-09-29T18:16:20.635593+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/S08-999","Output":"=== RUN   TestPolicies/S08-999\n"}
+{"Time":"2026-09-29T18:16:20.635596+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/S08-999","Output":"--- PASS: TestPolicies/S08-999 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635599+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/S08-999","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635602+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/S08-1000"}
+{"Time":"2026-09-29T18:16:20.635605+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/S08-1000","Output":"=== RUN   TestPolicies/S08-1000\n"}
+{"Time":"2026-09-29T18:16:20.635616+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/S08-1000","Output":"--- PASS: TestPolicies/S08-1000 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635619+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/S08-1000","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635626+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/S08-1001"}
+{"Time":"2026-09-29T18:16:20.635629+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/S08-1001","Output":"=== RUN   TestPolicies/S08-1001\n"}
+{"Time":"2026-09-29T18:16:20.635632+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/S08-1001","Output":"--- PASS: TestPolicies/S08-1001 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635635+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/S08-1001","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635638+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-normal"}
+{"Time":"2026-09-29T18:16:20.635641+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-normal","Output":"=== RUN   TestPolicies/W-normal\n"}
+{"Time":"2026-09-29T18:16:20.635643+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-normal","Output":"--- PASS: TestPolicies/W-normal (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635646+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-normal","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635649+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-before_issue"}
+{"Time":"2026-09-29T18:16:20.635652+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-before_issue","Output":"=== RUN   TestPolicies/W-before_issue\n"}
+{"Time":"2026-09-29T18:16:20.635655+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-before_issue","Output":"--- PASS: TestPolicies/W-before_issue (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635658+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-before_issue","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635661+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-at_issue"}
+{"Time":"2026-09-29T18:16:20.635664+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-at_issue","Output":"=== RUN   TestPolicies/W-at_issue\n"}
+{"Time":"2026-09-29T18:16:20.63567+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-at_issue","Output":"--- PASS: TestPolicies/W-at_issue (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635673+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-at_issue","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635676+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-at_expiry"}
+{"Time":"2026-09-29T18:16:20.635678+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-at_expiry","Output":"=== RUN   TestPolicies/W-at_expiry\n"}
+{"Time":"2026-09-29T18:16:20.635681+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-at_expiry","Output":"--- PASS: TestPolicies/W-at_expiry (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635685+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-at_expiry","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635689+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-after_expiry"}
+{"Time":"2026-09-29T18:16:20.635692+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-after_expiry","Output":"=== RUN   TestPolicies/W-after_expiry\n"}
+{"Time":"2026-09-29T18:16:20.635695+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-after_expiry","Output":"--- PASS: TestPolicies/W-after_expiry (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635698+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-after_expiry","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635701+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-ttl121"}
+{"Time":"2026-09-29T18:16:20.635703+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-ttl121","Output":"=== RUN   TestPolicies/W-ttl121\n"}
+{"Time":"2026-09-29T18:16:20.635706+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-ttl121","Output":"--- PASS: TestPolicies/W-ttl121 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635709+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-ttl121","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635712+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-audience"}
+{"Time":"2026-09-29T18:16:20.635714+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-audience","Output":"=== RUN   TestPolicies/W-audience\n"}
+{"Time":"2026-09-29T18:16:20.635719+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-audience","Output":"--- PASS: TestPolicies/W-audience (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635722+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-audience","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635724+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-origin_path"}
+{"Time":"2026-09-29T18:16:20.635727+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-origin_path","Output":"=== RUN   TestPolicies/W-origin_path\n"}
+{"Time":"2026-09-29T18:16:20.63573+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-origin_path","Output":"--- PASS: TestPolicies/W-origin_path (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635733+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-origin_path","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635736+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-origin_mismatch"}
+{"Time":"2026-09-29T18:16:20.635739+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-origin_mismatch","Output":"=== RUN   TestPolicies/W-origin_mismatch\n"}
+{"Time":"2026-09-29T18:16:20.635742+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-origin_mismatch","Output":"--- PASS: TestPolicies/W-origin_mismatch (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635745+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-origin_mismatch","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635748+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-nonce_replay"}
+{"Time":"2026-09-29T18:16:20.63575+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-nonce_replay","Output":"=== RUN   TestPolicies/W-nonce_replay\n"}
+{"Time":"2026-09-29T18:16:20.635753+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-nonce_replay","Output":"--- PASS: TestPolicies/W-nonce_replay (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635756+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies/W-nonce_replay","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635759+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies","Output":"--- PASS: TestPolicies (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.635762+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestPolicies","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.635765+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation"}
+{"Time":"2026-09-29T18:16:20.635768+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation","Output":"=== RUN   TestOrderValidation\n"}
+{"Time":"2026-09-29T18:16:20.638865+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/valid"}
+{"Time":"2026-09-29T18:16:20.638875+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/valid","Output":"=== RUN   TestOrderValidation/valid\n"}
+{"Time":"2026-09-29T18:16:20.639821+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/valid","Output":"--- PASS: TestOrderValidation/valid (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.639829+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/valid","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.639833+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/equal-expiry"}
+{"Time":"2026-09-29T18:16:20.639836+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/equal-expiry","Output":"=== RUN   TestOrderValidation/equal-expiry\n"}
+{"Time":"2026-09-29T18:16:20.640763+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/equal-expiry","Output":"--- PASS: TestOrderValidation/equal-expiry (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.640779+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/equal-expiry","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.640783+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/after-expiry"}
+{"Time":"2026-09-29T18:16:20.640787+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/after-expiry","Output":"=== RUN   TestOrderValidation/after-expiry\n"}
+{"Time":"2026-09-29T18:16:20.641814+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/after-expiry","Output":"--- PASS: TestOrderValidation/after-expiry (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.641824+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/after-expiry","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.641829+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/address"}
+{"Time":"2026-09-29T18:16:20.641833+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/address","Output":"=== RUN   TestOrderValidation/address\n"}
+{"Time":"2026-09-29T18:16:20.642632+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/address","Output":"--- PASS: TestOrderValidation/address (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.64264+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/address","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.642645+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/unregistered"}
+{"Time":"2026-09-29T18:16:20.642649+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/unregistered","Output":"=== RUN   TestOrderValidation/unregistered\n"}
+{"Time":"2026-09-29T18:16:20.64346+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/unregistered","Output":"--- PASS: TestOrderValidation/unregistered (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.64347+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/unregistered","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.643474+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/wrong-key"}
+{"Time":"2026-09-29T18:16:20.643479+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/wrong-key","Output":"=== RUN   TestOrderValidation/wrong-key\n"}
+{"Time":"2026-09-29T18:16:20.644284+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/wrong-key","Output":"--- PASS: TestOrderValidation/wrong-key (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.644292+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/wrong-key","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.644297+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/wrong-key-type"}
+{"Time":"2026-09-29T18:16:20.644301+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/wrong-key-type","Output":"=== RUN   TestOrderValidation/wrong-key-type\n"}
+{"Time":"2026-09-29T18:16:20.645125+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/wrong-key-type","Output":"--- PASS: TestOrderValidation/wrong-key-type (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.645136+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/wrong-key-type","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.645141+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/context-before-address"}
+{"Time":"2026-09-29T18:16:20.645146+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/context-before-address","Output":"=== RUN   TestOrderValidation/context-before-address\n"}
+{"Time":"2026-09-29T18:16:20.645921+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/context-before-address","Output":"--- PASS: TestOrderValidation/context-before-address (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.645931+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/context-before-address","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.645936+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/version"}
+{"Time":"2026-09-29T18:16:20.645946+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/version","Output":"=== RUN   TestOrderValidation/version\n"}
+{"Time":"2026-09-29T18:16:20.64622+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/version","Output":"--- PASS: TestOrderValidation/version (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.646225+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/version","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.646228+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/epoch"}
+{"Time":"2026-09-29T18:16:20.646231+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/epoch","Output":"=== RUN   TestOrderValidation/epoch\n"}
+{"Time":"2026-09-29T18:16:20.646871+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/epoch","Output":"--- PASS: TestOrderValidation/epoch (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.646879+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/epoch","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.646882+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/revoked"}
+{"Time":"2026-09-29T18:16:20.646885+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/revoked","Output":"=== RUN   TestOrderValidation/revoked\n"}
+{"Time":"2026-09-29T18:16:20.647525+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/revoked","Output":"--- PASS: TestOrderValidation/revoked (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.647532+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/revoked","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.647536+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/market"}
+{"Time":"2026-09-29T18:16:20.647539+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/market","Output":"=== RUN   TestOrderValidation/market\n"}
+{"Time":"2026-09-29T18:16:20.647863+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/market","Output":"--- PASS: TestOrderValidation/market (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.64787+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/market","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.647873+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/fee-cap"}
+{"Time":"2026-09-29T18:16:20.647876+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/fee-cap","Output":"=== RUN   TestOrderValidation/fee-cap\n"}
+{"Time":"2026-09-29T18:16:20.648549+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/fee-cap","Output":"--- PASS: TestOrderValidation/fee-cap (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.648557+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation/fee-cap","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.648726+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation","Output":"--- PASS: TestOrderValidation (0.01s)\n"}
+{"Time":"2026-09-29T18:16:20.648733+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestOrderValidation","Elapsed":0.01}
+{"Time":"2026-09-29T18:16:20.648737+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestIntegerBoundaries"}
+{"Time":"2026-09-29T18:16:20.648741+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestIntegerBoundaries","Output":"=== RUN   TestIntegerBoundaries\n"}
+{"Time":"2026-09-29T18:16:20.648759+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestIntegerBoundaries","Output":"--- PASS: TestIntegerBoundaries (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.648763+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestIntegerBoundaries","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.648766+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestJSONRejections"}
+{"Time":"2026-09-29T18:16:20.648769+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestJSONRejections","Output":"=== RUN   TestJSONRejections\n"}
+{"Time":"2026-09-29T18:16:20.649384+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestJSONRejections","Output":"--- PASS: TestJSONRejections (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.649394+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestJSONRejections","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.649399+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestLimits"}
+{"Time":"2026-09-29T18:16:20.649404+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestLimits","Output":"=== RUN   TestLimits\n"}
+{"Time":"2026-09-29T18:16:20.64941+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestLimits","Output":"--- PASS: TestLimits (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.649415+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestLimits","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.64942+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSchemaPin"}
+{"Time":"2026-09-29T18:16:20.649424+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSchemaPin","Output":"=== RUN   TestSchemaPin\n"}
+{"Time":"2026-09-29T18:16:20.649464+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSchemaPin","Output":"--- PASS: TestSchemaPin (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.649474+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSchemaPin","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.64948+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers"}
+{"Time":"2026-09-29T18:16:20.649484+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers","Output":"=== RUN   TestSharedIntegers\n"}
+{"Time":"2026-09-29T18:16:20.649518+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I01"}
+{"Time":"2026-09-29T18:16:20.649525+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I01","Output":"=== RUN   TestSharedIntegers/I01\n"}
+{"Time":"2026-09-29T18:16:20.649533+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I01","Output":"--- PASS: TestSharedIntegers/I01 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.649538+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I01","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.649544+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I02"}
+{"Time":"2026-09-29T18:16:20.649554+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I02","Output":"=== RUN   TestSharedIntegers/I02\n"}
+{"Time":"2026-09-29T18:16:20.649561+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I02","Output":"--- PASS: TestSharedIntegers/I02 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.649565+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I02","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.64957+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I03"}
+{"Time":"2026-09-29T18:16:20.649574+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I03","Output":"=== RUN   TestSharedIntegers/I03\n"}
+{"Time":"2026-09-29T18:16:20.649579+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I03","Output":"--- PASS: TestSharedIntegers/I03 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.649585+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I03","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.649591+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I04"}
+{"Time":"2026-09-29T18:16:20.649595+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I04","Output":"=== RUN   TestSharedIntegers/I04\n"}
+{"Time":"2026-09-29T18:16:20.64961+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I04","Output":"--- PASS: TestSharedIntegers/I04 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.649615+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I04","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.649619+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I05"}
+{"Time":"2026-09-29T18:16:20.649623+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I05","Output":"=== RUN   TestSharedIntegers/I05\n"}
+{"Time":"2026-09-29T18:16:20.649629+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I05","Output":"--- PASS: TestSharedIntegers/I05 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.649637+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I05","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.649641+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I06"}
+{"Time":"2026-09-29T18:16:20.649645+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I06","Output":"=== RUN   TestSharedIntegers/I06\n"}
+{"Time":"2026-09-29T18:16:20.64965+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I06","Output":"--- PASS: TestSharedIntegers/I06 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.649654+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I06","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.649659+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I07"}
+{"Time":"2026-09-29T18:16:20.649663+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I07","Output":"=== RUN   TestSharedIntegers/I07\n"}
+{"Time":"2026-09-29T18:16:20.649669+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I07","Output":"--- PASS: TestSharedIntegers/I07 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.649673+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I07","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.649678+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I08"}
+{"Time":"2026-09-29T18:16:20.649682+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I08","Output":"=== RUN   TestSharedIntegers/I08\n"}
+{"Time":"2026-09-29T18:16:20.649686+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I08","Output":"--- PASS: TestSharedIntegers/I08 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.649691+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I08","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.649695+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I09"}
+{"Time":"2026-09-29T18:16:20.649699+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I09","Output":"=== RUN   TestSharedIntegers/I09\n"}
+{"Time":"2026-09-29T18:16:20.649703+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I09","Output":"--- PASS: TestSharedIntegers/I09 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.649708+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I09","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.649712+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I10"}
+{"Time":"2026-09-29T18:16:20.649716+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I10","Output":"=== RUN   TestSharedIntegers/I10\n"}
+{"Time":"2026-09-29T18:16:20.649722+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I10","Output":"--- PASS: TestSharedIntegers/I10 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.649733+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I10","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.649738+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I11"}
+{"Time":"2026-09-29T18:16:20.649742+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I11","Output":"=== RUN   TestSharedIntegers/I11\n"}
+{"Time":"2026-09-29T18:16:20.649747+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I11","Output":"--- PASS: TestSharedIntegers/I11 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.649751+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I11","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.649756+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I12"}
+{"Time":"2026-09-29T18:16:20.649761+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I12","Output":"=== RUN   TestSharedIntegers/I12\n"}
+{"Time":"2026-09-29T18:16:20.649766+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I12","Output":"--- PASS: TestSharedIntegers/I12 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.64977+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I12","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.649775+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I13"}
+{"Time":"2026-09-29T18:16:20.649779+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I13","Output":"=== RUN   TestSharedIntegers/I13\n"}
+{"Time":"2026-09-29T18:16:20.649783+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I13","Output":"--- PASS: TestSharedIntegers/I13 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.649801+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I13","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.649807+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I14"}
+{"Time":"2026-09-29T18:16:20.649811+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I14","Output":"=== RUN   TestSharedIntegers/I14\n"}
+{"Time":"2026-09-29T18:16:20.649815+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I14","Output":"--- PASS: TestSharedIntegers/I14 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.64982+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I14","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.649824+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I15"}
+{"Time":"2026-09-29T18:16:20.649828+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I15","Output":"=== RUN   TestSharedIntegers/I15\n"}
+{"Time":"2026-09-29T18:16:20.649833+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I15","Output":"--- PASS: TestSharedIntegers/I15 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.649837+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I15","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.649841+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I16"}
+{"Time":"2026-09-29T18:16:20.649846+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I16","Output":"=== RUN   TestSharedIntegers/I16\n"}
+{"Time":"2026-09-29T18:16:20.64985+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I16","Output":"--- PASS: TestSharedIntegers/I16 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.649855+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I16","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.649859+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I17"}
+{"Time":"2026-09-29T18:16:20.649863+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I17","Output":"=== RUN   TestSharedIntegers/I17\n"}
+{"Time":"2026-09-29T18:16:20.649868+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I17","Output":"--- PASS: TestSharedIntegers/I17 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.649872+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I17","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.649876+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I18"}
+{"Time":"2026-09-29T18:16:20.64988+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I18","Output":"=== RUN   TestSharedIntegers/I18\n"}
+{"Time":"2026-09-29T18:16:20.649885+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I18","Output":"--- PASS: TestSharedIntegers/I18 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.649891+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I18","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.649895+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I19"}
+{"Time":"2026-09-29T18:16:20.6499+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I19","Output":"=== RUN   TestSharedIntegers/I19\n"}
+{"Time":"2026-09-29T18:16:20.649904+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I19","Output":"--- PASS: TestSharedIntegers/I19 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.649908+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I19","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.64992+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I20"}
+{"Time":"2026-09-29T18:16:20.649925+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I20","Output":"=== RUN   TestSharedIntegers/I20\n"}
+{"Time":"2026-09-29T18:16:20.649931+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I20","Output":"--- PASS: TestSharedIntegers/I20 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.649935+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I20","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.649942+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I21"}
+{"Time":"2026-09-29T18:16:20.649946+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I21","Output":"=== RUN   TestSharedIntegers/I21\n"}
+{"Time":"2026-09-29T18:16:20.649951+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I21","Output":"--- PASS: TestSharedIntegers/I21 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.649956+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I21","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.649963+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I22"}
+{"Time":"2026-09-29T18:16:20.649967+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I22","Output":"=== RUN   TestSharedIntegers/I22\n"}
+{"Time":"2026-09-29T18:16:20.649977+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I22","Output":"--- PASS: TestSharedIntegers/I22 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.649982+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I22","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.649986+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I23"}
+{"Time":"2026-09-29T18:16:20.649992+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I23","Output":"=== RUN   TestSharedIntegers/I23\n"}
+{"Time":"2026-09-29T18:16:20.650002+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I23","Output":"--- PASS: TestSharedIntegers/I23 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.650008+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I23","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.650013+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I24"}
+{"Time":"2026-09-29T18:16:20.650017+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I24","Output":"=== RUN   TestSharedIntegers/I24\n"}
+{"Time":"2026-09-29T18:16:20.650021+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I24","Output":"--- PASS: TestSharedIntegers/I24 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.650025+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I24","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.65003+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I25"}
+{"Time":"2026-09-29T18:16:20.650034+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I25","Output":"=== RUN   TestSharedIntegers/I25\n"}
+{"Time":"2026-09-29T18:16:20.650038+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I25","Output":"--- PASS: TestSharedIntegers/I25 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.650043+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I25","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.650047+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I26"}
+{"Time":"2026-09-29T18:16:20.650051+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I26","Output":"=== RUN   TestSharedIntegers/I26\n"}
+{"Time":"2026-09-29T18:16:20.650056+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I26","Output":"--- PASS: TestSharedIntegers/I26 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.65006+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I26","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.650067+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I27"}
+{"Time":"2026-09-29T18:16:20.650071+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I27","Output":"=== RUN   TestSharedIntegers/I27\n"}
+{"Time":"2026-09-29T18:16:20.650076+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I27","Output":"--- PASS: TestSharedIntegers/I27 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.65008+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I27","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.650084+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I28"}
+{"Time":"2026-09-29T18:16:20.650088+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I28","Output":"=== RUN   TestSharedIntegers/I28\n"}
+{"Time":"2026-09-29T18:16:20.650093+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I28","Output":"--- PASS: TestSharedIntegers/I28 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.650099+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I28","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.650108+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I29"}
+{"Time":"2026-09-29T18:16:20.650113+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I29","Output":"=== RUN   TestSharedIntegers/I29\n"}
+{"Time":"2026-09-29T18:16:20.650117+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I29","Output":"--- PASS: TestSharedIntegers/I29 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.650122+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I29","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.650126+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I30"}
+{"Time":"2026-09-29T18:16:20.65013+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I30","Output":"=== RUN   TestSharedIntegers/I30\n"}
+{"Time":"2026-09-29T18:16:20.650136+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I30","Output":"--- PASS: TestSharedIntegers/I30 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.65014+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I30","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.650144+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I31"}
+{"Time":"2026-09-29T18:16:20.650148+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I31","Output":"=== RUN   TestSharedIntegers/I31\n"}
+{"Time":"2026-09-29T18:16:20.650153+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I31","Output":"--- PASS: TestSharedIntegers/I31 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.650157+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I31","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.650161+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I32"}
+{"Time":"2026-09-29T18:16:20.650165+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I32","Output":"=== RUN   TestSharedIntegers/I32\n"}
+{"Time":"2026-09-29T18:16:20.65017+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I32","Output":"--- PASS: TestSharedIntegers/I32 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.650174+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers/I32","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.650179+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers","Output":"--- PASS: TestSharedIntegers (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.650183+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestSharedIntegers","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.650187+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries"}
+{"Time":"2026-09-29T18:16:20.650191+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries","Output":"=== RUN   TestS0Boundaries\n"}
+{"Time":"2026-09-29T18:16:20.650213+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/expiry-999"}
+{"Time":"2026-09-29T18:16:20.650227+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/expiry-999","Output":"=== RUN   TestS0Boundaries/expiry-999\n"}
+{"Time":"2026-09-29T18:16:20.650236+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/expiry-999","Output":"--- PASS: TestS0Boundaries/expiry-999 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.650241+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/expiry-999","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.650247+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/expiry-1000"}
+{"Time":"2026-09-29T18:16:20.650252+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/expiry-1000","Output":"=== RUN   TestS0Boundaries/expiry-1000\n"}
+{"Time":"2026-09-29T18:16:20.650258+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/expiry-1000","Output":"--- PASS: TestS0Boundaries/expiry-1000 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.650263+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/expiry-1000","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.650268+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/expiry-1001"}
+{"Time":"2026-09-29T18:16:20.650273+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/expiry-1001","Output":"=== RUN   TestS0Boundaries/expiry-1001\n"}
+{"Time":"2026-09-29T18:16:20.650279+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/expiry-1001","Output":"--- PASS: TestS0Boundaries/expiry-1001 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.650284+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/expiry-1001","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.650288+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/fill-3"}
+{"Time":"2026-09-29T18:16:20.650292+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/fill-3","Output":"=== RUN   TestS0Boundaries/fill-3\n"}
+{"Time":"2026-09-29T18:16:20.650297+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/fill-3","Output":"--- PASS: TestS0Boundaries/fill-3 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.650302+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/fill-3","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.650306+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/fill-4"}
+{"Time":"2026-09-29T18:16:20.65031+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/fill-4","Output":"=== RUN   TestS0Boundaries/fill-4\n"}
+{"Time":"2026-09-29T18:16:20.650316+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/fill-4","Output":"--- PASS: TestS0Boundaries/fill-4 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.650325+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/fill-4","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.65033+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/fill-5"}
+{"Time":"2026-09-29T18:16:20.650334+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/fill-5","Output":"=== RUN   TestS0Boundaries/fill-5\n"}
+{"Time":"2026-09-29T18:16:20.650339+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/fill-5","Output":"--- PASS: TestS0Boundaries/fill-5 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.650343+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/fill-5","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.650347+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/fill-6"}
+{"Time":"2026-09-29T18:16:20.650351+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/fill-6","Output":"=== RUN   TestS0Boundaries/fill-6\n"}
+{"Time":"2026-09-29T18:16:20.650356+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/fill-6","Output":"--- PASS: TestS0Boundaries/fill-6 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.65036+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/fill-6","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.650366+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/fill-7"}
+{"Time":"2026-09-29T18:16:20.650371+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/fill-7","Output":"=== RUN   TestS0Boundaries/fill-7\n"}
+{"Time":"2026-09-29T18:16:20.650377+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/fill-7","Output":"--- PASS: TestS0Boundaries/fill-7 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.650383+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/fill-7","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.65039+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/fill-8"}
+{"Time":"2026-09-29T18:16:20.650394+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/fill-8","Output":"=== RUN   TestS0Boundaries/fill-8\n"}
+{"Time":"2026-09-29T18:16:20.650399+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/fill-8","Output":"--- PASS: TestS0Boundaries/fill-8 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.650409+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/fill-8","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.650413+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/atoms-9"}
+{"Time":"2026-09-29T18:16:20.650418+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/atoms-9","Output":"=== RUN   TestS0Boundaries/atoms-9\n"}
+{"Time":"2026-09-29T18:16:20.650422+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/atoms-9","Output":"--- PASS: TestS0Boundaries/atoms-9 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.650428+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/atoms-9","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.650433+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/atoms-10"}
+{"Time":"2026-09-29T18:16:20.650437+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/atoms-10","Output":"=== RUN   TestS0Boundaries/atoms-10\n"}
+{"Time":"2026-09-29T18:16:20.650442+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/atoms-10","Output":"--- PASS: TestS0Boundaries/atoms-10 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.650446+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/atoms-10","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.650451+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/atoms-11"}
+{"Time":"2026-09-29T18:16:20.650455+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/atoms-11","Output":"=== RUN   TestS0Boundaries/atoms-11\n"}
+{"Time":"2026-09-29T18:16:20.65046+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/atoms-11","Output":"--- PASS: TestS0Boundaries/atoms-11 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.650465+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/atoms-11","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.65047+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/atoms-12"}
+{"Time":"2026-09-29T18:16:20.650474+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/atoms-12","Output":"=== RUN   TestS0Boundaries/atoms-12\n"}
+{"Time":"2026-09-29T18:16:20.65048+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/atoms-12","Output":"--- PASS: TestS0Boundaries/atoms-12 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.650484+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/atoms-12","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.650488+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/atoms-13"}
+{"Time":"2026-09-29T18:16:20.650492+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/atoms-13","Output":"=== RUN   TestS0Boundaries/atoms-13\n"}
+{"Time":"2026-09-29T18:16:20.650497+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/atoms-13","Output":"--- PASS: TestS0Boundaries/atoms-13 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.650502+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/atoms-13","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.650506+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/atoms-14"}
+{"Time":"2026-09-29T18:16:20.65051+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/atoms-14","Output":"=== RUN   TestS0Boundaries/atoms-14\n"}
+{"Time":"2026-09-29T18:16:20.650515+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/atoms-14","Output":"--- PASS: TestS0Boundaries/atoms-14 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.650519+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries/atoms-14","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.650523+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries","Output":"--- PASS: TestS0Boundaries (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.650528+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestS0Boundaries","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.650533+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestBaselineHashes"}
+{"Time":"2026-09-29T18:16:20.650537+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestBaselineHashes","Output":"=== RUN   TestBaselineHashes\n"}
+{"Time":"2026-09-29T18:16:20.65354+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestBaselineHashes","Output":"--- PASS: TestBaselineHashes (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.653552+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"TestBaselineHashes","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.653557+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"FuzzDecode"}
+{"Time":"2026-09-29T18:16:20.653562+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"FuzzDecode","Output":"=== RUN   FuzzDecode\n"}
+{"Time":"2026-09-29T18:16:20.653587+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"FuzzDecode/seed#0"}
+{"Time":"2026-09-29T18:16:20.653594+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"FuzzDecode/seed#0","Output":"=== RUN   FuzzDecode/seed#0\n"}
+{"Time":"2026-09-29T18:16:20.653641+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"FuzzDecode/seed#0","Output":"--- PASS: FuzzDecode/seed#0 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.653653+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"FuzzDecode/seed#0","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.653658+01:00","Action":"run","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"FuzzDecode/seed#1"}
+{"Time":"2026-09-29T18:16:20.653667+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"FuzzDecode/seed#1","Output":"=== RUN   FuzzDecode/seed#1\n"}
+{"Time":"2026-09-29T18:16:20.653672+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"FuzzDecode/seed#1","Output":"--- PASS: FuzzDecode/seed#1 (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.653678+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"FuzzDecode/seed#1","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.653683+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"FuzzDecode","Output":"--- PASS: FuzzDecode (0.00s)\n"}
+{"Time":"2026-09-29T18:16:20.653687+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Test":"FuzzDecode","Elapsed":0}
+{"Time":"2026-09-29T18:16:20.653693+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Output":"PASS\n"}
+{"Time":"2026-09-29T18:16:20.654266+01:00","Action":"output","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Output":"ok  \tgithub.com/nus-gang/cosmo-dex/chain/contract\t0.215s\n"}
+{"Time":"2026-09-29T18:16:20.654282+01:00","Action":"pass","Package":"github.com/nus-gang/cosmo-dex/chain/contract","Elapsed":0.215}
