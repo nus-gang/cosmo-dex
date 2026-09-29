@@ -14,3 +14,5 @@ evidence/node_modules/
 
 .npm/
 ci-download/
+
+ci-download-fixed/
