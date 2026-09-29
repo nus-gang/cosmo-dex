@@ -1,0 +1,38 @@
+{
+  "scope": "S0 independent common contract review only",
+  "common_output": "PASS",
+  "tested_authentication_rejection_invariants": "PASS",
+  "actual_mldsa_interop": "PASS",
+  "comparisons": 969,
+  "passed": 969,
+  "failed": 0,
+  "historical_results_preserved": [
+    [
+      420,
+      413,
+      7
+    ],
+    [
+      759,
+      754,
+      5
+    ],
+    [
+      783,
+      782,
+      1
+    ]
+  ],
+  "ack": "NOT_CONNECTED",
+  "ledger": "NOT_CONNECTED",
+  "rest_ws": "NOT_CONNECTED",
+  "chain": "NOT_CONNECTED",
+  "wal_replay": "NOT_RUN",
+  "product_T01_T16": "NOT_RUN",
+  "direct_recovery": "NOT_RUN",
+  "release_approved": false,
+  "main_merge_approved": false,
+  "test_sha": "041fa5954f3fa950b100c7a505217d949165347b",
+  "ci_pending": false,
+  "ci": "PASS"
+}

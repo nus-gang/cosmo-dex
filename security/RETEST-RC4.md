@@ -1,6 +1,6 @@
 # NUS-16 rc4 독립 전체 재시험
 
-2026-09-29 · Security. 로컬 공통 출력·시험 범위 보안 불변식·실제 ML-DSA 상호운용 PASS. CEO 독립 산출물 검토와 QA 인수는 별도다.
+2026-09-29 · Security. 로컬 및 Linux CI 공통 출력·시험 범위 보안 불변식·실제 ML-DSA 상호운용 PASS. CEO 독립 산출물 검토와 QA 인수는 별도다.
 
 ## 입력과 범위
 
@@ -8,7 +8,7 @@ A 57c187f5474e02c3f624667d3b8380268e13dd1a, C b0283833a0d040366219b35de58a3150d3
 
 contract afa3471a2210a90cde0004b3219b231468bf0b8471e8068f8e16b096b3549d84; vectors bb1b437d23a365f1083e85353bf62bcef6517cda94288ff7e2d0b4cb5fccd55b; snapshot-output 6508028f349af5aa127e148a808e075389eb450e81a8976ff32bad8cd065c884.
 
-API에서 A/C/D/F done/approved를 확인하고 각 승인 제출 SHA를 읽었다. C/D/F protocol 파일은 A와 byte-identical. E rc2 출처를 유지하고 실제 소비 schema/message-codec/s0-cases/batches 네 파일의 동일성을 검사했다. E의 결과는 합성 receipt/API 검증이며 암호 구현으로 집계하지 않는다. 구현 소스 변경 없음. 별도 Security checkout과 test adapter만 수정했다.
+API에서 A/C/D/F done/approved를 확인하고 각 승인 제출 SHA를 읽었다. C/D/F 각각 44개 protocol 파일은 A와 byte-identical. E rc2 출처를 유지하고 실제 소비 schema/message-codec/s0-cases/batches 네 파일의 동일성을 검사했다. E의 결과는 합성 receipt/API 검증이며 암호 구현으로 집계하지 않는다. 구현 소스 변경 없음. 별도 Security checkout과 test adapter만 수정했다.
 
 ## 실행 결과
 
@@ -34,4 +34,10 @@ API에서 A/C/D/F done/approved를 확인하고 각 승인 제출 SHA를 읽었�
 
 새 checkout: `python3 security/prepare.py` → `bash security/run.sh`. macOS 실행에서는 설치된 Rust 1.92.0의 CARGO/RUSTC/RUSTDOC 절대 경로를 지정했다. 최초 기본 toolchain 선택 실패는 환경 문제로 구분한다. 실제 브라우저는 web에서 `EVIDENCE_DIR=../security/evidence/browser npm run test:browser`.
 
-ACK·ledger·REST/WS·체인 NOT_CONNECTED; WAL·실제 자산 보존·출금/정산 경합·직접 회수·제품 T01~T16 NOT_RUN. 이 PASS는 승인된 S0 공통 규약 검증 범위이며 S0-H 최종 인수, main 병합·후속 기능·출시 승인이 아니다. Security harness의 독립 검토는 CEO 네이티브 검토 및 NUS-17 새 checkout 재현으로 받는다.
+ACK·ledger·REST/WS·체인 NOT_CONNECTED; WAL·실제 자산 보존·출금/정산 경합·직접 회수·제품 T01~T16 NOT_RUN. 이 PASS는 승인된 S0 공통 규약 검증 범위이며 S0-H 최종 인수, main 병합·후속 기능·출시 승인이 아니다. Security harness의 독립 검토는 CEO 네이티브 검토 및 [NUS-17](/NUS/issues/NUS-17) 새 checkout 재현으로 받는다.
+
+## 최종 CI 증거
+
+[PR #12](https://github.com/nus-gang/cosmo-dex/pull/12), 시험 SHA `041fa5954f3fa950b100c7a505217d949165347b`, [Linux CI 36635390972](https://github.com/nus-gang/cosmo-dex/actions/runs/36635390972) success. 새 checkout에서 입력 검증·구성요소 시험·전체 differential·실제 Chromium 단계가 모두 성공했다. 내려받은 전체 969행은 로컬과 JSON 동일하며, 453개 브라우저 check ID도 동일하다. Linux Chromium 140.0.7339.186, pageErrors 0, 외부 요청 0, overflow false. 원시 workflow.log와 artifact는 증거 ZIP에 포함한다.
+
+초기 963비교 SHA 3458d087의 CI도 success였으나 최종 판정은 null/누락 epoch+false 6비교를 포함한 041fa595 기준이다. 마지막 증거 commit은 시험 소스를 변경하지 않는다. C/D/E/F 승인 상태·manifest·라이선스/lock·기존 ID 보존 비교는 evidence에 기록했다. 새 미해결 S0 차단 finding은 없다. 최종 S0 게이트는 [NUS-17](/NUS/issues/NUS-17)의 별도 fresh checkout/공통 CI 인수이며 이번 검토의 PASS와 구분한다.
