@@ -2,12 +2,12 @@
   {
     "issue": "NUS-12",
     "component": "chain",
-    "sha": "b0283833a0d040366219b35de58a3150d3956e92"
+    "sha": "5d39b7a0ffe911ed60cd0e3a56ada135e76a425f"
   },
   {
     "issue": "NUS-13",
     "component": "exchange",
-    "sha": "7c7d0ca68b98f6c82fd297fa0dcd0a649194139d"
+    "sha": "7f9f14f35a985484cee64a5132ed26aa500c0887"
   },
   {
     "issue": "NUS-14",
@@ -17,6 +17,6 @@
   {
     "issue": "NUS-15",
     "component": "web",
-    "sha": "5ff848415c3fda4e2285634950848c99824193be"
+    "sha": "99ee3bf73c9e44b6e7fef6d8640af14d587ea89b"
   }
 ]

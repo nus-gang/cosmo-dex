@@ -1,0 +1,47 @@
+{
+  "total": 783,
+  "passed": 782,
+  "failures": [
+    {
+      "id": "rc3-signed-missing-epoch_matches",
+      "language": "Rust",
+      "expected": {
+        "code": "OK",
+        "decision": {
+          "authentication": {
+            "status": "PASS",
+            "code": "OK"
+          },
+          "snapshot_policy": {
+            "status": "NOT_CONNECTED",
+            "code": null,
+            "source": "SYNTHETIC",
+            "snapshot_id": "synthetic-1"
+          },
+          "ack": "NOT_CONNECTED",
+          "wal_replay": "NOT_RUN",
+          "ledger": "NOT_CONNECTED"
+        }
+      },
+      "actual": {
+        "code": "OK",
+        "decision": {
+          "ack": "NOT_CONNECTED",
+          "authentication": {
+            "code": "OK",
+            "status": "PASS"
+          },
+          "ledger": "NOT_CONNECTED",
+          "snapshot_policy": {
+            "code": null,
+            "snapshot_id": null,
+            "source": "SYNTHETIC",
+            "status": "NOT_CONNECTED"
+          },
+          "wal_replay": "NOT_RUN"
+        }
+      },
+      "passed": false
+    }
+  ]
+}

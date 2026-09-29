@@ -16,6 +16,6 @@ test_string_rules_and_generated_schema (__main__.Contract.test_string_rules_and_
 test_timeout_lookup_failure_and_not_found (__main__.Contract.test_timeout_lookup_failure_and_not_found) ... ok
 
 ----------------------------------------------------------------------
-Ran 16 tests in 0.009s
+Ran 16 tests in 0.007s
 
 OK

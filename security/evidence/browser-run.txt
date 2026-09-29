@@ -2,4 +2,4 @@
 > @nus/wallet-contract@0.0.1 test:browser
 > node scripts/browser.mjs
 
-{"runtime":"real headless Chrome","browser":"154.0.8037.58","node":"v24.21.0","suite":{"passed":392},"uiChecks":["key generation","OrderV1 signature","memory recovery","390px no overflow"],"pageErrors":[],"externalRequests":0,"overflow":false,"restWs":"NOT_CONNECTED","chainTx":"NOT_CONNECTED"}
+{"runtime":"real headless Chrome","browser":"154.0.8037.58","node":"v24.21.0","suite":{"passed":453},"uiChecks":["key generation","OrderV1 signature","memory recovery","390px no overflow"],"pageErrors":[],"externalRequests":0,"overflow":false,"restWs":"NOT_CONNECTED","chainTx":"NOT_CONNECTED"}

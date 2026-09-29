@@ -81,6 +81,7 @@ for receive,bps,expected in [('1000',0,dict(code='OK',fee='0')),('1000',25,dict(
 for lang in ps:
  check('identifier-newline',lang,dict(Op='encode',Name='OrderV1',API={**m,'chain_id':'nus-dev-1\n'},Domain=domains['OrderV1']),dict(code='NON_CANONICAL_WIRE'))
 exec((ROOT/'security/rc3_cases.py').read_text())
+exec((ROOT/'security/rc4_cases.py').read_text())
 for p in ps.values():p.stdin.close();assert p.wait()==0
 (E/'generated.json').write_text(json.dumps(generated,indent=2)+'\n')
 (E/'policy-inputs.json').write_text(json.dumps(policy_inputs,indent=2)+'\n')
