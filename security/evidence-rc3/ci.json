@@ -1,0 +1,11 @@
+{
+  "url": "https://github.com/nus-gang/cosmo-dex/actions/runs/36614473295",
+  "run_id": 36614473295,
+  "tested_sha": "e9edf595d5f2c96dae8c88c7bd33cfc4fcc4a804",
+  "conclusion": "failure",
+  "local_ci_summary_identical": true,
+  "local_ci_all_differential_rows_identical": true,
+  "total": 759,
+  "passed": 754,
+  "differences": 5
+}

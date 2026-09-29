@@ -1,0 +1,81 @@
+[
+  {
+    "file": "chain/go.mod",
+    "sha256": "fb92827c0549a95679bfdb793feb8cb184879e844f45e5f9be7342806ac4a5b5"
+  },
+  {
+    "file": "chain/go.sum",
+    "sha256": "be7914402a4ac34946df904f134fc88a62163b83f0f61b59f5c265f6b4513d1b"
+  },
+  {
+    "file": "exchange/Cargo.lock",
+    "sha256": "ab4f76dd87448219ade436d508822b423b036a5131cdc732150a59e2e764e894"
+  },
+  {
+    "file": "web/package-lock.json",
+    "sha256": "95c1b012fce8ac96e96ee9547438b4c36d15c071e5d79faf1ab4d651261cb0fa"
+  },
+  {
+    "file": "security/.go-mod/github.com/cloudflare/circl@v1.6.3/LICENSE",
+    "sha256": "b0da1764fe4d13d610b695536fc3f2ebc362482d053a1cd258e36975bc6b97a7",
+    "first_lines": [
+      "Copyright (c) 2019 Cloudflare. All rights reserved.",
+      "",
+      "Redistribution and use in source and binary forms, with or without"
+    ]
+  },
+  {
+    "file": "security/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fips204-0.4.6/LICENSE-APACHE",
+    "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
+    "first_lines": [
+      "                              Apache License",
+      "                        Version 2.0, January 2004",
+      "                     http://www.apache.org/licenses/"
+    ]
+  },
+  {
+    "file": "security/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fips204-0.4.6/LICENSE-MIT",
+    "sha256": "d27687b51f2874822c1530976b7e837eac4f308d94bf3dd42047011b7d437b47",
+    "first_lines": [
+      "Copyright (c) 2020-2022 RustCrypto Developers",
+      "",
+      "Permission is hereby granted, free of charge, to any"
+    ]
+  },
+  {
+    "file": "security/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/orderbook-rs-0.13.1/LICENSE",
+    "sha256": "e39769f967a17b7e0be3b1e34718e8bee7f989c57cc844464e40e58fb814a457",
+    "first_lines": [
+      "MIT License",
+      "",
+      "Copyright (c) 2025 Joaquin Bejar Garcia"
+    ]
+  },
+  {
+    "file": "web/node_modules/@noble/post-quantum/LICENSE",
+    "sha256": "0dea4b70b40ca57e3cfe30186e3dbd245147fe4d83ac566e92e70203aac59034",
+    "first_lines": [
+      "The MIT License (MIT)",
+      "",
+      "Copyright (c) 2024 Paul Miller (https://paulmillr.com)"
+    ]
+  },
+  {
+    "file": "web/node_modules/@noble/hashes/LICENSE",
+    "sha256": "4f221aee6e072336700c408c68ab3b96a3fc09f6aebe6f48f1bd99e5ef13faec",
+    "first_lines": [
+      "The MIT License (MIT)",
+      "",
+      "Copyright (c) 2022 Paul Miller (https://paulmillr.com)"
+    ]
+  },
+  {
+    "file": "web/node_modules/@scure/base/LICENSE",
+    "sha256": "3239e134eb6e6d64538ca76498c7fcb08a395249dd9d4af9927bf6d0169ee429",
+    "first_lines": [
+      "The MIT License (MIT)",
+      "",
+      "Copyright (c) 2022 Paul Miller (https://paulmillr.com)"
+    ]
+  }
+]

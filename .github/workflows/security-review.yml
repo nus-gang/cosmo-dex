@@ -1,0 +1,47 @@
+name: S0-G independent security reproduction
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pinned-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.4'
+          cache: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.21.0'
+      - uses: dtolnay/rust-toolchain@1.92.0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - name: Record the integrated checkout and start fresh evidence
+        run: |
+          # Historical evidence remains in Git; this run uploads only fresh results.
+          rm -rf security/evidence
+          mkdir -p security/evidence
+          git rev-parse HEAD > security/evidence/commit.txt
+          git ls-tree -r HEAD -- protocol chain exchange settlement web security > security/evidence/source-tree.txt
+      - name: Reproduce review (policy differences fail the gate)
+        run: bash security/run.sh
+      - name: Real browser conformance
+        if: always()
+        run: |
+          cd web
+          npx playwright-core install --with-deps chromium
+          export CHROME_BIN="$(node --input-type=module -e "import {chromium} from 'playwright-core'; console.log(chromium.executablePath())")"
+          EVIDENCE_DIR=../security/evidence/browser npm run test:browser > ../security/evidence/browser-run.txt 2>&1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: s0-g-security-evidence-${{ github.sha }}
+          path: security/evidence/

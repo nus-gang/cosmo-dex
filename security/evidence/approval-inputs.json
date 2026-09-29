@@ -1,0 +1,123 @@
+{
+  "NUS-10": {
+    "status": "done",
+    "executionState": {
+      "status": "completed",
+      "monitor": null,
+      "reviewRequest": null,
+      "currentStageId": null,
+      "lastDecisionId": "18967029-ed71-4c76-b748-df827357e6e2",
+      "returnAssignee": {
+        "type": "agent",
+        "userId": null,
+        "agentId": "890452a8-05a2-45f1-a2bf-b0c01278d521"
+      },
+      "currentStageType": null,
+      "completedStageIds": [
+        "aebb67c7-a7a3-4b7f-a901-81d7a9e85020",
+        "21efe8d5-ecc7-4268-b48d-bcdc3f6f5918"
+      ],
+      "currentStageIndex": null,
+      "currentParticipant": null,
+      "lastDecisionOutcome": "approved",
+      "changesRequestedCount": 0
+    }
+  },
+  "NUS-12": {
+    "status": "done",
+    "executionState": {
+      "status": "completed",
+      "monitor": null,
+      "reviewRequest": null,
+      "currentStageId": null,
+      "lastDecisionId": "471f3074-93a1-49d9-b169-cb4f4c885ae8",
+      "returnAssignee": {
+        "type": "agent",
+        "userId": null,
+        "agentId": "8ed0d728-5f08-4211-a115-ae6be939b955"
+      },
+      "currentStageType": null,
+      "completedStageIds": [
+        "d2909cd2-94f8-4d3c-bac5-ef6ca993c016",
+        "4dba0666-8490-48f9-a4f8-5dadec00c39a",
+        "829af09a-1338-4264-b86f-3c87f6607dce",
+        "6438962b-1b0a-449b-a1fc-23207d133790"
+      ],
+      "currentStageIndex": null,
+      "currentParticipant": null,
+      "lastDecisionOutcome": "approved",
+      "changesRequestedCount": 0
+    }
+  },
+  "NUS-13": {
+    "status": "done",
+    "executionState": {
+      "status": "completed",
+      "monitor": null,
+      "reviewRequest": null,
+      "currentStageId": null,
+      "lastDecisionId": "43caaff6-ba67-4618-a3cb-f4b8f3ac02fa",
+      "returnAssignee": {
+        "type": "agent",
+        "userId": null,
+        "agentId": "280662e3-46b6-4f2b-988c-fa8878f29fbf"
+      },
+      "currentStageType": null,
+      "completedStageIds": [
+        "4ff68b13-8002-4dcd-a2f1-95735118567d",
+        "6b744173-f5ec-460a-8bbe-61f04a4bb4cc"
+      ],
+      "currentStageIndex": null,
+      "currentParticipant": null,
+      "lastDecisionOutcome": "approved",
+      "changesRequestedCount": 0
+    }
+  },
+  "NUS-15": {
+    "status": "done",
+    "executionState": {
+      "status": "completed",
+      "monitor": null,
+      "reviewRequest": null,
+      "currentStageId": null,
+      "lastDecisionId": "7e05eaac-a528-4b11-8b30-85911c780d1a",
+      "returnAssignee": {
+        "type": "agent",
+        "userId": null,
+        "agentId": "bbab0ef4-f898-4a3f-868e-95907150184b"
+      },
+      "currentStageType": null,
+      "completedStageIds": [
+        "1b02ad7a-980e-482a-84de-aa6f81328881",
+        "63afc83b-7912-4f0f-a510-4a8488b59728"
+      ],
+      "currentStageIndex": null,
+      "currentParticipant": null,
+      "lastDecisionOutcome": "approved",
+      "changesRequestedCount": 0
+    }
+  },
+  "NUS-14": {
+    "status": "done",
+    "executionState": {
+      "status": "completed",
+      "monitor": null,
+      "reviewRequest": null,
+      "currentStageId": null,
+      "lastDecisionId": "c33c4874-de7c-4f27-bedf-d37a6dbbb88e",
+      "returnAssignee": {
+        "type": "agent",
+        "userId": null,
+        "agentId": "731426db-1eed-4e0e-ac48-2f6e887627d0"
+      },
+      "currentStageType": null,
+      "completedStageIds": [
+        "4ae66d9a-dcec-45e9-8400-fe1d6270d8da"
+      ],
+      "currentStageIndex": null,
+      "currentParticipant": null,
+      "lastDecisionOutcome": "approved",
+      "changesRequestedCount": 0
+    }
+  }
+}

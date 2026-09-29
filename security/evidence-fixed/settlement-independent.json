@@ -1,0 +1,122 @@
+[
+  {
+    "id": "historical-retry-after-epoch-change",
+    "actual": "ALREADY_COMMITTED",
+    "expected": "ALREADY_COMMITTED",
+    "passed": true
+  },
+  {
+    "id": "current-operator-auth-required",
+    "actual": "UNAUTHORIZED",
+    "expected": "UNAUTHORIZED",
+    "passed": true
+  },
+  {
+    "id": "historical-conflict-batch_id",
+    "actual": "BATCH_CONFLICT",
+    "expected": "BATCH_CONFLICT",
+    "passed": true
+  },
+  {
+    "id": "historical-conflict-batch_hash",
+    "actual": "BATCH_CONFLICT",
+    "expected": "BATCH_CONFLICT",
+    "passed": true
+  },
+  {
+    "id": "release-prerequisites-(False, False, False)",
+    "actual": false,
+    "expected": false,
+    "passed": true
+  },
+  {
+    "id": "release-prerequisites-(False, False, True)",
+    "actual": false,
+    "expected": false,
+    "passed": true
+  },
+  {
+    "id": "release-prerequisites-(False, True, False)",
+    "actual": false,
+    "expected": false,
+    "passed": true
+  },
+  {
+    "id": "release-prerequisites-(False, True, True)",
+    "actual": false,
+    "expected": false,
+    "passed": true
+  },
+  {
+    "id": "release-prerequisites-(True, False, False)",
+    "actual": false,
+    "expected": false,
+    "passed": true
+  },
+  {
+    "id": "release-prerequisites-(True, False, True)",
+    "actual": false,
+    "expected": false,
+    "passed": true
+  },
+  {
+    "id": "release-prerequisites-(True, True, False)",
+    "actual": false,
+    "expected": false,
+    "passed": true
+  },
+  {
+    "id": "release-prerequisites-(True, True, True)",
+    "actual": true,
+    "expected": true,
+    "passed": true
+  },
+  {
+    "id": "uncertain-holds-LOOKUP_UNAVAILABLE",
+    "actual": false,
+    "expected": false,
+    "passed": true
+  },
+  {
+    "id": "uncertain-holds-NOT_FOUND_AT_HEIGHT",
+    "actual": false,
+    "expected": false,
+    "passed": true
+  },
+  {
+    "id": "uncertain-holds-RECEIPT_INCONSISTENCY",
+    "actual": false,
+    "expected": false,
+    "passed": true
+  },
+  {
+    "id": "confirmed-receipt-wins-over-correction",
+    "actual": "COMMITTED",
+    "expected": "COMMITTED",
+    "passed": true
+  },
+  {
+    "id": "provisional-is-not-spendable",
+    "actual": "30",
+    "expected": "30",
+    "passed": true
+  },
+  {
+    "id": "same-bytes-retry",
+    "actual": "6f726967696e616c",
+    "expected": "6f726967696e616c",
+    "passed": true
+  },
+  {
+    "id": "changed-bytes",
+    "actual": "RETRY_BINDING",
+    "expected": "RETRY_BINDING",
+    "passed": true
+  },
+  {
+    "id": "no-lookup",
+    "actual": "RETRY_BINDING",
+    "expected": "RETRY_BINDING",
+    "passed": true
+  }
+]
