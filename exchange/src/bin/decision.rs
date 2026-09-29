@@ -42,8 +42,8 @@ fn run(v: &Value) -> Result<Value> {
                 registered_key: pk.as_deref(),
                 registered_key_type: reg["key_type"].as_str(),
                 height: number(c, "height", 64)? as u64,
-                // These legacy validate_order fields are not used by authenticate_order.
-                epoch: 0,
+                epoch: number(c, "epoch", 64).map_err(|_| "NOT_CONNECTED")? as u64,
+                // Remaining legacy fields are evaluated through the synthetic snapshot.
                 revoked: false,
                 filled: 0,
                 available: 0,

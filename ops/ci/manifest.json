@@ -12,6 +12,10 @@
     "node": "24.21.0",
     "python": "3 (actual version recorded at execution)"
   },
+  "common_input_manifest": {
+    "path": "ops/ci/cto-input.json",
+    "sha256": "e24c64d6ccb41f9fc22d6669ea57acd7036d2f1758a4127cba92ce49524823b5"
+  },
   "source_inputs": {
     "A": {
       "commit": "549ce150d6a9f21ec30f159d39a4d91c31dbd759",
@@ -19,7 +23,9 @@
       "vectors_sha256": "4851d9d674b2412ca8919d8347a71da13f9adf4426fe60b44e2a4a259f8bd948",
       "manifest_file_sha256": "4972f8125b959370263ab333fa8cec4896d896e1af41900461ba01e17711c4ea",
       "verified_file_count": 40,
-      "protocol_matches_A": true
+      "protocol_matches_A": true,
+      "tree": "d2aab07d6136ef5fd26888a73979f3a163df9f09",
+      "path": "protocol/v1"
     },
     "C": {
       "commit": "5d39b7a0ffe911ed60cd0e3a56ada135e76a425f",
@@ -27,15 +33,19 @@
       "vectors_sha256": "4851d9d674b2412ca8919d8347a71da13f9adf4426fe60b44e2a4a259f8bd948",
       "manifest_file_sha256": "4972f8125b959370263ab333fa8cec4896d896e1af41900461ba01e17711c4ea",
       "verified_file_count": 40,
-      "protocol_matches_A": true
+      "protocol_matches_A": true,
+      "tree": "addb9a400f730806e4a4576a9245591127a2d089",
+      "path": "chain"
     },
     "D": {
-      "commit": "d2984223fac6c9dfafc0d71ab9f86af5bf539339",
+      "commit": "7f9f14f35a985484cee64a5132ed26aa500c0887",
       "contract_sha256": "a71a8c03fea5e4d2876612e821eafcb4b359a0b132157929b9924d6f8fecd73e",
       "vectors_sha256": "4851d9d674b2412ca8919d8347a71da13f9adf4426fe60b44e2a4a259f8bd948",
       "manifest_file_sha256": "4972f8125b959370263ab333fa8cec4896d896e1af41900461ba01e17711c4ea",
       "verified_file_count": 40,
-      "protocol_matches_A": true
+      "protocol_matches_A": true,
+      "tree": "f5a84292f790ab1257190b65abfe83e3320ce140",
+      "path": "exchange"
     },
     "E": {
       "commit": "f9b5bbf1e06a4a0c43bebc6d5bd081dc3b1892c2",
@@ -43,71 +53,22 @@
       "vectors_sha256": "60ee56ff3ff5a754965472cfb353dd1565072dbf0985907c369a0b78237f91e0",
       "manifest_file_sha256": "e175140bb2215ef6c32d9b8da6406dbedf53fe0c9442a58419a009ac65317eab",
       "verified_file_count": 37,
-      "protocol_matches_A": false
+      "protocol_matches_A": false,
+      "tree": "ac537a420c4760f7e19f317a25c2a9cc76f54e39",
+      "path": "settlement"
     },
     "F": {
-      "commit": "8a70632d933b58c15b5bbac9fbef25dfa7312643",
+      "commit": "99ee3bf73c9e44b6e7fef6d8640af14d587ea89b",
       "contract_sha256": "a71a8c03fea5e4d2876612e821eafcb4b359a0b132157929b9924d6f8fecd73e",
       "vectors_sha256": "4851d9d674b2412ca8919d8347a71da13f9adf4426fe60b44e2a4a259f8bd948",
       "manifest_file_sha256": "4972f8125b959370263ab333fa8cec4896d896e1af41900461ba01e17711c4ea",
       "verified_file_count": 40,
-      "protocol_matches_A": true
+      "protocol_matches_A": true,
+      "tree": "6c739f3918143a82ee46998e4674dde060da7c09",
+      "path": "web"
     }
   },
   "e_compatibility": {
-    "python": "3.14.0",
-    "platform": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
-    "runs": [
-      {
-        "argv": [
-          "python3",
-          "settlement/v1/test_contract.py"
-        ],
-        "started_utc": "2026-09-29T18:39:50.687783+00:00",
-        "seconds": 0.0601,
-        "exit": 0,
-        "log": "e-check-0.log"
-      },
-      {
-        "argv": [
-          "python3",
-          "protocol/v1/tools/check-message-codec.py"
-        ],
-        "started_utc": "2026-09-29T18:39:50.747983+00:00",
-        "seconds": 0.042,
-        "exit": 0,
-        "log": "e-check-1.log"
-      },
-      {
-        "argv": [
-          "python3",
-          "protocol/v1/tools/check.py"
-        ],
-        "started_utc": "2026-09-29T18:39:50.790011+00:00",
-        "seconds": 0.0473,
-        "exit": 0,
-        "log": "e-check-2.log"
-      },
-      {
-        "argv": [
-          "python3",
-          "settlement/v1/generate.py"
-        ],
-        "started_utc": "2026-09-29T18:39:50.837382+00:00",
-        "seconds": 0.0304,
-        "exit": 0,
-        "log": "e-check-3.log"
-      }
-    ],
-    "generated_before": {
-      "settlement/v1/api.schema.json": "d12579ebbe539123a0591669619c98540cd607de4209c8e0fb251dee10315d09",
-      "settlement/v1/fixtures.json": "daa28f20eefc27aaa617b25c2715d9dd30961aa81f8e5507c761cc4c71ec4f0d"
-    },
-    "generated_after": {
-      "settlement/v1/api.schema.json": "d12579ebbe539123a0591669619c98540cd607de4209c8e0fb251dee10315d09",
-      "settlement/v1/fixtures.json": "daa28f20eefc27aaa617b25c2715d9dd30961aa81f8e5507c761cc4c71ec4f0d"
-    },
-    "generated_unchanged": true,
     "consumed_files": {
       "protocol/v1/schema.json": {
         "original_E_sha256": "6b7db405585adbf460ed7d78d81d8604fe69bc6de7d191d9bc9ea4e0f8611e2c",
@@ -122,7 +83,8 @@
         "rc3_sha256": "9bdc3d3f76dedde99af270dbaae7703c7f38312ce7d5deb13b2c96a6b4552f9f"
       }
     },
-    "scope": "synthetic receipt/API regression only; no fee/order decision/crypto/chain/DB claim"
+    "scope": "synthetic receipt/API regression only; no fee/order decision/crypto/chain/DB claim",
+    "execution_evidence": "Fresh vectors.json settlement-regression/settlement-generate and e_consumed_hashes; historical CTO run logs are not reused."
   },
   "cases": [
     {
@@ -6425,19 +6387,21 @@
     "exchange/.gitignore": "306fd52e74fca6746e12acc750f232de15e71da917756a1270d74c91f5eb7368",
     "exchange/Cargo.lock": "ab4f76dd87448219ade436d508822b423b036a5131cdc732150a59e2e764e894",
     "exchange/Cargo.toml": "f14a14210628a359bfefb199806224b86b91eecb8ff87ef053837b86cdf9be11",
-    "exchange/README.md": "fe08842ab19c5edd4ab9eab0e57582dbb6c934676b9a7fa687b6a79d8ac67c7a",
+    "exchange/README.md": "d076c229e91d40ce00c194f71ff4db20583b46c3276f60322ec8e75333d31573",
     "exchange/src/adapter.rs": "b60bbe02b298fd6aa50bb8cd9619517c14363a0dcd7945de36e829d0d6986685",
-    "exchange/src/bin/decision.rs": "1bab89b556c2dd81c44cbc780768b5b4359bb76cdc3ba9f1c001ef760a3fa13c",
+    "exchange/src/bin/decision.rs": "bf1853ac81c2b7b69c0f158553b07af7cda2ee63dfa22a4c2400f99325292e6c",
     "exchange/src/bin/vectors.rs": "16885de5d6a834fa8b07bd9c482702e93ffe74a626c5c526d186837b2c17d2d1",
     "exchange/src/codec.rs": "b6948227e674e2eb704ba6ae83f49e8feeb81db3be3c2662f08c6aa82c4b9eb1",
-    "exchange/src/decision.rs": "49be7835155f522e1c61b1b044cb84f87742398da85f394418fe701a1c4b214b",
+    "exchange/src/decision.rs": "1c9b8baa51663ab9710dd5e56595248df80f1817a91c0b474d868abd56f7704b",
     "exchange/src/lib.rs": "9809e627b9ff9cbe17194b60054c86dc3e92dbfdf8edab402d16bb8be8461a14",
-    "exchange/src/policy.rs": "1f1cf100450be704c6b52100ca9bc803f2a7ee9fa59d8e3996068fab44d331b6",
+    "exchange/src/policy.rs": "aec75b6aec4a149fea2e9d01e69bcdbe4ee0c6da21eaf4269bb947bf211b96fa",
     "exchange/tests/common_vectors.rs": "a4ae81c7cb4532c626a3dfec7e708bd43f296c485775f51f51e1f7bf9a7386ba",
-    "exchange/tests/rc3.rs": "8faae42de4e6e5a67ec3829880d5e6e7890d426c0725b8a25cc81b682b13314c",
+    "exchange/tests/rc3.rs": "e5aab2d9b6476cfa5340266aa9d5732361169a27082c57fb879fb7f11710231b",
     "exchange/tests/upstream_ioc.rs": "b7b7dfc0ac95d32d3f20a267e3c393b3106b2c9232cf7a644e805aa9e8422502",
+    "exchange/tools/compare_admission.py": "4d5bd77c2d46676ae2e20b6c0560de7adfdec113c23cb50ea34eb5105d2b196c",
     "web/.gitignore": "790e3169bc19b046fe55ba1da6d13b976c28363c8c00462a2195fe5faf260910",
     "web/ADR-wallet.md": "9a283d2cc2addbcf5f2c74062ad5de2389588d311805367b6b6ea47c8315cbd5",
+    "web/ENUM-FIX.md": "187426901ed3e528ba6ca0acee19b60e75c2fe18baf9cad3804780a12b1a0a33",
     "web/RC3-REVIEW.md": "0e0166e22cc9348a7c7361a134ccaba1517dcd731ad17de4b4ac95324a56a0bf",
     "web/README.md": "a05c4b2ec04f30ecb9574f1870fbe4171da9db1f0831105dd0f1aeeb2ae4e7dd",
     "web/package-lock.json": "95c1b012fce8ac96e96ee9547438b4c36d15c071e5d79faf1ab4d651261cb0fa",
@@ -6448,12 +6412,15 @@
     "web/scripts/vectors.ts": "70708c19fb8b21297c35f0fec340e6bfcf2500a65ec699dc2eee1777478d09f9",
     "web/src/browser.ts": "34d6bd1029b29c46d0b62a736e74fc1261946143e2af456c9f409bd3ca397c71",
     "web/src/codec.ts": "ffc477d25a7e9565c592473c63713b1799f9f8d12277194494d84b9497c48c80",
-    "web/src/decision.ts": "53ff79de2e81271310f478b799c3e5ca350b381e8f11fba74f50034e4b359f40",
+    "web/src/decision.ts": "f14df86eea25eab0ad5a0a9f79c4d98837acffc9296e95ca96a3d9903e1e75e3",
     "web/src/index.ts": "992a09c55861412ddcb3743851eacda1cfc299fa6e45afb16ecc1f09e8a3a3a9",
     "web/src/wallet.ts": "5fbb24fdd2988369eb37e0fbb40d28abda85c0d80879b2c7eab38ddfaa99eda6",
     "web/test/conformance.ts": "c901c650482e7c047d8fbc7ddd9e47d19a064a6cb9274e68188b5bd5c5371a22",
     "web/test/contract.test.ts": "c60b1110134e3e4dccb0d70f85ee45f4f919e055172d5102fe33997b6d4da4eb",
-    "web/test/decision.ts": "7a67ba4acd1f9469dc0bcd83b05df0a2f9f31eec3b8d9ca40a70944f9b9ba1a1",
+    "web/test/cross-enum/compare.py": "d89b3c91176b21dcd537b78927720fb0f45a4f5f3cdc4b8ee2cde7b72508bb1b",
+    "web/test/cross-enum/inputs.json": "965533f1e66d0b8a2f97c4b81f8f614179939aa623f2d4d3cf7d80d3e0a22e93",
+    "web/test/cross-enum/runner.ts": "514258950ff7bd302965e690e83df946b2c74944f72a8509c7990ae22799a3ef",
+    "web/test/decision.ts": "ae6564e6852eea8431265ea918a9e08a78bf84dc425f78c9a9c1833b75a75f62",
     "web/tsconfig.json": "13a683514e105b21b6f782049dada80a05373ad364c8ca11864d85b2eb0b4f77",
     "settlement/README.md": "e6fdb0c9cf9effd942812e6ccceae99db96b6afccac65d9c1c7b76c899d4be5f",
     "settlement/v1/.gitignore": "32dae3052f331ee34d628ef535709b301259a45df7c7522c4d35dcf49873f00b",
@@ -6465,7 +6432,8 @@
     "settlement/v1/manifest.json": "6323c430ae27875c7746b569b21fc7b3c7565d9c117256111e14fd7eaf8b9e1e",
     "settlement/v1/mock.py": "767b0ad2afa05a77f680c79ae27959e6fff0072ebd111459ed1e962f421df5d5",
     "settlement/v1/test_contract.py": "ca1bab6726e727d46313016f211ca3824661f1f2f516df03b3a23c185a19851d",
-    "ops/ci/input-lock.json": "a83464f4a057b2968bdf1ae96d879cca6e07f6bb4bb74861b9ea10da213567a2",
+    "ops/ci/cto-input.json": "e24c64d6ccb41f9fc22d6669ea57acd7036d2f1758a4127cba92ce49524823b5",
+    "ops/ci/input-lock.json": "01eb10108804c72d75d396ca616e5f769803073ea9e58706b7104dc0885b5ec1",
     "ops/ci/required-cases.json": "b303afd41c6521b5eb1bd538123f2b64cf363c91fe6a960ada07fa4931bcbe38",
     "ops/ci/ports/go.go": "36b8f98554ea3c396537261953cba213cc58546ecee1d5bc9bdfb54809db3f4c",
     "ops/ci/ports/ts.ts": "e793826782affb27dd42219378652ec01ab10f3a1410e6dfe4771238cdeb1927",

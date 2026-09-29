@@ -8,7 +8,9 @@
       "vectors_sha256": "4851d9d674b2412ca8919d8347a71da13f9adf4426fe60b44e2a4a259f8bd948",
       "manifest_file_sha256": "4972f8125b959370263ab333fa8cec4896d896e1af41900461ba01e17711c4ea",
       "verified_file_count": 40,
-      "protocol_matches_A": true
+      "protocol_matches_A": true,
+      "tree": "d2aab07d6136ef5fd26888a73979f3a163df9f09",
+      "path": "protocol/v1"
     },
     "C": {
       "commit": "5d39b7a0ffe911ed60cd0e3a56ada135e76a425f",
@@ -16,15 +18,19 @@
       "vectors_sha256": "4851d9d674b2412ca8919d8347a71da13f9adf4426fe60b44e2a4a259f8bd948",
       "manifest_file_sha256": "4972f8125b959370263ab333fa8cec4896d896e1af41900461ba01e17711c4ea",
       "verified_file_count": 40,
-      "protocol_matches_A": true
+      "protocol_matches_A": true,
+      "tree": "addb9a400f730806e4a4576a9245591127a2d089",
+      "path": "chain"
     },
     "D": {
-      "commit": "d2984223fac6c9dfafc0d71ab9f86af5bf539339",
+      "commit": "7f9f14f35a985484cee64a5132ed26aa500c0887",
       "contract_sha256": "a71a8c03fea5e4d2876612e821eafcb4b359a0b132157929b9924d6f8fecd73e",
       "vectors_sha256": "4851d9d674b2412ca8919d8347a71da13f9adf4426fe60b44e2a4a259f8bd948",
       "manifest_file_sha256": "4972f8125b959370263ab333fa8cec4896d896e1af41900461ba01e17711c4ea",
       "verified_file_count": 40,
-      "protocol_matches_A": true
+      "protocol_matches_A": true,
+      "tree": "f5a84292f790ab1257190b65abfe83e3320ce140",
+      "path": "exchange"
     },
     "E": {
       "commit": "f9b5bbf1e06a4a0c43bebc6d5bd081dc3b1892c2",
@@ -32,15 +38,19 @@
       "vectors_sha256": "60ee56ff3ff5a754965472cfb353dd1565072dbf0985907c369a0b78237f91e0",
       "manifest_file_sha256": "e175140bb2215ef6c32d9b8da6406dbedf53fe0c9442a58419a009ac65317eab",
       "verified_file_count": 37,
-      "protocol_matches_A": false
+      "protocol_matches_A": false,
+      "tree": "ac537a420c4760f7e19f317a25c2a9cc76f54e39",
+      "path": "settlement"
     },
     "F": {
-      "commit": "8a70632d933b58c15b5bbac9fbef25dfa7312643",
+      "commit": "99ee3bf73c9e44b6e7fef6d8640af14d587ea89b",
       "contract_sha256": "a71a8c03fea5e4d2876612e821eafcb4b359a0b132157929b9924d6f8fecd73e",
       "vectors_sha256": "4851d9d674b2412ca8919d8347a71da13f9adf4426fe60b44e2a4a259f8bd948",
       "manifest_file_sha256": "4972f8125b959370263ab333fa8cec4896d896e1af41900461ba01e17711c4ea",
       "verified_file_count": 40,
-      "protocol_matches_A": true
+      "protocol_matches_A": true,
+      "tree": "6c739f3918143a82ee46998e4674dde060da7c09",
+      "path": "web"
     }
   },
   "canonical_protocol": {
@@ -143,59 +153,6 @@
   },
   "execution_status": "B_G_H_NOT_RUN",
   "E_rc3_compatibility": {
-    "python": "3.14.0",
-    "platform": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
-    "runs": [
-      {
-        "argv": [
-          "python3",
-          "settlement/v1/test_contract.py"
-        ],
-        "started_utc": "2026-09-29T18:39:50.687783+00:00",
-        "seconds": 0.0601,
-        "exit": 0,
-        "log": "e-check-0.log"
-      },
-      {
-        "argv": [
-          "python3",
-          "protocol/v1/tools/check-message-codec.py"
-        ],
-        "started_utc": "2026-09-29T18:39:50.747983+00:00",
-        "seconds": 0.042,
-        "exit": 0,
-        "log": "e-check-1.log"
-      },
-      {
-        "argv": [
-          "python3",
-          "protocol/v1/tools/check.py"
-        ],
-        "started_utc": "2026-09-29T18:39:50.790011+00:00",
-        "seconds": 0.0473,
-        "exit": 0,
-        "log": "e-check-2.log"
-      },
-      {
-        "argv": [
-          "python3",
-          "settlement/v1/generate.py"
-        ],
-        "started_utc": "2026-09-29T18:39:50.837382+00:00",
-        "seconds": 0.0304,
-        "exit": 0,
-        "log": "e-check-3.log"
-      }
-    ],
-    "generated_before": {
-      "settlement/v1/api.schema.json": "d12579ebbe539123a0591669619c98540cd607de4209c8e0fb251dee10315d09",
-      "settlement/v1/fixtures.json": "daa28f20eefc27aaa617b25c2715d9dd30961aa81f8e5507c761cc4c71ec4f0d"
-    },
-    "generated_after": {
-      "settlement/v1/api.schema.json": "d12579ebbe539123a0591669619c98540cd607de4209c8e0fb251dee10315d09",
-      "settlement/v1/fixtures.json": "daa28f20eefc27aaa617b25c2715d9dd30961aa81f8e5507c761cc4c71ec4f0d"
-    },
-    "generated_unchanged": true,
     "consumed_files": {
       "protocol/v1/schema.json": {
         "original_E_sha256": "6b7db405585adbf460ed7d78d81d8604fe69bc6de7d191d9bc9ea4e0f8611e2c",
@@ -210,7 +167,8 @@
         "rc3_sha256": "9bdc3d3f76dedde99af270dbaae7703c7f38312ce7d5deb13b2c96a6b4552f9f"
       }
     },
-    "scope": "synthetic receipt/API regression only; no fee/order decision/crypto/chain/DB claim"
+    "scope": "synthetic receipt/API regression only; no fee/order decision/crypto/chain/DB claim",
+    "execution_evidence": "Fresh vectors.json settlement-regression/settlement-generate and e_consumed_hashes; historical CTO run logs are not reused."
   },
   "oracle_index": {
     "file": "required-cases.json",
@@ -218,5 +176,9 @@
     "key": "source + json_pointer + id",
     "tsv": "oracle/vectors/integers.tsv",
     "note": "Source cases retained verbatim. B/G must map each category to real supported ports; references/state examples must not count as product PASS. I20 explicit rc3 override: fee(0,0)=0."
+  },
+  "common_input_manifest": {
+    "path": "ops/ci/cto-input.json",
+    "sha256": "e24c64d6ccb41f9fc22d6669ea57acd7036d2f1758a4127cba92ce49524823b5"
   }
 }

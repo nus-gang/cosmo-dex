@@ -35,6 +35,18 @@ export function decisionChecks(m: Message, ctx: VerificationContext, secretKey: 
     eq('actual-registration:' + c.id, result.authentication, c.expected_registration === 'OK' ? { status: 'PASS', code: 'OK' } : c.expected_registration === 'NOT_CONNECTED' ? { status: 'NOT_CONNECTED', code: null } : { status: 'REJECTED', code: c.expected_registration });
   }
   const snap = { ...vectors.decision_cases[0].input.snapshot, q: '1', p: '1', cap: '25', active_bps: '25' } as Snapshot;
+  for (const side of ['1', '2', '3']) for (const order_type of ['1', '2', '3']) {
+    const order = { ...m, side, order_type, max_qty_lots: '100', limit_price_ticks: '100', max_fee_bps: '25' };
+    const signedEnum = sign('OrderV1', order, secretKey);
+    const enumSnap: Snapshot = { ...snap, q: '100', p: '100' };
+    const result = decideOrder(signedEnum.body, signedEnum.signature, ctx, enumSnap);
+    const id = `enum-${side}-${order_type}`;
+    eq(id + ':authentication', result.authentication, { status: 'PASS', code: 'OK' });
+    eq(id + ':policy', result.snapshot_policy, { status: side === '3' || order_type === '3' ? 'REJECTED' : 'PASS', code: side === '3' || order_type === '3' ? 'MARKET_LIMIT' : 'OK', source: 'SYNTHETIC', snapshot_id: enumSnap.id });
+    eq(id + ':ack', result.ack, 'NOT_CONNECTED');
+    eq(id + ':wal', result.wal_replay, 'NOT_RUN');
+    eq(id + ':ledger', result.ledger, 'NOT_CONNECTED');
+  }
   const signed = sign('OrderV1', { ...m, max_qty_lots: '1', limit_price_ticks: '1', max_fee_bps: '25' }, secretKey);
   const actual = decideOrder(signed.body, signed.signature, ctx, snap);
   eq('actual-crypto-tiny-fill', actual, vectors.decision_cases[1].expected);

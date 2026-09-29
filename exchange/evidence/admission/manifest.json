@@ -1,0 +1,19 @@
+{
+  "base_rust_sha": "d2984223fac6c9dfafc0d71ab9f86af5bf539339",
+  "go_sha": "5d39b7a0ffe911ed60cd0e3a56ada135e76a425f",
+  "ts_sha": "8a70632d933b58c15b5bbac9fbef25dfa7312643",
+  "harness_sha": "068477c19a6979641ff0a2b7d85bcf28ef36c817",
+  "contract_sha256": "a71a8c03fea5e4d2876612e821eafcb4b359a0b132157929b9924d6f8fecd73e",
+  "vectors_sha256": "4851d9d674b2412ca8919d8347a71da13f9adf4426fe60b44e2a4a259f8bd948",
+  "test_functions": 17,
+  "full_independent_retest": "NOT_RUN",
+  "prior_security": "FAIL: 759/754/5 preserved",
+  "files": {
+    "cross-results.json": "449517100fb00a70dea35dde00a8020640ba946958351420e19849fa6eb7db4a",
+    "test.log": "04a426b68c588a31a142b68eb8a67f01b01b2e48444882f01717136ccbec08b4",
+    "clippy.log": "1135b0c439f790276ca736c660572647501f0c9f7628eda0cf9dde338422788c",
+    "cross-summary.json": "06a35bfaa6363205a86e45581b7456b4ba63db5d5b79d5a922fcabeec3e36170",
+    "inputs.json": "2da1f6c265ef300b5368a76efc2db52b78e6eebae3dd003b92738352690027f6",
+    "rust-results.json": "bf52a691f0567c025808ee8d8306acd503bcdd8e7fe31374e909adf91595fc2d"
+  }
+}

@@ -109,6 +109,20 @@ pub fn authenticate_order(raw: &[u8], sig: &[u8], ctx: &OrderContext<'_>) -> Res
     }
     Ok(o)
 }
+/// Signed market fields shared by both authenticated order entry points.
+pub(crate) fn market_rules(o: &Value) -> Result<()> {
+    let q = integer(&o["max_qty_lots"], 64)? as u64;
+    let p = integer(&o["limit_price_ticks"], 64)? as u64;
+    if !(1..=1000000).contains(&q)
+        || !(1..=1000000).contains(&p)
+        || !["1", "2"].contains(&o["side"].as_str().unwrap())
+        || !["1", "2"].contains(&o["order_type"].as_str().unwrap())
+        || o["fee_asset_policy_id"] != "RECEIVE_ASSET_V1"
+    {
+        return Err("MARKET_LIMIT");
+    }
+    Ok(())
+}
 pub fn validate_order(raw: &[u8], sig: &[u8], ctx: &OrderContext<'_>) -> Result<Value> {
     let o = authenticate_order(raw, sig, ctx)?;
     if integer(&o["owner_epoch"], 64)? != ctx.epoch as u128 {
@@ -120,14 +134,7 @@ pub fn validate_order(raw: &[u8], sig: &[u8], ctx: &OrderContext<'_>) -> Result<
     expiry(ctx.height, integer(&o["expiry_height"], 64)? as u64)?;
     let q = integer(&o["max_qty_lots"], 64)? as u64;
     let p = integer(&o["limit_price_ticks"], 64)? as u64;
-    if !(1..=1000000).contains(&q)
-        || !(1..=1000000).contains(&p)
-        || !["1", "2"].contains(&o["side"].as_str().unwrap())
-        || !["1", "2"].contains(&o["order_type"].as_str().unwrap())
-        || o["fee_asset_policy_id"] != "RECEIVE_ASSET_V1"
-    {
-        return Err("MARKET_LIMIT");
-    }
+    market_rules(&o)?;
     let cap = integer(&o["max_fee_bps"], 32)?;
     if ctx.fee_bps > 10000 {
         return Err("BPS_RANGE");

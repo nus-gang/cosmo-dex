@@ -43,7 +43,7 @@ for rec in read('ops/ci/required-cases.json'):
 c=dict(schema_version=2,contract_revision=lock['inputs']['A']['commit'],contract_version='1.0.0-rc3',
  contract_sha256=lock['inputs']['A']['contract_sha256'],protocol_vectors_sha256=lock['inputs']['A']['vectors_sha256'],
  vectors='protocol/v1/vectors/signatures.json',vectors_sha256=digest('protocol/v1/vectors/signatures.json'),
- toolchains={'go':'1.24.4','rust':'1.92.0','node':'24.21.0','python':'3 (actual version recorded at execution)'},source_inputs=lock['inputs'],e_compatibility=lock['E_rc3_compatibility'],cases=cases,coverage=mapping,
+ toolchains={'go':'1.24.4','rust':'1.92.0','node':'24.21.0','python':'3 (actual version recorded at execution)'},common_input_manifest=lock['common_input_manifest'],source_inputs=lock['inputs'],e_compatibility=lock['E_rc3_compatibility'],cases=cases,coverage=mapping,
  integer_override={'id':'I20','original':'FEE_GE_RECEIVE','rc3':'0','reason':'rc3 fee(0,0)=0; original TSV remains unchanged'},
  boundaries={'ack':'NOT_CONNECTED','ledger':'NOT_CONNECTED','wal_replay':'NOT_RUN','chain_runtime':'NOT_CONNECTED'},
  lanes={
@@ -54,7 +54,7 @@ files={}
 for folder in ['protocol/v1','chain','exchange','web','settlement']:
  for p in sorted((R/folder).rglob('*')):
   if p.is_file() and not any(x in p.parts for x in ['evidence','node_modules','target','dist','__pycache__']) and p.name!='.DS_Store':files[str(p.relative_to(R))]=digest(p.relative_to(R))
-for p in ['ops/ci/input-lock.json','ops/ci/required-cases.json','ops/ci/ports/go.go','ops/ci/ports/ts.ts','ops/ci/ports/rust/Cargo.toml','ops/ci/ports/rust/Cargo.lock','ops/ci/ports/rust/src/main.rs']:
+for p in ['ops/ci/cto-input.json','ops/ci/input-lock.json','ops/ci/required-cases.json','ops/ci/ports/go.go','ops/ci/ports/ts.ts','ops/ci/ports/rust/Cargo.toml','ops/ci/ports/rust/Cargo.lock','ops/ci/ports/rust/src/main.rs']:
  if (R/p).exists():files[p]=digest(p)
 c['files_sha256']=files
 import sys

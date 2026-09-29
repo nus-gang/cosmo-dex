@@ -1,0 +1,72 @@
+   Compiling nus-exchange-contract v0.1.0 (/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/worktrees/NUS-13/exchange)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.36s
+     Running unittests src/lib.rs (exchange/target/debug/deps/nus_exchange_contract-c48582a6eedf9241)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/decision.rs (exchange/target/debug/deps/decision-1b370670f1cabad5)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/vectors.rs (exchange/target/debug/deps/vectors-bef514c259cc39ca)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/common_vectors.rs (exchange/target/debug/deps/common_vectors-c76c2705d0dfba82)
+
+running 10 tests
+PASS S0 exchange cases=15; receipt/transfer state belongs to Settlement/Chain
+test parser_adversarial_boundaries ... ok
+test s0_exchange_vectors ... ok
+PASS policy=13
+PASS integer_boundaries=32 (I20 superseded by rc3 fee-0)
+test sequenced_ioc_contract ... ok
+test common_policy ... ok
+test integer_vectors ... ok
+PASS complete_message_codec=14
+test message_vectors ... ok
+PASS wire=18 amount_codec=17
+test strict_wire_and_amount_vectors ... ok
+test order_validation_precedence_and_binding ... ok
+PASS ML-DSA-65 positives=3 negatives=35, independent API→wire→frame→SHA256
+test real_signature_vectors ... ok
+test cli_runner_receipt ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.37s
+
+     Running tests/rc3.rs (exchange/target/debug/deps/rc3-a6ea020e0364b37c)
+
+running 5 tests
+PASS rc3 fee=17 cap=21 synthetic decisions=34 API=6; injected authentication is NOT crypto evidence
+test common_rc3_policy_examples ... ok
+PASS real ML-DSA top-level registration=5 plus tampered signature
+test actual_registration_and_signature_at_top_level ... ok
+test json_lines_port_uses_real_registration ... ok
+PASS re-signed cap=5, active range=5, small-fill auth PASS/policy rejection; missing/mismatched snapshot never ACKED
+test newly_signed_cap_and_small_fill ... ok
+PASS admission: 9 signed enum combinations, 7 market boundaries, 4 epoch combinations, 21 CLI requests
+test signed_enum_market_and_epoch_at_admission_boundary ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.59s
+
+     Running tests/upstream_ioc.rs (exchange/target/debug/deps/upstream_ioc-6b5949e8bd1ff9ef)
+
+running 2 tests
+PASS actual orderbook-rs 0.13.1: IOC requested=5, callback filled=3, Err, release R=200, retain D=300/P=3000
+test real_cancel_and_zero_fill_ioc ... ok
+test real_ioc_error_retains_callback_debits ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests nus_exchange_contract
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
