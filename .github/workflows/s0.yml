@@ -1,0 +1,79 @@
+name: S0 rc4 build and oracle gate
+on:
+  push:
+    branches: [main, 'sre/**']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: s0-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  scaffold:
+    name: Go Rust TS component tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@7b8cf10d4e4a01d4992d18a89f4d7dc5a3e6d6f4
+        with:
+          go-version: '1.24.4'
+          cache: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.node-version'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install pinned Rust
+        run: rustup toolchain install 1.92.0 --profile minimal --component rustfmt --component clippy
+      - name: Build and orchestration checks
+        run: |
+          set -o pipefail
+          mkdir -p .evidence
+          make scaffold 2>&1 | tee .evidence/scaffold.log
+          git diff --exit-code -- chain/go.mod exchange/Cargo.lock web/package-lock.json
+      - name: Record environment and immutable inputs
+        if: always()
+        run: |
+          git rev-parse HEAD > .evidence/commit.txt
+          { go version; rustc --version; cargo --version; node --version; npm --version; python3 --version; } > .evidence/environment.txt
+          sha256sum chain/go.mod exchange/Cargo.lock web/package-lock.json ops/ci/manifest.json > .evidence/SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: s0-scaffold-${{ github.sha }}
+          path: .evidence/
+          include-hidden-files: true
+          if-no-files-found: error
+  vectors:
+    name: rc4 oracle and E regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@7b8cf10d4e4a01d4992d18a89f4d7dc5a3e6d6f4
+        with:
+          go-version: '1.24.4'
+          cache: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.node-version'
+      - run: rustup toolchain install 1.92.0 --profile minimal --component rustfmt --component clippy
+      - name: Record runtime environment
+        run: |
+          mkdir -p .evidence
+          git rev-parse HEAD > .evidence/commit.txt
+          { go version; rustc --version; cargo --version; node --version; npm --version; python3 --version; } > .evidence/environment.txt
+          sha256sum ops/ci/manifest.json > .evidence/manifest.sha256
+      - run: make bootstrap vectors
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: s0-vectors-${{ github.sha }}
+          path: .evidence/
+          include-hidden-files: true

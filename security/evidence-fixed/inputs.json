@@ -1,0 +1,22 @@
+[
+  {
+    "issue": "NUS-12",
+    "component": "chain",
+    "sha": "5d39b7a0ffe911ed60cd0e3a56ada135e76a425f"
+  },
+  {
+    "issue": "NUS-13",
+    "component": "exchange",
+    "sha": "7f9f14f35a985484cee64a5132ed26aa500c0887"
+  },
+  {
+    "issue": "NUS-14",
+    "component": "settlement",
+    "sha": "f9b5bbf1e06a4a0c43bebc6d5bd081dc3b1892c2"
+  },
+  {
+    "issue": "NUS-15",
+    "component": "web",
+    "sha": "99ee3bf73c9e44b6e7fef6d8640af14d587ea89b"
+  }
+]

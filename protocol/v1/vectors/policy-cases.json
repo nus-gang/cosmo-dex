@@ -1,0 +1,146 @@
+{
+  "validation": "specification_only; not executed against server/chain",
+  "cases": [
+    {
+      "id": "S08-999",
+      "kind": "order_and_cancel_expiry",
+      "height": "999",
+      "expiry_height": "1000",
+      "expected": "allow"
+    },
+    {
+      "id": "S08-1000",
+      "kind": "order_and_cancel_expiry",
+      "height": "1000",
+      "expiry_height": "1000",
+      "expected": "reject"
+    },
+    {
+      "id": "S08-1001",
+      "kind": "order_and_cancel_expiry",
+      "height": "1001",
+      "expiry_height": "1000",
+      "expected": "reject"
+    },
+    {
+      "id": "W-normal",
+      "kind": "wallet_policy",
+      "issued_at": "1799999880",
+      "expiry_time": "1800000000",
+      "now": "1799999999",
+      "audience": "private-ws",
+      "origin": "https://wallet.invalid",
+      "allowed_origin": "https://wallet.invalid",
+      "nonce_consumed": false,
+      "expected": "allow"
+    },
+    {
+      "id": "W-before_issue",
+      "kind": "wallet_policy",
+      "issued_at": "1799999880",
+      "expiry_time": "1800000000",
+      "now": "1799999879",
+      "audience": "private-ws",
+      "origin": "https://wallet.invalid",
+      "allowed_origin": "https://wallet.invalid",
+      "nonce_consumed": false,
+      "expected": "reject"
+    },
+    {
+      "id": "W-at_issue",
+      "kind": "wallet_policy",
+      "issued_at": "1799999880",
+      "expiry_time": "1800000000",
+      "now": "1799999880",
+      "audience": "private-ws",
+      "origin": "https://wallet.invalid",
+      "allowed_origin": "https://wallet.invalid",
+      "nonce_consumed": false,
+      "expected": "allow"
+    },
+    {
+      "id": "W-at_expiry",
+      "kind": "wallet_policy",
+      "issued_at": "1799999880",
+      "expiry_time": "1800000000",
+      "now": "1800000000",
+      "audience": "private-ws",
+      "origin": "https://wallet.invalid",
+      "allowed_origin": "https://wallet.invalid",
+      "nonce_consumed": false,
+      "expected": "reject"
+    },
+    {
+      "id": "W-after_expiry",
+      "kind": "wallet_policy",
+      "issued_at": "1799999880",
+      "expiry_time": "1800000000",
+      "now": "1800000001",
+      "audience": "private-ws",
+      "origin": "https://wallet.invalid",
+      "allowed_origin": "https://wallet.invalid",
+      "nonce_consumed": false,
+      "expected": "reject"
+    },
+    {
+      "id": "W-ttl121",
+      "kind": "wallet_policy",
+      "issued_at": "1799999879",
+      "expiry_time": "1800000000",
+      "now": "1799999999",
+      "audience": "private-ws",
+      "origin": "https://wallet.invalid",
+      "allowed_origin": "https://wallet.invalid",
+      "nonce_consumed": false,
+      "expected": "reject"
+    },
+    {
+      "id": "W-audience",
+      "kind": "wallet_policy",
+      "issued_at": "1799999880",
+      "expiry_time": "1800000000",
+      "now": "1799999999",
+      "audience": "nus-ws",
+      "origin": "https://wallet.invalid",
+      "allowed_origin": "https://wallet.invalid",
+      "nonce_consumed": false,
+      "expected": "reject"
+    },
+    {
+      "id": "W-origin_path",
+      "kind": "wallet_policy",
+      "issued_at": "1799999880",
+      "expiry_time": "1800000000",
+      "now": "1799999999",
+      "audience": "private-ws",
+      "origin": "https://wallet.invalid/path",
+      "allowed_origin": "https://wallet.invalid",
+      "nonce_consumed": false,
+      "expected": "reject"
+    },
+    {
+      "id": "W-origin_mismatch",
+      "kind": "wallet_policy",
+      "issued_at": "1799999880",
+      "expiry_time": "1800000000",
+      "now": "1799999999",
+      "audience": "private-ws",
+      "origin": "https://other.invalid",
+      "allowed_origin": "https://wallet.invalid",
+      "nonce_consumed": false,
+      "expected": "reject"
+    },
+    {
+      "id": "W-nonce_replay",
+      "kind": "wallet_policy",
+      "issued_at": "1799999880",
+      "expiry_time": "1800000000",
+      "now": "1799999999",
+      "audience": "private-ws",
+      "origin": "https://wallet.invalid",
+      "allowed_origin": "https://wallet.invalid",
+      "nonce_consumed": true,
+      "expected": "reject"
+    }
+  ]
+}

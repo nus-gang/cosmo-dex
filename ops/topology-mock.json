@@ -1,0 +1,17 @@
+{
+  "schema": "sre-m0-topology-v1",
+  "mode": "synthetic-only",
+  "chain_id": "nus-m0-local-1",
+  "validators": [
+    {"id":"val1","power":1,"logical_domain":"FD-1","rpc":"127.0.0.1:26657","p2p":"127.0.0.1:26656"},
+    {"id":"val2","power":1,"logical_domain":"FD-2","rpc":"127.0.0.1:26757","p2p":"127.0.0.1:26756"},
+    {"id":"val3","power":1,"logical_domain":"FD-3","rpc":"127.0.0.1:26857","p2p":"127.0.0.1:26856"},
+    {"id":"val4","power":1,"logical_domain":"FD-4","rpc":"127.0.0.1:26957","p2p":"127.0.0.1:26956"}
+  ],
+  "candidate_versions": {"cosmos_sdk":"v0.55.0","cometbft":"v0.40.0","go":"1.26.5"},
+  "release_lock": null,
+  "chain_adapter": null,
+  "consensus_key_proposal":"ed25519",
+  "roles":["issuer","relayer","sponsor","emergency-sponsor","upgrade"],
+  "warning":"Not a Cosmos genesis or runnable chain; Chain must supply validated genesis, binary and CLI adapter. All four local directories share one physical fault domain."
+}

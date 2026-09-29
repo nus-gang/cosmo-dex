@@ -1,0 +1,691 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nus:settlement:api:v1",
+  "$defs": {
+    "OrderV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol_version",
+        "chain_id",
+        "genesis_hash",
+        "exchange_module_id",
+        "market_id",
+        "market_config_version",
+        "owner",
+        "owner_pubkey",
+        "order_id",
+        "owner_epoch",
+        "side",
+        "limit_price_ticks",
+        "max_qty_lots",
+        "max_fee_bps",
+        "fee_asset_policy_id",
+        "expiry_height",
+        "order_type"
+      ],
+      "properties": {
+        "protocol_version": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 10,
+          "x-maximum": "4294967295"
+        },
+        "chain_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:/-]{1,128}$(?![\\s\\S])"
+        },
+        "genesis_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "exchange_module_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:/-]{1,128}$(?![\\s\\S])"
+        },
+        "market_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:/-]{1,128}$(?![\\s\\S])"
+        },
+        "market_config_version": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        },
+        "owner": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "x-decoded-length": 20
+        },
+        "owner_pubkey": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "x-decoded-length": 1952
+        },
+        "order_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "owner_epoch": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        },
+        "side": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 10,
+          "x-maximum": "4294967295"
+        },
+        "limit_price_ticks": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        },
+        "max_qty_lots": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        },
+        "max_fee_bps": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 10,
+          "x-maximum": "4294967295"
+        },
+        "fee_asset_policy_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:/-]{1,128}$(?![\\s\\S])"
+        },
+        "expiry_height": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        },
+        "order_type": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 10,
+          "x-maximum": "4294967295"
+        }
+      }
+    },
+    "CancelV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol_version",
+        "chain_id",
+        "genesis_hash",
+        "market_id",
+        "owner",
+        "owner_epoch",
+        "order_id",
+        "order_hash",
+        "cancel_nonce",
+        "expiry_height",
+        "exchange_module_id"
+      ],
+      "properties": {
+        "protocol_version": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 10,
+          "x-maximum": "4294967295"
+        },
+        "chain_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:/-]{1,128}$(?![\\s\\S])"
+        },
+        "genesis_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "market_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:/-]{1,128}$(?![\\s\\S])"
+        },
+        "owner": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "x-decoded-length": 20
+        },
+        "owner_epoch": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        },
+        "order_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "order_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "cancel_nonce": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "expiry_height": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        },
+        "exchange_module_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:/-]{1,128}$(?![\\s\\S])"
+        }
+      }
+    },
+    "WalletChallengeV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol_version",
+        "chain_id",
+        "server_origin",
+        "audience",
+        "owner",
+        "challenge_nonce",
+        "expiry_time",
+        "genesis_hash",
+        "issued_at"
+      ],
+      "properties": {
+        "protocol_version": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 10,
+          "x-maximum": "4294967295"
+        },
+        "chain_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:/-]{1,128}$(?![\\s\\S])"
+        },
+        "server_origin": {
+          "type": "string",
+          "pattern": "^https://[a-z0-9]+(?:[.-][a-z0-9]+)*(?::(?!443$)(?:[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5]))?$(?![\\s\\S])",
+          "x-origin-policy": "nondefault port 1..65535; exact deployment allowlist required"
+        },
+        "audience": {
+          "type": "string",
+          "enum": [
+            "exchange-api",
+            "private-ws"
+          ]
+        },
+        "owner": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "x-decoded-length": 20
+        },
+        "challenge_nonce": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "expiry_time": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        },
+        "genesis_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "issued_at": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        }
+      }
+    },
+    "SignedOrderV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "order",
+        "signature"
+      ],
+      "properties": {
+        "order": {
+          "$ref": "#/$defs/OrderV1"
+        },
+        "signature": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "x-decoded-length": 3309
+        }
+      }
+    },
+    "FillV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fill_id",
+        "maker_order_ref",
+        "taker_order_ref",
+        "buyer_order_ref",
+        "seller_order_ref",
+        "execution_price_ticks",
+        "quantity_lots",
+        "fee_policy_version",
+        "command_seq",
+        "match_index"
+      ],
+      "properties": {
+        "fill_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "maker_order_ref": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "taker_order_ref": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "buyer_order_ref": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "seller_order_ref": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "execution_price_ticks": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        },
+        "quantity_lots": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        },
+        "fee_policy_version": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        },
+        "command_seq": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        },
+        "match_index": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 10,
+          "x-maximum": "4294967295"
+        }
+      }
+    },
+    "BatchV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol_version",
+        "chain_id",
+        "market_id",
+        "operator_epoch",
+        "batch_seq",
+        "previous_batch_hash",
+        "batch_id",
+        "new_signed_orders",
+        "fills",
+        "genesis_hash",
+        "exchange_module_id",
+        "market_config_version"
+      ],
+      "properties": {
+        "protocol_version": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 10,
+          "x-maximum": "4294967295"
+        },
+        "chain_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:/-]{1,128}$(?![\\s\\S])"
+        },
+        "market_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:/-]{1,128}$(?![\\s\\S])"
+        },
+        "operator_epoch": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        },
+        "batch_seq": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        },
+        "previous_batch_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "batch_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "new_signed_orders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SignedOrderV1"
+          }
+        },
+        "fills": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FillV1"
+          }
+        },
+        "genesis_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "exchange_module_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:/-]{1,128}$(?![\\s\\S])"
+        },
+        "market_config_version": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        }
+      }
+    },
+    "FillIdentityV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chain_id",
+        "market_id",
+        "operator_epoch",
+        "command_seq",
+        "match_index"
+      ],
+      "properties": {
+        "chain_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:/-]{1,128}$(?![\\s\\S])"
+        },
+        "market_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:/-]{1,128}$(?![\\s\\S])"
+        },
+        "operator_epoch": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        },
+        "command_seq": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        },
+        "match_index": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 10,
+          "x-maximum": "4294967295"
+        }
+      }
+    },
+    "TransferStableV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol_version",
+        "chain_id",
+        "genesis_hash",
+        "sender",
+        "recipient",
+        "denom",
+        "amount_atoms",
+        "max_service_fee_atoms",
+        "policy_version",
+        "payment_id",
+        "expiry_height"
+      ],
+      "properties": {
+        "protocol_version": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 10,
+          "x-maximum": "4294967295"
+        },
+        "chain_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:/-]{1,128}$(?![\\s\\S])"
+        },
+        "genesis_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "sender": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "x-decoded-length": 20
+        },
+        "recipient": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "x-decoded-length": 20
+        },
+        "denom": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:/-]{1,128}$(?![\\s\\S])"
+        },
+        "amount_atoms": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 39,
+          "x-maximum": "340282366920938463463374607431768211455"
+        },
+        "max_service_fee_atoms": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 39,
+          "x-maximum": "340282366920938463463374607431768211455"
+        },
+        "policy_version": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        },
+        "payment_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "expiry_height": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        }
+      }
+    },
+    "BatchReceiptV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol_version",
+        "chain_id",
+        "genesis_hash",
+        "market_id",
+        "batch_seq",
+        "batch_id",
+        "batch_hash",
+        "committed_height",
+        "tx_hash"
+      ],
+      "properties": {
+        "protocol_version": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 10,
+          "x-maximum": "4294967295"
+        },
+        "chain_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:/-]{1,128}$(?![\\s\\S])"
+        },
+        "genesis_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "market_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:/-]{1,128}$(?![\\s\\S])"
+        },
+        "batch_seq": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        },
+        "batch_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "batch_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "committed_height": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        },
+        "tx_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "Event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entity_id",
+        "revision",
+        "observed_height",
+        "state"
+      ],
+      "properties": {
+        "entity_id": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        },
+        "observed_height": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        },
+        "state": {
+          "enum": [
+            "PENDING",
+            "COMMITTED",
+            "CORRECTED",
+            "SUBMISSION_UNKNOWN"
+          ]
+        }
+      }
+    },
+    "Lookup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "retryable",
+        "state",
+        "height",
+        "observed_height",
+        "indexer_height",
+        "stale",
+        "receipt"
+      ],
+      "properties": {
+        "code": {
+          "enum": [
+            "COMMITTED",
+            "NOT_FOUND_AT_HEIGHT",
+            "LOOKUP_UNAVAILABLE",
+            "RECEIPT_INCONSISTENCY"
+          ]
+        },
+        "retryable": {
+          "type": "boolean"
+        },
+        "state": {
+          "enum": [
+            "COMMITTED",
+            "SUBMISSION_UNKNOWN"
+          ]
+        },
+        "height": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        },
+        "observed_height": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        },
+        "indexer_height": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "x-maximum": "18446744073709551615"
+        },
+        "stale": {
+          "type": "boolean"
+        },
+        "receipt": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BatchReceiptV1"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

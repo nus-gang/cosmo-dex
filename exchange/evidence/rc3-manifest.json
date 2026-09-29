@@ -1,0 +1,16 @@
+{
+  "base_commit": "549ce150d6a9f21ec30f159d39a4d91c31dbd759",
+  "contract_sha256": "a71a8c03fea5e4d2876612e821eafcb4b359a0b132157929b9924d6f8fecd73e",
+  "vectors_sha256": "4851d9d674b2412ca8919d8347a71da13f9adf4426fe60b44e2a4a259f8bd948",
+  "tests_passed": 16,
+  "rustc": "1.92.0",
+  "cross_language_retest": "NOT_RUN",
+  "prior_security_fail": "preserved",
+  "ack": "NOT_CONNECTED",
+  "ledger": "NOT_CONNECTED",
+  "wal_replay": "NOT_RUN",
+  "logs": {
+    "rc3-test.log": "202a3f6e211760afbdc64cc3ed82cbcca566524303eaf68243f23ceae646755e",
+    "rc3-clippy.log": "0749b0356d146172b5e08770b08fd77f10e00cca0a5709703a8047228e534c2f"
+  }
+}

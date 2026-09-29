@@ -1,0 +1,1186 @@
+{
+  "profile": "synthetic-codec-only; addresses/genesis/tx hash are synthetic, no TX auth or state integration",
+  "positives": [
+    {
+      "id": "transfer",
+      "message": "TransferStableV1",
+      "api_json": {
+        "protocol_version": "1",
+        "chain_id": "nus-dev-1",
+        "genesis_hash": "abababababababababababababababababababababababababababababababab",
+        "sender": "ERERERERERERERERERERERERERE=",
+        "recipient": "IiIiIiIiIiIiIiIiIiIiIiIiIiI=",
+        "denom": "DEVQUOTE",
+        "amount_atoms": "1000000",
+        "max_service_fee_atoms": "1000",
+        "policy_version": "2",
+        "payment_id": "3333333333333333333333333333333333333333333333333333333333333333",
+        "expiry_height": "100"
+      },
+      "fields": [
+        [
+          1,
+          "u32",
+          "1"
+        ],
+        [
+          2,
+          "utf8",
+          "nus-dev-1"
+        ],
+        [
+          3,
+          "hex",
+          "abababababababababababababababababababababababababababababababab"
+        ],
+        [
+          4,
+          "hex",
+          "1111111111111111111111111111111111111111"
+        ],
+        [
+          5,
+          "hex",
+          "2222222222222222222222222222222222222222"
+        ],
+        [
+          6,
+          "utf8",
+          "DEVQUOTE"
+        ],
+        [
+          7,
+          "hex",
+          "000000000000000000000000000f4240"
+        ],
+        [
+          8,
+          "hex",
+          "000000000000000000000000000003e8"
+        ],
+        [
+          9,
+          "u64",
+          "2"
+        ],
+        [
+          10,
+          "hex",
+          "3333333333333333333333333333333333333333333333333333333333333333"
+        ],
+        [
+          11,
+          "u64",
+          "100"
+        ]
+      ],
+      "canonical_hex": "080112096e75732d6465762d311a20abababababababababababababababababababababababababababababababab221411111111111111111111111111111111111111112a142222222222222222222222222222222222222222320844455651554f54453a10000000000000000000000000000f42404210000000000000000000000000000003e84802522033333333333333333333333333333333333333333333333333333333333333335864",
+      "payment_frame_hex": "000000114e55532f5041594d454e545f49442f563100000000000000af080112096e75732d6465762d311a20abababababababababababababababababababababababababababababababab221411111111111111111111111111111111111111112a142222222222222222222222222222222222222222320844455651554f54453a10000000000000000000000000000f42404210000000000000000000000000000003e84802522033333333333333333333333333333333333333333333333333333333333333335864",
+      "payment_hash": "bd8c3ae1af810a7a7b6f0b8787ee0c63e4b616c9b39d52c01dded9581a2c9a81"
+    },
+    {
+      "id": "transfer-change-sender",
+      "message": "TransferStableV1",
+      "api_json": {
+        "protocol_version": "1",
+        "chain_id": "nus-dev-1",
+        "genesis_hash": "abababababababababababababababababababababababababababababababab",
+        "sender": "REREREREREREREREREREREREREQ=",
+        "recipient": "IiIiIiIiIiIiIiIiIiIiIiIiIiI=",
+        "denom": "DEVQUOTE",
+        "amount_atoms": "1000000",
+        "max_service_fee_atoms": "1000",
+        "policy_version": "2",
+        "payment_id": "3333333333333333333333333333333333333333333333333333333333333333",
+        "expiry_height": "100"
+      },
+      "fields": [
+        [
+          1,
+          "u32",
+          "1"
+        ],
+        [
+          2,
+          "utf8",
+          "nus-dev-1"
+        ],
+        [
+          3,
+          "hex",
+          "abababababababababababababababababababababababababababababababab"
+        ],
+        [
+          4,
+          "hex",
+          "4444444444444444444444444444444444444444"
+        ],
+        [
+          5,
+          "hex",
+          "2222222222222222222222222222222222222222"
+        ],
+        [
+          6,
+          "utf8",
+          "DEVQUOTE"
+        ],
+        [
+          7,
+          "hex",
+          "000000000000000000000000000f4240"
+        ],
+        [
+          8,
+          "hex",
+          "000000000000000000000000000003e8"
+        ],
+        [
+          9,
+          "u64",
+          "2"
+        ],
+        [
+          10,
+          "hex",
+          "3333333333333333333333333333333333333333333333333333333333333333"
+        ],
+        [
+          11,
+          "u64",
+          "100"
+        ]
+      ],
+      "canonical_hex": "080112096e75732d6465762d311a20abababababababababababababababababababababababababababababababab221444444444444444444444444444444444444444442a142222222222222222222222222222222222222222320844455651554f54453a10000000000000000000000000000f42404210000000000000000000000000000003e84802522033333333333333333333333333333333333333333333333333333333333333335864",
+      "payment_frame_hex": "000000114e55532f5041594d454e545f49442f563100000000000000af080112096e75732d6465762d311a20abababababababababababababababababababababababababababababababab221444444444444444444444444444444444444444442a142222222222222222222222222222222222222222320844455651554f54453a10000000000000000000000000000f42404210000000000000000000000000000003e84802522033333333333333333333333333333333333333333333333333333333333333335864",
+      "payment_hash": "673e01c92a4f0eac2748ded6b1e0cfb5c744bc7180bd60b59ea030d286af7f6f"
+    },
+    {
+      "id": "transfer-change-recipient",
+      "message": "TransferStableV1",
+      "api_json": {
+        "protocol_version": "1",
+        "chain_id": "nus-dev-1",
+        "genesis_hash": "abababababababababababababababababababababababababababababababab",
+        "sender": "ERERERERERERERERERERERERERE=",
+        "recipient": "VVVVVVVVVVVVVVVVVVVVVVVVVVU=",
+        "denom": "DEVQUOTE",
+        "amount_atoms": "1000000",
+        "max_service_fee_atoms": "1000",
+        "policy_version": "2",
+        "payment_id": "3333333333333333333333333333333333333333333333333333333333333333",
+        "expiry_height": "100"
+      },
+      "fields": [
+        [
+          1,
+          "u32",
+          "1"
+        ],
+        [
+          2,
+          "utf8",
+          "nus-dev-1"
+        ],
+        [
+          3,
+          "hex",
+          "abababababababababababababababababababababababababababababababab"
+        ],
+        [
+          4,
+          "hex",
+          "1111111111111111111111111111111111111111"
+        ],
+        [
+          5,
+          "hex",
+          "5555555555555555555555555555555555555555"
+        ],
+        [
+          6,
+          "utf8",
+          "DEVQUOTE"
+        ],
+        [
+          7,
+          "hex",
+          "000000000000000000000000000f4240"
+        ],
+        [
+          8,
+          "hex",
+          "000000000000000000000000000003e8"
+        ],
+        [
+          9,
+          "u64",
+          "2"
+        ],
+        [
+          10,
+          "hex",
+          "3333333333333333333333333333333333333333333333333333333333333333"
+        ],
+        [
+          11,
+          "u64",
+          "100"
+        ]
+      ],
+      "canonical_hex": "080112096e75732d6465762d311a20abababababababababababababababababababababababababababababababab221411111111111111111111111111111111111111112a145555555555555555555555555555555555555555320844455651554f54453a10000000000000000000000000000f42404210000000000000000000000000000003e84802522033333333333333333333333333333333333333333333333333333333333333335864",
+      "payment_frame_hex": "000000114e55532f5041594d454e545f49442f563100000000000000af080112096e75732d6465762d311a20abababababababababababababababababababababababababababababababab221411111111111111111111111111111111111111112a145555555555555555555555555555555555555555320844455651554f54453a10000000000000000000000000000f42404210000000000000000000000000000003e84802522033333333333333333333333333333333333333333333333333333333333333335864",
+      "payment_hash": "33a19ccd2a04ef824ea9adf3a00989878dcf370b6c17d39ed44a3722af7c12f1"
+    },
+    {
+      "id": "transfer-change-payment_id",
+      "message": "TransferStableV1",
+      "api_json": {
+        "protocol_version": "1",
+        "chain_id": "nus-dev-1",
+        "genesis_hash": "abababababababababababababababababababababababababababababababab",
+        "sender": "ERERERERERERERERERERERERERE=",
+        "recipient": "IiIiIiIiIiIiIiIiIiIiIiIiIiI=",
+        "denom": "DEVQUOTE",
+        "amount_atoms": "1000000",
+        "max_service_fee_atoms": "1000",
+        "policy_version": "2",
+        "payment_id": "6666666666666666666666666666666666666666666666666666666666666666",
+        "expiry_height": "100"
+      },
+      "fields": [
+        [
+          1,
+          "u32",
+          "1"
+        ],
+        [
+          2,
+          "utf8",
+          "nus-dev-1"
+        ],
+        [
+          3,
+          "hex",
+          "abababababababababababababababababababababababababababababababab"
+        ],
+        [
+          4,
+          "hex",
+          "1111111111111111111111111111111111111111"
+        ],
+        [
+          5,
+          "hex",
+          "2222222222222222222222222222222222222222"
+        ],
+        [
+          6,
+          "utf8",
+          "DEVQUOTE"
+        ],
+        [
+          7,
+          "hex",
+          "000000000000000000000000000f4240"
+        ],
+        [
+          8,
+          "hex",
+          "000000000000000000000000000003e8"
+        ],
+        [
+          9,
+          "u64",
+          "2"
+        ],
+        [
+          10,
+          "hex",
+          "6666666666666666666666666666666666666666666666666666666666666666"
+        ],
+        [
+          11,
+          "u64",
+          "100"
+        ]
+      ],
+      "canonical_hex": "080112096e75732d6465762d311a20abababababababababababababababababababababababababababababababab221411111111111111111111111111111111111111112a142222222222222222222222222222222222222222320844455651554f54453a10000000000000000000000000000f42404210000000000000000000000000000003e84802522066666666666666666666666666666666666666666666666666666666666666665864",
+      "payment_frame_hex": "000000114e55532f5041594d454e545f49442f563100000000000000af080112096e75732d6465762d311a20abababababababababababababababababababababababababababababababab221411111111111111111111111111111111111111112a142222222222222222222222222222222222222222320844455651554f54453a10000000000000000000000000000f42404210000000000000000000000000000003e84802522066666666666666666666666666666666666666666666666666666666666666665864",
+      "payment_hash": "9a2a73812224c7a702c3bf7d3367e680c8cc84ef71a09293374bb1589d8006e0"
+    },
+    {
+      "id": "transfer-change-amount_atoms",
+      "message": "TransferStableV1",
+      "api_json": {
+        "protocol_version": "1",
+        "chain_id": "nus-dev-1",
+        "genesis_hash": "abababababababababababababababababababababababababababababababab",
+        "sender": "ERERERERERERERERERERERERERE=",
+        "recipient": "IiIiIiIiIiIiIiIiIiIiIiIiIiI=",
+        "denom": "DEVQUOTE",
+        "amount_atoms": "1000001",
+        "max_service_fee_atoms": "1000",
+        "policy_version": "2",
+        "payment_id": "3333333333333333333333333333333333333333333333333333333333333333",
+        "expiry_height": "100"
+      },
+      "fields": [
+        [
+          1,
+          "u32",
+          "1"
+        ],
+        [
+          2,
+          "utf8",
+          "nus-dev-1"
+        ],
+        [
+          3,
+          "hex",
+          "abababababababababababababababababababababababababababababababab"
+        ],
+        [
+          4,
+          "hex",
+          "1111111111111111111111111111111111111111"
+        ],
+        [
+          5,
+          "hex",
+          "2222222222222222222222222222222222222222"
+        ],
+        [
+          6,
+          "utf8",
+          "DEVQUOTE"
+        ],
+        [
+          7,
+          "hex",
+          "000000000000000000000000000f4241"
+        ],
+        [
+          8,
+          "hex",
+          "000000000000000000000000000003e8"
+        ],
+        [
+          9,
+          "u64",
+          "2"
+        ],
+        [
+          10,
+          "hex",
+          "3333333333333333333333333333333333333333333333333333333333333333"
+        ],
+        [
+          11,
+          "u64",
+          "100"
+        ]
+      ],
+      "canonical_hex": "080112096e75732d6465762d311a20abababababababababababababababababababababababababababababababab221411111111111111111111111111111111111111112a142222222222222222222222222222222222222222320844455651554f54453a10000000000000000000000000000f42414210000000000000000000000000000003e84802522033333333333333333333333333333333333333333333333333333333333333335864",
+      "payment_frame_hex": "000000114e55532f5041594d454e545f49442f563100000000000000af080112096e75732d6465762d311a20abababababababababababababababababababababababababababababababab221411111111111111111111111111111111111111112a142222222222222222222222222222222222222222320844455651554f54453a10000000000000000000000000000f42414210000000000000000000000000000003e84802522033333333333333333333333333333333333333333333333333333333333333335864",
+      "payment_hash": "4dd77dc9b569512f3082f287f07cd73c8d0ffba7511d2c710eb99ed43f3cede5"
+    },
+    {
+      "id": "transfer-change-policy_version",
+      "message": "TransferStableV1",
+      "api_json": {
+        "protocol_version": "1",
+        "chain_id": "nus-dev-1",
+        "genesis_hash": "abababababababababababababababababababababababababababababababab",
+        "sender": "ERERERERERERERERERERERERERE=",
+        "recipient": "IiIiIiIiIiIiIiIiIiIiIiIiIiI=",
+        "denom": "DEVQUOTE",
+        "amount_atoms": "1000000",
+        "max_service_fee_atoms": "1000",
+        "policy_version": "1",
+        "payment_id": "3333333333333333333333333333333333333333333333333333333333333333",
+        "expiry_height": "100"
+      },
+      "fields": [
+        [
+          1,
+          "u32",
+          "1"
+        ],
+        [
+          2,
+          "utf8",
+          "nus-dev-1"
+        ],
+        [
+          3,
+          "hex",
+          "abababababababababababababababababababababababababababababababab"
+        ],
+        [
+          4,
+          "hex",
+          "1111111111111111111111111111111111111111"
+        ],
+        [
+          5,
+          "hex",
+          "2222222222222222222222222222222222222222"
+        ],
+        [
+          6,
+          "utf8",
+          "DEVQUOTE"
+        ],
+        [
+          7,
+          "hex",
+          "000000000000000000000000000f4240"
+        ],
+        [
+          8,
+          "hex",
+          "000000000000000000000000000003e8"
+        ],
+        [
+          9,
+          "u64",
+          "1"
+        ],
+        [
+          10,
+          "hex",
+          "3333333333333333333333333333333333333333333333333333333333333333"
+        ],
+        [
+          11,
+          "u64",
+          "100"
+        ]
+      ],
+      "canonical_hex": "080112096e75732d6465762d311a20abababababababababababababababababababababababababababababababab221411111111111111111111111111111111111111112a142222222222222222222222222222222222222222320844455651554f54453a10000000000000000000000000000f42404210000000000000000000000000000003e84801522033333333333333333333333333333333333333333333333333333333333333335864",
+      "payment_frame_hex": "000000114e55532f5041594d454e545f49442f563100000000000000af080112096e75732d6465762d311a20abababababababababababababababababababababababababababababababab221411111111111111111111111111111111111111112a142222222222222222222222222222222222222222320844455651554f54453a10000000000000000000000000000f42404210000000000000000000000000000003e84801522033333333333333333333333333333333333333333333333333333333333333335864",
+      "payment_hash": "a9eea3c0a90ffed1131185cbb5e1467c5c36c9eeb49d6301651578703faaf42b"
+    },
+    {
+      "id": "receipt",
+      "message": "BatchReceiptV1",
+      "api_json": {
+        "protocol_version": "1",
+        "chain_id": "nus-m0-local",
+        "genesis_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+        "market_id": "BASE-QUOTE",
+        "batch_seq": "1",
+        "batch_id": "cecd2ab91c1e54c4c856c039d39f03546cc00d12dda17d58dcb2472c487c86df",
+        "batch_hash": "4be8474ab577b66dcf05e75d13c390994ed8bbebedb77bdf6e3c11fb4f1e4684",
+        "committed_height": "90",
+        "tx_hash": "7777777777777777777777777777777777777777777777777777777777777777"
+      },
+      "fields": [
+        [
+          1,
+          "u32",
+          "1"
+        ],
+        [
+          2,
+          "utf8",
+          "nus-m0-local"
+        ],
+        [
+          3,
+          "hex",
+          "1111111111111111111111111111111111111111111111111111111111111111"
+        ],
+        [
+          4,
+          "utf8",
+          "BASE-QUOTE"
+        ],
+        [
+          5,
+          "u64",
+          "1"
+        ],
+        [
+          6,
+          "hex",
+          "cecd2ab91c1e54c4c856c039d39f03546cc00d12dda17d58dcb2472c487c86df"
+        ],
+        [
+          7,
+          "hex",
+          "4be8474ab577b66dcf05e75d13c390994ed8bbebedb77bdf6e3c11fb4f1e4684"
+        ],
+        [
+          8,
+          "u64",
+          "90"
+        ],
+        [
+          9,
+          "hex",
+          "7777777777777777777777777777777777777777777777777777777777777777"
+        ]
+      ],
+      "canonical_hex": "0801120c6e75732d6d302d6c6f63616c1a201111111111111111111111111111111111111111111111111111111111111111220a424153452d51554f544528013220cecd2ab91c1e54c4c856c039d39f03546cc00d12dda17d58dcb2472c487c86df3a204be8474ab577b66dcf05e75d13c390994ed8bbebedb77bdf6e3c11fb4f1e4684405a4a207777777777777777777777777777777777777777777777777777777777777777",
+      "source_batch_id": "normal"
+    },
+    {
+      "id": "receipt-change-chain_id",
+      "message": "BatchReceiptV1",
+      "api_json": {
+        "protocol_version": "1",
+        "chain_id": "other-chain",
+        "genesis_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+        "market_id": "BASE-QUOTE",
+        "batch_seq": "1",
+        "batch_id": "cecd2ab91c1e54c4c856c039d39f03546cc00d12dda17d58dcb2472c487c86df",
+        "batch_hash": "4be8474ab577b66dcf05e75d13c390994ed8bbebedb77bdf6e3c11fb4f1e4684",
+        "committed_height": "90",
+        "tx_hash": "7777777777777777777777777777777777777777777777777777777777777777"
+      },
+      "fields": [
+        [
+          1,
+          "u32",
+          "1"
+        ],
+        [
+          2,
+          "utf8",
+          "other-chain"
+        ],
+        [
+          3,
+          "hex",
+          "1111111111111111111111111111111111111111111111111111111111111111"
+        ],
+        [
+          4,
+          "utf8",
+          "BASE-QUOTE"
+        ],
+        [
+          5,
+          "u64",
+          "1"
+        ],
+        [
+          6,
+          "hex",
+          "cecd2ab91c1e54c4c856c039d39f03546cc00d12dda17d58dcb2472c487c86df"
+        ],
+        [
+          7,
+          "hex",
+          "4be8474ab577b66dcf05e75d13c390994ed8bbebedb77bdf6e3c11fb4f1e4684"
+        ],
+        [
+          8,
+          "u64",
+          "90"
+        ],
+        [
+          9,
+          "hex",
+          "7777777777777777777777777777777777777777777777777777777777777777"
+        ]
+      ],
+      "canonical_hex": "0801120b6f746865722d636861696e1a201111111111111111111111111111111111111111111111111111111111111111220a424153452d51554f544528013220cecd2ab91c1e54c4c856c039d39f03546cc00d12dda17d58dcb2472c487c86df3a204be8474ab577b66dcf05e75d13c390994ed8bbebedb77bdf6e3c11fb4f1e4684405a4a207777777777777777777777777777777777777777777777777777777777777777"
+    },
+    {
+      "id": "receipt-change-genesis_hash",
+      "message": "BatchReceiptV1",
+      "api_json": {
+        "protocol_version": "1",
+        "chain_id": "nus-m0-local",
+        "genesis_hash": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+        "market_id": "BASE-QUOTE",
+        "batch_seq": "1",
+        "batch_id": "cecd2ab91c1e54c4c856c039d39f03546cc00d12dda17d58dcb2472c487c86df",
+        "batch_hash": "4be8474ab577b66dcf05e75d13c390994ed8bbebedb77bdf6e3c11fb4f1e4684",
+        "committed_height": "90",
+        "tx_hash": "7777777777777777777777777777777777777777777777777777777777777777"
+      },
+      "fields": [
+        [
+          1,
+          "u32",
+          "1"
+        ],
+        [
+          2,
+          "utf8",
+          "nus-m0-local"
+        ],
+        [
+          3,
+          "hex",
+          "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+        ],
+        [
+          4,
+          "utf8",
+          "BASE-QUOTE"
+        ],
+        [
+          5,
+          "u64",
+          "1"
+        ],
+        [
+          6,
+          "hex",
+          "cecd2ab91c1e54c4c856c039d39f03546cc00d12dda17d58dcb2472c487c86df"
+        ],
+        [
+          7,
+          "hex",
+          "4be8474ab577b66dcf05e75d13c390994ed8bbebedb77bdf6e3c11fb4f1e4684"
+        ],
+        [
+          8,
+          "u64",
+          "90"
+        ],
+        [
+          9,
+          "hex",
+          "7777777777777777777777777777777777777777777777777777777777777777"
+        ]
+      ],
+      "canonical_hex": "0801120c6e75732d6d302d6c6f63616c1a20cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd220a424153452d51554f544528013220cecd2ab91c1e54c4c856c039d39f03546cc00d12dda17d58dcb2472c487c86df3a204be8474ab577b66dcf05e75d13c390994ed8bbebedb77bdf6e3c11fb4f1e4684405a4a207777777777777777777777777777777777777777777777777777777777777777"
+    },
+    {
+      "id": "receipt-change-market_id",
+      "message": "BatchReceiptV1",
+      "api_json": {
+        "protocol_version": "1",
+        "chain_id": "nus-m0-local",
+        "genesis_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+        "market_id": "other-market",
+        "batch_seq": "1",
+        "batch_id": "cecd2ab91c1e54c4c856c039d39f03546cc00d12dda17d58dcb2472c487c86df",
+        "batch_hash": "4be8474ab577b66dcf05e75d13c390994ed8bbebedb77bdf6e3c11fb4f1e4684",
+        "committed_height": "90",
+        "tx_hash": "7777777777777777777777777777777777777777777777777777777777777777"
+      },
+      "fields": [
+        [
+          1,
+          "u32",
+          "1"
+        ],
+        [
+          2,
+          "utf8",
+          "nus-m0-local"
+        ],
+        [
+          3,
+          "hex",
+          "1111111111111111111111111111111111111111111111111111111111111111"
+        ],
+        [
+          4,
+          "utf8",
+          "other-market"
+        ],
+        [
+          5,
+          "u64",
+          "1"
+        ],
+        [
+          6,
+          "hex",
+          "cecd2ab91c1e54c4c856c039d39f03546cc00d12dda17d58dcb2472c487c86df"
+        ],
+        [
+          7,
+          "hex",
+          "4be8474ab577b66dcf05e75d13c390994ed8bbebedb77bdf6e3c11fb4f1e4684"
+        ],
+        [
+          8,
+          "u64",
+          "90"
+        ],
+        [
+          9,
+          "hex",
+          "7777777777777777777777777777777777777777777777777777777777777777"
+        ]
+      ],
+      "canonical_hex": "0801120c6e75732d6d302d6c6f63616c1a201111111111111111111111111111111111111111111111111111111111111111220c6f746865722d6d61726b657428013220cecd2ab91c1e54c4c856c039d39f03546cc00d12dda17d58dcb2472c487c86df3a204be8474ab577b66dcf05e75d13c390994ed8bbebedb77bdf6e3c11fb4f1e4684405a4a207777777777777777777777777777777777777777777777777777777777777777"
+    },
+    {
+      "id": "receipt-change-batch_seq",
+      "message": "BatchReceiptV1",
+      "api_json": {
+        "protocol_version": "1",
+        "chain_id": "nus-m0-local",
+        "genesis_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+        "market_id": "BASE-QUOTE",
+        "batch_seq": "2",
+        "batch_id": "cecd2ab91c1e54c4c856c039d39f03546cc00d12dda17d58dcb2472c487c86df",
+        "batch_hash": "4be8474ab577b66dcf05e75d13c390994ed8bbebedb77bdf6e3c11fb4f1e4684",
+        "committed_height": "90",
+        "tx_hash": "7777777777777777777777777777777777777777777777777777777777777777"
+      },
+      "fields": [
+        [
+          1,
+          "u32",
+          "1"
+        ],
+        [
+          2,
+          "utf8",
+          "nus-m0-local"
+        ],
+        [
+          3,
+          "hex",
+          "1111111111111111111111111111111111111111111111111111111111111111"
+        ],
+        [
+          4,
+          "utf8",
+          "BASE-QUOTE"
+        ],
+        [
+          5,
+          "u64",
+          "2"
+        ],
+        [
+          6,
+          "hex",
+          "cecd2ab91c1e54c4c856c039d39f03546cc00d12dda17d58dcb2472c487c86df"
+        ],
+        [
+          7,
+          "hex",
+          "4be8474ab577b66dcf05e75d13c390994ed8bbebedb77bdf6e3c11fb4f1e4684"
+        ],
+        [
+          8,
+          "u64",
+          "90"
+        ],
+        [
+          9,
+          "hex",
+          "7777777777777777777777777777777777777777777777777777777777777777"
+        ]
+      ],
+      "canonical_hex": "0801120c6e75732d6d302d6c6f63616c1a201111111111111111111111111111111111111111111111111111111111111111220a424153452d51554f544528023220cecd2ab91c1e54c4c856c039d39f03546cc00d12dda17d58dcb2472c487c86df3a204be8474ab577b66dcf05e75d13c390994ed8bbebedb77bdf6e3c11fb4f1e4684405a4a207777777777777777777777777777777777777777777777777777777777777777"
+    },
+    {
+      "id": "receipt-change-batch_id",
+      "message": "BatchReceiptV1",
+      "api_json": {
+        "protocol_version": "1",
+        "chain_id": "nus-m0-local",
+        "genesis_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+        "market_id": "BASE-QUOTE",
+        "batch_seq": "1",
+        "batch_id": "8888888888888888888888888888888888888888888888888888888888888888",
+        "batch_hash": "4be8474ab577b66dcf05e75d13c390994ed8bbebedb77bdf6e3c11fb4f1e4684",
+        "committed_height": "90",
+        "tx_hash": "7777777777777777777777777777777777777777777777777777777777777777"
+      },
+      "fields": [
+        [
+          1,
+          "u32",
+          "1"
+        ],
+        [
+          2,
+          "utf8",
+          "nus-m0-local"
+        ],
+        [
+          3,
+          "hex",
+          "1111111111111111111111111111111111111111111111111111111111111111"
+        ],
+        [
+          4,
+          "utf8",
+          "BASE-QUOTE"
+        ],
+        [
+          5,
+          "u64",
+          "1"
+        ],
+        [
+          6,
+          "hex",
+          "8888888888888888888888888888888888888888888888888888888888888888"
+        ],
+        [
+          7,
+          "hex",
+          "4be8474ab577b66dcf05e75d13c390994ed8bbebedb77bdf6e3c11fb4f1e4684"
+        ],
+        [
+          8,
+          "u64",
+          "90"
+        ],
+        [
+          9,
+          "hex",
+          "7777777777777777777777777777777777777777777777777777777777777777"
+        ]
+      ],
+      "canonical_hex": "0801120c6e75732d6d302d6c6f63616c1a201111111111111111111111111111111111111111111111111111111111111111220a424153452d51554f54452801322088888888888888888888888888888888888888888888888888888888888888883a204be8474ab577b66dcf05e75d13c390994ed8bbebedb77bdf6e3c11fb4f1e4684405a4a207777777777777777777777777777777777777777777777777777777777777777"
+    },
+    {
+      "id": "receipt-change-batch_hash",
+      "message": "BatchReceiptV1",
+      "api_json": {
+        "protocol_version": "1",
+        "chain_id": "nus-m0-local",
+        "genesis_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+        "market_id": "BASE-QUOTE",
+        "batch_seq": "1",
+        "batch_id": "cecd2ab91c1e54c4c856c039d39f03546cc00d12dda17d58dcb2472c487c86df",
+        "batch_hash": "9999999999999999999999999999999999999999999999999999999999999999",
+        "committed_height": "90",
+        "tx_hash": "7777777777777777777777777777777777777777777777777777777777777777"
+      },
+      "fields": [
+        [
+          1,
+          "u32",
+          "1"
+        ],
+        [
+          2,
+          "utf8",
+          "nus-m0-local"
+        ],
+        [
+          3,
+          "hex",
+          "1111111111111111111111111111111111111111111111111111111111111111"
+        ],
+        [
+          4,
+          "utf8",
+          "BASE-QUOTE"
+        ],
+        [
+          5,
+          "u64",
+          "1"
+        ],
+        [
+          6,
+          "hex",
+          "cecd2ab91c1e54c4c856c039d39f03546cc00d12dda17d58dcb2472c487c86df"
+        ],
+        [
+          7,
+          "hex",
+          "9999999999999999999999999999999999999999999999999999999999999999"
+        ],
+        [
+          8,
+          "u64",
+          "90"
+        ],
+        [
+          9,
+          "hex",
+          "7777777777777777777777777777777777777777777777777777777777777777"
+        ]
+      ],
+      "canonical_hex": "0801120c6e75732d6d302d6c6f63616c1a201111111111111111111111111111111111111111111111111111111111111111220a424153452d51554f544528013220cecd2ab91c1e54c4c856c039d39f03546cc00d12dda17d58dcb2472c487c86df3a209999999999999999999999999999999999999999999999999999999999999999405a4a207777777777777777777777777777777777777777777777777777777777777777"
+    },
+    {
+      "id": "transfer-zero",
+      "message": "TransferStableV1",
+      "api_json": {
+        "protocol_version": "1",
+        "chain_id": "nus-dev-1",
+        "genesis_hash": "abababababababababababababababababababababababababababababababab",
+        "sender": "ERERERERERERERERERERERERERE=",
+        "recipient": "IiIiIiIiIiIiIiIiIiIiIiIiIiI=",
+        "denom": "DEVQUOTE",
+        "amount_atoms": "0",
+        "max_service_fee_atoms": "1000",
+        "policy_version": "2",
+        "payment_id": "3333333333333333333333333333333333333333333333333333333333333333",
+        "expiry_height": "100"
+      },
+      "fields": [
+        [
+          1,
+          "u32",
+          "1"
+        ],
+        [
+          2,
+          "utf8",
+          "nus-dev-1"
+        ],
+        [
+          3,
+          "hex",
+          "abababababababababababababababababababababababababababababababab"
+        ],
+        [
+          4,
+          "hex",
+          "1111111111111111111111111111111111111111"
+        ],
+        [
+          5,
+          "hex",
+          "2222222222222222222222222222222222222222"
+        ],
+        [
+          6,
+          "utf8",
+          "DEVQUOTE"
+        ],
+        [
+          7,
+          "hex",
+          "00000000000000000000000000000000"
+        ],
+        [
+          8,
+          "hex",
+          "000000000000000000000000000003e8"
+        ],
+        [
+          9,
+          "u64",
+          "2"
+        ],
+        [
+          10,
+          "hex",
+          "3333333333333333333333333333333333333333333333333333333333333333"
+        ],
+        [
+          11,
+          "u64",
+          "100"
+        ]
+      ],
+      "canonical_hex": "080112096e75732d6465762d311a20abababababababababababababababababababababababababababababababab221411111111111111111111111111111111111111112a142222222222222222222222222222222222222222320844455651554f54453a10000000000000000000000000000000004210000000000000000000000000000003e84802522033333333333333333333333333333333333333333333333333333333333333335864",
+      "payment_frame_hex": "000000114e55532f5041594d454e545f49442f563100000000000000af080112096e75732d6465762d311a20abababababababababababababababababababababababababababababababab221411111111111111111111111111111111111111112a142222222222222222222222222222222222222222320844455651554f54453a10000000000000000000000000000000004210000000000000000000000000000003e84802522033333333333333333333333333333333333333333333333333333333333333335864",
+      "payment_hash": "0019a42c923459c699b0d0f541de91247cb6145e2b52a74cc88b70bbf17baade"
+    }
+  ],
+  "wire_cases": [
+    {
+      "id": "TransferStableV1-valid",
+      "message": "TransferStableV1",
+      "wire_hex": "080112096e75732d6465762d311a20abababababababababababababababababababababababababababababababab221411111111111111111111111111111111111111112a142222222222222222222222222222222222222222320844455651554f54453a10000000000000000000000000000f42404210000000000000000000000000000003e84802522033333333333333333333333333333333333333333333333333333333333333335864",
+      "expected": "CANONICAL"
+    },
+    {
+      "id": "TransferStableV1-missing",
+      "message": "TransferStableV1",
+      "wire_hex": "12096e75732d6465762d311a20abababababababababababababababababababababababababababababababab221411111111111111111111111111111111111111112a142222222222222222222222222222222222222222320844455651554f54453a10000000000000000000000000000f42404210000000000000000000000000000003e84802522033333333333333333333333333333333333333333333333333333333333333335864",
+      "expected": "NON_CANONICAL_WIRE"
+    },
+    {
+      "id": "TransferStableV1-duplicate",
+      "message": "TransferStableV1",
+      "wire_hex": "0801080112096e75732d6465762d311a20abababababababababababababababababababababababababababababababab221411111111111111111111111111111111111111112a142222222222222222222222222222222222222222320844455651554f54453a10000000000000000000000000000f42404210000000000000000000000000000003e84802522033333333333333333333333333333333333333333333333333333333333333335864",
+      "expected": "NON_CANONICAL_WIRE"
+    },
+    {
+      "id": "TransferStableV1-nonminimal",
+      "message": "TransferStableV1",
+      "wire_hex": "08810012096e75732d6465762d311a20abababababababababababababababababababababababababababababababab221411111111111111111111111111111111111111112a142222222222222222222222222222222222222222320844455651554f54453a10000000000000000000000000000f42404210000000000000000000000000000003e84802522033333333333333333333333333333333333333333333333333333333333333335864",
+      "expected": "NON_CANONICAL_WIRE"
+    },
+    {
+      "id": "TransferStableV1-atoms-15",
+      "message": "TransferStableV1",
+      "wire_hex": "080112096e75732d6465762d311a20abababababababababababababababababababababababababababababababab221411111111111111111111111111111111111111112a142222222222222222222222222222222222222222320844455651554f54453a0f0000000000000000000000000000004210000000000000000000000000000003e84802522033333333333333333333333333333333333333333333333333333333333333335864",
+      "expected": "NON_CANONICAL_WIRE"
+    },
+    {
+      "id": "TransferStableV1-atoms-17",
+      "message": "TransferStableV1",
+      "wire_hex": "080112096e75732d6465762d311a20abababababababababababababababababababababababababababababababab221411111111111111111111111111111111111111112a142222222222222222222222222222222222222222320844455651554f54453a1100000000000000000000000000000000004210000000000000000000000000000003e84802522033333333333333333333333333333333333333333333333333333333333333335864",
+      "expected": "NON_CANONICAL_WIRE"
+    },
+    {
+      "id": "BatchReceiptV1-valid",
+      "message": "BatchReceiptV1",
+      "wire_hex": "0801120c6e75732d6d302d6c6f63616c1a201111111111111111111111111111111111111111111111111111111111111111220a424153452d51554f544528013220cecd2ab91c1e54c4c856c039d39f03546cc00d12dda17d58dcb2472c487c86df3a204be8474ab577b66dcf05e75d13c390994ed8bbebedb77bdf6e3c11fb4f1e4684405a4a207777777777777777777777777777777777777777777777777777777777777777",
+      "expected": "CANONICAL"
+    },
+    {
+      "id": "BatchReceiptV1-missing",
+      "message": "BatchReceiptV1",
+      "wire_hex": "120c6e75732d6d302d6c6f63616c1a201111111111111111111111111111111111111111111111111111111111111111220a424153452d51554f544528013220cecd2ab91c1e54c4c856c039d39f03546cc00d12dda17d58dcb2472c487c86df3a204be8474ab577b66dcf05e75d13c390994ed8bbebedb77bdf6e3c11fb4f1e4684405a4a207777777777777777777777777777777777777777777777777777777777777777",
+      "expected": "NON_CANONICAL_WIRE"
+    },
+    {
+      "id": "BatchReceiptV1-duplicate",
+      "message": "BatchReceiptV1",
+      "wire_hex": "08010801120c6e75732d6d302d6c6f63616c1a201111111111111111111111111111111111111111111111111111111111111111220a424153452d51554f544528013220cecd2ab91c1e54c4c856c039d39f03546cc00d12dda17d58dcb2472c487c86df3a204be8474ab577b66dcf05e75d13c390994ed8bbebedb77bdf6e3c11fb4f1e4684405a4a207777777777777777777777777777777777777777777777777777777777777777",
+      "expected": "NON_CANONICAL_WIRE"
+    },
+    {
+      "id": "BatchReceiptV1-nonminimal",
+      "message": "BatchReceiptV1",
+      "wire_hex": "088100120c6e75732d6d302d6c6f63616c1a201111111111111111111111111111111111111111111111111111111111111111220a424153452d51554f544528013220cecd2ab91c1e54c4c856c039d39f03546cc00d12dda17d58dcb2472c487c86df3a204be8474ab577b66dcf05e75d13c390994ed8bbebedb77bdf6e3c11fb4f1e4684405a4a207777777777777777777777777777777777777777777777777777777777777777",
+      "expected": "NON_CANONICAL_WIRE"
+    }
+  ],
+  "state_cases": [
+    {
+      "id": "before-expiry",
+      "kind": "transfer",
+      "submitted": "transfer",
+      "expected": "OK",
+      "height": "99",
+      "stored": null
+    },
+    {
+      "id": "expiry-equality",
+      "kind": "transfer",
+      "submitted": "transfer",
+      "expected": "EXPIRED",
+      "height": "100",
+      "stored": null
+    },
+    {
+      "id": "after-expiry",
+      "kind": "transfer",
+      "submitted": "transfer",
+      "expected": "EXPIRED",
+      "height": "101",
+      "stored": null
+    },
+    {
+      "id": "committed-after-expiry",
+      "kind": "transfer",
+      "submitted": "transfer",
+      "expected": "ALREADY_COMMITTED",
+      "height": "101",
+      "stored": "transfer"
+    },
+    {
+      "id": "same-id-change-recipient",
+      "kind": "transfer",
+      "submitted": "transfer-change-recipient",
+      "expected": "PAYMENT_ID_CONFLICT",
+      "height": "99",
+      "stored": "transfer"
+    },
+    {
+      "id": "same-id-change-amount_atoms",
+      "kind": "transfer",
+      "submitted": "transfer-change-amount_atoms",
+      "expected": "PAYMENT_ID_CONFLICT",
+      "height": "99",
+      "stored": "transfer"
+    },
+    {
+      "id": "same-id-change-policy_version",
+      "kind": "transfer",
+      "submitted": "transfer-change-policy_version",
+      "expected": "PAYMENT_ID_CONFLICT",
+      "height": "99",
+      "stored": "transfer"
+    },
+    {
+      "id": "new-key-sender",
+      "kind": "transfer",
+      "submitted": "transfer-change-sender",
+      "expected": "OK",
+      "height": "99",
+      "stored": "transfer"
+    },
+    {
+      "id": "new-key-payment_id",
+      "kind": "transfer",
+      "submitted": "transfer-change-payment_id",
+      "expected": "OK",
+      "height": "99",
+      "stored": "transfer"
+    },
+    {
+      "id": "historical-identical",
+      "kind": "receipt",
+      "submitted": "receipt",
+      "expected": "ALREADY_COMMITTED",
+      "stored": "receipt",
+      "last_seq": "11"
+    },
+    {
+      "id": "receipt-chain_id",
+      "kind": "receipt",
+      "submitted": "receipt-change-chain_id",
+      "expected": "NOT_FOUND_AT_HEIGHT",
+      "stored": "receipt",
+      "last_seq": "11"
+    },
+    {
+      "id": "receipt-genesis_hash",
+      "kind": "receipt",
+      "submitted": "receipt-change-genesis_hash",
+      "expected": "NOT_FOUND_AT_HEIGHT",
+      "stored": "receipt",
+      "last_seq": "11"
+    },
+    {
+      "id": "receipt-market_id",
+      "kind": "receipt",
+      "submitted": "receipt-change-market_id",
+      "expected": "NOT_FOUND_AT_HEIGHT",
+      "stored": "receipt",
+      "last_seq": "11"
+    },
+    {
+      "id": "receipt-batch_seq",
+      "kind": "receipt",
+      "submitted": "receipt-change-batch_seq",
+      "expected": "NOT_FOUND_AT_HEIGHT",
+      "stored": "receipt",
+      "last_seq": "11"
+    },
+    {
+      "id": "receipt-batch_id",
+      "kind": "receipt",
+      "submitted": "receipt-change-batch_id",
+      "expected": "BATCH_CONFLICT",
+      "stored": "receipt",
+      "last_seq": "11"
+    },
+    {
+      "id": "receipt-batch_hash",
+      "kind": "receipt",
+      "submitted": "receipt-change-batch_hash",
+      "expected": "BATCH_CONFLICT",
+      "stored": "receipt",
+      "last_seq": "11"
+    },
+    {
+      "id": "zero-policy",
+      "kind": "transfer",
+      "submitted": "transfer-zero",
+      "expected": "MARKET_LIMIT",
+      "height": "99",
+      "stored": null
+    }
+  ]
+}

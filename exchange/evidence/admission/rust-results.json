@@ -1,0 +1,305 @@
+[
+  {
+    "ack": "NOT_CONNECTED",
+    "authentication": {
+      "code": "OK",
+      "status": "PASS"
+    },
+    "ledger": "NOT_CONNECTED",
+    "snapshot_policy": {
+      "code": "OK",
+      "snapshot_id": "same-snapshot",
+      "source": "SYNTHETIC",
+      "status": "PASS"
+    },
+    "wal_replay": "NOT_RUN"
+  },
+  {
+    "ack": "NOT_CONNECTED",
+    "authentication": {
+      "code": "OK",
+      "status": "PASS"
+    },
+    "ledger": "NOT_CONNECTED",
+    "snapshot_policy": {
+      "code": "OK",
+      "snapshot_id": "same-snapshot",
+      "source": "SYNTHETIC",
+      "status": "PASS"
+    },
+    "wal_replay": "NOT_RUN"
+  },
+  {
+    "ack": "NOT_CONNECTED",
+    "authentication": {
+      "code": "OK",
+      "status": "PASS"
+    },
+    "ledger": "NOT_CONNECTED",
+    "snapshot_policy": {
+      "code": "MARKET_LIMIT",
+      "snapshot_id": "same-snapshot",
+      "source": "SYNTHETIC",
+      "status": "REJECTED"
+    },
+    "wal_replay": "NOT_RUN"
+  },
+  {
+    "ack": "NOT_CONNECTED",
+    "authentication": {
+      "code": "OK",
+      "status": "PASS"
+    },
+    "ledger": "NOT_CONNECTED",
+    "snapshot_policy": {
+      "code": "OK",
+      "snapshot_id": "same-snapshot",
+      "source": "SYNTHETIC",
+      "status": "PASS"
+    },
+    "wal_replay": "NOT_RUN"
+  },
+  {
+    "ack": "NOT_CONNECTED",
+    "authentication": {
+      "code": "OK",
+      "status": "PASS"
+    },
+    "ledger": "NOT_CONNECTED",
+    "snapshot_policy": {
+      "code": "OK",
+      "snapshot_id": "same-snapshot",
+      "source": "SYNTHETIC",
+      "status": "PASS"
+    },
+    "wal_replay": "NOT_RUN"
+  },
+  {
+    "ack": "NOT_CONNECTED",
+    "authentication": {
+      "code": "OK",
+      "status": "PASS"
+    },
+    "ledger": "NOT_CONNECTED",
+    "snapshot_policy": {
+      "code": "MARKET_LIMIT",
+      "snapshot_id": "same-snapshot",
+      "source": "SYNTHETIC",
+      "status": "REJECTED"
+    },
+    "wal_replay": "NOT_RUN"
+  },
+  {
+    "ack": "NOT_CONNECTED",
+    "authentication": {
+      "code": "OK",
+      "status": "PASS"
+    },
+    "ledger": "NOT_CONNECTED",
+    "snapshot_policy": {
+      "code": "MARKET_LIMIT",
+      "snapshot_id": "same-snapshot",
+      "source": "SYNTHETIC",
+      "status": "REJECTED"
+    },
+    "wal_replay": "NOT_RUN"
+  },
+  {
+    "ack": "NOT_CONNECTED",
+    "authentication": {
+      "code": "OK",
+      "status": "PASS"
+    },
+    "ledger": "NOT_CONNECTED",
+    "snapshot_policy": {
+      "code": "MARKET_LIMIT",
+      "snapshot_id": "same-snapshot",
+      "source": "SYNTHETIC",
+      "status": "REJECTED"
+    },
+    "wal_replay": "NOT_RUN"
+  },
+  {
+    "ack": "NOT_CONNECTED",
+    "authentication": {
+      "code": "OK",
+      "status": "PASS"
+    },
+    "ledger": "NOT_CONNECTED",
+    "snapshot_policy": {
+      "code": "MARKET_LIMIT",
+      "snapshot_id": "same-snapshot",
+      "source": "SYNTHETIC",
+      "status": "REJECTED"
+    },
+    "wal_replay": "NOT_RUN"
+  },
+  {
+    "ack": "NOT_CONNECTED",
+    "authentication": {
+      "code": "OK",
+      "status": "PASS"
+    },
+    "ledger": "NOT_CONNECTED",
+    "snapshot_policy": {
+      "code": "MARKET_LIMIT",
+      "snapshot_id": "same-snapshot",
+      "source": "SYNTHETIC",
+      "status": "REJECTED"
+    },
+    "wal_replay": "NOT_RUN"
+  },
+  {
+    "ack": "NOT_CONNECTED",
+    "authentication": {
+      "code": "OK",
+      "status": "PASS"
+    },
+    "ledger": "NOT_CONNECTED",
+    "snapshot_policy": {
+      "code": "OK",
+      "snapshot_id": "same-snapshot",
+      "source": "SYNTHETIC",
+      "status": "PASS"
+    },
+    "wal_replay": "NOT_RUN"
+  },
+  {
+    "ack": "NOT_CONNECTED",
+    "authentication": {
+      "code": "OK",
+      "status": "PASS"
+    },
+    "ledger": "NOT_CONNECTED",
+    "snapshot_policy": {
+      "code": "MARKET_LIMIT",
+      "snapshot_id": "same-snapshot",
+      "source": "SYNTHETIC",
+      "status": "REJECTED"
+    },
+    "wal_replay": "NOT_RUN"
+  },
+  {
+    "ack": "NOT_CONNECTED",
+    "authentication": {
+      "code": "OK",
+      "status": "PASS"
+    },
+    "ledger": "NOT_CONNECTED",
+    "snapshot_policy": {
+      "code": "MARKET_LIMIT",
+      "snapshot_id": "same-snapshot",
+      "source": "SYNTHETIC",
+      "status": "REJECTED"
+    },
+    "wal_replay": "NOT_RUN"
+  },
+  {
+    "ack": "NOT_CONNECTED",
+    "authentication": {
+      "code": "OK",
+      "status": "PASS"
+    },
+    "ledger": "NOT_CONNECTED",
+    "snapshot_policy": {
+      "code": "OK",
+      "snapshot_id": "same-snapshot",
+      "source": "SYNTHETIC",
+      "status": "PASS"
+    },
+    "wal_replay": "NOT_RUN"
+  },
+  {
+    "ack": "NOT_CONNECTED",
+    "authentication": {
+      "code": "OK",
+      "status": "PASS"
+    },
+    "ledger": "NOT_CONNECTED",
+    "snapshot_policy": {
+      "code": "MARKET_LIMIT",
+      "snapshot_id": "same-snapshot",
+      "source": "SYNTHETIC",
+      "status": "REJECTED"
+    },
+    "wal_replay": "NOT_RUN"
+  },
+  {
+    "ack": "NOT_CONNECTED",
+    "authentication": {
+      "code": "OK",
+      "status": "PASS"
+    },
+    "ledger": "NOT_CONNECTED",
+    "snapshot_policy": {
+      "code": "MARKET_LIMIT",
+      "snapshot_id": "same-snapshot",
+      "source": "SYNTHETIC",
+      "status": "REJECTED"
+    },
+    "wal_replay": "NOT_RUN"
+  },
+  {
+    "ack": "NOT_CONNECTED",
+    "authentication": {
+      "code": "OK",
+      "status": "PASS"
+    },
+    "ledger": "NOT_CONNECTED",
+    "snapshot_policy": {
+      "code": "OK",
+      "snapshot_id": "same-snapshot",
+      "source": "SYNTHETIC",
+      "status": "PASS"
+    },
+    "wal_replay": "NOT_RUN"
+  },
+  {
+    "ack": "NOT_CONNECTED",
+    "authentication": {
+      "code": "OK",
+      "status": "PASS"
+    },
+    "ledger": "NOT_CONNECTED",
+    "snapshot_policy": {
+      "code": "EPOCH_MISMATCH",
+      "snapshot_id": "same-snapshot",
+      "source": "SYNTHETIC",
+      "status": "REJECTED"
+    },
+    "wal_replay": "NOT_RUN"
+  },
+  {
+    "ack": "NOT_CONNECTED",
+    "authentication": {
+      "code": "OK",
+      "status": "PASS"
+    },
+    "ledger": "NOT_CONNECTED",
+    "snapshot_policy": {
+      "code": null,
+      "snapshot_id": null,
+      "source": "SYNTHETIC",
+      "status": "NOT_CONNECTED"
+    },
+    "wal_replay": "NOT_RUN"
+  },
+  {
+    "ack": "NOT_CONNECTED",
+    "authentication": {
+      "code": "OK",
+      "status": "PASS"
+    },
+    "ledger": "NOT_CONNECTED",
+    "snapshot_policy": {
+      "code": null,
+      "snapshot_id": null,
+      "source": "SYNTHETIC",
+      "status": "NOT_CONNECTED"
+    },
+    "wal_replay": "NOT_RUN"
+  },
+  {
+    "error": "NOT_CONNECTED"
+  }
+]

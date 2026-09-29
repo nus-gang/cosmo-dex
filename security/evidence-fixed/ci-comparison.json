@@ -1,0 +1,9 @@
+{
+  "run": "https://github.com/nus-gang/cosmo-dex/actions/runs/36620674595",
+  "sha": "37c45de5a687eea9c33875d98d553971ea47168f",
+  "full_rows_equal": true,
+  "rows": 783,
+  "passed": 782,
+  "failed": 1,
+  "browser_suite_equal": true
+}

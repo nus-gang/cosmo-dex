@@ -1,0 +1,25 @@
+{
+  "name": "@noble/hashes",
+  "version": "1.8.0",
+  "license": "MIT",
+  "dependencies": null,
+  "dist": {
+    "shasum": "cee43d801fcef9644b11b8194857695acd5f815a",
+    "tarball": "https://registry.npmjs.org/@noble/hashes/-/hashes-1.8.0.tgz",
+    "fileCount": 247,
+    "integrity": "sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==",
+    "signatures": [
+      {
+        "sig": "MEQCID8lQUmAx5TfCSeorp3w14AhfRGIwS1xYXLsWxk9hs9ZAiA7CboxrJT9SLLXE2yDJ+QJ8bu51bRL7+HHpgST8E2HOg==",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      }
+    ],
+    "attestations": {
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/@noble%2fhashes@1.8.0",
+      "provenance": {
+        "predicateType": "https://slsa.dev/provenance/v1"
+      }
+    },
+    "unpackedSize": 1145416
+  }
+}

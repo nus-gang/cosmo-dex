@@ -1,0 +1,31 @@
+{
+  "approved_protocol_sha": "57c187f5474e02c3f624667d3b8380268e13dd1a",
+  "contract_sha256": "afa3471a2210a90cde0004b3219b231468bf0b8471e8068f8e16b096b3549d84",
+  "vectors_sha256": "bb1b437d23a365f1083e85353bf62bcef6517cda94288ff7e2d0b4cb5fccd55b",
+  "rust_tests": 18,
+  "rc4_full_outputs": 60,
+  "legacy_regression": {
+    "total": 783,
+    "passed": 783,
+    "ids_preserved": true,
+    "Go_chain": "5d39b7a0ffe911ed60cd0e3a56ada135e76a425f",
+    "TS_web": "99ee3bf73c9e44b6e7fef6d8640af14d587ea89b",
+    "security_harness": "2c5cff9fd1288b8ff2ceb5680cb2ea8ae3b9a50c",
+    "fresh_dependency_install": false,
+    "independent_security_retest": "NOT_RUN"
+  },
+  "historical_security_result": "783/782/1 FAIL preserved",
+  "ack": "NOT_CONNECTED",
+  "ledger": "NOT_CONNECTED",
+  "wal_replay": "NOT_RUN",
+  "sha256": {
+    "rc4-clippy.log": "170b105c2c87b43496bf9fc772116f180342807240207105d82486f7ebfd109b",
+    "rc4-full-outputs.json": "f6dfb35e2c6e0b216e6187f4f4aa204f4f2de3930788fc9ac264af8c0f3f56c2",
+    "rc4-protocol.log": "763a616f5c1ee36bf48bfdf1402a802a7c7bddc5a432459f1a8dd14df95d4db8",
+    "rc4-test.log": "566943120b02e3a2d70f09b983dc6b83373cb33e6dc8104eb275b0716342fe55",
+    "rc4-regression/differential.json": "6a37aa8724fb0988458fc29e094b5b4dd61132b04b8af9e16b64b3e4f88222d0",
+    "rc4-regression/generated.json": "3366d2283ace863f107836abc54f245fa92d7d1bc10e2170e662cc01b5827a1b",
+    "rc4-regression/policy-inputs.json": "21ff730dc851e41190388c55187a6b60d36dc864b525302b471026cc48ece367",
+    "rc4-regression/summary.json": "d0a3b61235412cdb7c485a4bf9986d0bea334cfd78f9032e2c4cc01abf2458e9"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "verdict": "FAIL",
+  "reason": "G-FIX-01 common output mismatch; partial-snapshot ID semantics require CTO clarification",
+  "severity": "Low",
+  "authentication_policy_invariants": "PASS within executed synthetic scope",
+  "mldsa_interop": "PASS",
+  "previous_five_failures": "FIXED_RETEST_PASS",
+  "total": 783,
+  "passed": 782,
+  "failed": 1,
+  "browser": "PASS local Chrome and Linux Chromium, 392 checks each",
+  "product_T01_T16": "NOT_RUN",
+  "release_approval": false,
+  "test_sha": "37c45de5a687eea9c33875d98d553971ea47168f"
+}

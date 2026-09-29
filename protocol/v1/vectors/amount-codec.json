@@ -1,0 +1,81 @@
+{
+  "note": "wire_base64 is diagnostic only; never API atoms input. Codec zero is valid, transfer minimum policy rejects zero.",
+  "cases": [
+    {
+      "api_json": "0",
+      "wire_hex": "00000000000000000000000000000000",
+      "wire_base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+      "expected": "OK"
+    },
+    {
+      "api_json": "1",
+      "wire_hex": "00000000000000000000000000000001",
+      "wire_base64": "AAAAAAAAAAAAAAAAAAAAAQ==",
+      "expected": "OK"
+    },
+    {
+      "api_json": "18446744073709551616",
+      "wire_hex": "00000000000000010000000000000000",
+      "wire_base64": "AAAAAAAAAAEAAAAAAAAAAA==",
+      "expected": "OK"
+    },
+    {
+      "api_json": "340282366920938463463374607431768211455",
+      "wire_hex": "ffffffffffffffffffffffffffffffff",
+      "wire_base64": "/////////////////////w==",
+      "expected": "OK"
+    },
+    {
+      "api_json": "-1",
+      "expected": "INTEGER_RANGE"
+    },
+    {
+      "api_json": "01",
+      "expected": "INTEGER_RANGE"
+    },
+    {
+      "api_json": "+1",
+      "expected": "INTEGER_RANGE"
+    },
+    {
+      "api_json": " 1",
+      "expected": "INTEGER_RANGE"
+    },
+    {
+      "api_json": "1.0",
+      "expected": "INTEGER_RANGE"
+    },
+    {
+      "api_json": "1e0",
+      "expected": "INTEGER_RANGE"
+    },
+    {
+      "api_json": "",
+      "expected": "INTEGER_RANGE"
+    },
+    {
+      "api_json": "340282366920938463463374607431768211456",
+      "expected": "INTEGER_RANGE"
+    },
+    {
+      "api_json": "AAAAAAAAAAAAAAAAAAAAAQ==",
+      "expected": "INTEGER_RANGE"
+    },
+    {
+      "api_json": 1,
+      "expected": "INTEGER_RANGE"
+    },
+    {
+      "api_json": null,
+      "expected": "INTEGER_RANGE"
+    },
+    {
+      "wire_hex": "000000000000000000000000000000",
+      "expected": "NON_CANONICAL_WIRE"
+    },
+    {
+      "wire_hex": "0000000000000000000000000000000000",
+      "expected": "NON_CANONICAL_WIRE"
+    }
+  ]
+}

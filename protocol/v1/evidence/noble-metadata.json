@@ -1,0 +1,27 @@
+{
+  "name": "@noble/post-quantum",
+  "version": "0.4.1",
+  "license": "MIT",
+  "dependencies": {
+    "@noble/hashes": "1.8.0"
+  },
+  "dist": {
+    "shasum": "c192781c1db9fd02f746efd16bc18cef3b0af37f",
+    "tarball": "https://registry.npmjs.org/@noble/post-quantum/-/post-quantum-0.4.1.tgz",
+    "fileCount": 59,
+    "integrity": "sha512-TRXjvnY9jAFNWbxOx+pKt21BNsCEWKFjMbIKwdx9CQXBudDanpY20EfOcooV7DIsRS/+Mf8D8utpUPjfGrQ8fA==",
+    "signatures": [
+      {
+        "sig": "MEUCIBlnsrt9Zhg22GO131wuhzWMtHdYptt3JGqFpZ8yiczdAiEAoq6EISceHS+3xnjfowyYrq4x/oVjx1u8JWmcVYi++es=",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      }
+    ],
+    "attestations": {
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/@noble%2fpost-quantum@0.4.1",
+      "provenance": {
+        "predicateType": "https://slsa.dev/provenance/v1"
+      }
+    },
+    "unpackedSize": 423968
+  }
+}

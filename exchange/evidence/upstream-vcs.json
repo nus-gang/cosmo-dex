@@ -1,0 +1,14 @@
+{
+  "orderbook-rs-0.13.1": {
+    "git": {
+      "sha1": "a36218b9d2140e1c04ed22328f30fb4977adb109"
+    },
+    "path_in_vcs": ""
+  },
+  "fips204-0.4.6": {
+    "git": {
+      "sha1": "8d456d989dce681233ef963d3c3306da8f76d7c7"
+    },
+    "path_in_vcs": ""
+  }
+}

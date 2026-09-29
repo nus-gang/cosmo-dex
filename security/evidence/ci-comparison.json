@@ -1,0 +1,12 @@
+{
+  "test_sha": "041fa5954f3fa950b100c7a505217d949165347b",
+  "ci_run": 36635390972,
+  "ci_url": "https://github.com/nus-gang/cosmo-dex/actions/runs/36635390972",
+  "conclusion": "success",
+  "full_rows_equal": true,
+  "total": 969,
+  "local_browser": "154.0.8037.58",
+  "linux_browser": "140.0.7339.186",
+  "browser_checks_equal": true,
+  "browser_checks": 453
+}
