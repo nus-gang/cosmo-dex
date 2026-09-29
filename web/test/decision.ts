@@ -1,3 +1,4 @@
+import snapshotVectors from '../../protocol/v1/vectors/snapshot-output.json' with { type: 'json' };
 import vectors from '../../protocol/v1/vectors/decision-port.json' with { type: 'json' };
 import signatures from '../../protocol/v1/vectors/signatures.json' with { type: 'json' };
 import { hexToBytes, type Message } from '../src/codec.ts';
@@ -9,7 +10,7 @@ export function decisionChecks(m: Message, ctx: VerificationContext, secretKey: 
   const checks: string[] = [];
   const eq = (id: string, actual: unknown, expected: unknown) => {
     if (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Error(id + ': ' + JSON.stringify({ actual, expected }));
-    checks.push('rc3:' + id);
+    checks.push(id.startsWith('rc4-') ? id : 'rc3:' + id);
   };
   const code = (fn: () => unknown) => { try { return fn() ?? 'OK'; } catch (e) { if (e instanceof Error) return e.message; throw e; } };
   for (const c of vectors.fee_cases) eq(c.id, code(() => feeAtoms(c.receive, c.active_bps)), c.expected);
@@ -60,5 +61,27 @@ export function decisionChecks(m: Message, ctx: VerificationContext, secretKey: 
     eq('missing-field:' + field, decideOrder(signed.body, signed.signature, ctx, missing).snapshot_policy.status, 'NOT_CONNECTED');
   }
   eq('api-refuses-test-status', code(() => apiError('NOT_CONNECTED')), 'CONTEXT_MISMATCH');
+  // rc4 is a separate 60-case suite: expected authentication is never injected.
+  for (const c of snapshotVectors.cases) {
+    const order = { ...m, ...c.input.authenticated_order };
+    const signed = sign('OrderV1', order, secretKey);
+    const context: VerificationContext = {
+      ...ctx, snapshotId: c.input.context.snapshot_id,
+      height: c.input.context.height, epoch: c.input.context.epoch,
+    };
+    if (c.input.authentication_result.status === 'REJECTED') signed.signature[0] ^= 1;
+    if (c.input.authentication_result.status === 'NOT_CONNECTED') {
+      context.registeredKey = { bytes: ctx.registeredKey!.bytes }; // real missing key-type path
+    }
+    const actual = decideOrder(signed.body, signed.signature, context, c.input.snapshot ?? null);
+    eq(c.id, actual, c.expected);
+  }
+  const nullEpochOrder = sign('OrderV1', { ...m, ...snapshotVectors.cases[0].input.authenticated_order }, secretKey);
+  const nullEpochSnapshot = { ...snapshotVectors.cases[0].input.snapshot!, epoch_matches: false };
+  eq('rc4-extra:null-epoch-false-flag', decideOrder(nullEpochOrder.body, nullEpochOrder.signature,
+    { ...ctx, epoch: null }, nullEpochSnapshot), {
+    ...snapshotVectors.cases[0].expected,
+    snapshot_policy: { status: 'NOT_CONNECTED', code: null, source: 'SYNTHETIC', snapshot_id: 'synthetic-1' },
+  });
   return checks;
 }

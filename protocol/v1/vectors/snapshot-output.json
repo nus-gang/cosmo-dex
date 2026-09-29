@@ -1,0 +1,2982 @@
+{
+  "version": "1.0.0-rc4",
+  "scope": "synthetic specification; authentication_result and authenticated_order are injected, actual crypto NOT_RUN",
+  "product_mapping": "Use signatures.json OrderV1 positive mock seed/key and override owner_epoch/max_qty_lots/limit_price_ticks/max_fee_bps/expiry_height from authenticated_order; re-encode and re-sign. Context and snapshot are trusted adapter inputs, never order-supplied authority. Replace injected authentication_result with actual authentication.",
+  "historical_baseline": {
+    "comparison_rows": 783,
+    "matched": 782,
+    "different": 1,
+    "verdict": "FAIL",
+    "retest": "NOT_RUN"
+  },
+  "cases": [
+    {
+      "id": "rc4-normal",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "PASS",
+          "code": "OK",
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-snapshot-omitted",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": null
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-snapshot-null",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": null,
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": null
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-snapshot-empty",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {},
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": null
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-id-omitted",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": null
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-id-null",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": null,
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": null
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-source-omitted",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-source-null",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": null,
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-height-omitted",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-height-null",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": null,
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-expiry_height-omitted",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-expiry_height-null",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": null,
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-epoch_matches-omitted",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-epoch_matches-null",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": null,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-revoked-omitted",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-revoked-null",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": null,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-id_state-omitted",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-id_state-null",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": null,
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-cumulative_ok-omitted",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-cumulative_ok-null",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": null,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-confirmed_balance_ok-omitted",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-confirmed_balance_ok-null",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": null,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-q-omitted",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-q-null",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": null,
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-p-omitted",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-p-null",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": null,
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-active_bps-omitted",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-active_bps-null",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": null,
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-cap-omitted",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-cap-null",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": null
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-binding-id",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "other-observation",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "other-observation"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-binding-height",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "998",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-binding-expiry_height",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "2000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-binding-q",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "99",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-binding-p",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "99",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-binding-cap",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "24"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-epoch-7-true",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "PASS",
+          "code": "OK",
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-epoch-7-false",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": false,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-epoch-999-true",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "999"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-epoch-999-false",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": false,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "999"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "REJECTED",
+          "code": "EPOCH_MISMATCH",
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-context-snapshot_id-omitted",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-context-snapshot_id-null",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": null,
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-context-height-omitted",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-context-height-null",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": null,
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-context-epoch-omitted",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-context-epoch-null",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": null
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-context-id-empty",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-snapshot-id-empty",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": ""
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-auth-rejected-normal",
+      "input": {
+        "authentication_result": {
+          "status": "REJECTED",
+          "code": "INVALID_SIGNATURE"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "REJECTED",
+          "code": "INVALID_SIGNATURE"
+        },
+        "snapshot_policy": {
+          "status": "NOT_RUN",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-auth-rejected-absent",
+      "input": {
+        "authentication_result": {
+          "status": "REJECTED",
+          "code": "INVALID_SIGNATURE"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "REJECTED",
+          "code": "INVALID_SIGNATURE"
+        },
+        "snapshot_policy": {
+          "status": "NOT_RUN",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": null
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-auth-rejected-partial",
+      "input": {
+        "authentication_result": {
+          "status": "REJECTED",
+          "code": "INVALID_SIGNATURE"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "REJECTED",
+          "code": "INVALID_SIGNATURE"
+        },
+        "snapshot_policy": {
+          "status": "NOT_RUN",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-auth-rejected-contradiction",
+      "input": {
+        "authentication_result": {
+          "status": "REJECTED",
+          "code": "INVALID_SIGNATURE"
+        },
+        "snapshot": {
+          "id": "other-observation",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "REJECTED",
+          "code": "INVALID_SIGNATURE"
+        },
+        "snapshot_policy": {
+          "status": "NOT_RUN",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "other-observation"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-auth-not_connected-normal",
+      "input": {
+        "authentication_result": {
+          "status": "NOT_CONNECTED",
+          "code": null
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "NOT_CONNECTED",
+          "code": null
+        },
+        "snapshot_policy": {
+          "status": "NOT_RUN",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-auth-not_connected-absent",
+      "input": {
+        "authentication_result": {
+          "status": "NOT_CONNECTED",
+          "code": null
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "NOT_CONNECTED",
+          "code": null
+        },
+        "snapshot_policy": {
+          "status": "NOT_RUN",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": null
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-auth-not_connected-partial",
+      "input": {
+        "authentication_result": {
+          "status": "NOT_CONNECTED",
+          "code": null
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "NOT_CONNECTED",
+          "code": null
+        },
+        "snapshot_policy": {
+          "status": "NOT_RUN",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-auth-not_connected-contradiction",
+      "input": {
+        "authentication_result": {
+          "status": "NOT_CONNECTED",
+          "code": null
+        },
+        "snapshot": {
+          "id": "other-observation",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "NOT_CONNECTED",
+          "code": null
+        },
+        "snapshot_policy": {
+          "status": "NOT_RUN",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "other-observation"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-fee-q-p-1",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "1",
+          "p": "1",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "1",
+          "limit_price_ticks": "1",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "REJECTED",
+          "code": "FEE_GE_RECEIVE",
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-partial-and-contradictory",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "other-observation",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "other-observation"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-binding-before-policy",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": false,
+          "revoked": false,
+          "id_state": "CONFLICT",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "7"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "rc4-consistent-epoch-policy-priority",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": false,
+          "revoked": false,
+          "id_state": "CONFLICT",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        },
+        "authenticated_order": {
+          "owner_epoch": "7",
+          "max_qty_lots": "100",
+          "limit_price_ticks": "100",
+          "max_fee_bps": "25",
+          "expiry_height": "1000"
+        },
+        "context": {
+          "snapshot_id": "synthetic-1",
+          "height": "999",
+          "epoch": "999"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "REJECTED",
+          "code": "ID_CONFLICT",
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    }
+  ]
+}

@@ -26,3 +26,18 @@ CTO · 첫 실행 조정 · 2026-09-29. A/B 병렬, A review 통과 후 C/D/E/F 
 통합 순서: 원 PR #2 rc3 → Security→QA 계약 검토 → [NUS-12](/NUS/issues/NUS-12)·[NUS-13](/NUS/issues/NUS-13)·[NUS-15](/NUS/issues/NUS-15)가 동일 새 SHA/hash를 pin하여 수정·자체 시험·네이티브 검토 → CTO가 세 수정/검토 완료 증거를 확인한 뒤 기존 [NUS-16](/NUS/issues/NUS-16)을 원래 Security 담당자에게 resume → [NUS-17](/NUS/issues/NUS-17) 재현. 지금 G를 조기 resume하거나 C/D/F blocker를 해제하지 않는다. 중복 수정 이슈는 만들지 않는다. 실제 앱/WAL/원장과 후속 기능 단계는 범위 밖이다.
 
 C/D/F 담당자는 수정/검토 완료 때 이 원 업무에 SHA·판정·검토 근거를 전달한다. CTO의 G 재개 조건은 세 업무의 실제 완료이며 이번 계약 검토 완료와 구별한다.
+
+## rc4 / G-FIX-01 인계
+
+기준: ADR G-FIX-01과 snapshot-output.json 60개 명세 예제. rc3 원본 vectors/schema/config 보존. 계약 검토는 새 Security→QA 네이티브 회차이며 과거 승인·FAIL 기록은 유지한다. 실제 제품 재시험은 NOT_RUN.
+
+계약 승인 후 원래 업무로 반환한다:
+- NUS-13 Exchange: binding 실패/부분 epoch 누락에서 snapshot null 치환을 제거하고 원본 ID와 정책 연결 판정을 분리한다. 전체 출력 60개 소비와 기존 회귀·독립 네이티브 검토.
+- NUS-12 Chain: 완전하지만 모순인 binding의 CONTEXT_MISMATCH 출력을 NOT_CONNECTED/code=null로 맞춘다. 원본 ID 보존·누락·epoch 전체 출력과 기존 회귀·독립 검토.
+- NUS-15 Wallet: 현재 코드상 관측 ID 보존·모순 미연결은 일치하지만 새 벡터 소비·같은 protocol hash와 full SHA에서 재검증/네이티브 검토를 제출한다. 검증 없이 구현 일치를 확정하지 않는다.
+- NUS-11 SRE: A/C/D/F의 승인된 새 full SHA/path tree·contract/vector hash를 CI manifest에 고정한다. E는 실제 소비 파일 동일성만 확인하고 rc4 전체 구현으로 표기하지 않는다.
+- CTO: C/D/F 수정·독립 검토가 모두 끝나면 새 통합 manifest를 업로드하고 기존 NUS-16을 원 Security 담당자에게 resume한다. 현재는 조기 재시험하지 않는다.
+- NUS-16 Security: 기존 783개 ID/언어, 과거 783/782/1 FAIL을 보존하고 새 full-output 사례를 별도 집계한다. 기존 모순 사례는 ID를 유지하면서 rc4 전체 출력으로 강화한다. 전체 differential와 실제 암호 교차검증을 새 manifest에서 독립 재실행한다.
+- NUS-17 QA: 같은 새 manifest와 CI 실행 SHA로 새 checkout 재현을 수행한다. 기존 FAIL/NOT_RUN 문서는 덮어쓰지 않는다.
+
+작업량은 계약 60사례 추가, Rust binding 출력 수정, Go 모순 결과 정렬, TS 벡터 소비 및 3언어 검토/전체 재시험이다. 계약 승인 후 C/D/F는 각 checkout에서 병렬 가능하다. PR #2 계약 → C/D/F 원 PR → 새 통합 manifest/CI → G → H 순서로 검토한다. 통합 후보의 조립과 main 병합은 다르며 이 반환에 main 병합·출시 승인은 없다. 일정·비용은 실제 수정/검토·실행 결과 전 확약하지 않는다.
