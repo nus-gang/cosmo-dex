@@ -24,7 +24,7 @@ pub fn cap_check(cap: &Value, bps: &Value) -> Result<()> {
     }
     Ok(())
 }
-fn policy_code(s: &Value) -> Result<()> {
+fn policy_code(s: &Value, signed_market: Result<()>) -> Result<()> {
     for k in ["height", "expiry_height", "q", "p"] {
         integer(&s[k], 64)?;
     }
@@ -47,6 +47,7 @@ fn policy_code(s: &Value) -> Result<()> {
     if !(1..=1000000).contains(&q) || !(1..=1000000).contains(&p) {
         return Err("MARKET_LIMIT");
     }
+    signed_market?;
     cap_check(&s["cap"], &s["active_bps"])?;
     policy::fill(q, p, active_bps(&s["active_bps"])?)?;
     if s["cumulative_ok"] == false {
@@ -66,6 +67,9 @@ pub fn stage(result: Result<()>) -> Value {
 }
 /// Policy-only entry point. Caller supplies authentication result; this is not crypto evidence.
 pub fn evaluate_snapshot(authentication: Value, s: &Value) -> Value {
+    evaluate_bound_snapshot(authentication, s, Ok(()))
+}
+fn evaluate_bound_snapshot(authentication: Value, s: &Value, signed_market: Result<()>) -> Value {
     let mut out = json!({"authentication":authentication,"snapshot_policy":{
         "status":"NOT_RUN","code":null,"source":"SYNTHETIC","snapshot_id":s["id"]},
         "ack":"NOT_CONNECTED","wal_replay":"NOT_RUN","ledger":"NOT_CONNECTED"});
@@ -100,7 +104,7 @@ pub fn evaluate_snapshot(authentication: Value, s: &Value) -> Value {
         .iter()
         .all(|k| s[*k].is_boolean());
     let result = if connected {
-        stage(policy_code(s))
+        stage(policy_code(s, signed_market))
     } else {
         stage(Err("NOT_CONNECTED"))
     };
@@ -113,8 +117,11 @@ pub fn admit_order(raw: &[u8], sig: &[u8], ctx: &OrderContext<'_>, snapshot: &Va
     let authenticated = policy::authenticate_order(raw, sig, ctx);
     let authentication = stage(authenticated.as_ref().map(|_| ()).map_err(|e| *e));
     let mut s = snapshot.clone();
+    let mut market = Ok(());
     if let Ok(order) = authenticated {
         let observed_height = ctx.height.to_string();
+        market = policy::market_rules(&order);
+        let epoch_matches = integer(&order["owner_epoch"], 64) == Ok(u128::from(ctx.epoch));
         // Bind supplied policy fields to the signed order and authentication observation.
         let matches = [
             ("q", "max_qty_lots"),
@@ -124,6 +131,7 @@ pub fn admit_order(raw: &[u8], sig: &[u8], ctx: &OrderContext<'_>, snapshot: &Va
         ]
         .iter()
         .all(|(a, b)| s[*a].is_null() || s[*a] == order[*b])
+            && s["epoch_matches"].as_bool() == Some(epoch_matches)
             && !ctx.snapshot_id.is_empty()
             && (s["id"].is_null() || s["id"] == ctx.snapshot_id)
             && (s["height"].is_null() || s["height"].as_str() == Some(observed_height.as_str()));
@@ -131,8 +139,9 @@ pub fn admit_order(raw: &[u8], sig: &[u8], ctx: &OrderContext<'_>, snapshot: &Va
             s = Value::Null;
         }
     }
-    evaluate_snapshot(authentication, &s)
+    evaluate_bound_snapshot(authentication, &s, market)
 }
+
 pub fn api_error(code: &str, height: Option<u64>) -> Option<Value> {
     if ![
         "INTEGER_RANGE",

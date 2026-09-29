@@ -76,6 +76,41 @@ Security→QA가 승인한 공통 SHA `549ce150d6a9f21ec30f159d39a4d91c31dbd759`
 - `evaluate_snapshot`은 합성 인증 결과를 주입하는 정책 전용 함수다. 공통 decision 34개는 이 함수의 정책·출력 구조 증거이며 실제 암호 증거는 별도 등록키·변조·재서명 시험이다.
 - `validate_order`는 기존 신규 주문 convenience 함수이고 ID 영속 판정·재시도나 ACK를 구현하지 않는다. G/H는 분리된 `admit_order` 출력을 소비한다.
 
-JSON-lines 재시험 포트: `cargo run --manifest-path exchange/Cargo.toml --locked --bin decision`. stdin 1행 JSON당 stdout 1행 JSON. `op=fee`는 receive/active_bps 정규 십진 문자열, `op=cap`은 cap/active_bps를 받는다. 성공 result 문자열 또는 error code를 반환한다. 실제 인증은 `op=admit_order`, wire_hex, signature_hex, context, snapshot을 받는다. context의 필수 필드는 snapshot_id/height/chain_id/genesis_hash/exchange_module_id/market_id/market_config_version/registered다. registered=null은 미등록, 객체는 key_type/raw_key_hex를 명시한다. snapshot 필드는 공통 DECISION-PORT.md와 같고 숫자는 문자열이다. context/등록 조회 미연결은 승인으로 바꾸지 않는다. 입력 예제는 `tests/rc3.rs::json_lines_port_uses_real_registration`에 있다.
+JSON-lines 재시험 포트: `cargo run --manifest-path exchange/Cargo.toml --locked --bin decision`. stdin 1행 JSON당 stdout 1행 JSON. `op=fee`는 receive/active_bps 정규 십진 문자열, `op=cap`은 cap/active_bps를 받는다. 성공 result 문자열 또는 error code를 반환한다. 실제 인증은 `op=admit_order`, wire_hex, signature_hex, context, snapshot을 받는다. context의 필수 필드는 snapshot_id/height/epoch/chain_id/genesis_hash/exchange_module_id/market_id/market_config_version/registered다. registered=null은 미등록, 객체는 key_type/raw_key_hex를 명시한다. snapshot 필드는 공통 DECISION-PORT.md와 같고 숫자는 문자열이다. context/등록 조회 미연결은 승인으로 바꾸지 않는다. 입력 예제는 `tests/rc3.rs::json_lines_port_uses_real_registration`에 있다.
 
 재현 환경: Rust 1.92.0, macOS arm64, Cargo.lock 고정. 모의 seed로 생성한 테스트 키만 사용한다. 명령은 위 재현 절차와 동일하며 rc3 단독 재시험은 `cargo test --manifest-path exchange/Cargo.toml --locked --test rc3 -- --nocapture`. CI의 기존 all-targets 시험에 자동 포함된다. SDK 탐색 환경 경고가 있었으나 컴파일/16 tests/Clippy 모두 성공했다.
+
+
+## G-RC3-01/02 admission 수정
+
+`admit_order`는 서명 인증 후 `validate_order`와 같은 시장 규칙(side/order_type 1/2,
+q/p 1..1,000,000, RECEIVE_ASSET_V1)을 정책 단계에서 검사한다. 인증 성공만으로 정책 PASS를 반환하지 않는다.
+서명 owner_epoch와 신뢰 context.epoch의 비교 결과가 snapshot.epoch_matches와 같아야 한다.
+일치/true는 정상, 불일치/false는 EPOCH_MISMATCH, 두 모순은 NOT_CONNECTED다.
+기존 공통 오류를 사용하며 새 공통 표준 오류를 추가하지 않았다. CLI의 context.epoch는 정규 U64 십진 문자열 필수값이며 누락/비정규 값은 NOT_CONNECTED다.
+
+재현:
+
+```sh
+NUS_ADMISSION_EVIDENCE="$PWD/exchange/evidence/admission" cargo test --manifest-path exchange/Cargo.toml --locked -- --nocapture
+cargo clippy --manifest-path exchange/Cargo.toml --locked --all-targets -- -D warnings
+python3 protocol/v1/tools/check.py
+```
+
+17 tests PASS: 새 시험은 모의 ML-DSA 키로 enum 9조합, 시장 7경계, epoch 4조합을 새로 서명하고 함수와 실제 CLI에서 검사한다.
+CLI epoch 누락 1건을 더해 21요청이며 evidence/admission/inputs.json과 rust-results.json에 원시 입력·결과를 저장한다.
+Go/TS 제한 비교는 `tools/compare_admission.py <cross-root>`로 실행한다. cross-root에 아래 고정 SHA의 경로를 git archive로 추출하고,
+chain에서 `go build -mod=readonly -o ../security/go-runner ../security/go.go`, web에서 `npm ci --ignore-scripts`를 실행한다.
+이번 로컬 TS 의존성은 같은 lock의 기존 설치를 읽기 전용 재사용했으며 fresh install 증거는 아니다.
+
+- Go chain: 5d39b7a0ffe911ed60cd0e3a56ada135e76a425f
+- TS web: 8a70632d933b58c15b5bbac9fbef25dfa7312643
+- protocol: 549ce150d6a9f21ec30f159d39a4d91c31dbd759
+- security/go.go 및 security/runner.ts: 068477c (전체 SHA는 admission/manifest.json)
+
+같은 wire/signature/context/snapshot을 Go/Rust/TS에 전달한 60비교 중 54일치, 6차이:
+Rust 20/20, Go 20/20, 기존 TS 14/20. TS의 side/order_type에 3이 포함된 5조합과 fee_asset_policy_id=OTHER에서 정책 PASS가 남는다.
+Wallet 원본은 수정하지 않았다. 이전 SHA를 고정한 구현자 회귀 비교이며 Wallet 최신 수정 검증 또는 Security 독립 전체 재시험이 아니다.
+모순 snapshot의 세부 code/id는 표준화되지 않아 REJECTED/NOT_CONNECTED 불변식으로 비교한다.
+기존 Security 759/754/5 FAIL·암호 상호운용 PASS와 이전 420/7 기록을 보존한다. 전체 독립 수정 후 재시험 NOT_RUN.
+ACK·원장·REST/WS/체인 NOT_CONNECTED, WAL/replay·직접 회수 NOT_RUN. main merge·출시·후속 기능 승인 없음.

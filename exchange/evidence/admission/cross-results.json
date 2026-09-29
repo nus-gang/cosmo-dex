@@ -1,0 +1,1262 @@
+[
+  {
+    "id": "enum-1-1",
+    "language": "Rust",
+    "expected": "OK",
+    "passed": true,
+    "actual": {
+      "ack": "NOT_CONNECTED",
+      "authentication": {
+        "code": "OK",
+        "status": "PASS"
+      },
+      "ledger": "NOT_CONNECTED",
+      "snapshot_policy": {
+        "code": "OK",
+        "snapshot_id": "same-snapshot",
+        "source": "SYNTHETIC",
+        "status": "PASS"
+      },
+      "wal_replay": "NOT_RUN"
+    }
+  },
+  {
+    "id": "enum-1-1",
+    "language": "Go",
+    "expected": "OK",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "PASS",
+        "code": "OK",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "enum-1-1",
+    "language": "TS",
+    "expected": "OK",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "PASS",
+        "code": "OK",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "enum-1-2",
+    "language": "Rust",
+    "expected": "OK",
+    "passed": true,
+    "actual": {
+      "ack": "NOT_CONNECTED",
+      "authentication": {
+        "code": "OK",
+        "status": "PASS"
+      },
+      "ledger": "NOT_CONNECTED",
+      "snapshot_policy": {
+        "code": "OK",
+        "snapshot_id": "same-snapshot",
+        "source": "SYNTHETIC",
+        "status": "PASS"
+      },
+      "wal_replay": "NOT_RUN"
+    }
+  },
+  {
+    "id": "enum-1-2",
+    "language": "Go",
+    "expected": "OK",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "PASS",
+        "code": "OK",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "enum-1-2",
+    "language": "TS",
+    "expected": "OK",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "PASS",
+        "code": "OK",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "enum-1-3",
+    "language": "Rust",
+    "expected": "MARKET_LIMIT",
+    "passed": true,
+    "actual": {
+      "ack": "NOT_CONNECTED",
+      "authentication": {
+        "code": "OK",
+        "status": "PASS"
+      },
+      "ledger": "NOT_CONNECTED",
+      "snapshot_policy": {
+        "code": "MARKET_LIMIT",
+        "snapshot_id": "same-snapshot",
+        "source": "SYNTHETIC",
+        "status": "REJECTED"
+      },
+      "wal_replay": "NOT_RUN"
+    }
+  },
+  {
+    "id": "enum-1-3",
+    "language": "Go",
+    "expected": "MARKET_LIMIT",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "REJECTED",
+        "code": "MARKET_LIMIT",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "enum-1-3",
+    "language": "TS",
+    "expected": "MARKET_LIMIT",
+    "passed": false,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "PASS",
+        "code": "OK",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "enum-2-1",
+    "language": "Rust",
+    "expected": "OK",
+    "passed": true,
+    "actual": {
+      "ack": "NOT_CONNECTED",
+      "authentication": {
+        "code": "OK",
+        "status": "PASS"
+      },
+      "ledger": "NOT_CONNECTED",
+      "snapshot_policy": {
+        "code": "OK",
+        "snapshot_id": "same-snapshot",
+        "source": "SYNTHETIC",
+        "status": "PASS"
+      },
+      "wal_replay": "NOT_RUN"
+    }
+  },
+  {
+    "id": "enum-2-1",
+    "language": "Go",
+    "expected": "OK",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "PASS",
+        "code": "OK",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "enum-2-1",
+    "language": "TS",
+    "expected": "OK",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "PASS",
+        "code": "OK",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "enum-2-2",
+    "language": "Rust",
+    "expected": "OK",
+    "passed": true,
+    "actual": {
+      "ack": "NOT_CONNECTED",
+      "authentication": {
+        "code": "OK",
+        "status": "PASS"
+      },
+      "ledger": "NOT_CONNECTED",
+      "snapshot_policy": {
+        "code": "OK",
+        "snapshot_id": "same-snapshot",
+        "source": "SYNTHETIC",
+        "status": "PASS"
+      },
+      "wal_replay": "NOT_RUN"
+    }
+  },
+  {
+    "id": "enum-2-2",
+    "language": "Go",
+    "expected": "OK",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "PASS",
+        "code": "OK",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "enum-2-2",
+    "language": "TS",
+    "expected": "OK",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "PASS",
+        "code": "OK",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "enum-2-3",
+    "language": "Rust",
+    "expected": "MARKET_LIMIT",
+    "passed": true,
+    "actual": {
+      "ack": "NOT_CONNECTED",
+      "authentication": {
+        "code": "OK",
+        "status": "PASS"
+      },
+      "ledger": "NOT_CONNECTED",
+      "snapshot_policy": {
+        "code": "MARKET_LIMIT",
+        "snapshot_id": "same-snapshot",
+        "source": "SYNTHETIC",
+        "status": "REJECTED"
+      },
+      "wal_replay": "NOT_RUN"
+    }
+  },
+  {
+    "id": "enum-2-3",
+    "language": "Go",
+    "expected": "MARKET_LIMIT",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "REJECTED",
+        "code": "MARKET_LIMIT",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "enum-2-3",
+    "language": "TS",
+    "expected": "MARKET_LIMIT",
+    "passed": false,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "PASS",
+        "code": "OK",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "enum-3-1",
+    "language": "Rust",
+    "expected": "MARKET_LIMIT",
+    "passed": true,
+    "actual": {
+      "ack": "NOT_CONNECTED",
+      "authentication": {
+        "code": "OK",
+        "status": "PASS"
+      },
+      "ledger": "NOT_CONNECTED",
+      "snapshot_policy": {
+        "code": "MARKET_LIMIT",
+        "snapshot_id": "same-snapshot",
+        "source": "SYNTHETIC",
+        "status": "REJECTED"
+      },
+      "wal_replay": "NOT_RUN"
+    }
+  },
+  {
+    "id": "enum-3-1",
+    "language": "Go",
+    "expected": "MARKET_LIMIT",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "REJECTED",
+        "code": "MARKET_LIMIT",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "enum-3-1",
+    "language": "TS",
+    "expected": "MARKET_LIMIT",
+    "passed": false,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "PASS",
+        "code": "OK",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "enum-3-2",
+    "language": "Rust",
+    "expected": "MARKET_LIMIT",
+    "passed": true,
+    "actual": {
+      "ack": "NOT_CONNECTED",
+      "authentication": {
+        "code": "OK",
+        "status": "PASS"
+      },
+      "ledger": "NOT_CONNECTED",
+      "snapshot_policy": {
+        "code": "MARKET_LIMIT",
+        "snapshot_id": "same-snapshot",
+        "source": "SYNTHETIC",
+        "status": "REJECTED"
+      },
+      "wal_replay": "NOT_RUN"
+    }
+  },
+  {
+    "id": "enum-3-2",
+    "language": "Go",
+    "expected": "MARKET_LIMIT",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "REJECTED",
+        "code": "MARKET_LIMIT",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "enum-3-2",
+    "language": "TS",
+    "expected": "MARKET_LIMIT",
+    "passed": false,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "PASS",
+        "code": "OK",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "enum-3-3",
+    "language": "Rust",
+    "expected": "MARKET_LIMIT",
+    "passed": true,
+    "actual": {
+      "ack": "NOT_CONNECTED",
+      "authentication": {
+        "code": "OK",
+        "status": "PASS"
+      },
+      "ledger": "NOT_CONNECTED",
+      "snapshot_policy": {
+        "code": "MARKET_LIMIT",
+        "snapshot_id": "same-snapshot",
+        "source": "SYNTHETIC",
+        "status": "REJECTED"
+      },
+      "wal_replay": "NOT_RUN"
+    }
+  },
+  {
+    "id": "enum-3-3",
+    "language": "Go",
+    "expected": "MARKET_LIMIT",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "REJECTED",
+        "code": "MARKET_LIMIT",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "enum-3-3",
+    "language": "TS",
+    "expected": "MARKET_LIMIT",
+    "passed": false,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "PASS",
+        "code": "OK",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "market-max_qty_lots-0",
+    "language": "Rust",
+    "expected": "MARKET_LIMIT",
+    "passed": true,
+    "actual": {
+      "ack": "NOT_CONNECTED",
+      "authentication": {
+        "code": "OK",
+        "status": "PASS"
+      },
+      "ledger": "NOT_CONNECTED",
+      "snapshot_policy": {
+        "code": "MARKET_LIMIT",
+        "snapshot_id": "same-snapshot",
+        "source": "SYNTHETIC",
+        "status": "REJECTED"
+      },
+      "wal_replay": "NOT_RUN"
+    }
+  },
+  {
+    "id": "market-max_qty_lots-0",
+    "language": "Go",
+    "expected": "MARKET_LIMIT",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "REJECTED",
+        "code": "MARKET_LIMIT",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "market-max_qty_lots-0",
+    "language": "TS",
+    "expected": "MARKET_LIMIT",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "REJECTED",
+        "code": "MARKET_LIMIT",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "market-max_qty_lots-1000000",
+    "language": "Rust",
+    "expected": "OK",
+    "passed": true,
+    "actual": {
+      "ack": "NOT_CONNECTED",
+      "authentication": {
+        "code": "OK",
+        "status": "PASS"
+      },
+      "ledger": "NOT_CONNECTED",
+      "snapshot_policy": {
+        "code": "OK",
+        "snapshot_id": "same-snapshot",
+        "source": "SYNTHETIC",
+        "status": "PASS"
+      },
+      "wal_replay": "NOT_RUN"
+    }
+  },
+  {
+    "id": "market-max_qty_lots-1000000",
+    "language": "Go",
+    "expected": "OK",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "PASS",
+        "code": "OK",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "market-max_qty_lots-1000000",
+    "language": "TS",
+    "expected": "OK",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "PASS",
+        "code": "OK",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "market-max_qty_lots-1000001",
+    "language": "Rust",
+    "expected": "MARKET_LIMIT",
+    "passed": true,
+    "actual": {
+      "ack": "NOT_CONNECTED",
+      "authentication": {
+        "code": "OK",
+        "status": "PASS"
+      },
+      "ledger": "NOT_CONNECTED",
+      "snapshot_policy": {
+        "code": "MARKET_LIMIT",
+        "snapshot_id": "same-snapshot",
+        "source": "SYNTHETIC",
+        "status": "REJECTED"
+      },
+      "wal_replay": "NOT_RUN"
+    }
+  },
+  {
+    "id": "market-max_qty_lots-1000001",
+    "language": "Go",
+    "expected": "MARKET_LIMIT",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "REJECTED",
+        "code": "MARKET_LIMIT",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "market-max_qty_lots-1000001",
+    "language": "TS",
+    "expected": "MARKET_LIMIT",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "REJECTED",
+        "code": "MARKET_LIMIT",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "market-limit_price_ticks-0",
+    "language": "Rust",
+    "expected": "MARKET_LIMIT",
+    "passed": true,
+    "actual": {
+      "ack": "NOT_CONNECTED",
+      "authentication": {
+        "code": "OK",
+        "status": "PASS"
+      },
+      "ledger": "NOT_CONNECTED",
+      "snapshot_policy": {
+        "code": "MARKET_LIMIT",
+        "snapshot_id": "same-snapshot",
+        "source": "SYNTHETIC",
+        "status": "REJECTED"
+      },
+      "wal_replay": "NOT_RUN"
+    }
+  },
+  {
+    "id": "market-limit_price_ticks-0",
+    "language": "Go",
+    "expected": "MARKET_LIMIT",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "REJECTED",
+        "code": "MARKET_LIMIT",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "market-limit_price_ticks-0",
+    "language": "TS",
+    "expected": "MARKET_LIMIT",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "REJECTED",
+        "code": "MARKET_LIMIT",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "market-limit_price_ticks-1000000",
+    "language": "Rust",
+    "expected": "OK",
+    "passed": true,
+    "actual": {
+      "ack": "NOT_CONNECTED",
+      "authentication": {
+        "code": "OK",
+        "status": "PASS"
+      },
+      "ledger": "NOT_CONNECTED",
+      "snapshot_policy": {
+        "code": "OK",
+        "snapshot_id": "same-snapshot",
+        "source": "SYNTHETIC",
+        "status": "PASS"
+      },
+      "wal_replay": "NOT_RUN"
+    }
+  },
+  {
+    "id": "market-limit_price_ticks-1000000",
+    "language": "Go",
+    "expected": "OK",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "PASS",
+        "code": "OK",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "market-limit_price_ticks-1000000",
+    "language": "TS",
+    "expected": "OK",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "PASS",
+        "code": "OK",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "market-limit_price_ticks-1000001",
+    "language": "Rust",
+    "expected": "MARKET_LIMIT",
+    "passed": true,
+    "actual": {
+      "ack": "NOT_CONNECTED",
+      "authentication": {
+        "code": "OK",
+        "status": "PASS"
+      },
+      "ledger": "NOT_CONNECTED",
+      "snapshot_policy": {
+        "code": "MARKET_LIMIT",
+        "snapshot_id": "same-snapshot",
+        "source": "SYNTHETIC",
+        "status": "REJECTED"
+      },
+      "wal_replay": "NOT_RUN"
+    }
+  },
+  {
+    "id": "market-limit_price_ticks-1000001",
+    "language": "Go",
+    "expected": "MARKET_LIMIT",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "REJECTED",
+        "code": "MARKET_LIMIT",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "market-limit_price_ticks-1000001",
+    "language": "TS",
+    "expected": "MARKET_LIMIT",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "REJECTED",
+        "code": "MARKET_LIMIT",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "market-fee_asset_policy_id-OTHER",
+    "language": "Rust",
+    "expected": "MARKET_LIMIT",
+    "passed": true,
+    "actual": {
+      "ack": "NOT_CONNECTED",
+      "authentication": {
+        "code": "OK",
+        "status": "PASS"
+      },
+      "ledger": "NOT_CONNECTED",
+      "snapshot_policy": {
+        "code": "MARKET_LIMIT",
+        "snapshot_id": "same-snapshot",
+        "source": "SYNTHETIC",
+        "status": "REJECTED"
+      },
+      "wal_replay": "NOT_RUN"
+    }
+  },
+  {
+    "id": "market-fee_asset_policy_id-OTHER",
+    "language": "Go",
+    "expected": "MARKET_LIMIT",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "REJECTED",
+        "code": "MARKET_LIMIT",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "market-fee_asset_policy_id-OTHER",
+    "language": "TS",
+    "expected": "MARKET_LIMIT",
+    "passed": false,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "PASS",
+        "code": "OK",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "epoch-7-true",
+    "language": "Rust",
+    "expected": "OK",
+    "passed": true,
+    "actual": {
+      "ack": "NOT_CONNECTED",
+      "authentication": {
+        "code": "OK",
+        "status": "PASS"
+      },
+      "ledger": "NOT_CONNECTED",
+      "snapshot_policy": {
+        "code": "OK",
+        "snapshot_id": "same-snapshot",
+        "source": "SYNTHETIC",
+        "status": "PASS"
+      },
+      "wal_replay": "NOT_RUN"
+    }
+  },
+  {
+    "id": "epoch-7-true",
+    "language": "Go",
+    "expected": "OK",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "PASS",
+        "code": "OK",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "epoch-7-true",
+    "language": "TS",
+    "expected": "OK",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "PASS",
+        "code": "OK",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "epoch-999-false",
+    "language": "Rust",
+    "expected": "EPOCH_MISMATCH",
+    "passed": true,
+    "actual": {
+      "ack": "NOT_CONNECTED",
+      "authentication": {
+        "code": "OK",
+        "status": "PASS"
+      },
+      "ledger": "NOT_CONNECTED",
+      "snapshot_policy": {
+        "code": "EPOCH_MISMATCH",
+        "snapshot_id": "same-snapshot",
+        "source": "SYNTHETIC",
+        "status": "REJECTED"
+      },
+      "wal_replay": "NOT_RUN"
+    }
+  },
+  {
+    "id": "epoch-999-false",
+    "language": "Go",
+    "expected": "EPOCH_MISMATCH",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "REJECTED",
+        "code": "EPOCH_MISMATCH",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "epoch-999-false",
+    "language": "TS",
+    "expected": "EPOCH_MISMATCH",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "REJECTED",
+        "code": "EPOCH_MISMATCH",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "epoch-7-false",
+    "language": "Rust",
+    "expected": "NOT_CONNECTED",
+    "passed": true,
+    "actual": {
+      "ack": "NOT_CONNECTED",
+      "authentication": {
+        "code": "OK",
+        "status": "PASS"
+      },
+      "ledger": "NOT_CONNECTED",
+      "snapshot_policy": {
+        "code": null,
+        "snapshot_id": null,
+        "source": "SYNTHETIC",
+        "status": "NOT_CONNECTED"
+      },
+      "wal_replay": "NOT_RUN"
+    }
+  },
+  {
+    "id": "epoch-7-false",
+    "language": "Go",
+    "expected": "NOT_CONNECTED",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "REJECTED",
+        "code": "CONTEXT_MISMATCH",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "epoch-7-false",
+    "language": "TS",
+    "expected": "NOT_CONNECTED",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "NOT_CONNECTED",
+        "code": null,
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "epoch-999-true",
+    "language": "Rust",
+    "expected": "NOT_CONNECTED",
+    "passed": true,
+    "actual": {
+      "ack": "NOT_CONNECTED",
+      "authentication": {
+        "code": "OK",
+        "status": "PASS"
+      },
+      "ledger": "NOT_CONNECTED",
+      "snapshot_policy": {
+        "code": null,
+        "snapshot_id": null,
+        "source": "SYNTHETIC",
+        "status": "NOT_CONNECTED"
+      },
+      "wal_replay": "NOT_RUN"
+    }
+  },
+  {
+    "id": "epoch-999-true",
+    "language": "Go",
+    "expected": "NOT_CONNECTED",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "REJECTED",
+        "code": "CONTEXT_MISMATCH",
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  },
+  {
+    "id": "epoch-999-true",
+    "language": "TS",
+    "expected": "NOT_CONNECTED",
+    "passed": true,
+    "actual": {
+      "authentication": {
+        "status": "PASS",
+        "code": "OK"
+      },
+      "snapshot_policy": {
+        "status": "NOT_CONNECTED",
+        "code": null,
+        "source": "SYNTHETIC",
+        "snapshot_id": "same-snapshot"
+      },
+      "ack": "NOT_CONNECTED",
+      "wal_replay": "NOT_RUN",
+      "ledger": "NOT_CONNECTED"
+    }
+  }
+]
