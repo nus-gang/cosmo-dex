@@ -1,0 +1,257 @@
+{
+  "profile": "s0-dev-v1",
+  "scope": "contract examples; implementation validation pending",
+  "cases": [
+    {
+      "id": "expiry-999",
+      "kind": "expiry",
+      "input": {
+        "height": "999",
+        "expiry_height": "1000"
+      },
+      "expected": "OK"
+    },
+    {
+      "id": "expiry-1000",
+      "kind": "expiry",
+      "input": {
+        "height": "1000",
+        "expiry_height": "1000"
+      },
+      "expected": "EXPIRED"
+    },
+    {
+      "id": "expiry-1001",
+      "kind": "expiry",
+      "input": {
+        "height": "1001",
+        "expiry_height": "1000"
+      },
+      "expected": "EXPIRED"
+    },
+    {
+      "id": "fill-3",
+      "kind": "fill",
+      "input": {
+        "q": "2",
+        "p": "100",
+        "bps": "0"
+      },
+      "expected": {
+        "base": "2000",
+        "quote": "200",
+        "fee_base": "0",
+        "fee_quote": "0"
+      }
+    },
+    {
+      "id": "fill-4",
+      "kind": "fill",
+      "input": {
+        "q": "2",
+        "p": "100",
+        "bps": "25"
+      },
+      "expected": {
+        "base": "2000",
+        "quote": "200",
+        "fee_base": "5",
+        "fee_quote": "1"
+      }
+    },
+    {
+      "id": "fill-5",
+      "kind": "fill",
+      "input": {
+        "q": "1",
+        "p": "1",
+        "bps": "25"
+      },
+      "expected": "FEE_GE_RECEIVE"
+    },
+    {
+      "id": "fill-6",
+      "kind": "fill",
+      "input": {
+        "q": "1000001",
+        "p": "1",
+        "bps": "0"
+      },
+      "expected": "MARKET_LIMIT"
+    },
+    {
+      "id": "fill-7",
+      "kind": "fill",
+      "input": {
+        "q": "1",
+        "p": "1000001",
+        "bps": "0"
+      },
+      "expected": "MARKET_LIMIT"
+    },
+    {
+      "id": "fill-8",
+      "kind": "fill",
+      "input": {
+        "q": "0",
+        "p": "1",
+        "bps": "0"
+      },
+      "expected": "MARKET_LIMIT"
+    },
+    {
+      "id": "atoms-9",
+      "kind": "atoms",
+      "input": {
+        "value": "9007199254740993"
+      },
+      "expected": "OK"
+    },
+    {
+      "id": "atoms-10",
+      "kind": "atoms",
+      "input": {
+        "value": "340282366920938463463374607431768211455"
+      },
+      "expected": "OK"
+    },
+    {
+      "id": "atoms-11",
+      "kind": "atoms",
+      "input": {
+        "value": "340282366920938463463374607431768211456"
+      },
+      "expected": "INTEGER_RANGE"
+    },
+    {
+      "id": "atoms-12",
+      "kind": "atoms",
+      "input": {
+        "value": "01"
+      },
+      "expected": "INTEGER_RANGE"
+    },
+    {
+      "id": "atoms-13",
+      "kind": "atoms",
+      "input": {
+        "value": "-1"
+      },
+      "expected": "INTEGER_RANGE"
+    },
+    {
+      "id": "atoms-14",
+      "kind": "atoms",
+      "input": {
+        "value": "1e3"
+      },
+      "expected": "INTEGER_RANGE"
+    },
+    {
+      "id": "past-identical",
+      "kind": "receipt",
+      "input": {
+        "last_seq": "9",
+        "seq": "2",
+        "stored_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "submitted_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "expected": "ALREADY_COMMITTED"
+    },
+    {
+      "id": "past-conflict",
+      "kind": "receipt",
+      "input": {
+        "last_seq": "9",
+        "seq": "2",
+        "stored_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "submitted_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "expected": "BATCH_CONFLICT"
+    },
+    {
+      "id": "missing-past",
+      "kind": "receipt",
+      "input": {
+        "last_seq": "9",
+        "seq": "2",
+        "stored_hash": null,
+        "submitted_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "expected": "RECEIPT_INCONSISTENCY"
+    },
+    {
+      "id": "next",
+      "kind": "receipt",
+      "input": {
+        "last_seq": "9",
+        "seq": "10",
+        "stored_hash": null,
+        "submitted_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "expected": "CHECK_NEW_BATCH"
+    },
+    {
+      "id": "gap",
+      "kind": "receipt",
+      "input": {
+        "last_seq": "9",
+        "seq": "11",
+        "stored_hash": null,
+        "submitted_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "expected": "BATCH_SEQUENCE_GAP"
+    },
+    {
+      "id": "timeout",
+      "kind": "submission",
+      "input": {
+        "rpc_result": "timeout",
+        "receipt_result": "NOT_FOUND_AT_HEIGHT"
+      },
+      "expected": {
+        "state": "SUBMISSION_UNKNOWN",
+        "release_D_P": false,
+        "new_id_allowed": false
+      }
+    },
+    {
+      "id": "transfer-positive",
+      "kind": "transfer",
+      "input": {
+        "amount": "1001",
+        "bps": "10",
+        "max_fee": "2"
+      },
+      "expected": {
+        "fee": "2",
+        "sender_debit": "1003",
+        "recipient_credit": "1001"
+      }
+    },
+    {
+      "id": "transfer-cap",
+      "kind": "transfer",
+      "input": {
+        "amount": "1001",
+        "bps": "10",
+        "max_fee": "1"
+      },
+      "expected": "FEE_CAP"
+    },
+    {
+      "id": "transfer-zero",
+      "kind": "transfer",
+      "input": {
+        "amount": "1",
+        "bps": "0",
+        "max_fee": "0"
+      },
+      "expected": {
+        "fee": "0",
+        "sender_debit": "1",
+        "recipient_credit": "1"
+      }
+    }
+  ]
+}

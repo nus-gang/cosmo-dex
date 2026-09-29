@@ -1,0 +1,84 @@
+{
+  "profile": "s0-dev-v1",
+  "test_only": true,
+  "protocol_version": "1",
+  "chain_id": "nus-dev-1",
+  "genesis_binding": "runtime manifest must provide SHA256 of exact genesis bytes; no placeholder accepted",
+  "market_id": "DEVBASE/DEVQUOTE",
+  "market_config_version": "1",
+  "assets": {
+    "DEVBASE": {
+      "decimals": "6"
+    },
+    "DEVQUOTE": {
+      "decimals": "6",
+      "test_stable": true
+    }
+  },
+  "base_atoms_per_lot": "1000",
+  "quote_atoms_per_lot_tick": "1",
+  "min_price_ticks": "1",
+  "max_price_ticks": "1000000",
+  "min_qty_lots": "1",
+  "max_qty_lots": "1000000",
+  "max_open_orders_per_owner": "100",
+  "max_order_quote_atoms": "1000000000000",
+  "trade_fee_profiles": [
+    {
+      "version": "1",
+      "bps": "0"
+    },
+    {
+      "version": "2",
+      "bps": "25"
+    }
+  ],
+  "transfer": {
+    "denom": "DEVQUOTE",
+    "min_atoms": "1",
+    "max_atoms": "1000000000000",
+    "profiles": [
+      {
+        "version": "1",
+        "bps": "0"
+      },
+      {
+        "version": "2",
+        "bps": "10"
+      }
+    ],
+    "minimum_fee_atoms": "0",
+    "max_service_fee_atoms": "1000000000"
+  },
+  "sponsor": {
+    "denom": "DEVGAS",
+    "per_tx_max_atoms": "10000",
+    "per_owner_per_1000_blocks_atoms": "100000",
+    "global_per_1000_blocks_atoms": "1000000",
+    "window": "floor(height/1000)",
+    "allowed_messages": [
+      "TransferStableV1"
+    ],
+    "on_exhaustion": "SPONSOR_BUDGET_EXCEEDED; no automatic user debit"
+  },
+  "limits": {
+    "max_order_bytes": "8192",
+    "max_cancel_bytes": "1024",
+    "max_wallet_bytes": "1024",
+    "max_batch_bytes": "1048576",
+    "max_new_orders": "100",
+    "max_fills": "1000",
+    "max_nesting": "4"
+  },
+  "wallet": {
+    "bech32_hrp": "nus",
+    "origin_allowlist": [
+      "https://wallet.invalid"
+    ],
+    "audiences": [
+      "exchange-api",
+      "private-ws"
+    ],
+    "ttl_seconds": "120"
+  }
+}

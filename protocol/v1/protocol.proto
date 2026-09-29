@@ -1,0 +1,118 @@
+syntax = "proto3";
+package nus.protocol.v1;
+
+// All singular fields require presence, including numeric zero.
+// Strict wire validation is mandatory before generated protobuf decoding.
+
+message OrderV1 {
+  optional uint32 protocol_version = 1;
+  optional string chain_id = 2;
+  optional bytes genesis_hash = 3;
+  optional string exchange_module_id = 4;
+  optional string market_id = 5;
+  optional uint64 market_config_version = 6;
+  optional bytes owner = 7;
+  optional bytes owner_pubkey = 8;
+  optional bytes order_id = 9;
+  optional uint64 owner_epoch = 10;
+  optional uint32 side = 11;
+  optional uint64 limit_price_ticks = 12;
+  optional uint64 max_qty_lots = 13;
+  optional uint32 max_fee_bps = 14;
+  optional string fee_asset_policy_id = 15;
+  optional uint64 expiry_height = 16;
+  optional uint32 order_type = 17;
+}
+
+message CancelV1 {
+  optional uint32 protocol_version = 1;
+  optional string chain_id = 2;
+  optional bytes genesis_hash = 3;
+  optional string market_id = 4;
+  optional bytes owner = 5;
+  optional uint64 owner_epoch = 6;
+  optional bytes order_id = 7;
+  optional bytes order_hash = 8;
+  optional bytes cancel_nonce = 9;
+  optional uint64 expiry_height = 10;
+  optional string exchange_module_id = 11;
+}
+
+message WalletChallengeV1 {
+  optional uint32 protocol_version = 1;
+  optional string chain_id = 2;
+  optional string server_origin = 3;
+  optional string audience = 4;
+  optional bytes owner = 5;
+  optional bytes challenge_nonce = 6;
+  optional uint64 expiry_time = 7;
+  optional bytes genesis_hash = 8;
+  optional uint64 issued_at = 9;
+}
+
+message SignedOrderV1 {
+  optional OrderV1 order = 1;
+  optional bytes signature = 2;
+}
+
+message FillV1 {
+  optional bytes fill_id = 1;
+  optional bytes maker_order_ref = 2;
+  optional bytes taker_order_ref = 3;
+  optional bytes buyer_order_ref = 4;
+  optional bytes seller_order_ref = 5;
+  optional uint64 execution_price_ticks = 6;
+  optional uint64 quantity_lots = 7;
+  optional uint64 fee_policy_version = 8;
+  optional uint64 command_seq = 9;
+  optional uint32 match_index = 10;
+}
+
+message BatchV1 {
+  optional uint32 protocol_version = 1;
+  optional string chain_id = 2;
+  optional string market_id = 3;
+  optional uint64 operator_epoch = 4;
+  optional uint64 batch_seq = 5;
+  optional bytes previous_batch_hash = 6;
+  optional bytes batch_id = 7;
+  repeated SignedOrderV1 new_signed_orders = 8;
+  repeated FillV1 fills = 9;
+  optional bytes genesis_hash = 10;
+  optional string exchange_module_id = 11;
+  optional uint64 market_config_version = 12;
+}
+
+message FillIdentityV1 {
+  optional string chain_id = 1;
+  optional string market_id = 2;
+  optional uint64 operator_epoch = 3;
+  optional uint64 command_seq = 4;
+  optional uint32 match_index = 5;
+}
+
+message TransferStableV1 {
+  optional uint32 protocol_version = 1;
+  optional string chain_id = 2;
+  optional bytes genesis_hash = 3;
+  optional bytes sender = 4;
+  optional bytes recipient = 5;
+  optional string denom = 6;
+  optional bytes amount_atoms = 7;
+  optional bytes max_service_fee_atoms = 8;
+  optional uint64 policy_version = 9;
+  optional bytes payment_id = 10;
+  optional uint64 expiry_height = 11;
+}
+
+message BatchReceiptV1 {
+  optional uint32 protocol_version = 1;
+  optional string chain_id = 2;
+  optional bytes genesis_hash = 3;
+  optional string market_id = 4;
+  optional uint64 batch_seq = 5;
+  optional bytes batch_id = 6;
+  optional bytes batch_hash = 7;
+  optional uint64 committed_height = 8;
+  optional bytes tx_hash = 9;
+}
