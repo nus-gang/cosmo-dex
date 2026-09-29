@@ -1,4 +1,4 @@
-# S0 계약 v1.0.0-rc1
+# S0 계약 v1.0.0-rc2
 
 CTO 결정, 2026-09-29. 상태: **계약 단계 Security·QA 검토 대기, 독립 최종 검증 전**. 승인 범위는 S0-A~H이며 제품 통합·실자산 정책이 아니다.
 
@@ -10,7 +10,7 @@ CTO 결정, 2026-09-29. 상태: **계약 단계 Security·QA 검토 대기, 독�
 
 모든 singular tag는 정확히 1회, 0도 presence 필수. tag 비감소, minimal unsigned varint, unknown/duplicate/wrong wire/missing tag 거절. repeated message는 tag별 연속, 빈 배열은 0개 tag. 배열을 정렬해서 수신 오류를 복구하지 않는다. nested에도 동일 적용. 일반 protobuf decoder 단독 사용 금지: strict wire 검사 후 decode/reencode 동일성 확인. 크기 제한은 dev-config의 bytes/count/depth를 decode 전에 적용한다.
 
-JSON 모든 정수(U32도 포함)는 `0|[1-9][0-9]*` 문자열. unknown/duplicate JSON key, 부호/공백/소수/지수/선행0, 범위 초과 거절. schema h=32-byte lowercase hex, a/pk/sig/atoms=RFC4648 canonical padded base64. 벡터의 `fields`에 쓰는 `hex`는 fixture 표현이며 API base64 규칙을 바꾸지 않는다. atoms wire는 16-byte unsigned big endian. 문자열 s는 baseline ASCII 제한; server_origin만 아래 별도 제한. SignedOrder.order는 object, repeated는 배열. map/float/signed integer 없음.
+API JSON의 모든 정수(U32/U64 및 U128 atoms 포함)는 `0|[1-9][0-9]*` 문자열. unknown/duplicate JSON key, 부호/공백/소수/지수/선행0, 범위 초과 거절. schema h=32-byte lowercase hex, a/pk/sig만 RFC4648 canonical padded base64. atoms API 값은 십진 문자열 하나만 허용하고 base64를 거절한다. protobuf JSON의 bytes 자동 base64 매핑은 이 API 계약이 아니므로 별도 변환 어댑터가 필요하다. 벡터의 `fields`에 쓰는 `hex`는 fixture 표현이며 API base64 규칙을 바꾸지 않는다. atoms wire는 정확히 16-byte unsigned big endian이며 짧은 폭을 padding하거나 긴 폭을 자르지 않는다. API 십진 문자열↔16-byte 변환은 가역적이다. 진단용 wire_base64는 wire bytes의 표시일 뿐 API 입력이 아니다. codec은 0을 허용하지만 신규 송금의 0은 DEV 최소액 정책에서 MARKET_LIMIT로 거절한다. 문자열 s는 baseline ASCII 제한; server_origin만 아래 별도 제한. SignedOrder.order는 object, repeated는 배열. map/float/signed integer 없음.
 
 ## 키·도메인·검증
 
@@ -49,3 +49,7 @@ TransferStableV1.sender는 TX signer, recipient는 raw20, DEVQUOTE만 허용. se
 `vectors/signatures.json`, `batches.json`, `integers.tsv`, `policy-cases.json`은 M0 Security r1 원본 바이트를 보존한 **m0-crypto 프로필**이다. fields에서 얻은 chain/market/genesis를 fixture context로 사용하며 DEV 설정과 혼합하지 않는다. 암호 긍정은 full business acceptance가 아니다. `vectors/s0-cases.json`은 DEV 설정·receipt/재시도 판단 입력과 기대값이다. Go/Rust/TS 모두 같은 파일을 읽고 독립 인코딩/검증한다. Python 도구는 예상 바이트/해시와 설정 산술의 무결성만 검증한다. C/D/F의 실제 암호 교차검증과 G/H의 독립 QA는 NOT_RUN이다.
 
 runtime manifest는 git SHA, contract/vector/config hash, Go/Rust/Node 및 lock hash, 실제 genesis bytes hash, 활성 fee versions, 환경·실행명령·결과를 모두 채워야 한다. candidate manifest의 null은 실패/미연결 경계이며 runtime 사용 허가가 아니다. genesis 미제공인 DEV profile을 체인 권한 검증에 사용하지 않는다.
+
+## SEC-A-01·02 보완 (rc2)
+
+rc1 atoms/base64 문구의 충돌을 API 십진 문자열로 해소했다. M0 십진 금액 규칙을 유지하며 기존 wire/tag/서명 바이트는 변경하지 않았다. `amount-codec.json`은 0/1/2^64/U128_MAX의 왕복과 비정규/범위/폭 거절을 고정한다. `message-codec.json`은 완전한 API JSON·fields·canonical bytes, PAYMENT_ID frame/hash 및 송금 변경·과거 영수증 사례를 제공한다. fixture의 genesis/주소/tx_hash는 합성이며 TX 서명 성공을 뜻하지 않는다. receipt 원본은 보존 batch fixture의 chain/genesis/market/seq/id/hash에 연결했다. lookup context가 다른 영수증은 NOT_FOUND_AT_HEIGHT이며 다른 context의 receipt를 반환하지 않는다. state 사례의 wire/context/auth 선검사는 성공으로 가정하며 제품 영속성·서명·경합 증거가 아니다.
