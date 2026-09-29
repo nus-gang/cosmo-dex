@@ -438,7 +438,7 @@ func TestBaselineHashes(t *testing.T) {
 	if e = json.Unmarshal(b, &m); e != nil {
 		t.Fatal(e)
 	}
-	if m.Contract != "a71a8c03fea5e4d2876612e821eafcb4b359a0b132157929b9924d6f8fecd73e" || m.Vectors != "4851d9d674b2412ca8919d8347a71da13f9adf4426fe60b44e2a4a259f8bd948" {
+	if m.Contract != "afa3471a2210a90cde0004b3219b231468bf0b8471e8068f8e16b096b3549d84" || m.Vectors != "bb1b437d23a365f1083e85353bf62bcef6517cda94288ff7e2d0b4cb5fccd55b" {
 		t.Fatal("baseline pin changed")
 	}
 	for name, want := range m.Files {

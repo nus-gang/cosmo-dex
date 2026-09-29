@@ -1,4 +1,4 @@
-name: S0 rc3 build and oracle gate
+name: S0 rc4 build and oracle gate
 on:
   push:
     branches: [main, 'sre/**']
@@ -49,7 +49,7 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
   vectors:
-    name: rc3 oracle and E regression
+    name: rc4 oracle and E regression
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:

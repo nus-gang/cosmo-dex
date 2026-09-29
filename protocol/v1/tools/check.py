@@ -7,7 +7,7 @@ def aggregate(files):return sha(''.join(f'{v}  {k}\n' for k,v in sorted(files.it
 files={str(p.relative_to(r)):sha(p.read_bytes()) for p in sorted(r.rglob('*')) if p.is_file() and p.name!='manifest.candidate.json' and '__pycache__' not in str(p)}
 contract={k:v for k,v in files.items() if not k.startswith(('vectors/','evidence/'))}
 vectors={k:v for k,v in files.items() if k.startswith('vectors/')}
-manifest={'version':'1.0.0-rc3','wire_version':'1','status':'contract_review_pending; independent_final_validation_NOT_RUN','baseline_revision':'a979abc3-8c56-4f12-9ba6-55fa204d8be4','contract_sha256':aggregate(contract),'vectors_sha256':aggregate(vectors),'config_sha256':files['dev-config.json'],'files_sha256':files,'runtime':{'git_sha':None,'genesis_sha256':None,'toolchains':None,'dependency_locks':None,'active_fee_versions':None,'cross_language_crypto':'NOT_RUN','repository_ci':'NOT_RUN'}}
+manifest={'version':'1.0.0-rc4','wire_version':'1','status':'contract_review_pending; independent_final_validation_NOT_RUN','baseline_revision':'a979abc3-8c56-4f12-9ba6-55fa204d8be4','contract_sha256':aggregate(contract),'vectors_sha256':aggregate(vectors),'config_sha256':files['dev-config.json'],'files_sha256':files,'runtime':{'git_sha':None,'genesis_sha256':None,'toolchains':None,'dependency_locks':None,'active_fee_versions':None,'cross_language_crypto':'NOT_RUN','repository_ci':'NOT_RUN'}}
 if sys.argv[1:]==['--write-manifest']:
  (r/'manifest.candidate.json').write_text(json.dumps(manifest,indent=2)+'\n')
 else:
@@ -15,7 +15,7 @@ else:
  assert json.loads((r/'manifest.candidate.json').read_text())==manifest,'manifest mismatch; review changes before regenerating'
  assert files['m0-baseline.md']=='27c9170f1643cea5bca78b5bfa7b6e62a6e6ba778006ef1944669fc357e77af8'
  runpy.run_path(str(r/'tools/check-message-codec.py'))
- runpy.run_path(str(r/'tools/check-decision-port.py'))
+ runpy.run_path(str(r/'tools/check-snapshot-output.py'))
  cfg=json.loads((r/'dev-config.json').read_text())
  def evaluate(c):
   a=c['input'];kind=c['kind']

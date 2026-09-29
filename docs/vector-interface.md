@@ -1,8 +1,8 @@
-# rc3 공통 CI와 검증 범위
+# rc4 공통 CI와 검증 범위
 
 B 초기 골격 이후 H-01 연결. ops/ci/manifest.json은 CTO가 고정한 A/C/D/E/F commit,
 계약·전체 벡터 집합 hash, 파일별 hash, 실제 명령, 필수 ID·원본 기대값·범위를 담는다.
-E 원본 rc2와 실행 rc3는 e_compatibility에서 구분한다. E의 읽기 입력 3개 hash와
+E 원본 rc2와 실행 rc4는 e_compatibility에서 구분한다. E의 읽기 입력 3개 hash와
 schema/fixture 재생성 불변성도 매 실행 확인한다.
 
 ## 재현
@@ -37,14 +37,33 @@ legacy Rust/TS receipt의 서로 다른 revision 표기를 묵시적으로 동�
 | API 오류 6 | Rust/TS API mapping. Go API mapping은 제공되지 않아 이 집합에 포함하지 않음 |
 | 등록/서명/만료/정수/IOC 등 | 고정 구현의 전체 component assertion 시험과 원시 로그 |
 | integers.tsv 32 | Go/Rust component 시험. I20만 rc3의 fee(0,0)=0 override; 원본 보존 |
-| E receipt/API | 기존 rc2 소스 + rc3 입력에서 16 모의 회귀 및 생성물 불변성 |
+| E receipt/API | 기존 rc2 소스 + rc4 입력에서 16 모의 회귀 및 생성물 불변성 |
 | batch 경제 상태 / message state | protocol reference checks만 사용. 제품 실행 PASS 아님 |
 
-CTO required-cases.json의 243개 id 레코드는 중첩 snapshot id까지 포함한 원본 인덱스다.
-독립 테스트 243개라는 의미가 아니다. amount(17)와 API(6)는 원본에 id가 없어 별도 ID를 부여했다.
+CTO required-cases.json의 303개 id 레코드 (rc3 243개 + rc4 원본 60개)는 중첩 snapshot id까지 포함한 원본 인덱스다.
+독립 테스트 303개라는 의미가 아니다. amount(17)와 API(6)는 원본에 id가 없어 별도 ID를 부여했다.
 coverage는 이 원본 인덱스와 실행 집합을 연결한다. component assertion은 개별 반환값 영수증과 구분한다.
 G/H는 component 내부 assertion의 충분성 및 독립 교차 생성/검증을 별도로 판정한다.
 
 PASS는 위 S0 CI 범위에 한정한다. ACK/ledger는 NOT_CONNECTED, WAL replay는 NOT_RUN,
 실제 체인·4검증인 runtime은 미연결이다. 실제 등록 상태·DB·보존식·출금 경합 시험 또는
 전체 제품 통합 PASS가 아니다. main merge 승인도 별도다.
+
+## rc4 추가 실행과 역사 보존
+
+A/C/D/F 네이티브 승인 full SHA와 path tree를 `ops/ci/cto-input.json`에 SRE가
+통합했다. 파일명은 기존 연동 경로를 유지하며 이번 통합은 CTO 재검토 대상이다.
+입력 lock에는 E의 원본 rc2와 rc4에서 실제 읽는 세 파일의 동일 hash를 구분한다.
+
+`ops/ci/rc4.py`는 A의 `snapshot-output.json` 60개 원본 ID/기대 전체 출력을
+각 언어에 대조한다. 새 Rust component test가 모의 키로 주문을 서명하고,
+변조 서명과 등록 타입 미연결을 구성한다. 그 실행이 만든 요청을 Go `DecideOrder`,
+TS `decideOrder`에 전달한다. Rust의 제출 evidence 파일은 읽지 않는다.
+예상값은 A oracle에서만 읽고, 중복/누락/추가/같은 오답을 기존 fail-closed gate로 거절한다.
+Go 어댑터는 누락/null height·epoch를 숫자 0으로 만들지 않는다.
+
+결과는 `.evidence/rc4/rc4.json` 및 `vectors.json`에 60×3으로 별도 집계한다.
+기존 Go 165/Rust 171/TS 171의 oracle 집합을 대체하지 않는다. 실제 서명 인증과
+합성 snapshot 정책의 결과이며 ACK/원장 연결 증거가 아니다.
+과거 G의 783/782/1 FAIL과 이후 재시험 기록은 보존하며 B의 수치에 합산하지 않는다.
+G의 전체 783 ID/언어 보존·추가 사례 판정 및 H의 독립 재현은 각 담당 업무에서 수행한다.

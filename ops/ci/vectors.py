@@ -46,6 +46,8 @@ def main():
    # Receipt metadata comes from verified immutable input, rows only from actual library calls.
    validate_receipt(receipt,{x['id']:x['expected'] for x in selected},c['contract_revision'],c['vectors_sha256'])
    report['lanes'][lang]={'status':'PASS','receipt':receipt,'scope_counts':{s:sum(x['scope']==s for x in selected) for s in {x['scope'] for x in selected}}}
+  run('rc4-full-output',['python3','ops/ci/rc4.py',str(a.output.parent.resolve()/'rc4')],root)
+  report['rc4']=json.loads((a.output.parent/'rc4/rc4.json').read_text())
   run('settlement-regression',['python3','settlement/v1/test_contract.py'],root)
   before={f:hashlib.sha256((root/f).read_bytes()).hexdigest() for f in ['settlement/v1/api.schema.json','settlement/v1/fixtures.json']}
   run('settlement-generate',['python3','settlement/v1/generate.py'],root)

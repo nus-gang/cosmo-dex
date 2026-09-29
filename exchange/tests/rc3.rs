@@ -362,7 +362,10 @@ fn signed_enum_market_and_epoch_at_admission_boundary() {
     assert_eq!(rows.len(), requests.len());
     for (r, out) in requests.iter().zip(&rows) {
         if r["id"] == "missing-epoch" {
-            assert_eq!(out["error"], "NOT_CONNECTED");
+            // rc4 preserves authentication and observed ID when context is incomplete.
+            assert_eq!(out["authentication"]["status"], "PASS");
+            assert_eq!(out["snapshot_policy"]["status"], "NOT_CONNECTED");
+            assert_eq!(out["snapshot_policy"]["snapshot_id"], "same-snapshot");
             continue;
         }
         assert_eq!(out["authentication"]["status"], "PASS");

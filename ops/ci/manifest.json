@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "contract_revision": "549ce150d6a9f21ec30f159d39a4d91c31dbd759",
-  "contract_version": "1.0.0-rc3",
-  "contract_sha256": "a71a8c03fea5e4d2876612e821eafcb4b359a0b132157929b9924d6f8fecd73e",
-  "protocol_vectors_sha256": "4851d9d674b2412ca8919d8347a71da13f9adf4426fe60b44e2a4a259f8bd948",
+  "contract_revision": "57c187f5474e02c3f624667d3b8380268e13dd1a",
+  "contract_version": "1.0.0-rc4",
+  "contract_sha256": "afa3471a2210a90cde0004b3219b231468bf0b8471e8068f8e16b096b3549d84",
+  "protocol_vectors_sha256": "bb1b437d23a365f1083e85353bf62bcef6517cda94288ff7e2d0b4cb5fccd55b",
   "vectors": "protocol/v1/vectors/signatures.json",
   "vectors_sha256": "4f55d2806f98ece56c4a7a7f148373ecaa82e6360c121310c124ed29db4f8217",
   "toolchains": {
@@ -14,73 +14,73 @@
   },
   "common_input_manifest": {
     "path": "ops/ci/cto-input.json",
-    "sha256": "e24c64d6ccb41f9fc22d6669ea57acd7036d2f1758a4127cba92ce49524823b5"
+    "sha256": "05abeba166e00de2de12be35bd36c186a706cc9aada93ff666840927f2da7e9d"
   },
   "source_inputs": {
     "A": {
-      "commit": "549ce150d6a9f21ec30f159d39a4d91c31dbd759",
-      "contract_sha256": "a71a8c03fea5e4d2876612e821eafcb4b359a0b132157929b9924d6f8fecd73e",
-      "vectors_sha256": "4851d9d674b2412ca8919d8347a71da13f9adf4426fe60b44e2a4a259f8bd948",
-      "manifest_file_sha256": "4972f8125b959370263ab333fa8cec4896d896e1af41900461ba01e17711c4ea",
-      "verified_file_count": 40,
-      "protocol_matches_A": true,
-      "tree": "d2aab07d6136ef5fd26888a73979f3a163df9f09",
-      "path": "protocol/v1"
+      "commit": "57c187f5474e02c3f624667d3b8380268e13dd1a",
+      "path": "protocol/v1",
+      "tree": "2b6f78cc29a2706b64cfa4fd6f154abce6deb8c5",
+      "contract_sha256": "afa3471a2210a90cde0004b3219b231468bf0b8471e8068f8e16b096b3549d84",
+      "vectors_sha256": "bb1b437d23a365f1083e85353bf62bcef6517cda94288ff7e2d0b4cb5fccd55b",
+      "manifest_file_sha256": "048b7078bdc2af6f64ea08e402b765876e0d1d4032a29e0394884908a2a9ca11",
+      "verified_file_count": 43,
+      "protocol_matches_A": true
     },
     "C": {
-      "commit": "5d39b7a0ffe911ed60cd0e3a56ada135e76a425f",
-      "contract_sha256": "a71a8c03fea5e4d2876612e821eafcb4b359a0b132157929b9924d6f8fecd73e",
-      "vectors_sha256": "4851d9d674b2412ca8919d8347a71da13f9adf4426fe60b44e2a4a259f8bd948",
-      "manifest_file_sha256": "4972f8125b959370263ab333fa8cec4896d896e1af41900461ba01e17711c4ea",
-      "verified_file_count": 40,
-      "protocol_matches_A": true,
-      "tree": "addb9a400f730806e4a4576a9245591127a2d089",
-      "path": "chain"
+      "commit": "b0283833a0d040366219b35de58a3150d3956e92",
+      "path": "chain",
+      "tree": "68b122e6111f6d31d40db5c1f02d3b02cc201eaa",
+      "contract_sha256": "afa3471a2210a90cde0004b3219b231468bf0b8471e8068f8e16b096b3549d84",
+      "vectors_sha256": "bb1b437d23a365f1083e85353bf62bcef6517cda94288ff7e2d0b4cb5fccd55b",
+      "manifest_file_sha256": "048b7078bdc2af6f64ea08e402b765876e0d1d4032a29e0394884908a2a9ca11",
+      "verified_file_count": 43,
+      "protocol_matches_A": true
     },
     "D": {
-      "commit": "7f9f14f35a985484cee64a5132ed26aa500c0887",
-      "contract_sha256": "a71a8c03fea5e4d2876612e821eafcb4b359a0b132157929b9924d6f8fecd73e",
-      "vectors_sha256": "4851d9d674b2412ca8919d8347a71da13f9adf4426fe60b44e2a4a259f8bd948",
-      "manifest_file_sha256": "4972f8125b959370263ab333fa8cec4896d896e1af41900461ba01e17711c4ea",
-      "verified_file_count": 40,
-      "protocol_matches_A": true,
-      "tree": "f5a84292f790ab1257190b65abfe83e3320ce140",
-      "path": "exchange"
+      "commit": "7c7d0ca68b98f6c82fd297fa0dcd0a649194139d",
+      "path": "exchange",
+      "tree": "5a135dad0a8f653be9c5a4b25120297fc3234882",
+      "contract_sha256": "afa3471a2210a90cde0004b3219b231468bf0b8471e8068f8e16b096b3549d84",
+      "vectors_sha256": "bb1b437d23a365f1083e85353bf62bcef6517cda94288ff7e2d0b4cb5fccd55b",
+      "manifest_file_sha256": "048b7078bdc2af6f64ea08e402b765876e0d1d4032a29e0394884908a2a9ca11",
+      "verified_file_count": 43,
+      "protocol_matches_A": true
     },
     "E": {
       "commit": "f9b5bbf1e06a4a0c43bebc6d5bd081dc3b1892c2",
+      "path": "settlement",
+      "tree": "ac537a420c4760f7e19f317a25c2a9cc76f54e39",
       "contract_sha256": "daae05c8b3b94694d9f38122bf92a74f53b83197cd667d9ad93df545d55bc3dd",
       "vectors_sha256": "60ee56ff3ff5a754965472cfb353dd1565072dbf0985907c369a0b78237f91e0",
       "manifest_file_sha256": "e175140bb2215ef6c32d9b8da6406dbedf53fe0c9442a58419a009ac65317eab",
       "verified_file_count": 37,
-      "protocol_matches_A": false,
-      "tree": "ac537a420c4760f7e19f317a25c2a9cc76f54e39",
-      "path": "settlement"
+      "protocol_matches_A": false
     },
     "F": {
-      "commit": "99ee3bf73c9e44b6e7fef6d8640af14d587ea89b",
-      "contract_sha256": "a71a8c03fea5e4d2876612e821eafcb4b359a0b132157929b9924d6f8fecd73e",
-      "vectors_sha256": "4851d9d674b2412ca8919d8347a71da13f9adf4426fe60b44e2a4a259f8bd948",
-      "manifest_file_sha256": "4972f8125b959370263ab333fa8cec4896d896e1af41900461ba01e17711c4ea",
-      "verified_file_count": 40,
-      "protocol_matches_A": true,
-      "tree": "6c739f3918143a82ee46998e4674dde060da7c09",
-      "path": "web"
+      "commit": "5ff848415c3fda4e2285634950848c99824193be",
+      "path": "web",
+      "tree": "13ce474fbf660b6d7334a4376e9700548f25d131",
+      "contract_sha256": "afa3471a2210a90cde0004b3219b231468bf0b8471e8068f8e16b096b3549d84",
+      "vectors_sha256": "bb1b437d23a365f1083e85353bf62bcef6517cda94288ff7e2d0b4cb5fccd55b",
+      "manifest_file_sha256": "048b7078bdc2af6f64ea08e402b765876e0d1d4032a29e0394884908a2a9ca11",
+      "verified_file_count": 43,
+      "protocol_matches_A": true
     }
   },
   "e_compatibility": {
     "consumed_files": {
       "protocol/v1/schema.json": {
         "original_E_sha256": "6b7db405585adbf460ed7d78d81d8604fe69bc6de7d191d9bc9ea4e0f8611e2c",
-        "rc3_sha256": "6b7db405585adbf460ed7d78d81d8604fe69bc6de7d191d9bc9ea4e0f8611e2c"
+        "rc4_sha256": "6b7db405585adbf460ed7d78d81d8604fe69bc6de7d191d9bc9ea4e0f8611e2c"
       },
       "protocol/v1/vectors/s0-cases.json": {
         "original_E_sha256": "573111f4f5c6dae135698cbee3c3e61e9ebdec707a2c756e0e4357e7d185ff74",
-        "rc3_sha256": "573111f4f5c6dae135698cbee3c3e61e9ebdec707a2c756e0e4357e7d185ff74"
+        "rc4_sha256": "573111f4f5c6dae135698cbee3c3e61e9ebdec707a2c756e0e4357e7d185ff74"
       },
       "protocol/v1/vectors/message-codec.json": {
         "original_E_sha256": "9bdc3d3f76dedde99af270dbaae7703c7f38312ce7d5deb13b2c96a6b4552f9f",
-        "rc3_sha256": "9bdc3d3f76dedde99af270dbaae7703c7f38312ce7d5deb13b2c96a6b4552f9f"
+        "rc4_sha256": "9bdc3d3f76dedde99af270dbaae7703c7f38312ce7d5deb13b2c96a6b4552f9f"
       }
     },
     "scope": "synthetic receipt/API regression only; no fee/order decision/crypto/chain/DB claim",
@@ -6261,6 +6261,546 @@
         "oracle-ports",
         "component-tests"
       ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/0",
+      "id": "rc4-normal",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/1",
+      "id": "rc4-snapshot-omitted",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/2",
+      "id": "rc4-snapshot-null",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/3",
+      "id": "rc4-snapshot-empty",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/4",
+      "id": "rc4-id-omitted",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/5",
+      "id": "rc4-id-null",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/6",
+      "id": "rc4-source-omitted",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/7",
+      "id": "rc4-source-null",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/8",
+      "id": "rc4-height-omitted",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/9",
+      "id": "rc4-height-null",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/10",
+      "id": "rc4-expiry_height-omitted",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/11",
+      "id": "rc4-expiry_height-null",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/12",
+      "id": "rc4-epoch_matches-omitted",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/13",
+      "id": "rc4-epoch_matches-null",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/14",
+      "id": "rc4-revoked-omitted",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/15",
+      "id": "rc4-revoked-null",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/16",
+      "id": "rc4-id_state-omitted",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/17",
+      "id": "rc4-id_state-null",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/18",
+      "id": "rc4-cumulative_ok-omitted",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/19",
+      "id": "rc4-cumulative_ok-null",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/20",
+      "id": "rc4-confirmed_balance_ok-omitted",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/21",
+      "id": "rc4-confirmed_balance_ok-null",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/22",
+      "id": "rc4-q-omitted",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/23",
+      "id": "rc4-q-null",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/24",
+      "id": "rc4-p-omitted",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/25",
+      "id": "rc4-p-null",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/26",
+      "id": "rc4-active_bps-omitted",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/27",
+      "id": "rc4-active_bps-null",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/28",
+      "id": "rc4-cap-omitted",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/29",
+      "id": "rc4-cap-null",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/30",
+      "id": "rc4-binding-id",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/31",
+      "id": "rc4-binding-height",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/32",
+      "id": "rc4-binding-expiry_height",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/33",
+      "id": "rc4-binding-q",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/34",
+      "id": "rc4-binding-p",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/35",
+      "id": "rc4-binding-cap",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/36",
+      "id": "rc4-epoch-7-true",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/37",
+      "id": "rc4-epoch-7-false",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/38",
+      "id": "rc4-epoch-999-true",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/39",
+      "id": "rc4-epoch-999-false",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/40",
+      "id": "rc4-context-snapshot_id-omitted",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/41",
+      "id": "rc4-context-snapshot_id-null",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/42",
+      "id": "rc4-context-height-omitted",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/43",
+      "id": "rc4-context-height-null",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/44",
+      "id": "rc4-context-epoch-omitted",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/45",
+      "id": "rc4-context-epoch-null",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/46",
+      "id": "rc4-context-id-empty",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/47",
+      "id": "rc4-snapshot-id-empty",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/48",
+      "id": "rc4-auth-rejected-normal",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/49",
+      "id": "rc4-auth-rejected-absent",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/50",
+      "id": "rc4-auth-rejected-partial",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/51",
+      "id": "rc4-auth-rejected-contradiction",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/52",
+      "id": "rc4-auth-not_connected-normal",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/53",
+      "id": "rc4-auth-not_connected-absent",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/54",
+      "id": "rc4-auth-not_connected-partial",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/55",
+      "id": "rc4-auth-not_connected-contradiction",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/56",
+      "id": "rc4-fee-q-p-1",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/57",
+      "id": "rc4-partial-and-contradictory",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/58",
+      "id": "rc4-binding-before-policy",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
+    },
+    {
+      "source": "protocol/v1/vectors/snapshot-output.json",
+      "json_pointer": "/cases/59",
+      "id": "rc4-consistent-epoch-policy-priority",
+      "scope": "actual_crypto_synthetic_snapshot",
+      "commands": [
+        "rc4-full-output"
+      ]
     }
   ],
   "integer_override": {
@@ -6342,9 +6882,9 @@
   },
   "files_sha256": {
     "protocol/v1/CONTRACT.md": "be2f923042565040394ff2386d482c92f7a72c5ef81d34d2ff29bee0ce55c9fb",
-    "protocol/v1/DECISION-PORT.md": "79606720a401a37a1c698219227ad9f3c0ca0653aa7ffc24d0c4c7981e3d98ea",
-    "protocol/v1/HANDOFF.md": "fe4f33f80c49898acf3244de1c0b31efbd1fb8bc0e9a4bd93ee915d7f6a354dd",
-    "protocol/v1/README.md": "e1c9655b1ef4d52512f2e9135221bfb0d12391fdbfa01c8ee9f8f15058896a60",
+    "protocol/v1/DECISION-PORT.md": "ac6dd7d25287f1b629b0db63828a4f299da72528a7da60ffe2c8c4f9d1221d61",
+    "protocol/v1/HANDOFF.md": "d5ac66fb1b3e630a00a81751ceb829688aaaa780df8826e1f76059b5215434e1",
+    "protocol/v1/README.md": "af6e559f9bcb0b5d1a311f69498dd93dae91ad5a6a8a4a31dfc6053154e956a9",
     "protocol/v1/adr/DEC-02.md": "5358acc27a8805c3e3fb116055772a971161173813a7ba1a93fe623c69bb51ae",
     "protocol/v1/adr/DEC-03.md": "8151cb0ded41c5074905977e6908578bb0b7998384ce3810528b952da45d4349",
     "protocol/v1/adr/DEC-04.md": "e0601fb1711c8583265b47c7eff2fff33123af1ed80844114e836f5c6a783d05",
@@ -6352,15 +6892,17 @@
     "protocol/v1/adr/DEC-07.md": "d63ccd50c1dd81b5bfdc35efe37ff8144b2bd061713471e14f4a1fde1326b1f7",
     "protocol/v1/adr/DEC-09.md": "2f3fd56d02d73824d4f80db80313b7a281160ada68a7fe0a7026605a73fd5334",
     "protocol/v1/adr/DEC-10.md": "1f1eaf65a3b3677791ddcf3ab1971ef5c4638a80a68d5de4d6947e688855c4a9",
+    "protocol/v1/adr/G-FIX-01.md": "00e1a959876cb9f79688c221c5b9ede948053c25d0862a371dc954e924d28c29",
     "protocol/v1/dev-config.json": "7b12f8dffd4dfd07242331b975f0c440f5948074280c3a120c3232b3e674d13e",
     "protocol/v1/m0-baseline.md": "27c9170f1643cea5bca78b5bfa7b6e62a6e6ba778006ef1944669fc357e77af8",
-    "protocol/v1/manifest.candidate.json": "4972f8125b959370263ab333fa8cec4896d896e1af41900461ba01e17711c4ea",
+    "protocol/v1/manifest.candidate.json": "048b7078bdc2af6f64ea08e402b765876e0d1d4032a29e0394884908a2a9ca11",
     "protocol/v1/protocol.proto": "1a82d83b4adac400fd7cd7af753f0b2ecae65281bf34ee5dbfe80107f666c972",
     "protocol/v1/schema.json": "6b7db405585adbf460ed7d78d81d8604fe69bc6de7d191d9bc9ea4e0f8611e2c",
     "protocol/v1/tools/check-decision-port.py": "c46b4bcc36d0247507993b79e908e42e39deb51c98a0de368682a56b44defce3",
     "protocol/v1/tools/check-message-codec.py": "f820af4e6794435fffab17ea27c92560ad82f82e0800673fcce5ea62823975d5",
+    "protocol/v1/tools/check-snapshot-output.py": "578efb7451089970cc7c46e0c9b4338fa6d2894fa88090a789871d1a2f7a6b25",
     "protocol/v1/tools/check-wire.py": "c3bab05947b34c62a93e1957bd7de10e968ec1158ff0fae5469c7ddc1cfd5efc",
-    "protocol/v1/tools/check.py": "2584e306fcc27c191d671319ae89a3b92e6a110a4bff9a034924e90a37f291e1",
+    "protocol/v1/tools/check.py": "4b8c5d7666c532ce8a85e9d930f40b6ec91bd758cf550e10a5e834dbfb1de048",
     "protocol/v1/tools/verify-bytes.py": "c0aa016caade17c76afc4a05c70a80b53518b01f9424da263e073151ff64b5cd",
     "protocol/v1/vectors/amount-codec.json": "14b791865b9a0d016ce1ef3d89053112b15fbbf80d0ea876ab164bab77a67c69",
     "protocol/v1/vectors/batches.json": "51e9c7d74c39c4a96faca6889888fe49d4251b1bf6456575433d022a0757f029",
@@ -6370,33 +6912,36 @@
     "protocol/v1/vectors/policy-cases.json": "98b6ee82c253f8b888021fb3cd8052e379536bde7a963101d50f156ca705f198",
     "protocol/v1/vectors/s0-cases.json": "573111f4f5c6dae135698cbee3c3e61e9ebdec707a2c756e0e4357e7d185ff74",
     "protocol/v1/vectors/signatures.json": "4f55d2806f98ece56c4a7a7f148373ecaa82e6360c121310c124ed29db4f8217",
+    "protocol/v1/vectors/snapshot-output.json": "6508028f349af5aa127e148a808e075389eb450e81a8976ff32bad8cd065c884",
     "protocol/v1/vectors/wire-cases.json": "358740f6fdedfab5f6e245b3aff4dfc11cb1538582aa0860ce203dc830a00070",
     "chain/.gitignore": "70a213afeabe5ac38ae4c88b2c7002ce5068b91a3e57a032245ab809dc6fa460",
-    "chain/README.md": "0d3f47721d521ce73f2a10bfb17dd1def20d5868abc37193a8fa66c9e49fce64",
+    "chain/README.md": "cc41162f85b93caa064336562b8cd7155cf0946b8eac72a9f04d1178df052caf",
     "chain/cmd/contract-runner/main.go": "50ae64098fe1b83ae30052cc138307580e34f57c37e5e4404089565785c6ee3f",
+    "chain/cmd/contract-runner/main_test.go": "bb705b0c026356f02e7b01c531e7b423278c99c246a65e5629fbdf2b575a7c74",
     "chain/contract/amount.go": "8418ad712eb02748843aab9c220aa136351dd2467d80e3d5cd9eaf95630a8192",
     "chain/contract/codec.go": "59fbed0a07a92f1921df7e35fad303a95f360c413f65732a48c04ee425a5c6d9",
-    "chain/contract/contract_test.go": "911641af7c248004e64d863dbc1d132f5c341f29ce23d7cd98e8ac6f9c0813e4",
-    "chain/contract/decision.go": "f562251bf058dd2c144b375aea3a91b39b652da3bbb24479911fb6af10b4b967",
-    "chain/contract/decision_test.go": "dbb90ec7316f0f0b60b28ef9839b8e5f422505e691261f4030f3cb76227ffb76",
+    "chain/contract/contract_test.go": "4193799a62dec49403e0257e2247a8b675bb29d50fef3cc61d648549a36dcb01",
+    "chain/contract/decision.go": "cafad741741fdb27a8405059d1d44864ed7773c62eb0bc9663efdd9e73acaf39",
+    "chain/contract/decision_test.go": "c5c18b10333c02710efd9576187f00aaae44e117f6a4f17378a1d00c69b4340e",
     "chain/contract/schema.json": "6b7db405585adbf460ed7d78d81d8604fe69bc6de7d191d9bc9ea4e0f8611e2c",
-    "chain/contract/verify.go": "d23978ce7c44836d88aedadc86e46862193e6af108e9cfec4d5d9ae2b3975f1c",
+    "chain/contract/verify.go": "b914306ef5d3d0e3277d8c941b7b769a146a1da36b971fe0688d75c779ecaee0",
     "chain/go.mod": "fb92827c0549a95679bfdb793feb8cb184879e844f45e5f9be7342806ac4a5b5",
     "chain/go.sum": "be7914402a4ac34946df904f134fc88a62163b83f0f61b59f5c265f6b4513d1b",
     "chain/test.sh": "4b8ebe551c0349469aa83de94d707891e1d1c816a4f6b68980ff15f943c4f9ac",
     "exchange/.gitignore": "306fd52e74fca6746e12acc750f232de15e71da917756a1270d74c91f5eb7368",
     "exchange/Cargo.lock": "ab4f76dd87448219ade436d508822b423b036a5131cdc732150a59e2e764e894",
     "exchange/Cargo.toml": "f14a14210628a359bfefb199806224b86b91eecb8ff87ef053837b86cdf9be11",
-    "exchange/README.md": "d076c229e91d40ce00c194f71ff4db20583b46c3276f60322ec8e75333d31573",
+    "exchange/README.md": "28dc7c21572470b74de5668eb2586d030908d3b8967f6f3b0ed521de34f43159",
     "exchange/src/adapter.rs": "b60bbe02b298fd6aa50bb8cd9619517c14363a0dcd7945de36e829d0d6986685",
-    "exchange/src/bin/decision.rs": "bf1853ac81c2b7b69c0f158553b07af7cda2ee63dfa22a4c2400f99325292e6c",
+    "exchange/src/bin/decision.rs": "eafa2b9553ac1fb28f39fa4847dcee36089c1fdd4fae5266c65c63ebefc6b222",
     "exchange/src/bin/vectors.rs": "16885de5d6a834fa8b07bd9c482702e93ffe74a626c5c526d186837b2c17d2d1",
     "exchange/src/codec.rs": "b6948227e674e2eb704ba6ae83f49e8feeb81db3be3c2662f08c6aa82c4b9eb1",
-    "exchange/src/decision.rs": "1c9b8baa51663ab9710dd5e56595248df80f1817a91c0b474d868abd56f7704b",
+    "exchange/src/decision.rs": "8a59ee06d19ff19bf0f101acb8fa53f7b991f95907dbf2773dd9312bc4d64342",
     "exchange/src/lib.rs": "9809e627b9ff9cbe17194b60054c86dc3e92dbfdf8edab402d16bb8be8461a14",
     "exchange/src/policy.rs": "aec75b6aec4a149fea2e9d01e69bcdbe4ee0c6da21eaf4269bb947bf211b96fa",
     "exchange/tests/common_vectors.rs": "a4ae81c7cb4532c626a3dfec7e708bd43f296c485775f51f51e1f7bf9a7386ba",
-    "exchange/tests/rc3.rs": "e5aab2d9b6476cfa5340266aa9d5732361169a27082c57fb879fb7f11710231b",
+    "exchange/tests/rc3.rs": "2eabfe72d472f4efda37189b038a067ce0167b62bee46c2f5a7573d635dc6276",
+    "exchange/tests/rc4.rs": "9bd5dc4005e158675a44ed3764eec399912da6b82d702cb8d57a84221a6a4eb0",
     "exchange/tests/upstream_ioc.rs": "b7b7dfc0ac95d32d3f20a267e3c393b3106b2c9232cf7a644e805aa9e8422502",
     "exchange/tools/compare_admission.py": "4d5bd77c2d46676ae2e20b6c0560de7adfdec113c23cb50ea34eb5105d2b196c",
     "web/.gitignore": "790e3169bc19b046fe55ba1da6d13b976c28363c8c00462a2195fe5faf260910",
@@ -6404,6 +6949,7 @@
     "web/ENUM-FIX.md": "187426901ed3e528ba6ca0acee19b60e75c2fe18baf9cad3804780a12b1a0a33",
     "web/RC3-REVIEW.md": "0e0166e22cc9348a7c7361a134ccaba1517dcd731ad17de4b4ac95324a56a0bf",
     "web/README.md": "a05c4b2ec04f30ecb9574f1870fbe4171da9db1f0831105dd0f1aeeb2ae4e7dd",
+    "web/docs/rc4-handoff.md": "46e03a9bf6c3d54f5d2b03b33eceece10e2e5ff3259c4ad3cdcb1e5ce8eeaf24",
     "web/package-lock.json": "95c1b012fce8ac96e96ee9547438b4c36d15c071e5d79faf1ab4d651261cb0fa",
     "web/package.json": "4a2461a1187a6bb73a5400167aa622d87dff7d91821b09f0b8f827d8bafa38ff",
     "web/scripts/browser.mjs": "10acfe8a0f748f04c7b2ce1a6db21ff9e0415cf28a3b5382648ae782d9ec39b0",
@@ -6412,15 +6958,15 @@
     "web/scripts/vectors.ts": "70708c19fb8b21297c35f0fec340e6bfcf2500a65ec699dc2eee1777478d09f9",
     "web/src/browser.ts": "34d6bd1029b29c46d0b62a736e74fc1261946143e2af456c9f409bd3ca397c71",
     "web/src/codec.ts": "ffc477d25a7e9565c592473c63713b1799f9f8d12277194494d84b9497c48c80",
-    "web/src/decision.ts": "f14df86eea25eab0ad5a0a9f79c4d98837acffc9296e95ca96a3d9903e1e75e3",
+    "web/src/decision.ts": "8de171841021c93196e73c674ee42c67eaca2ed16449363df7bdddc3761ae57d",
     "web/src/index.ts": "992a09c55861412ddcb3743851eacda1cfc299fa6e45afb16ecc1f09e8a3a3a9",
-    "web/src/wallet.ts": "5fbb24fdd2988369eb37e0fbb40d28abda85c0d80879b2c7eab38ddfaa99eda6",
+    "web/src/wallet.ts": "f1bbbf8f489f62093d864121a516e9567870bfbec6326e8bbcd0cf5c042f83b5",
     "web/test/conformance.ts": "c901c650482e7c047d8fbc7ddd9e47d19a064a6cb9274e68188b5bd5c5371a22",
     "web/test/contract.test.ts": "c60b1110134e3e4dccb0d70f85ee45f4f919e055172d5102fe33997b6d4da4eb",
     "web/test/cross-enum/compare.py": "d89b3c91176b21dcd537b78927720fb0f45a4f5f3cdc4b8ee2cde7b72508bb1b",
     "web/test/cross-enum/inputs.json": "965533f1e66d0b8a2f97c4b81f8f614179939aa623f2d4d3cf7d80d3e0a22e93",
     "web/test/cross-enum/runner.ts": "514258950ff7bd302965e690e83df946b2c74944f72a8509c7990ae22799a3ef",
-    "web/test/decision.ts": "ae6564e6852eea8431265ea918a9e08a78bf84dc425f78c9a9c1833b75a75f62",
+    "web/test/decision.ts": "568aedeeeec3667c0303dc1ef1f15b246c5610184dd16aa5d161d0067c6217b8",
     "web/tsconfig.json": "13a683514e105b21b6f782049dada80a05373ad364c8ca11864d85b2eb0b4f77",
     "settlement/README.md": "e6fdb0c9cf9effd942812e6ccceae99db96b6afccac65d9c1c7b76c899d4be5f",
     "settlement/v1/.gitignore": "32dae3052f331ee34d628ef535709b301259a45df7c7522c4d35dcf49873f00b",
@@ -6432,11 +6978,14 @@
     "settlement/v1/manifest.json": "6323c430ae27875c7746b569b21fc7b3c7565d9c117256111e14fd7eaf8b9e1e",
     "settlement/v1/mock.py": "767b0ad2afa05a77f680c79ae27959e6fff0072ebd111459ed1e962f421df5d5",
     "settlement/v1/test_contract.py": "ca1bab6726e727d46313016f211ca3824661f1f2f516df03b3a23c185a19851d",
-    "ops/ci/cto-input.json": "e24c64d6ccb41f9fc22d6669ea57acd7036d2f1758a4127cba92ce49524823b5",
-    "ops/ci/input-lock.json": "01eb10108804c72d75d396ca616e5f769803073ea9e58706b7104dc0885b5ec1",
-    "ops/ci/required-cases.json": "b303afd41c6521b5eb1bd538123f2b64cf363c91fe6a960ada07fa4931bcbe38",
-    "ops/ci/ports/go.go": "36b8f98554ea3c396537261953cba213cc58546ecee1d5bc9bdfb54809db3f4c",
-    "ops/ci/ports/ts.ts": "e793826782affb27dd42219378652ec01ab10f3a1410e6dfe4771238cdeb1927",
+    "ops/ci/rc4.py": "147755d2a90f6bce1093a1909bccd9964896b6c8a0c14bc6f309fd78976a6669",
+    "ops/ci/vectors.py": "f6ea1599707ed9a324ea4614df26f219494523d9cd74f23101c54d74557a927a",
+    "ops/ci/build_manifest.py": "4457a74b096f9827a6a701d1515d4853f23f00e2c140988b18a6aae35e67f4ea",
+    "ops/ci/cto-input.json": "05abeba166e00de2de12be35bd36c186a706cc9aada93ff666840927f2da7e9d",
+    "ops/ci/input-lock.json": "74c372e468c6e5c90e719956785cc5894671e9113887d19d868e3bc09d697106",
+    "ops/ci/required-cases.json": "749cd26f07c7d8dd451023c84fd7e29243c83dfe5a11c7997ea61234e8a40075",
+    "ops/ci/ports/go.go": "f73f302df09197867c3ec25dc875ee77531265bed19eded4ea8ddb15251031ce",
+    "ops/ci/ports/ts.ts": "12ee801328124ff0a72e0ddd27605ece412df6210161914b274c89294845566b",
     "ops/ci/ports/rust/Cargo.toml": "78d81c828d7f9730ddfcd5e47a6527d38c3c8bedd1767f999eaa98e1a95488cd",
     "ops/ci/ports/rust/Cargo.lock": "75865e404c86384e552012171d88d4af17dc4fdb3f822017d6f9c32ce59629dd",
     "ops/ci/ports/rust/src/main.rs": "d9c3f6315a373882e25482c65b2d6915ce1598810b398e82be45ce3a1faf5d51"

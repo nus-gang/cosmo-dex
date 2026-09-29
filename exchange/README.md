@@ -114,3 +114,31 @@ Wallet 원본은 수정하지 않았다. 이전 SHA를 고정한 구현자 회�
 모순 snapshot의 세부 code/id는 표준화되지 않아 REJECTED/NOT_CONNECTED 불변식으로 비교한다.
 기존 Security 759/754/5 FAIL·암호 상호운용 PASS와 이전 420/7 기록을 보존한다. 전체 독립 수정 후 재시험 NOT_RUN.
 ACK·원장·REST/WS/체인 NOT_CONNECTED, WAL/replay·직접 회수 NOT_RUN. main merge·출시·후속 기능 승인 없음.
+
+## G-FIX-01 rc4 수정
+
+승인 protocol `57c187f5474e02c3f624667d3b8380268e13dd1a`의 ADR을 소비한다.
+`admit_order_with_observation`은 원본 snapshot과 optional 관측 context를 따로 받아
+실제 인증 결과와 binding 여부를 분리한다. binding 실패/부분 누락에도 원본 ID를 보존하며
+context ID로 채우지 않는다. 빈 ID와 context 누락/null/비정규 정수는 정책 NOT_CONNECTED다.
+CLI의 legacy OrderContext 숫자는 인증에 사용되지 않으며 정책은 반드시 원본 observation을 검사한다.
+인증 실패 시 정책 NOT_RUN, ACK/ledger NOT_CONNECTED와 WAL/replay NOT_RUN은 유지한다.
+위 rc3의 CLI 누락 오류와 모순 ID 미규정 설명은 과거 기록이며 rc4 전체 출력 규약이 우선한다.
+
+```sh
+NUS_RC4_EVIDENCE="$PWD/exchange/evidence" cargo test --manifest-path exchange/Cargo.toml --locked -- --nocapture
+cargo clippy --manifest-path exchange/Cargo.toml --locked --all-targets -- -D warnings
+python3 protocol/v1/tools/check.py
+```
+
+18 tests PASS. 새 `tests/rc4.rs`는 공통 snapshot-output 60건을 실제 ML-DSA로 재서명하고
+CLI 전체 출력을 비교한다. 인증 부정은 실제 서명 변조, 미연결은 등록 key_type 누락으로 만든다.
+원시 요청/예상/실제는 `evidence/rc4-full-outputs.json`, hash는 `rc4-manifest.json`에 있다.
+
+기존 Security harness 2c5cff9의 783개 ID/언어를 보존한 구현자 회귀는 783/783이다.
+Go chain 5d39b7a와 TS web 99ee3bf의 기존 dependency/build를 읽기 전용 재사용했고 Rust를 새로 빌드했다.
+고정 harness의 review.py/rc3_cases.py/runner.ts/runner.rs/go.go를 격리 디렉터리의 security에 복사한 후,
+chain/web/protocol/exchange 경로를 각각 고정 소스로 구성하고 Go runner와 Rust example security를 빌드하여
+`python3 security/review.py`로 재현한다. 기존 783 ID/언어 집합 동일성을 별도 대조했다.
+이는 새 rc4 60×3 전체 검증이 아니며 Go/TS rc4 정렬이나 독립 Security PASS를 뜻하지 않는다.
+역사 783/782/1 FAIL·Low, 759/754/5 및 420/7은 보존한다. 최종 독립 재시험은 NOT_RUN이다.

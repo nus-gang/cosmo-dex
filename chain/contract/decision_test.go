@@ -82,6 +82,7 @@ func TestRC3ActualCryptoDecision(t *testing.T) {
 	_, priv := mldsa65.NewKeyFromSeed(&seed)
 	for _, tc := range []struct {
 		name, cap, rate, keyType, auth, policy                string
+		binding                                               string
 		missingKey, badKey, badSig, missingSnapshot, mismatch bool
 	}{
 		{name: "zero-fee", cap: "0", rate: "0", keyType: "ML-DSA-65", auth: "OK", policy: "OK"},
@@ -97,7 +98,13 @@ func TestRC3ActualCryptoDecision(t *testing.T) {
 		{name: "wrong-raw", cap: "25", rate: "0", keyType: "ML-DSA-65", auth: "ACCOUNT_KEY_MISMATCH", badKey: true},
 		{name: "bad-signature", cap: "25", rate: "0", keyType: "ML-DSA-65", auth: "INVALID_SIGNATURE", badSig: true},
 		{name: "missing-snapshot", cap: "25", rate: "0", keyType: "ML-DSA-65", auth: "OK", policy: "NOT_CONNECTED", missingSnapshot: true},
-		{name: "unbound-q", cap: "25", rate: "0", keyType: "ML-DSA-65", auth: "OK", policy: "CONTEXT_MISMATCH", mismatch: true},
+		{name: "rc4-binding-epoch_matches", binding: "epoch_matches", cap: "25", rate: "0", keyType: "ML-DSA-65", auth: "OK", policy: "NOT_CONNECTED"},
+		{name: "rc4-binding-cap", binding: "cap", cap: "25", rate: "0", keyType: "ML-DSA-65", auth: "OK", policy: "NOT_CONNECTED"},
+		{name: "rc4-binding-p", binding: "p", cap: "25", rate: "0", keyType: "ML-DSA-65", auth: "OK", policy: "NOT_CONNECTED"},
+		{name: "rc4-binding-expiry_height", binding: "expiry_height", cap: "25", rate: "0", keyType: "ML-DSA-65", auth: "OK", policy: "NOT_CONNECTED"},
+		{name: "rc4-binding-height", binding: "height", cap: "25", rate: "0", keyType: "ML-DSA-65", auth: "OK", policy: "NOT_CONNECTED"},
+		{name: "rc4-binding-id", binding: "id", cap: "25", rate: "0", keyType: "ML-DSA-65", auth: "OK", policy: "NOT_CONNECTED"},
+		{name: "unbound-q", cap: "25", rate: "0", keyType: "ML-DSA-65", auth: "OK", policy: "NOT_CONNECTED", mismatch: true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			m := map[string]any{}
@@ -129,6 +136,13 @@ func TestRC3ActualCryptoDecision(t *testing.T) {
 			if tc.mismatch {
 				raw["q"] = "2"
 			}
+			if tc.binding != "" {
+				if tc.binding == "epoch_matches" {
+					raw[tc.binding] = false
+				} else {
+					raw[tc.binding] = "2"
+				}
+			}
 			b, _ := json.Marshal(raw)
 			s := new(Snapshot)
 			if e = json.Unmarshal(b, s); e != nil {
@@ -138,6 +152,12 @@ func TestRC3ActualCryptoDecision(t *testing.T) {
 				s = nil
 			}
 			d := DecideOrder(body, sig, c, s)
+			if s != nil && !reflect.DeepEqual(d.SnapshotPolicy.SnapshotID, s.ID) {
+				t.Fatal("observed ID lost")
+			}
+			if tc.policy == "NOT_CONNECTED" && d.SnapshotPolicy.Code != nil {
+				t.Fatal("unconnected code must be null")
+			}
 			got := d.Authentication.Status
 			if d.Authentication.Code != nil {
 				got = *d.Authentication.Code
@@ -158,6 +178,48 @@ func TestRC3ActualCryptoDecision(t *testing.T) {
 			}
 			if d.ACK != "NOT_CONNECTED" || d.Ledger != "NOT_CONNECTED" || d.WALReplay != "NOT_RUN" {
 				t.Fatal(d)
+			}
+		})
+	}
+}
+
+// The 60 rc4 cases inject authentication explicitly; these are specification
+// comparisons, not 60 independent ML-DSA verifications.
+func TestRC4SnapshotOutputs(t *testing.T) {
+	b, err := os.ReadFile("../../protocol/v1/vectors/snapshot-output.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var v struct {
+		Cases []struct {
+			ID    string
+			Input struct {
+				Auth     Result         `json:"authentication_result"`
+				Snapshot *Snapshot      `json:"snapshot"`
+				Order    map[string]any `json:"authenticated_order"`
+				Context  struct {
+					ID     *string `json:"snapshot_id"`
+					Height *string `json:"height"`
+					Epoch  *string `json:"epoch"`
+				} `json:"context"`
+			}
+			Expected Decision
+		}
+	}
+	if err := json.Unmarshal(b, &v); err != nil {
+		t.Fatal(err)
+	}
+	if len(v.Cases) != 60 {
+		t.Fatalf("expected 60 rc4 cases, got %d", len(v.Cases))
+	}
+	for _, tc := range v.Cases {
+		t.Run(tc.ID, func(t *testing.T) {
+			a := tc.Input
+			got := decideAuthenticated(a.Auth, a.Order, a.Context.ID, a.Context.Height, a.Context.Epoch, a.Snapshot)
+			if !reflect.DeepEqual(got, tc.Expected) {
+				actual, _ := json.Marshal(got)
+				want, _ := json.Marshal(tc.Expected)
+				t.Fatalf("%s != %s", actual, want)
 			}
 		})
 	}

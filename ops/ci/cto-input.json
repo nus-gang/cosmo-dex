@@ -1,50 +1,60 @@
 {
-  "purpose": "CTO 수정 후 B/G/H 공통 입력 고정; 실행 PASS 증거 아님",
-  "contract_version": "1.0.0-rc3",
-  "contract_sha256": "a71a8c03fea5e4d2876612e821eafcb4b359a0b132157929b9924d6f8fecd73e",
-  "protocol_vectors_sha256": "4851d9d674b2412ca8919d8347a71da13f9adf4426fe60b44e2a4a259f8bd948",
-  "previous_B_commit": "2689f53d92185a382e801bfcbf4fd3b32f4e6c8c",
-  "previous_B_manifest_sha256": "6df6b6b6388390929d0a6f3dbb9c3b88fcaf85d16c7dda1e308c792647898ad5",
+  "purpose": "SRE consolidation of native-approved rc4 inputs; pending CTO review; not CI PASS",
+  "previous_B_commit": "c9063595b257964d377cb2f9575e57ca7fe697eb",
   "inputs": {
     "A": {
-      "commit": "549ce150d6a9f21ec30f159d39a4d91c31dbd759",
+      "commit": "57c187f5474e02c3f624667d3b8380268e13dd1a",
       "path": "protocol/v1",
-      "tree": "d2aab07d6136ef5fd26888a73979f3a163df9f09",
-      "protocol_manifest_file_sha256": "4972f8125b959370263ab333fa8cec4896d896e1af41900461ba01e17711c4ea"
+      "tree": "2b6f78cc29a2706b64cfa4fd6f154abce6deb8c5",
+      "contract_sha256": "afa3471a2210a90cde0004b3219b231468bf0b8471e8068f8e16b096b3549d84",
+      "vectors_sha256": "bb1b437d23a365f1083e85353bf62bcef6517cda94288ff7e2d0b4cb5fccd55b",
+      "manifest_file_sha256": "048b7078bdc2af6f64ea08e402b765876e0d1d4032a29e0394884908a2a9ca11",
+      "verified_file_count": 43,
+      "protocol_matches_A": true
     },
     "C": {
-      "commit": "5d39b7a0ffe911ed60cd0e3a56ada135e76a425f",
+      "commit": "b0283833a0d040366219b35de58a3150d3956e92",
       "path": "chain",
-      "tree": "addb9a400f730806e4a4576a9245591127a2d089",
-      "protocol_manifest_file_sha256": "4972f8125b959370263ab333fa8cec4896d896e1af41900461ba01e17711c4ea"
+      "tree": "68b122e6111f6d31d40db5c1f02d3b02cc201eaa",
+      "contract_sha256": "afa3471a2210a90cde0004b3219b231468bf0b8471e8068f8e16b096b3549d84",
+      "vectors_sha256": "bb1b437d23a365f1083e85353bf62bcef6517cda94288ff7e2d0b4cb5fccd55b",
+      "manifest_file_sha256": "048b7078bdc2af6f64ea08e402b765876e0d1d4032a29e0394884908a2a9ca11",
+      "verified_file_count": 43,
+      "protocol_matches_A": true
     },
     "D": {
-      "commit": "7f9f14f35a985484cee64a5132ed26aa500c0887",
+      "commit": "7c7d0ca68b98f6c82fd297fa0dcd0a649194139d",
       "path": "exchange",
-      "tree": "f5a84292f790ab1257190b65abfe83e3320ce140",
-      "protocol_manifest_file_sha256": "4972f8125b959370263ab333fa8cec4896d896e1af41900461ba01e17711c4ea"
+      "tree": "5a135dad0a8f653be9c5a4b25120297fc3234882",
+      "contract_sha256": "afa3471a2210a90cde0004b3219b231468bf0b8471e8068f8e16b096b3549d84",
+      "vectors_sha256": "bb1b437d23a365f1083e85353bf62bcef6517cda94288ff7e2d0b4cb5fccd55b",
+      "manifest_file_sha256": "048b7078bdc2af6f64ea08e402b765876e0d1d4032a29e0394884908a2a9ca11",
+      "verified_file_count": 43,
+      "protocol_matches_A": true
     },
     "E": {
       "commit": "f9b5bbf1e06a4a0c43bebc6d5bd081dc3b1892c2",
       "path": "settlement",
-      "tree": "ac537a420c4760f7e19f317a25c2a9cc76f54e39"
+      "tree": "ac537a420c4760f7e19f317a25c2a9cc76f54e39",
+      "contract_sha256": "daae05c8b3b94694d9f38122bf92a74f53b83197cd667d9ad93df545d55bc3dd",
+      "vectors_sha256": "60ee56ff3ff5a754965472cfb353dd1565072dbf0985907c369a0b78237f91e0",
+      "manifest_file_sha256": "e175140bb2215ef6c32d9b8da6406dbedf53fe0c9442a58419a009ac65317eab",
+      "verified_file_count": 37,
+      "protocol_matches_A": false
     },
     "F": {
-      "commit": "99ee3bf73c9e44b6e7fef6d8640af14d587ea89b",
+      "commit": "5ff848415c3fda4e2285634950848c99824193be",
       "path": "web",
-      "tree": "6c739f3918143a82ee46998e4674dde060da7c09",
-      "protocol_manifest_file_sha256": "4972f8125b959370263ab333fa8cec4896d896e1af41900461ba01e17711c4ea"
+      "tree": "13ce474fbf660b6d7334a4376e9700548f25d131",
+      "contract_sha256": "afa3471a2210a90cde0004b3219b231468bf0b8471e8068f8e16b096b3549d84",
+      "vectors_sha256": "bb1b437d23a365f1083e85353bf62bcef6517cda94288ff7e2d0b4cb5fccd55b",
+      "manifest_file_sha256": "048b7078bdc2af6f64ea08e402b765876e0d1d4032a29e0394884908a2a9ca11",
+      "verified_file_count": 43,
+      "protocol_matches_A": true
     }
   },
-  "security_retest": "NOT_RUN",
-  "qa_retest": "NOT_RUN",
-  "product_T01_T16": "NOT_RUN",
-  "integration_rules": [
-    "각 commit에서 지정 경로만 소비하고 A protocol을 공통 사용한다.",
-    "B는 input-lock 및 실행 manifest를 재생성하고 전체 files hash를 새 입력으로 계산한다. 기존 실행 결과를 복사하지 않는다.",
-    "G는 같은 입력으로 독립 전체 교차 매트릭스와 기존 5개 차이 회귀를 실행하고 raw log 및 verdict를 자신의 업무에 기록한다.",
-    "B/G 산출물은 이 입력 manifest SHA256과 각 구현 SHA 및 통합 시험 SHA를 기록한다.",
-    "E의 원본 protocol은 rc3 전체와 불일치한다. 기존 소비 파일 호환성 제한을 유지하고 rc3 위 receipt/API 회귀를 재실행한다.",
-    "기존 rc2/rc3 FAIL 증거와 승인 이력을 보존한다."
-  ]
+  "contract_version": "1.0.0-rc4",
+  "contract_sha256": "afa3471a2210a90cde0004b3219b231468bf0b8471e8068f8e16b096b3549d84",
+  "protocol_vectors_sha256": "bb1b437d23a365f1083e85353bf62bcef6517cda94288ff7e2d0b4cb5fccd55b",
+  "historical_results": "Preserved; G 783/782/1 FAIL is not changed by B CI"
 }

@@ -50,7 +50,7 @@ export function decideOrder(body: Uint8Array, signature: Uint8Array, ctx: Verifi
   if (auth.status === 'PASS' && complete(snapshot)) {
     const matches = snapshot.id === ctx.snapshotId && snapshot.height === ctx.height && snapshot.expiry_height === message!.expiry_height
       && snapshot.q === message!.max_qty_lots && snapshot.p === message!.limit_price_ticks
-      && snapshot.cap === message!.max_fee_bps && ctx.epoch !== undefined
+      && snapshot.cap === message!.max_fee_bps && typeof ctx.epoch === 'string'
       && snapshot.epoch_matches === (message!.owner_epoch === ctx.epoch);
     if (!matches) return evaluateSnapshot(auth, { ...snapshot, source: null });
   }

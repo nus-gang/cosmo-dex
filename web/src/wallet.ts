@@ -20,9 +20,9 @@ export interface VerificationContext {
   // Provided by a trusted finalized account/config snapshot, never by the submitted request.
   expected: Record<string, string>;
   registeredKey?: { type?: string; bytes: Uint8Array };
-  height: string;
-  snapshotId?: string;
-  epoch?: string;
+  height?: string | null;
+  snapshotId?: string | null;
+  epoch?: string | null;
   now?: string;
   originAllowlist?: readonly string[];
   audiences?: readonly string[];

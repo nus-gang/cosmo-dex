@@ -1,12 +1,17 @@
 import { readFileSync } from 'node:fs';
 import { encode, decode, frame, atoms, fromAtoms, hexToBytes as unhex, bytesToHex as hex } from '../../../web/src/codec.ts';
 import { ml_dsa65, feeAtoms, checkFeeCap } from '../../../web/src/wallet.ts';
-import { evaluateSnapshot, apiError } from '../../../web/src/decision.ts';
+import { evaluateSnapshot, apiError, decideOrder } from '../../../web/src/decision.ts';
 const requests=JSON.parse(readFileSync(0,'utf8'));
 console.log(JSON.stringify(requests.map((r:any)=>{
  let actual:any;
  try{
  switch(r.op){
+ case 'rc4': {
+ const n=r.native,c=n.context,reg=c.registered;
+ const ctx:any={expected:{...c,fee_asset_policy_id:'RECEIVE_ASSET_V1'},registeredKey:{bytes:unhex(reg.raw_key_hex),type:reg.key_type},snapshotId:c.snapshot_id,height:c.height,epoch:c.epoch};
+ actual=decideOrder(unhex(n.wire_hex),unhex(n.signature_hex),ctx,n.snapshot??null);break;
+ }
  case 'crypto': try{actual=(ml_dsa65 as any).verify(unhex(r.pk),unhex(r.input),unhex(r.signature),unhex(r.context??""));}catch{actual=false;}break;
  case 'frame':actual=hex(frame(r.domain,unhex(r.wire)));break;
  case 'atoms':actual=hex(atoms(r.api));break;
