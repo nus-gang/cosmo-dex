@@ -1,0 +1,22 @@
+{
+  "scope": "S0 mock; chain/DB/crypto/CI NOT_RUN",
+  "a_commit": "889fda0c7181a696b4eb2a2649508c6192af8406",
+  "python": "3.14.0",
+  "contract_sha256": "daae05c8b3b94694d9f38122bf92a74f53b83197cd667d9ad93df545d55bc3dd",
+  "vectors_sha256": "60ee56ff3ff5a754965472cfb353dd1565072dbf0985907c369a0b78237f91e0",
+  "config_sha256": "7b12f8dffd4dfd07242331b975f0c440f5948074280c3a120c3232b3e674d13e",
+  "files_sha256": {
+    "settlement/v1/.gitignore": "32dae3052f331ee34d628ef535709b301259a45df7c7522c4d35dcf49873f00b",
+    "settlement/v1/README.md": "9af7952781bef1db121eefc4c76c5edc58376a753a48c0401f80bf04a01402d5",
+    "settlement/v1/adapter.py": "3028ba0bd96e7498b5fb84494018421103fa058a7e530b5269c7ce22830c0817",
+    "settlement/v1/api.schema.json": "dc7c30cffe7d74a25ecb8cac4e4c1357f560d9995dbad97c52a435aa82039481",
+    "settlement/v1/evidence/a-codec.txt": "257a9a3962c9f4e5d9b4fc1d9f370595006624a465ea8fe2664e646c163057e6",
+    "settlement/v1/evidence/rest.json": "e9a106cf341367753b84f165e1e3ec076ea6a2c5e8a5619520fd5f7023dc4259",
+    "settlement/v1/evidence/tests.txt": "9ca0c43c00d3e1f45b7bc9e643ace8c73cd31e1675be73ce2f1f7a5883f134ff",
+    "settlement/v1/evidence/ws.jsonl": "70818667dc97b0231faf13633e6e8ba0874240fb346c53a77b901f8f57efce09",
+    "settlement/v1/fixtures.json": "daa28f20eefc27aaa617b25c2715d9dd30961aa81f8e5507c761cc4c71ec4f0d",
+    "settlement/v1/generate.py": "fb0636cf5372f23013a8a1f095285370d057bd6850521d8fd9d17ecc7f0784af",
+    "settlement/v1/mock.py": "a3a316295c42d53eabefa17f03f0b0eb139dc52250140d49cd64c4d44b3d5a0e",
+    "settlement/v1/test_contract.py": "8d3f8f8e8cd3f2bc5f33a9f3501a378341051cde97a71f8eecb1145ba27fd39f"
+  }
+}
