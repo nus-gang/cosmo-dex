@@ -1,0 +1,1674 @@
+{
+  "version": "1.0.0-rc3",
+  "scope": "synthetic specification only; authentication_result is injected, product crypto NOT_RUN",
+  "fee_cases": [
+    {
+      "id": "fee-0",
+      "receive": "0",
+      "active_bps": "0",
+      "expected": "0"
+    },
+    {
+      "id": "fee-1",
+      "receive": "1",
+      "active_bps": "0",
+      "expected": "0"
+    },
+    {
+      "id": "fee-2",
+      "receive": "1",
+      "active_bps": "25",
+      "expected": "FEE_GE_RECEIVE"
+    },
+    {
+      "id": "fee-3",
+      "receive": "1000",
+      "active_bps": "25",
+      "expected": "3"
+    },
+    {
+      "id": "fee-4",
+      "receive": "1000",
+      "active_bps": "10000",
+      "expected": "FEE_GE_RECEIVE"
+    },
+    {
+      "id": "fee-5",
+      "receive": "1000",
+      "active_bps": "10001",
+      "expected": "BPS_RANGE"
+    },
+    {
+      "id": "fee-6",
+      "receive": "340282366920938463463374607431768211455",
+      "active_bps": "0",
+      "expected": "0"
+    },
+    {
+      "id": "fee-7",
+      "receive": "340282366920938463463374607431768211455",
+      "active_bps": "25",
+      "expected": "850705917302346158658436518579420529"
+    },
+    {
+      "id": "fee-8",
+      "receive": "340282366920938463463374607431768211455",
+      "active_bps": "10000",
+      "expected": "FEE_GE_RECEIVE"
+    },
+    {
+      "id": "fee-9",
+      "receive": "0",
+      "active_bps": "25",
+      "expected": "FEE_GE_RECEIVE"
+    },
+    {
+      "id": "fee-10",
+      "receive": "340282366920938463463374607431768211456",
+      "active_bps": "0",
+      "expected": "INTEGER_RANGE"
+    },
+    {
+      "id": "fee-11",
+      "receive": "340282366920938463463374607431768211456",
+      "active_bps": "10001",
+      "expected": "INTEGER_RANGE"
+    },
+    {
+      "id": "fee-12",
+      "receive": "-1",
+      "active_bps": "0",
+      "expected": "INTEGER_RANGE"
+    },
+    {
+      "id": "fee-13",
+      "receive": "01",
+      "active_bps": "0",
+      "expected": "INTEGER_RANGE"
+    },
+    {
+      "id": "fee-14",
+      "receive": "1000",
+      "active_bps": "-1",
+      "expected": "BPS_RANGE"
+    },
+    {
+      "id": "fee-15",
+      "receive": "1000",
+      "active_bps": "01",
+      "expected": "BPS_RANGE"
+    },
+    {
+      "id": "fee-16",
+      "receive": "1000",
+      "active_bps": "4294967296",
+      "expected": "BPS_RANGE"
+    }
+  ],
+  "cap_cases": [
+    {
+      "id": "cap-0-0",
+      "cap": "0",
+      "active_bps": "0",
+      "expected": "OK"
+    },
+    {
+      "id": "cap-0-25",
+      "cap": "0",
+      "active_bps": "25",
+      "expected": "FEE_CAP"
+    },
+    {
+      "id": "cap-0-10000",
+      "cap": "0",
+      "active_bps": "10000",
+      "expected": "FEE_CAP"
+    },
+    {
+      "id": "cap-0-10001",
+      "cap": "0",
+      "active_bps": "10001",
+      "expected": "BPS_RANGE"
+    },
+    {
+      "id": "cap-25-0",
+      "cap": "25",
+      "active_bps": "0",
+      "expected": "OK"
+    },
+    {
+      "id": "cap-25-25",
+      "cap": "25",
+      "active_bps": "25",
+      "expected": "OK"
+    },
+    {
+      "id": "cap-25-10000",
+      "cap": "25",
+      "active_bps": "10000",
+      "expected": "FEE_CAP"
+    },
+    {
+      "id": "cap-25-10001",
+      "cap": "25",
+      "active_bps": "10001",
+      "expected": "BPS_RANGE"
+    },
+    {
+      "id": "cap-10000-0",
+      "cap": "10000",
+      "active_bps": "0",
+      "expected": "OK"
+    },
+    {
+      "id": "cap-10000-25",
+      "cap": "10000",
+      "active_bps": "25",
+      "expected": "OK"
+    },
+    {
+      "id": "cap-10000-10000",
+      "cap": "10000",
+      "active_bps": "10000",
+      "expected": "OK"
+    },
+    {
+      "id": "cap-10000-10001",
+      "cap": "10000",
+      "active_bps": "10001",
+      "expected": "BPS_RANGE"
+    },
+    {
+      "id": "cap-10001-0",
+      "cap": "10001",
+      "active_bps": "0",
+      "expected": "OK"
+    },
+    {
+      "id": "cap-10001-25",
+      "cap": "10001",
+      "active_bps": "25",
+      "expected": "OK"
+    },
+    {
+      "id": "cap-10001-10000",
+      "cap": "10001",
+      "active_bps": "10000",
+      "expected": "OK"
+    },
+    {
+      "id": "cap-10001-10001",
+      "cap": "10001",
+      "active_bps": "10001",
+      "expected": "BPS_RANGE"
+    },
+    {
+      "id": "cap-4294967295-0",
+      "cap": "4294967295",
+      "active_bps": "0",
+      "expected": "OK"
+    },
+    {
+      "id": "cap-4294967295-25",
+      "cap": "4294967295",
+      "active_bps": "25",
+      "expected": "OK"
+    },
+    {
+      "id": "cap-4294967295-10000",
+      "cap": "4294967295",
+      "active_bps": "10000",
+      "expected": "OK"
+    },
+    {
+      "id": "cap-4294967295-10001",
+      "cap": "4294967295",
+      "active_bps": "10001",
+      "expected": "BPS_RANGE"
+    },
+    {
+      "id": "cap-u32-overflow",
+      "cap": "4294967296",
+      "active_bps": "0",
+      "expected": "INTEGER_RANGE"
+    }
+  ],
+  "decision_cases": [
+    {
+      "id": "normal-policy-only",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "PASS",
+          "code": "OK",
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "q-p-1-fee-25",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "1",
+          "p": "1",
+          "active_bps": "25",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "REJECTED",
+          "code": "FEE_GE_RECEIVE",
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "q-p-1-fee-zero",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "1",
+          "p": "1",
+          "active_bps": "0",
+          "cap": "0"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "PASS",
+          "code": "OK",
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "id-conflict",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "CONFLICT",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "REJECTED",
+          "code": "ID_CONFLICT",
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "epoch",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": false,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "REJECTED",
+          "code": "EPOCH_MISMATCH",
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "revoked",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": true,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "REJECTED",
+          "code": "ORDER_REVOKED",
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "expiry-equal",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "1000",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "REJECTED",
+          "code": "EXPIRED",
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "market",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "0",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "REJECTED",
+          "code": "MARKET_LIMIT",
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "bps",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "10001",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "REJECTED",
+          "code": "BPS_RANGE",
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "cap",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "0"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "REJECTED",
+          "code": "FEE_CAP",
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "cumulative",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": false,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "REJECTED",
+          "code": "CUMULATIVE_QTY_EXCEEDED",
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "balance",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": false,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "REJECTED",
+          "code": "INSUFFICIENT_CONFIRMED_BALANCE",
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "policy-cap-10000",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "10000"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "PASS",
+          "code": "OK",
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "policy-cap-10001",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "10001"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "PASS",
+          "code": "OK",
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "policy-cap-4294967295",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "4294967295"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "PASS",
+          "code": "OK",
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "missing-id",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": null
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "missing-source",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "missing-height",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "missing-expiry_height",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "missing-epoch_matches",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "missing-revoked",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "missing-id_state",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "missing-cumulative_ok",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "missing-confirmed_balance_ok",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "missing-q",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "missing-p",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "active_bps": "25",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "missing-active_bps",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "missing-cap",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "snapshot-unconnected",
+      "input": {
+        "authentication_result": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot": null
+      },
+      "expected": {
+        "authentication": {
+          "status": "PASS",
+          "code": "OK"
+        },
+        "snapshot_policy": {
+          "status": "NOT_CONNECTED",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": null
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "key-type-other",
+      "input": {
+        "authentication_result": {
+          "status": "REJECTED",
+          "code": "ACCOUNT_KEY_MISMATCH"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "REJECTED",
+          "code": "ACCOUNT_KEY_MISMATCH"
+        },
+        "snapshot_policy": {
+          "status": "NOT_RUN",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "key-unregistered",
+      "input": {
+        "authentication_result": {
+          "status": "REJECTED",
+          "code": "ACCOUNT_KEY_UNREGISTERED"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "REJECTED",
+          "code": "ACCOUNT_KEY_UNREGISTERED"
+        },
+        "snapshot_policy": {
+          "status": "NOT_RUN",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "key-bytes-other",
+      "input": {
+        "authentication_result": {
+          "status": "REJECTED",
+          "code": "ACCOUNT_KEY_MISMATCH"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "REJECTED",
+          "code": "ACCOUNT_KEY_MISMATCH"
+        },
+        "snapshot_policy": {
+          "status": "NOT_RUN",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "signature-invalid",
+      "input": {
+        "authentication_result": {
+          "status": "REJECTED",
+          "code": "INVALID_SIGNATURE"
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "REJECTED",
+          "code": "INVALID_SIGNATURE"
+        },
+        "snapshot_policy": {
+          "status": "NOT_RUN",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    },
+    {
+      "id": "key-type-port-missing",
+      "input": {
+        "authentication_result": {
+          "status": "NOT_CONNECTED",
+          "code": null
+        },
+        "snapshot": {
+          "id": "synthetic-1",
+          "source": "SYNTHETIC",
+          "height": "999",
+          "expiry_height": "1000",
+          "epoch_matches": true,
+          "revoked": false,
+          "id_state": "NEW",
+          "cumulative_ok": true,
+          "confirmed_balance_ok": true,
+          "q": "100",
+          "p": "100",
+          "active_bps": "25",
+          "cap": "25"
+        }
+      },
+      "expected": {
+        "authentication": {
+          "status": "NOT_CONNECTED",
+          "code": null
+        },
+        "snapshot_policy": {
+          "status": "NOT_RUN",
+          "code": null,
+          "source": "SYNTHETIC",
+          "snapshot_id": "synthetic-1"
+        },
+        "ack": "NOT_CONNECTED",
+        "wal_replay": "NOT_RUN",
+        "ledger": "NOT_CONNECTED"
+      }
+    }
+  ],
+  "api_errors": [
+    {
+      "code": "INTEGER_RANGE",
+      "expected": {
+        "http_status": 400,
+        "body": {
+          "code": "INTEGER_RANGE",
+          "retryable": false,
+          "state": "REJECTED",
+          "height": null
+        }
+      }
+    },
+    {
+      "code": "BPS_RANGE",
+      "expected": {
+        "http_status": 400,
+        "body": {
+          "code": "BPS_RANGE",
+          "retryable": false,
+          "state": "REJECTED",
+          "height": null
+        }
+      }
+    },
+    {
+      "code": "FEE_CAP",
+      "expected": {
+        "http_status": 400,
+        "body": {
+          "code": "FEE_CAP",
+          "retryable": false,
+          "state": "REJECTED",
+          "height": null
+        }
+      }
+    },
+    {
+      "code": "FEE_GE_RECEIVE",
+      "expected": {
+        "http_status": 400,
+        "body": {
+          "code": "FEE_GE_RECEIVE",
+          "retryable": false,
+          "state": "REJECTED",
+          "height": null
+        }
+      }
+    },
+    {
+      "code": "ACCOUNT_KEY_UNREGISTERED",
+      "expected": {
+        "http_status": 400,
+        "body": {
+          "code": "ACCOUNT_KEY_UNREGISTERED",
+          "retryable": false,
+          "state": "REJECTED",
+          "height": null
+        }
+      }
+    },
+    {
+      "code": "ACCOUNT_KEY_MISMATCH",
+      "expected": {
+        "http_status": 400,
+        "body": {
+          "code": "ACCOUNT_KEY_MISMATCH",
+          "retryable": false,
+          "state": "REJECTED",
+          "height": null
+        }
+      }
+    }
+  ],
+  "registration_cases": [
+    {
+      "id": "same-type",
+      "submitted_fixture": {
+        "file": "signatures.json",
+        "positive_id": "order"
+      },
+      "registered": {
+        "key_type": "ML-DSA-65",
+        "raw_key_ref": "submitted"
+      },
+      "expected_registration": "OK",
+      "crypto": "NOT_RUN"
+    },
+    {
+      "id": "other-type",
+      "submitted_fixture": {
+        "file": "signatures.json",
+        "positive_id": "order"
+      },
+      "registered": {
+        "key_type": "OTHER",
+        "raw_key_ref": "submitted"
+      },
+      "expected_registration": "ACCOUNT_KEY_MISMATCH",
+      "crypto": "NOT_RUN"
+    },
+    {
+      "id": "unregistered",
+      "submitted_fixture": {
+        "file": "signatures.json",
+        "positive_id": "order"
+      },
+      "registered": null,
+      "expected_registration": "ACCOUNT_KEY_UNREGISTERED",
+      "crypto": "NOT_RUN"
+    },
+    {
+      "id": "other-bytes",
+      "submitted_fixture": {
+        "file": "signatures.json",
+        "positive_id": "order"
+      },
+      "registered": {
+        "key_type": "ML-DSA-65",
+        "raw_key_ref": "submitted-first-byte-xor-1"
+      },
+      "expected_registration": "ACCOUNT_KEY_MISMATCH",
+      "crypto": "NOT_RUN"
+    },
+    {
+      "id": "missing-type",
+      "submitted_fixture": {
+        "file": "signatures.json",
+        "positive_id": "order"
+      },
+      "registered": {
+        "raw_key_ref": "submitted"
+      },
+      "expected_registration": "NOT_CONNECTED",
+      "crypto": "NOT_RUN"
+    }
+  ]
+}
