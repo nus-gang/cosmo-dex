@@ -1,0 +1,62 @@
+{
+  "version": "rc3-retest",
+  "security_verdict": "FAIL",
+  "crypto_interoperability": "PASS",
+  "review_deliverable": "COMPLETE_PENDING_CEO_REVIEW",
+  "total": 759,
+  "passed": 754,
+  "differences": 5,
+  "original_420_cases": "PASS_WITH_RC3_G04_DECISION_PORT",
+  "G-01": "REPRODUCTION_FIXED",
+  "G-02": "REPRODUCTION_FIXED",
+  "G-03": "REPRODUCTION_FIXED_RC3",
+  "G-04": "ORIGINAL_REPRODUCTION_FIXED; NEW_DECISION_PORT_FINDINGS_FAIL",
+  "open_findings": [
+    "G-RC3-01",
+    "G-RC3-02"
+  ],
+  "findings_fix_retest": "NOT_RUN",
+  "ack": "NOT_CONNECTED",
+  "wal_replay": "NOT_RUN",
+  "ledger": "NOT_CONNECTED",
+  "rest_ws_chain": "NOT_CONNECTED",
+  "withdrawal_settlement_race": "NOT_RUN",
+  "sponsorship_bypass": "NOT_RUN",
+  "direct_recovery": "NOT_RUN",
+  "product_release_approval": false,
+  "ci": {
+    "url": "https://github.com/nus-gang/cosmo-dex/actions/runs/36614473295",
+    "run_id": 36614473295,
+    "tested_sha": "e9edf595d5f2c96dae8c88c7bd33cfc4fcc4a804",
+    "conclusion": "failure",
+    "local_ci_summary_identical": true,
+    "local_ci_all_differential_rows_identical": true,
+    "total": 759,
+    "passed": 754,
+    "differences": 5
+  },
+  "inputs": [
+    {
+      "issue": "NUS-12",
+      "component": "chain",
+      "sha": "5d39b7a0ffe911ed60cd0e3a56ada135e76a425f"
+    },
+    {
+      "issue": "NUS-13",
+      "component": "exchange",
+      "sha": "d2984223fac6c9dfafc0d71ab9f86af5bf539339"
+    },
+    {
+      "issue": "NUS-14",
+      "component": "settlement",
+      "sha": "f9b5bbf1e06a4a0c43bebc6d5bd081dc3b1892c2"
+    },
+    {
+      "issue": "NUS-15",
+      "component": "web",
+      "sha": "8a70632d933b58c15b5bbac9fbef25dfa7312643"
+    }
+  ],
+  "contract_sha256": "a71a8c03fea5e4d2876612e821eafcb4b359a0b132157929b9924d6f8fecd73e",
+  "vectors_sha256": "4851d9d674b2412ca8919d8347a71da13f9adf4426fe60b44e2a4a259f8bd948"
+}

@@ -14,7 +14,7 @@
 |E / Settlement [NUS-14](/NUS/issues/NUS-14)|f9b5bbf1e06a4a0c43bebc6d5bd081dc3b1892c2|
 |F / Wallet [NUS-15](/NUS/issues/NUS-15)|8a70632d933b58c15b5bbac9fbef25dfa7312643|
 
-API의 done/approved와 각 commit work product를 직접 대조했다. C/D/F protocol 40파일씩은 A rc3와 byte-for-byte 동일하다. E의 원래 rc2 manifest는 유지한다. E가 실제 소비하는 `schema.json`, `vectors/message-codec.json`, `vectors/s0-cases.json`, `vectors/batches.json` 네 파일은 rc3와 동일하며 E 시험을 rc3 입력으로 재실행했다. E 전체 manifest가 rc3라고 표시하지 않는다. 원래 구현 파일은 변경하지 않았고 새 시험 adapter만 별도 `security/`에 작성했다.
+API의 done/approved와 각 commit work product를 직접 대조했다. C/D/F protocol 41파일씩은 A rc3와 byte-for-byte 동일하다. E의 원래 rc2 manifest는 유지한다. E가 실제 소비하는 `schema.json`, `vectors/message-codec.json`, `vectors/s0-cases.json`, `vectors/batches.json` 네 파일은 rc3와 동일하며 E 시험을 rc3 입력으로 재실행했다. E 전체 manifest가 rc3라고 표시하지 않는다. 원래 구현 파일은 변경하지 않았고 새 시험 adapter만 별도 `security/`에 작성했다.
 
 - contract: `a71a8c03fea5e4d2876612e821eafcb4b359a0b132157929b9924d6f8fecd73e`
 - vectors: `4851d9d674b2412ca8919d8347a71da13f9adf4426fe60b44e2a4a259f8bd948`
@@ -30,7 +30,7 @@ API의 done/approved와 각 commit work product를 직접 대조했다. C/D/F pr
 - G-03: rc3 21 cap 사례 및 cap 0/25/10000/10001/U32_MAX를 새로 서명한 주문 검사 일치. 승인 rc3 규약을 기준으로 한다.
 - G-04: 34 합성 정책 벡터 및 실제 인증과 결합한 revoked/ID/잔고/누적량/만료/누락 상태 시험을 실행했다. 기존 재현은 수정 확인했지만 아래 새 결함 때문에 판정 포트 전체는 FAIL이다.
 - 암호 3×3 각 칸 Order/Cancel/Wallet 3건, 총 27 검증 PASS. 다른 공개 synthetic seed로 실제 9개 서명 생성. 27 codec/frame, 27 domain 변조 거절, 27 FIPS context 교차 거절도 PASS. 공통 3 positive/35 negative fixture를 유지했다.
-- Go 제출 계약 시험, Rust 16 integration tests, TS Node 347 assertions 및 build/typecheck PASS. 정산 기존 16 tests와 독립 20조건 PASS. 이번 브라우저 재시험은 NOT_RUN(이전/개별 승인 브라우저 결과와 분리).
+- Go 제출 계약 264 tests, Rust 16 integration tests, TS Node 347 assertions 및 build/typecheck PASS. 정산 기존 16 tests와 독립 20조건 PASS. 이번 브라우저 재시험은 NOT_RUN(이전/개별 승인 브라우저 결과와 분리).
 - 759는 비교 수이며 고유 취약점 시험 수가 아니다. 추가 339비교 중 5차이이며 동일 원인 두 findings에 대응한다.
 
 ## G-RC3-01 — 새 판정 포트의 주문 enum 검증 누락
@@ -59,10 +59,14 @@ API의 done/approved와 각 commit work product를 직접 대조했다. C/D/F pr
 
 실제 자산 보존·음수 잔고/중복 지급·출금/정산 경합·후원 우회·직접 회수·영속 ID/ACK/WAL replay는 NOT_RUN. REST/WS/chain/DB/원장은 NOT_CONNECTED. 잠정액 비가용·timeout 보류·과거 receipt·동일 bytes 재시도는 모의 정산 adapter 수준만 PASS다.
 
-재사용 소스는 기존 고정 lock(CIRCL 1.6.3, fips204 0.4.6, noble 0.4.1, hashes 1.8.0, scure/base 1.2.6, OrderBook-rs 0.13.1)을 유지한다. 재다운로드한 소스/라이선스와 잠금 hash를 확인하며 세부 기존 출처·제한은 `REVIEW.md`에 보존한다. 독자 암호 설계, 전체 SBOM/취약점 전수 감사 또는 법률 승인은 없다.
+재사용 소스는 기존 고정 lock(CIRCL 1.6.3, fips204 0.4.6, noble 0.4.1, hashes 1.8.0, scure/base 1.2.6, OrderBook-rs 0.13.1)을 유지한다. 재다운로드한 소스/라이선스와 잠금 hash를 `evidence/licenses-and-locks.json`에 기록했다. [공식 CIRCL v1.6.3 LICENSE](https://github.com/cloudflare/circl/blob/v1.6.3/LICENSE)와 [noble 0.4.1 태그](https://github.com/paulmillr/noble-post-quantum/tree/0.4.1)도 조회했다. fips204 웹 문서는 접근 실패했으며 잠금 checksum으로 설치된 0.4.6 crate의 MIT/Apache 원문을 확인했다. 세부 기존 출처·제한은 `REVIEW.md`에 보존한다. 독자 암호 설계, 전체 SBOM/취약점 전수 감사 또는 법률 승인은 없다.
 
 CEO는 부정 판정 산출물을 인수하고 수정은 원래 D/F 업무로 반환한다. CTO에게 같은 findings를 공유한다. [NUS-17](/NUS/issues/NUS-17)은 G의 done을 PASS로 해석하지 않고 이 새 verdict와 별도 fresh checkout/공통 CI 결과를 읽어야 한다. main 병합·후속 기능·출시는 승인하지 않는다.
 
 ## CI
 
-실행 링크·시험 SHA·artifact 대조 결과는 실행 완료 후 아래에 기록한다. 아직 결과가 없는 상태를 PASS라고 쓰지 않는다.
+[PR #9](https://github.com/nus-gang/cosmo-dex/pull/9), [실제 Linux CI 36614473295](https://github.com/nus-gang/cosmo-dex/actions/runs/36614473295), 시험한 harness SHA `e9edf595d5f2c96dae8c88c7bd33cfc4fcc4a804`.
+
+새 Ubuntu checkout에서 prepare 및 선행 Go/Rust/TS/정산 시험을 통과하고 differential 단계가 위 5차이로 **failure**를 반환했다. 업로드된 CI artifact를 실제 내려받아 local/CI `summary.json`뿐 아니라 `differential.json`의 **전체 759행이 동일함**을 확인했다. CI 원시 로그는 제출 ZIP의 `security/ci-download/`에 보존했다. 뒤따르는 보고·증거 commit은 시험 코드를 변경하지 않는다.
+
+최초 로컬 실행은 캐시 쓰기 권한 때문에 중단되어 격리 캐시와 승인된 네트워크 실행으로 재개했다. harness 작성 중 중복 Height 인자 오류를 고친 뒤 최종 버전을 시험했으며 이는 제품 결함으로 계산하지 않았다. CI는 그 최종 코드의 새 환경 재현이다.
