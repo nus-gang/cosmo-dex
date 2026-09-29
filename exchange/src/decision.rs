@@ -67,9 +67,14 @@ pub fn stage(result: Result<()>) -> Value {
 }
 /// Policy-only entry point. Caller supplies authentication result; this is not crypto evidence.
 pub fn evaluate_snapshot(authentication: Value, s: &Value) -> Value {
-    evaluate_bound_snapshot(authentication, s, Ok(()))
+    evaluate_bound_snapshot(authentication, s, Ok(()), true)
 }
-fn evaluate_bound_snapshot(authentication: Value, s: &Value, signed_market: Result<()>) -> Value {
+fn evaluate_bound_snapshot(
+    authentication: Value,
+    s: &Value,
+    signed_market: Result<()>,
+    bound: bool,
+) -> Value {
     let mut out = json!({"authentication":authentication,"snapshot_policy":{
         "status":"NOT_RUN","code":null,"source":"SYNTHETIC","snapshot_id":s["id"]},
         "ack":"NOT_CONNECTED","wal_replay":"NOT_RUN","ledger":"NOT_CONNECTED"});
@@ -91,7 +96,9 @@ fn evaluate_bound_snapshot(authentication: Value, s: &Value, signed_market: Resu
         "active_bps",
         "cap",
     ];
-    let connected = required.iter().all(|k| !s[*k].is_null())
+    let connected = bound
+        && s["id"].as_str().is_some_and(|id| !id.is_empty())
+        && required.iter().all(|k| !s[*k].is_null())
         && s["source"] == "SYNTHETIC"
         && s["id"].is_string()
         && ["NEW", "CONFLICT"].contains(&s["id_state"].as_str().unwrap_or(""))
@@ -114,32 +121,52 @@ fn evaluate_bound_snapshot(authentication: Value, s: &Value, signed_market: Resu
 }
 /// Trusted snapshot must be from the same observation as ctx; never accept it from an order request.
 pub fn admit_order(raw: &[u8], sig: &[u8], ctx: &OrderContext<'_>, snapshot: &Value) -> Value {
+    admit_order_with_observation(
+        raw,
+        sig,
+        ctx,
+        &json!({
+            "snapshot_id":ctx.snapshot_id,"height":ctx.height.to_string(),"epoch":ctx.epoch.to_string()
+        }),
+        snapshot,
+    )
+}
+/// Authentication uses only registration/domain fields of ctx. Observation is optional
+/// trusted adapter data; absent values never become policy defaults or authority.
+pub fn admit_order_with_observation(
+    raw: &[u8],
+    sig: &[u8],
+    ctx: &OrderContext<'_>,
+    observation: &Value,
+    snapshot: &Value,
+) -> Value {
     let authenticated = policy::authenticate_order(raw, sig, ctx);
     let authentication = stage(authenticated.as_ref().map(|_| ()).map_err(|e| *e));
-    let mut s = snapshot.clone();
     let mut market = Ok(());
+    let mut bound = false;
     if let Ok(order) = authenticated {
-        let observed_height = ctx.height.to_string();
         market = policy::market_rules(&order);
-        let epoch_matches = integer(&order["owner_epoch"], 64) == Ok(u128::from(ctx.epoch));
-        // Bind supplied policy fields to the signed order and authentication observation.
-        let matches = [
-            ("q", "max_qty_lots"),
-            ("p", "limit_price_ticks"),
-            ("cap", "max_fee_bps"),
-            ("expiry_height", "expiry_height"),
-        ]
-        .iter()
-        .all(|(a, b)| s[*a].is_null() || s[*a] == order[*b])
-            && s["epoch_matches"].as_bool() == Some(epoch_matches)
-            && !ctx.snapshot_id.is_empty()
-            && (s["id"].is_null() || s["id"] == ctx.snapshot_id)
-            && (s["height"].is_null() || s["height"].as_str() == Some(observed_height.as_str()));
-        if !matches {
-            s = Value::Null;
+        if let (Some(id), Ok(height), Ok(epoch)) = (
+            observation["snapshot_id"].as_str(),
+            integer(&observation["height"], 64),
+            integer(&observation["epoch"], 64),
+        ) {
+            let epoch_matches = integer(&order["owner_epoch"], 64) == Ok(epoch);
+            bound = !id.is_empty()
+                && snapshot["id"] == id
+                && snapshot["height"].as_str() == Some(height.to_string().as_str())
+                && snapshot["epoch_matches"].as_bool() == Some(epoch_matches)
+                && [
+                    ("q", "max_qty_lots"),
+                    ("p", "limit_price_ticks"),
+                    ("cap", "max_fee_bps"),
+                    ("expiry_height", "expiry_height"),
+                ]
+                .iter()
+                .all(|(a, b)| !snapshot[*a].is_null() && snapshot[*a] == order[*b]);
         }
     }
-    evaluate_bound_snapshot(authentication, &s, market)
+    evaluate_bound_snapshot(authentication, snapshot, market, bound)
 }
 
 pub fn api_error(code: &str, height: Option<u64>) -> Option<Value> {

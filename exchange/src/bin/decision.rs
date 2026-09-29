@@ -33,7 +33,7 @@ fn run(v: &Value) -> Result<Value> {
                 Some(hex::decode(string(reg, "raw_key_hex")?).map_err(|_| "KEY_LENGTH")?)
             };
             let ctx = OrderContext {
-                snapshot_id: string(c, "snapshot_id")?,
+                snapshot_id: "", // Not used for authentication; raw observation is passed below.
                 chain_id: string(c, "chain_id")?,
                 genesis_hash: string(c, "genesis_hash")?,
                 exchange_module_id: string(c, "exchange_module_id")?,
@@ -41,15 +41,21 @@ fn run(v: &Value) -> Result<Value> {
                 market_config_version: number(c, "market_config_version", 64)? as u64,
                 registered_key: pk.as_deref(),
                 registered_key_type: reg["key_type"].as_str(),
-                height: number(c, "height", 64)? as u64,
-                epoch: number(c, "epoch", 64).map_err(|_| "NOT_CONNECTED")? as u64,
+                height: 0, // Legacy policy fields are not used by this authentication-only context.
+                epoch: 0,
                 // Remaining legacy fields are evaluated through the synthetic snapshot.
                 revoked: false,
                 filled: 0,
                 available: 0,
                 fee_bps: 0,
             };
-            Ok(admit_order(&raw, &sig, &ctx, &v["snapshot"]))
+            Ok(admit_order_with_observation(
+                &raw,
+                &sig,
+                &ctx,
+                c,
+                &v["snapshot"],
+            ))
         }
         _ => Err("UNSUPPORTED_OPERATION"),
     }

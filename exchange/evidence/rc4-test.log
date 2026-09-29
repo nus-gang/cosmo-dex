@@ -1,0 +1,152 @@
+   Compiling nus-exchange-contract v0.1.0 (/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/worktrees/NUS-13/exchange)
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-09-29 22:14:58.030 xcodebuild[73514:4356736]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-09-29 22:14:58.499 xcodebuild[73514:4356629] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-09-29 22:14:59.317 xcodebuild[73707:4357475]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-09-29 22:14:59.662 xcodebuild[73707:4357474] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-09-29 22:14:58.288 xcodebuild[73567:4356954]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-09-29 22:14:58.609 xcodebuild[73567:4356873] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-09-29 22:14:59.407 xcodebuild[73708:4357487]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-09-29 22:14:59.704 xcodebuild[73708:4357480] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-09-29 22:14:58.288 xcodebuild[73568:4356943]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-09-29 22:14:58.609 xcodebuild[73568:4356870] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-09-29 22:14:59.420 xcodebuild[73709:4357489]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-09-29 22:14:59.717 xcodebuild[73709:4357483] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-09-29 22:14:58.335 xcodebuild[73591:4356992]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-09-29 22:14:58.634 xcodebuild[73591:4356937] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-09-29 22:14:59.444 xcodebuild[73710:4357496]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-09-29 22:14:59.736 xcodebuild[73710:4357486] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-09-29 22:14:58.379 xcodebuild[73614:4357066]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-09-29 22:14:58.662 xcodebuild[73614:4356998] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-09-29 22:14:59.479 xcodebuild[73711:4357499]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-09-29 22:14:59.765 xcodebuild[73711:4357495] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-09-29 22:14:58.525 xcodebuild[73637:4357302]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-09-29 22:14:58.806 xcodebuild[73637:4357198] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-09-29 22:14:59.622 xcodebuild[73712:4357506]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-09-29 22:14:59.897 xcodebuild[73712:4357505] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-09-29 22:14:58.590 xcodebuild[73660:4357423]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-09-29 22:14:58.883 xcodebuild[73660:4357320] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-09-29 22:14:59.691 xcodebuild[73713:4357514]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-09-29 22:14:59.972 xcodebuild[73713:4357510] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-09-29 22:14:58.630 xcodebuild[73683:4357455]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-09-29 22:14:58.924 xcodebuild[73683:4357426] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-09-29 22:14:59.732 xcodebuild[73714:4357519]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-09-29 22:15:00.016 xcodebuild[73714:4357513] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-09-29 22:14:58.676 xcodebuild[73706:4357457]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-09-29 22:14:58.962 xcodebuild[73706:4357451] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-09-29 22:14:59.789 xcodebuild[73715:4357521]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-09-29 22:15:00.069 xcodebuild[73715:4357518] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: `nus-exchange-contract` (bin "decision" test) generated 1 warning
+warning: `nus-exchange-contract` (bin "vectors" test) generated 1 warning
+warning: `nus-exchange-contract` (lib test) generated 1 warning
+warning: `nus-exchange-contract` (bin "decision") generated 1 warning
+warning: `nus-exchange-contract` (bin "vectors") generated 1 warning
+warning: `nus-exchange-contract` (test "common_vectors") generated 1 warning
+warning: `nus-exchange-contract` (test "rc3") generated 1 warning
+warning: `nus-exchange-contract` (test "rc4") generated 1 warning
+warning: `nus-exchange-contract` (test "upstream_ioc") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.40s
+     Running unittests src/lib.rs (worktrees/NUS-13/exchange/target/debug/deps/nus_exchange_contract-c48582a6eedf9241)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/decision.rs (worktrees/NUS-13/exchange/target/debug/deps/decision-1b370670f1cabad5)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/vectors.rs (worktrees/NUS-13/exchange/target/debug/deps/vectors-bef514c259cc39ca)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/common_vectors.rs (worktrees/NUS-13/exchange/target/debug/deps/common_vectors-c76c2705d0dfba82)
+
+running 10 tests
+PASS policy=13
+test sequenced_ioc_contract ... ok
+test common_policy ... ok
+PASS S0 exchange cases=15; receipt/transfer state belongs to Settlement/Chain
+test parser_adversarial_boundaries ... ok
+PASS integer_boundaries=32 (I20 superseded by rc3 fee-0)
+test s0_exchange_vectors ... ok
+test integer_vectors ... ok
+PASS complete_message_codec=14
+test message_vectors ... ok
+PASS wire=18 amount_codec=17
+test strict_wire_and_amount_vectors ... ok
+test order_validation_precedence_and_binding ... ok
+PASS ML-DSA-65 positives=3 negatives=35, independent API→wire→frame→SHA256
+test real_signature_vectors ... ok
+test cli_runner_receipt ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.38s
+
+     Running tests/rc3.rs (worktrees/NUS-13/exchange/target/debug/deps/rc3-a6ea020e0364b37c)
+
+running 5 tests
+PASS rc3 fee=17 cap=21 synthetic decisions=34 API=6; injected authentication is NOT crypto evidence
+test common_rc3_policy_examples ... ok
+PASS real ML-DSA top-level registration=5 plus tampered signature
+test actual_registration_and_signature_at_top_level ... ok
+test json_lines_port_uses_real_registration ... ok
+PASS re-signed cap=5, active range=5, small-fill auth PASS/policy rejection; missing/mismatched snapshot never ACKED
+test newly_signed_cap_and_small_fill ... ok
+PASS admission: 9 signed enum combinations, 7 market boundaries, 4 epoch combinations, 21 CLI requests
+test signed_enum_market_and_epoch_at_admission_boundary ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.62s
+
+     Running tests/rc4.rs (worktrees/NUS-13/exchange/target/debug/deps/rc4-332eece3dc38b2d4)
+
+running 1 test
+PASS rc4 60 full outputs; actual ML-DSA signatures, corrupted signature and disconnected registration; ACK/ledger NOT_CONNECTED
+test rc4_full_outputs_through_actual_signature_and_cli ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.91s
+
+     Running tests/upstream_ioc.rs (worktrees/NUS-13/exchange/target/debug/deps/upstream_ioc-6b5949e8bd1ff9ef)
+
+running 2 tests
+test real_cancel_and_zero_fill_ioc ... ok
+PASS actual orderbook-rs 0.13.1: IOC requested=5, callback filled=3, Err, release R=200, retain D=300/P=3000
+test real_ioc_error_retains_callback_debits ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests nus_exchange_contract
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
