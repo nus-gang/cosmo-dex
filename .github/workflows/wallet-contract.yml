@@ -1,0 +1,36 @@
+name: S0 Wallet contract
+on:
+  push:
+    branches: ['wallet/**']
+  pull_request:
+    paths: ['web/**', 'protocol/v1/**', '.github/workflows/wallet-contract.yml']
+permissions:
+  contents: read
+jobs:
+  wallet:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.21.0'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: npm test > evidence/node.txt
+      - run: node --experimental-strip-types scripts/vectors.ts ../protocol/v1/vectors/signatures.json > evidence/ci-vectors.json
+      - run: npm run test:browser
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: wallet-contract-${{ github.sha }}
+          path: web/evidence/
