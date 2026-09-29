@@ -102,6 +102,10 @@ A 기준 SHA `889fda0c7181a696b4eb2a2649508c6192af8406`. C/D/E/F의 `protocol/v1
 |출금↔정산 두 순서, epoch 원자 증가|명세만 있음|NOT_RUN, Chain|
 |가스 후원 우회·bank/authz/모듈 경유·발행 권한|실제 앱 route/ante/keeper 없음|NOT_RUN, Chain/SRE; 임의 우회 불가 PASS 금지|
 |직접 회수·대체 RPC/가스·지속 키 복구|메모리 복구 probe만 실행|NOT_RUN, Wallet/Chain/SRE; 실자산 출시 차단|
-|공통 CI/새 checkout 전체 인수|G workflow 재현 경로 제공, 현재 고정 입력에서 실패를 그대로 노출|H가 실제 CI·manifest·verdict를 읽고 판정; local PASS를 CI PASS로 대체하지 않음|
+|공통 CI/새 checkout 전체 인수|GitHub Linux 새 checkout 재현 완료, 동일 7차이로 FAIL|H가 실제 CI·manifest·verdict를 읽고 판정; local PASS를 CI PASS로 대체하지 않음|
 
 CEO는 이 부정 판정 산출물의 완료 여부를 인수하고 G-01~04를 원래 업무로 반환한다. CTO는 공통 판정 포트·수수료 계약을 조정한다. [NUS-17](/NUS/issues/NUS-17) QA는 G done 여부만 보고 통과시키지 말고 `verdict.json`을 읽는다. 후속 기능 단계·유료 자원·실자산 운영은 이번 리뷰의 승인 범위가 아니다.
+
+## 저장소 CI 재현 증거
+
+[GitHub run 36607517804](https://github.com/nus-gang/cosmo-dex/actions/runs/36607517804), 시험한 harness SHA `2be2347632909e1b6a417b3823220d5abcba4745`. Ubuntu 새 checkout에서 고정 입력 추출, Go/Rust/TS/정산 시험, 독립 harness 실행을 완료했다. 실패 원인은 동일 7개 정책 차이이며 업로드된 CI artifact의 summary.json이 로컬 결과와 동일하다. 다운로드 후 원시 Go/Rust/TS/harness 로그를 확인했다. workflow 결론은 실제 **failure**, 보안 게이트 PASS가 아니다. PR #7은 A 기준 stacked PR이며 main 통합은 수행하지 않았다. 이후 문서·증거 커밋은 harness 코드를 바꾸지 않는다.

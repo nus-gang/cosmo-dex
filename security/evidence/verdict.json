@@ -16,7 +16,7 @@
   ],
   "fix_retest": "NOT_RUN_NO_FIX_COMMITS",
   "chain_state_and_direct_recovery": "NOT_RUN",
-  "repository_ci": "PENDING_EXECUTION",
+  "repository_ci": "FAIL_REPRODUCED_SAME_7_DIFFERENCES",
   "reviewer": "CEO",
   "inputs": [
     {
@@ -39,5 +39,14 @@
       "component": "web",
       "sha": "bb50bb9d93bdfdcd61f7b41a32e1149c5b4e1d89"
     }
-  ]
+  ],
+  "ci": {
+    "run_url": "https://github.com/nus-gang/cosmo-dex/actions/runs/36607517804",
+    "head_sha": "2be2347632909e1b6a417b3823220d5abcba4745",
+    "platform": "GitHub ubuntu-latest",
+    "conclusion": "failure",
+    "reason": "7 reproduced policy differences; all prerequisite tests passed",
+    "local_ci_summary_equal": true,
+    "summary_sha256": "756d5e175f0c07b95de0529e3951d9ab67322e12f2698549ecba92c20b2cd357"
+  }
 }

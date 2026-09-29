@@ -1,4 +1,4 @@
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.04s
      Running unittests src/lib.rs (exchange/target/debug/deps/nus_exchange_contract-c48582a6eedf9241)
 
 running 0 tests
@@ -14,8 +14,8 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
      Running tests/common_vectors.rs (exchange/target/debug/deps/common_vectors-6836d39c4fa1c1d5)
 
 running 10 tests
-test integer_vectors ... ok
 test sequenced_ioc_contract ... ok
+test integer_vectors ... ok
 test common_policy ... ok
 test s0_exchange_vectors ... ok
 test parser_adversarial_boundaries ... ok
@@ -25,7 +25,7 @@ test order_validation_precedence_and_binding ... ok
 test real_signature_vectors ... ok
 test cli_runner_receipt ... ok
 
-test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.38s
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.36s
 
      Running tests/upstream_ioc.rs (exchange/target/debug/deps/upstream_ioc-06971ab8c929c4eb)
 
