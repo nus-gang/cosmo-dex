@@ -12,12 +12,12 @@ API에서 A/C/D/F done/approved를 확인하고 각 승인 제출 SHA를 읽었�
 
 ## 실행 결과
 
-- 총 963 비교, 963 일치, 0 차이. 기존 783개 ID/언어를 모두 보존하고 rc4 60×3=180 비교를 추가했다.
+- 총 969 비교, 969 일치, 0 차이. 기존 783개 ID/언어를 모두 보존하고 rc4 60×3=180 비교 및 독립 null/누락 epoch+false 2×3=6 비교를 추가했다.
 - 기존 binding/epoch 불변식 36행은 rc4 규범의 전체 출력 기대값으로 강화했다. 과거 기대/FAIL 증거는 evidence-fixed 및 이전 PR/첨부에 보존한다.
 - 새 60건은 인증 결과를 주입하지 않는다. 공개 모의 seed로 OrderV1 projection을 재직렬화·재서명하고 각 언어의 실제 인증/정책 함수를 호출한다. 인증 거절은 서명 변조, 인증 NOT_CONNECTED는 등록 키 타입 누락으로 재현한다. 원본 context 누락/null은 Go Context JSON presence, Rust observation, TS optional 필드에 전달한다.
 - 실제 ML-DSA Go/Rust/TS 생성×검증 27, codec 27, domain 거절 27, context 거절 27 PASS. wire·정수·overflow·만료 등호·등록 키 타입/bytes와 주소 결합·fee/cap 회귀 PASS.
 - 로컬 실제 Chrome 154.0.8037.58: conformance 453 PASS, 키 생성/주문 서명/메모리 복구/390px UI PASS, pageErrors 0, 외부 요청 0. 영속 백업은 미구현이다.
-- Go/Rust/TS 구성요소 시험·build, 정산 16 및 독립 합성 adapter 20 검사 PASS. 정산 과거 receipt·동일 bytes 재시도·timeout UNKNOWN·잠정 수취액 비가용의 모의 계약 경계만 검증한다.
+- Go 338, Rust 18, TS 구성요소 시험·build, 정산 16 및 독립 합성 adapter 20 검사 PASS. 정산 과거 receipt·동일 bytes 재시도·timeout UNKNOWN·잠정 수취액 비가용의 모의 계약 경계만 검증한다.
 
 ## findings 재시험 및 잔여 위험
 

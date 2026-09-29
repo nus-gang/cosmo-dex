@@ -1,8 +1,8 @@
 {
   "previous_total": 783,
-  "current_total": 963,
+  "current_total": 969,
   "preserved_ids": 783,
-  "added_rc4": 180,
+  "added_rc4": 186,
   "previous_failed_ids": [
     {
       "id": "rc3-signed-missing-epoch_matches",

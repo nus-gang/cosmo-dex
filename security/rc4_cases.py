@@ -27,3 +27,14 @@ for v in rc4['cases']:
  expected=dict(code='OK',decision=v['expected'])
  policy_inputs.append(dict(id=v['id'],request=r,expected=expected))
  for lang in ps:check(v['id'],lang,r,expected)
+# Independent regression for null/omitted epoch with a false flag: absence is not
+# evidence of an epoch mismatch. Unlike the 60 vectors this exercises false.
+for absent in ['null','omitted']:
+ r=signed_request(snapshot_updates={'epoch_matches':False})
+ r['Observation']={'snapshot_id':'synthetic-1','height':'999'}
+ r['C'].pop('Epoch')
+ if absent=='null':r['Observation']['epoch']=None;r['C']['Epoch']=None
+ expected=expect_decision(policy='NOT_CONNECTED')
+ ident='rc4-extra-epoch-'+absent+'-false'
+ policy_inputs.append(dict(id=ident,request=r,expected=expected))
+ for lang in ps:check(ident,lang,r,expected)
