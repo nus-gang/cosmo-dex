@@ -1,0 +1,48 @@
+{
+  "contract_revision": null,
+  "vectors": null,
+  "vectors_sha256": null,
+  "lanes": {
+    "go": {
+      "cwd": "chain",
+      "build": [
+        "go",
+        "build",
+        "./..."
+      ],
+      "test": [
+        "go",
+        "test",
+        "./..."
+      ],
+      "vectors": null
+    },
+    "rust": {
+      "cwd": "exchange",
+      "build": [
+        "cargo",
+        "build",
+        "--locked"
+      ],
+      "test": [
+        "cargo",
+        "test",
+        "--locked"
+      ],
+      "vectors": null
+    },
+    "ts": {
+      "cwd": "web",
+      "build": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "test": [
+        "npm",
+        "test"
+      ],
+      "vectors": null
+    }
+  }
+}
