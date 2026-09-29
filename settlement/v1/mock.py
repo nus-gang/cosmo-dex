@@ -13,7 +13,7 @@ def rest(api, url):
     if set(q)!={'chain_id','genesis_hash'} or any(len(v)!=1 for v in q.values()):
         raise ValueError('QUERY')
     result=api.lookup(q['chain_id'][0],q['genesis_hash'][0],unquote(parts[3]),parts[5])
-    return (200 if result['code']=='COMMITTED' else 404),result
+    return (200 if result['code']=='COMMITTED' else 409 if result['code']=='RECEIPT_INCONSISTENCY' else 404),result
 
 if __name__=='__main__':
     f=json.loads(Path(__file__).with_name('fixtures.json').read_text())

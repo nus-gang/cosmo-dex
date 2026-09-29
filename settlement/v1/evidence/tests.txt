@@ -5,15 +5,17 @@ test_context_isolation (__main__.Contract.test_context_isolation) ... ok
 test_current_authorization_required (__main__.Contract.test_current_authorization_required) ... ok
 test_events (__main__.Contract.test_events) ... ok
 test_historical_receipt_before_continuity (__main__.Contract.test_historical_receipt_before_continuity) ... ok
+test_inconsistency_blocks_every_correction_combination (__main__.Contract.test_inconsistency_blocks_every_correction_combination) ... ok
 test_integer_boundaries_and_duplicate_keys (__main__.Contract.test_integer_boundaries_and_duplicate_keys) ... ok
 test_missing_history_is_inconsistency (__main__.Contract.test_missing_history_is_inconsistency) ... ok
 test_new_sequence_and_partial_failure (__main__.Contract.test_new_sequence_and_partial_failure) ... ok
 test_rest_route_and_ws_fixture (__main__.Contract.test_rest_route_and_ws_fixture) ... ok
 test_retry_keeps_a_canonical_bytes (__main__.Contract.test_retry_keeps_a_canonical_bytes) ... ok
 test_schema_matches_a (__main__.Contract.test_schema_matches_a) ... ok
+test_string_rules_and_generated_schema (__main__.Contract.test_string_rules_and_generated_schema) ... ok
 test_timeout_lookup_failure_and_not_found (__main__.Contract.test_timeout_lookup_failure_and_not_found) ... ok
 
 ----------------------------------------------------------------------
-Ran 14 tests in 0.007s
+Ran 16 tests in 0.007s
 
 OK

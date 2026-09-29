@@ -41,3 +41,10 @@ WS `/v1/stream`의 S0 최소 프레임은 entity_id, revision U64, observed_heig
 ## 인수와 후속 연결
 
 CTO 네이티브 검토 후 NUS-16(S0-G)에서 독립 검증 입력으로 사용한다. NUS-11(SRE)은 위 두 시험 명령을 공통 CI에 연결할 수 있다. 이 PR은 settlement 경로만 변경하며 CI/타 담당 파일을 덮어쓰지 않는다. main에 A가 아직 없으므로 A 브랜치를 base로 하는 stacked PR로 제출한다. A 머지 후 CTO가 base를 main으로 전환한다. GitHub workflow 실행은 이 PR에서 NOT_RUN이며 공통 CI 연결은 B 책임이다.
+
+
+## CTO 수정 요청 반영
+
+- P1: retry 또는 last_seq를 제공한 lookup에서 확인한 RECEIPT_INCONSISTENCY를 chain/genesis/market/seq별로 보존한다. 이후 조회 장애·영수증 재등장·정정 플래그 8조합에서도 D/P 해제를 금지한다. lookup 응답은 retryable=false, SUBMISSION_UNKNOWN이며 REST는 409다. 운영 복구/불일치 해제는 이 모의 API 범위 밖이다. last_seq 없는 최초 조회의 미발견만으로 불일치를 추정하지 않는다.
+- P2: 일반 문자열은 1–128 ASCII 바이트 [A-Za-z0-9._:/-]+. server_origin은 lowercase HTTPS host와 정규 비기본 포트(1..65535), audience는 exchange-api/private-ws로 구분한다. schema와 validator가 같은 lexical 규칙을 사용한다. 실제 배포 origin allowlist·nonce·TTL 검증은 인증 어댑터 연결 시 필요하며 여기서는 NOT_RUN.
+- 회귀 시험은 불일치 판정 경로 2개 × 조회 가능 여부 2개 × 정정 플래그 8개 조합, context 격리, 문자열 경계 및 생성 schema 판정을 포함한다.

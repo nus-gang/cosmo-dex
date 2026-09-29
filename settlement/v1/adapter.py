@@ -8,6 +8,37 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMA = json.loads((ROOT / 'protocol/v1/schema.json').read_text())
 
+# Shared lexical rules for the validator and generated JSON Schema.
+IDENTIFIER_PATTERN = r'[A-Za-z0-9._:/-]{1,128}'
+ORIGIN_PATTERN = r'https://[a-z0-9]+(?:[.-][a-z0-9]+)*(?::(?!443$)(?:[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5]))?'
+
+def string_schema(field):
+    if field == 'audience':
+        return {'type':'string', 'enum':['exchange-api','private-ws']}
+    pattern = ORIGIN_PATTERN if field == 'server_origin' else IDENTIFIER_PATTERN
+    rule = {'type':'string', 'pattern':'^' + pattern + r'$(?![\s\S])'}
+    if field == 'server_origin':
+        rule['x-origin-policy'] = 'nondefault port 1..65535; exact deployment allowlist required'
+    return rule
+
+def string_value(field, value):
+    if not isinstance(value, str):
+        raise ValueError('STRING')
+    if field == 'audience':
+        if value not in ('exchange-api','private-ws'):
+            raise ValueError('AUDIENCE')
+    elif field == 'server_origin':
+        if not re.fullmatch(ORIGIN_PATTERN, value):
+            raise ValueError('ORIGIN')
+        authority = value[len('https://'):]
+        if ':' in authority:
+            port = int(authority.rsplit(':',1)[1])
+            if port == 443 or port > 65535:
+                raise ValueError('ORIGIN')
+    elif not re.fullmatch(IDENTIFIER_PATTERN, value):
+        raise ValueError('STRING')
+    return value
+
 def integer(value, bits=64):
     if not isinstance(value, str) or not re.fullmatch(r'0|[1-9][0-9]*', value) or len(value) > 39 or int(value) >= 2**bits:
         raise ValueError('INTEGER_RANGE')
@@ -46,8 +77,7 @@ def validate(name, obj):
                 if len(b) != {'a':20, 'pk':1952, 'sig':3309}[t] or base64.b64encode(b).decode() != v:
                     raise ValueError('BASE64')
             elif t == 's':
-                if not isinstance(v, str) or not re.fullmatch('[ -~]*', v):
-                    raise ValueError('ASCII')
+                string_value(f['name'], v)
             else:
                 validate(t, v)
     if 'protocol_version' in obj and obj['protocol_version'] != '1':
@@ -69,6 +99,7 @@ class MockAPI:
     """Seeded receipts are trusted synthetic finalized chain observations only."""
     def __init__(self, receipts, observed_height='100', indexer_height='100'):
         self.receipts = {}
+        self.inconsistencies = set()
         for r in receipts:
             validate('BatchReceiptV1', r)
             k = key(r)
@@ -80,13 +111,23 @@ class MockAPI:
         if int(self.indexer) > int(self.height):
             raise ValueError('HEIGHT')
 
-    def lookup(self, chain_id, genesis_hash, market_id, batch_seq, *, available=True):
+    def lookup(self, chain_id, genesis_hash, market_id, batch_seq, *, available=True, last_seq=None):
+        string_value("chain_id", chain_id)
+        string_value("market_id", market_id)
         integer(batch_seq)
         if not re.fullmatch('[0-9a-f]{64}', genesis_hash):
             raise ValueError('HASH')
         r = self.receipts.get((chain_id, genesis_hash, market_id, batch_seq)) if available else None
-        code = 'COMMITTED' if r else ('NOT_FOUND_AT_HEIGHT' if available else 'LOOKUP_UNAVAILABLE')
-        return {'code':code, 'retryable':not bool(r), 'state':'COMMITTED' if r else 'SUBMISSION_UNKNOWN',
+        k = (chain_id, genesis_hash, market_id, batch_seq)
+        if last_seq is not None:
+            last = integer(last_seq)
+            if available and r is None and int(batch_seq) <= last:
+                self.inconsistencies.add(k)
+        code = ('RECEIPT_INCONSISTENCY' if k in self.inconsistencies else
+                'COMMITTED' if r else ('NOT_FOUND_AT_HEIGHT' if available else 'LOOKUP_UNAVAILABLE'))
+        if code == 'RECEIPT_INCONSISTENCY':
+            r = None
+        return {'code':code, 'retryable':code not in ('COMMITTED','RECEIPT_INCONSISTENCY'), 'state':'COMMITTED' if r else 'SUBMISSION_UNKNOWN',
                 'height':self.height, 'observed_height':self.height, 'indexer_height':self.indexer,
                 'stale':self.indexer != self.height, 'receipt':copy.deepcopy(r)}
 
@@ -95,11 +136,15 @@ class MockAPI:
         validate('BatchReceiptV1', submitted)
         if not authorized:
             return 'UNAUTHORIZED'
+        if key(submitted) in self.inconsistencies:
+            return 'RECEIPT_INCONSISTENCY'
         if not available:
             return 'SUBMISSION_UNKNOWN'
         r = self.receipts.get(key(submitted))
         result = decision(last_seq, submitted['batch_seq'], r['batch_hash'] if r else None,
                           submitted['batch_hash'], r['batch_id'] if r else None, submitted['batch_id'])
+        if result == 'RECEIPT_INCONSISTENCY':
+            self.inconsistencies.add(key(submitted))
         if result != 'CHECK_NEW_BATCH':
             return result
         if not previous_matches:
@@ -109,6 +154,8 @@ class MockAPI:
         return 'CHECK_NEW_BATCH'
 
 def reconcile(lookup, *, rejected_final=False, inflight_resolved=False, replay_complete=False):
+    if lookup['code'] == 'RECEIPT_INCONSISTENCY':
+        return {'state':'SUBMISSION_UNKNOWN', 'release_D_P':False, 'new_id_allowed':False}
     if lookup['code'] == 'COMMITTED':
         return {'state':'COMMITTED', 'release_D_P':True, 'new_id_allowed':False}
     corrected = rejected_final and inflight_resolved and replay_complete

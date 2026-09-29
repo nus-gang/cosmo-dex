@@ -27,7 +27,62 @@ class Contract(unittest.TestCase):
     def test_missing_history_is_inconsistency(self):
         self.api.receipts.clear()
         self.assertEqual(self.api.retry(self.r,'999'),'RECEIPT_INCONSISTENCY')
-        self.assertEqual(self.lookup()['code'],'NOT_FOUND_AT_HEIGHT')
+        self.assertEqual(self.lookup()['code'],'RECEIPT_INCONSISTENCY')
+
+    def test_inconsistency_blocks_every_correction_combination(self):
+        from itertools import product
+        for source in ('retry', 'lookup'):
+            api = MockAPI([])
+            if source == 'retry':
+                self.assertEqual(api.retry(self.r, '999'), 'RECEIPT_INCONSISTENCY')
+            else:
+                self.assertEqual(api.lookup(*(self.r[k] for k in KEYS), last_seq='999')['code'],
+                                 'RECEIPT_INCONSISTENCY')
+            for available_flag in (True, False):
+                response = api.lookup(*(self.r[k] for k in KEYS), available=available_flag)
+                self.assertEqual(response['code'], 'RECEIPT_INCONSISTENCY')
+                self.assertFalse(response['retryable'])
+                for flags in product((False, True), repeat=3):
+                    with self.subTest(source=source, available=available_flag, flags=flags):
+                        self.assertEqual(reconcile(response, rejected_final=flags[0],
+                            inflight_resolved=flags[1], replay_complete=flags[2]),
+                            {'state':'SUBMISSION_UNKNOWN','release_D_P':False,'new_id_allowed':False})
+            other = dict(self.r, market_id='other')
+            self.assertEqual(api.lookup(*(other[k] for k in KEYS))['code'], 'NOT_FOUND_AT_HEIGHT')
+            api.receipts[key(self.r)] = self.r
+            self.assertEqual(api.retry(self.r, '999'), 'RECEIPT_INCONSISTENCY')
+            self.assertFalse(reconcile(api.lookup(*(self.r[k] for k in KEYS)))['release_D_P'])
+
+    def test_string_rules_and_generated_schema(self):
+        defs = json.loads((HERE/'api.schema.json').read_text())['$defs']
+        cases = {
+            'chain_id': (['a','A0._:/-' * 16, 'x'*128], ['', 'a b','x'*129,'é','x\n']),
+            'server_origin': (['https://example.com','https://example.com:8443'],
+                ['', 'http://example.com','https://EXAMPLE.com','https://example.com/',
+                 'https://u@example.com','https://example.com:443','https://example.com:65536',
+                 'https://example.com:01','https://example.com?x','https://example.com#x']),
+            'audience': (['exchange-api','private-ws'], ['', 'other','exchange-api '])
+        }
+        for field, (good,bad) in cases.items():
+            for value in good + bad:
+                expected = value in good
+                for name, fields in SCHEMA.items():
+                    if not any(f['name']==field for f in fields):
+                        continue
+                    rule = defs[name]['properties'][field]
+                    accepted = (value in rule['enum'] if 'enum' in rule else
+                                re.search(rule['pattern'], value) is not None)
+                    self.assertEqual(accepted, expected, (name,field,value))
+                if expected:
+                    self.assertEqual(string_value(field,value),value)
+                else:
+                    with self.assertRaises(ValueError): string_value(field,value)
+        for field in ('chain_id','market_id'):
+            for value in ('','a b','x'*129):
+                bad = dict(self.r, **{field:value})
+                with self.assertRaises(ValueError): validate('BatchReceiptV1',bad)
+                with self.assertRaises(ValueError): self.api.lookup(*(bad[k] for k in KEYS))
+
     def test_context_isolation(self):
         for field in KEYS[:3]:
             bad=copy.deepcopy(self.r); bad[field]='ff'*32 if field=='genesis_hash' else 'other'

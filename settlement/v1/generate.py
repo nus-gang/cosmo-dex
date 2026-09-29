@@ -1,7 +1,7 @@
 """Generate API schemas directly from the pinned A field definitions."""
 import json
 from pathlib import Path
-from adapter import SCHEMA, ROOT
+from adapter import SCHEMA, ROOT, string_schema
 HERE = Path(__file__).resolve().parent
 
 def obj(props):
@@ -20,13 +20,13 @@ def generate():
             if t in ('u32','u64','atoms'): s=uint(128 if t=='atoms' else int(t[1:]))
             elif t=='h': s={'type':'string','pattern':'^[0-9a-f]{64}$'}
             elif t in ('a','pk','sig'): s={'type':'string','contentEncoding':'base64','x-decoded-length':{'a':20,'pk':1952,'sig':3309}[t]}
-            elif t=='s': s={'type':'string','pattern':'^[ -~]*$'}
+            elif t=='s': s=string_schema(f['name'])
             else: s={'$ref':'#/$defs/'+t}
             props[f['name']]={'type':'array','items':s} if f['repeated'] else s
         defs[name]=obj(props)
     defs['Event']=obj({'entity_id':{'type':'string'},'revision':uint(64),'observed_height':uint(64),
                        'state':{'enum':['PENDING','COMMITTED','CORRECTED','SUBMISSION_UNKNOWN']}})
-    defs['Lookup']=obj({'code':{'enum':['COMMITTED','NOT_FOUND_AT_HEIGHT','LOOKUP_UNAVAILABLE']},
+    defs['Lookup']=obj({'code':{'enum':['COMMITTED','NOT_FOUND_AT_HEIGHT','LOOKUP_UNAVAILABLE','RECEIPT_INCONSISTENCY']},
         'retryable':{'type':'boolean'},'state':{'enum':['COMMITTED','SUBMISSION_UNKNOWN']},
         'height':uint(64),'observed_height':uint(64),'indexer_height':uint(64),'stale':{'type':'boolean'},
         'receipt':{'anyOf':[{'$ref':'#/$defs/BatchReceiptV1'},{'type':'null'}]}})
