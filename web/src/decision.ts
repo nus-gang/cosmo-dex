@@ -54,7 +54,13 @@ export function decideOrder(body: Uint8Array, signature: Uint8Array, ctx: Verifi
       && snapshot.epoch_matches === (message!.owner_epoch === ctx.epoch);
     if (!matches) return evaluateSnapshot(auth, { ...snapshot, source: null });
   }
-  return evaluateSnapshot(auth, snapshot);
+  const result = evaluateSnapshot(auth, snapshot);
+  // Enum validity is admission policy, not cryptographic authentication.
+  if (result.snapshot_policy.status === 'PASS'
+    && (!['1', '2'].includes(message!.side as string) || !['1', '2'].includes(message!.order_type as string))) {
+    Object.assign(result.snapshot_policy, { status: 'REJECTED', code: 'MARKET_LIMIT' });
+  }
+  return result;
 }
 export function apiError(code: string, height: string | null = null) {
   if (!['INTEGER_RANGE', 'BPS_RANGE', 'FEE_CAP', 'FEE_GE_RECEIVE', 'ACCOUNT_KEY_UNREGISTERED', 'ACCOUNT_KEY_MISMATCH'].includes(code)) fail('CONTEXT_MISMATCH');
