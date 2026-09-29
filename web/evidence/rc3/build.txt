@@ -1,0 +1,9 @@
+
+> @nus/wallet-contract@0.0.1 build
+> npm run typecheck && node scripts/build.mjs
+
+
+> @nus/wallet-contract@0.0.1 typecheck
+> tsc --noEmit
+
+Built standalone dist/demo.html (no external scripts/network)

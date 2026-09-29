@@ -26,6 +26,7 @@ jobs:
       - run: npm run build
       - run: npm test > evidence/node.txt
       - run: node --experimental-strip-types scripts/vectors.ts ../protocol/v1/vectors/signatures.json > evidence/ci-vectors.json
+      - run: node --experimental-strip-types scripts/decision-vectors.ts > evidence/rc3/decision-results.json
       - run: npm run test:browser
         env:
           CHROME_BIN: /usr/bin/google-chrome

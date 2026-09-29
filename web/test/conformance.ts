@@ -1,3 +1,4 @@
+import { decisionChecks } from './decision.ts';
 import signatures from '../../protocol/v1/vectors/signatures.json' with { type: 'json' };
 import amounts from '../../protocol/v1/vectors/amount-codec.json' with { type: 'json' };
 import messages from '../../protocol/v1/vectors/message-codec.json' with { type: 'json' };
@@ -107,6 +108,7 @@ export function runConformance(): { passed: number; checks: string[] } {
     ok('fee-zero', feeAtoms('1', '0') === '0'); ok('fee-ceil', feeAtoms('1001', '25') === '3');
     rejects('fee-ge-receive', () => feeAtoms('1', '25'), 'FEE_GE_RECEIVE');
     rejects('dev-qty-limit', () => validateDevOrder({ ...m, max_qty_lots: '1000001' }, '0'), 'MARKET_LIMIT');
+    checks.push(...decisionChecks(m, ctx, keys.secretKey));
     return { passed: checks.length, checks };
   } finally { keys.secretKey.fill(0); }
 }

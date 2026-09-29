@@ -2,6 +2,7 @@ import { chromium } from 'playwright-core';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { writeFile, mkdir } from 'node:fs/promises';
+const evidenceDir = process.env.EVIDENCE_DIR || 'evidence';
 const executablePath = process.env.CHROME_BIN || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const browser = await chromium.launch({ executablePath, headless: true });
 try {
@@ -14,12 +15,12 @@ try {
   await page.click('#sign'); await page.waitForFunction(() => document.querySelector('#status').textContent.includes('3309'));
   await page.click('#recover'); await page.waitForFunction(() => document.querySelector('#status').textContent.includes('복구 검증 성공'));
   const suite = await page.evaluate(() => globalThis.conformance);
-  await mkdir('evidence', { recursive: true });
-  await page.screenshot({ path: 'evidence/browser.png', fullPage: true });
+  await mkdir(evidenceDir, { recursive: true });
+  await page.screenshot({ path: resolve(evidenceDir, 'browser.png'), fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
   const evidence = { runtime: 'real headless Chrome', browser: browser.version(), node: process.version, suite, uiChecks: ['key generation', 'OrderV1 signature', 'memory recovery', '390px no overflow'], pageErrors: errors, externalRequests: requests.length, overflow, restWs: 'NOT_CONNECTED', chainTx: 'NOT_CONNECTED' };
-  await writeFile('evidence/browser.json', JSON.stringify(evidence, null, 2) + '\n');
+  await writeFile(resolve(evidenceDir, 'browser.json'), JSON.stringify(evidence, null, 2) + '\n');
   if (errors.length || requests.length || overflow) throw new Error('Browser boundary failure');
   console.log(JSON.stringify({ ...evidence, suite: { passed: suite.passed } }));
 } finally { await browser.close(); }

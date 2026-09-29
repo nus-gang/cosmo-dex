@@ -5,7 +5,7 @@ import { ml_dsa65 } from '@noble/post-quantum/ml-dsa';
 import { fromFields, runConformance } from '../test/conformance.ts';
 import { encode, frame, hexToBytes as unhex, bytesToHex as hex } from '../src/codec.ts';
 import { domains, type Signable } from '../src/wallet.ts';
-const contract_revision = '889fda0c7181a696b4eb2a2649508c6192af8406';
+const contract_revision = '549ce150d6a9f21ec30f159d39a4d91c31dbd759';
 const original = readFileSync(new URL('../../protocol/v1/vectors/signatures.json', import.meta.url));
 const input = process.argv[2] ? readFileSync(resolve(process.argv[2])) : original;
 const hash = (b: Uint8Array) => createHash('sha256').update(b).digest('hex');
