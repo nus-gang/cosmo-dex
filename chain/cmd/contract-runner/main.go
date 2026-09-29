@@ -13,15 +13,19 @@ import (
 )
 
 type request struct {
-	Op        string           `json:"op"`
-	Message   string           `json:"message"`
-	API       json.RawMessage  `json:"api_json"`
-	Wire      string           `json:"wire_hex"`
-	Domain    string           `json:"domain"`
-	PublicKey string           `json:"public_key_hex"`
-	Signature string           `json:"signature_hex"`
-	SignInput string           `json:"sign_input_hex"`
-	Context   contract.Context `json:"context"`
+	Snapshot  *contract.Snapshot `json:"snapshot"`
+	Receive   string             `json:"receive"`
+	ActiveBPS string             `json:"active_bps"`
+	Cap       string             `json:"cap"`
+	Op        string             `json:"op"`
+	Message   string             `json:"message"`
+	API       json.RawMessage    `json:"api_json"`
+	Wire      string             `json:"wire_hex"`
+	Domain    string             `json:"domain"`
+	PublicKey string             `json:"public_key_hex"`
+	Signature string             `json:"signature_hex"`
+	SignInput string             `json:"sign_input_hex"`
+	Context   contract.Context   `json:"context"`
 }
 
 func run(r request) map[string]any {
@@ -29,6 +33,20 @@ func run(r request) map[string]any {
 	b, e := hex.DecodeString(r.Wire)
 	if e == nil {
 		switch r.Op {
+		case "fee":
+			out["value"], e = contract.FeeDecimal(r.Receive, r.ActiveBPS)
+		case "cap":
+			e = contract.CheckCap(r.Cap, r.ActiveBPS)
+		case "decide_order":
+			var sig []byte
+			sig, e = hex.DecodeString(r.Signature)
+			if e == nil {
+				d := contract.DecideOrder(b, sig, r.Context, r.Snapshot)
+				raw, _ := json.Marshal(d)
+				var v map[string]any
+				_ = json.Unmarshal(raw, &v)
+				return v
+			}
 		case "encode":
 			b, e = contract.EncodeJSON(r.Message, r.API)
 		case "decode":

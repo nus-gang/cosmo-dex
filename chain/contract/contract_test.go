@@ -380,6 +380,13 @@ func TestSharedIntegers(t *testing.T) {
 			if e != nil {
 				got = e.Error()
 			}
+			// rc3 supersedes the preserved M0 I20 zero/zero fee expectation.
+			if a[0] == "I20" {
+				if a[2] != "0" || a[3] != "0" || a[5] != "FEE_GE_RECEIVE" {
+					t.Fatal("legacy fixture changed")
+				}
+				a[5] = "0"
+			}
 			if got != a[5] {
 				t.Fatalf("got %s want %s", got, a[5])
 			}
@@ -431,7 +438,7 @@ func TestBaselineHashes(t *testing.T) {
 	if e = json.Unmarshal(b, &m); e != nil {
 		t.Fatal(e)
 	}
-	if m.Contract != "daae05c8b3b94694d9f38122bf92a74f53b83197cd667d9ad93df545d55bc3dd" || m.Vectors != "60ee56ff3ff5a754965472cfb353dd1565072dbf0985907c369a0b78237f91e0" {
+	if m.Contract != "a71a8c03fea5e4d2876612e821eafcb4b359a0b132157929b9924d6f8fecd73e" || m.Vectors != "4851d9d674b2412ca8919d8347a71da13f9adf4426fe60b44e2a4a259f8bd948" {
 		t.Fatal("baseline pin changed")
 	}
 	for name, want := range m.Files {

@@ -43,6 +43,7 @@ func VerifyCrypto(pk, message, signature []byte) bool {
 // Context must come from confirmed state, never from the submitted message.
 // The caller owns immutable market configuration and atomic state/replay checks.
 type Context struct {
+	SnapshotID                                                    string // Immutable snapshot identity for the rc3 decision port.
 	ChainID, GenesisHash, ModuleID, MarketID, MarketConfigVersion string
 	RegisteredKey                                                 []byte
 	RegisteredKeyType                                             string
@@ -74,6 +75,10 @@ func raw64(m map[string]any, k string) []byte {
 // Verify validates a canonical order/cancel/challenge against a supplied state snapshot.
 // Success is authentication/policy acceptance only; it does not reserve funds or consume nonce.
 func Verify(name string, body, signature []byte, c Context) error {
+	return verify(name, body, signature, c, false)
+}
+
+func verify(name string, body, signature []byte, c Context, authOnly bool) error {
 	domain, ok := domains[name]
 	if !ok {
 		return Code("UNSUPPORTED_VERSION")
@@ -125,11 +130,17 @@ func Verify(name string, body, signature []byte, c Context) error {
 	if len(c.RegisteredKey) == 0 {
 		return Code("ACCOUNT_KEY_UNREGISTERED")
 	}
+	if authOnly && c.RegisteredKeyType == "" {
+		return Code("NOT_CONNECTED")
+	}
 	if c.RegisteredKeyType != "ML-DSA-65" || !bytes.Equal(pk, c.RegisteredKey) {
 		return Code("ACCOUNT_KEY_MISMATCH")
 	}
 	if !VerifyCrypto(pk, Frame(domain, body), signature) {
 		return Code("INVALID_SIGNATURE")
+	}
+	if authOnly {
+		return nil
 	}
 	if name == "WalletChallengeV1" {
 		return WalletPolicy(number(m, "issued_at"), number(m, "expiry_time"), c.Now, m["server_origin"].(string), c.Origin, m["audience"].(string), c.Audience, c.NonceConsumed)
@@ -147,6 +158,9 @@ func Verify(name string, body, signature []byte, c Context) error {
 		p, q := number(m, "limit_price_ticks"), number(m, "max_qty_lots")
 		if p == 0 || q == 0 || p > c.MaxPrice || q > c.MaxQuantity || number(m, "side") < 1 || number(m, "side") > 2 || number(m, "order_type") < 1 || number(m, "order_type") > 2 || m["fee_asset_policy_id"] != "RECEIVE_ASSET_V1" {
 			return Code("MARKET_LIMIT")
+		}
+		if c.ActiveFeeBPS > 10000 {
+			return Code("BPS_RANGE")
 		}
 		if c.ActiveFeeBPS > number(m, "max_fee_bps") {
 			return Code("FEE_CAP")
@@ -190,12 +204,15 @@ func CheckedArithmetic(a, b string, multiply bool) (string, error) {
 	return n.String(), nil
 }
 func Fee(receive string, bps uint64) (string, error) {
-	if bps > 10000 {
-		return "", Code("BPS_RANGE")
-	}
 	n, e := Integer(receive, 128)
 	if e != nil {
 		return "", e
+	}
+	if bps > 10000 {
+		return "", Code("BPS_RANGE")
+	}
+	if bps == 0 {
+		return "0", nil
 	}
 	f := new(big.Int).Mul(n, new(big.Int).SetUint64(bps))
 	f.Add(f, big.NewInt(9999))

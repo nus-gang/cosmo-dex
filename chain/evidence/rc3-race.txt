@@ -1,0 +1,2 @@
+?   	github.com/nus-gang/cosmo-dex/chain/cmd/contract-runner	[no test files]
+ok  	github.com/nus-gang/cosmo-dex/chain/contract	1.709s
