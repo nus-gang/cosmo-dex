@@ -147,27 +147,33 @@ func AuthenticateOrder(body, sig []byte, c Context) Result {
 // DecideOrder binds the synthetic policy to the authenticated signed fields and
 // the caller's snapshot height. It cannot return an ACK from policy success.
 func DecideOrder(body, sig []byte, c Context, s *Snapshot) Decision {
-	d := Decision{Authentication: AuthenticateOrder(body, sig, c), SnapshotPolicy: PolicyResult{Result: Result{Status: "NOT_RUN"}, Source: "SYNTHETIC"}, ACK: "NOT_CONNECTED", WALReplay: "NOT_RUN", Ledger: "NOT_CONNECTED"}
-	if s != nil {
-		d.SnapshotPolicy.SnapshotID = s.ID
-	}
-	if d.Authentication.Status != "PASS" {
-		return d
-	}
-	d.SnapshotPolicy = EvaluateSnapshot(s)
-	if !s.connected() {
-		return d
-	}
+	auth := AuthenticateOrder(body, sig, c)
 	m, _ := Decode("OrderV1", body)
-	if c.SnapshotID == "" {
-		d.SnapshotPolicy.Result = Result{Status: "NOT_CONNECTED"}
-		return d
-	}
-	if *s.ID != c.SnapshotID || *s.Height != strconv.FormatUint(c.Height, 10) || *s.Expiry != m["expiry_height"] || *s.Q != m["max_qty_lots"] || *s.P != m["limit_price_ticks"] || *s.Cap != m["max_fee_bps"] || *s.EpochMatches != (number(m, "owner_epoch") == c.Epoch) {
-		d.SnapshotPolicy.Result = result(Code("CONTEXT_MISMATCH"))
-	}
+	height, epoch := strconv.FormatUint(c.Height, 10), strconv.FormatUint(c.Epoch, 10)
+	d := decideAuthenticated(auth, m, &c.SnapshotID, &height, &epoch, s)
 	if d.SnapshotPolicy.Status == "PASS" && (number(m, "side") < 1 || number(m, "side") > 2 || number(m, "order_type") < 1 || number(m, "order_type") > 2 || m["fee_asset_policy_id"] != "RECEIVE_ASSET_V1") {
 		d.SnapshotPolicy.Result = result(Code("MARKET_LIMIT"))
 	}
+	return d
+}
+
+// Internal policy boundary. Authentication is supplied only by AuthenticateOrder
+// in production; specification tests explicitly inject synthetic auth outcomes.
+func decideAuthenticated(auth Result, m map[string]any, id, height, epoch *string, s *Snapshot) Decision {
+	d := Decision{Authentication: auth, SnapshotPolicy: PolicyResult{Result: Result{Status: "NOT_RUN"}, Source: "SYNTHETIC"}, ACK: "NOT_CONNECTED", WALReplay: "NOT_RUN", Ledger: "NOT_CONNECTED"}
+	if s != nil {
+		d.SnapshotPolicy.SnapshotID = s.ID
+	}
+	if auth.Status != "PASS" {
+		return d
+	}
+	d.SnapshotPolicy.Result = Result{Status: "NOT_CONNECTED"}
+	if !s.connected() || id == nil || *id == "" || height == nil || epoch == nil {
+		return d
+	}
+	if *s.ID != *id || *s.Height != *height || *s.Expiry != m["expiry_height"] || *s.Q != m["max_qty_lots"] || *s.P != m["limit_price_ticks"] || *s.Cap != m["max_fee_bps"] || *s.EpochMatches != (m["owner_epoch"] == *epoch) {
+		return d
+	}
+	d.SnapshotPolicy = EvaluateSnapshot(s)
 	return d
 }
