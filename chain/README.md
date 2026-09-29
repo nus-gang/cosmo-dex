@@ -25,7 +25,7 @@ CIRCL v1.6.3 / x/sys v0.28.0을 go.mod/go.sum에 고정했다. Go 1.24.4가 없�
 - API JSON: 중복/unknown key, 정수 JSON number/부호/지수/선행0 거절. U32/U64 및 decimal atoms↔16-byte U128, canonical hex/base64.
 - 주문·취소·지갑 challenge의 pure ML-DSA-65, empty FIPS context. SHA256(raw pk)[:20] owner와 확정 등록 key type/raw bytes 비교. context/version/auth/epoch/expiry/market/fee-cap 순서의 스냅샷 검증.
 - signatures.json 양성 3·음성 35. 양성은 fields→wire→frame→hash→실제 암호 검증과 공개 seed의 결정적 Go 서명 바이트까지 대조한다. 이 입력은 m0-crypto 프로필이며 DEV 시장 인수를 의미하지 않는다.
-- wire-cases 24개 및 message-codec wire 10개, message-codec positives 14개, amount-codec 17개, integers.tsv 32개, policy-cases 13개를 소비한다. S0 cases에서는 Chain의 expiry/atoms/fill 15개를 소비한다.
+- wire-cases 8개 및 message-codec wire 10개, message-codec positives 14개, amount-codec 17개, integers.tsv 32개, policy-cases 13개를 소비한다. S0 cases에서는 Chain의 expiry/atoms/fill 15개를 소비한다.
 - 등록 키/주소/도메인·context, 높이 999/1000/1001, 정수 최대값/overflow, JSON 부정 입력 및 resource limit의 추가 시험. JSONL 원시 로그에서 실제 개수·이름을 확인할 수 있다.
 - race 및 짧은 parser fuzz를 실행했다. fuzz 실행률은 제품 TPS 지표가 아니다.
 
