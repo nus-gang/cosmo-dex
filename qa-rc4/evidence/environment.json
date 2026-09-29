@@ -1,0 +1,52 @@
+{
+  "observed_utc": "2026-09-29T22:02:01.588990+00:00",
+  "commands": [
+    {
+      "command": [
+        "sw_vers"
+      ],
+      "exit": 0,
+      "output": "ProductName:\t\tmacOS\nProductVersion:\t\t15.6.1\nBuildVersion:\t\t24G90\n"
+    },
+    {
+      "command": [
+        "uname",
+        "-m"
+      ],
+      "exit": 0,
+      "output": "arm64\n"
+    },
+    {
+      "command": [
+        "go",
+        "version"
+      ],
+      "exit": 0,
+      "output": "go version go1.24.4 darwin/arm64\n"
+    },
+    {
+      "command": [
+        "/Users/gangdongju/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc",
+        "--version"
+      ],
+      "exit": 0,
+      "output": "rustc 1.92.0 (ded5c06cf 2025-12-08)\n"
+    },
+    {
+      "command": [
+        "node",
+        "--version"
+      ],
+      "exit": 0,
+      "output": "v24.21.0\n"
+    },
+    {
+      "command": [
+        "python3",
+        "--version"
+      ],
+      "exit": 0,
+      "output": "Python 3.14.0\n"
+    }
+  ]
+}

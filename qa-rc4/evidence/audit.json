@@ -1,0 +1,50 @@
+{
+  "status": "PASS",
+  "comparisons": 969,
+  "passed": 969,
+  "missing": 0,
+  "duplicates": 0,
+  "prior_ids_retained": 783,
+  "added": 186,
+  "languages": {
+    "Go": 323,
+    "Rust": 323,
+    "TS": 323
+  },
+  "crypto_groups": {
+    "matrix-": 108,
+    "matrix-context-": 27,
+    "matrix-domain-": 27,
+    "matrix-codec-": 27
+  },
+  "source_files_checked": {
+    "A": 44,
+    "C": 24,
+    "D": 42,
+    "E": 13,
+    "F": 43
+  },
+  "protocol_files_checked": 43,
+  "exact_full_rows": 872,
+  "expected_projection_rows": 97,
+  "B_lane_counts": {
+    "go": 165,
+    "rust": 171,
+    "ts": 171
+  },
+  "B_rc4_counts": {
+    "rust": 60,
+    "go": 60,
+    "ts": 60
+  },
+  "G_local_ci_full_rows_equal": true,
+  "B_local_ci_results_equal": true,
+  "browser_checks": 453,
+  "B_sha": "178aaaf1253ef8573ec7158e02291d92b40e3ea3",
+  "G_sha": "a2fb8e83870e60ff11134a7d6c71c2605fed3ef5",
+  "contract_sha256": "afa3471a2210a90cde0004b3219b231468bf0b8471e8068f8e16b096b3549d84",
+  "vectors_sha256": "bb1b437d23a365f1083e85353bf62bcef6517cda94288ff7e2d0b4cb5fccd55b",
+  "candidate_status_preserved": "contract_review_pending; independent_final_validation_NOT_RUN",
+  "S0_gate": "PASS",
+  "product_T01_T16": "NOT_RUN"
+}

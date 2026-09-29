@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "run": "ace30f35-c2c7-4086-9f01-5171567c83a0",
+  "qa_branch": "qa/nus-17-rc4",
+  "baseline_G": "a2fb8e83870e60ff11134a7d6c71c2605fed3ef5",
+  "baseline_B": "178aaaf1253ef8573ec7158e02291d92b40e3ea3",
+  "commands": [
+    {
+      "cwd": "G",
+      "command": "python3 security/prepare.py",
+      "exit": 0
+    },
+    {
+      "cwd": "G",
+      "command": "bash security/run.sh",
+      "exit": 0
+    },
+    {
+      "cwd": "G/web",
+      "command": "EVIDENCE_DIR=../qa-rc4/evidence/browser npm run test:browser",
+      "exit": 0
+    },
+    {
+      "cwd": "B",
+      "command": "make scaffold vectors",
+      "exit": 0
+    },
+    {
+      "cwd": "G",
+      "command": "python3 qa-rc4/audit.py",
+      "exit": 0
+    }
+  ],
+  "verdict": "S0 scoped PASS",
+  "product": "T01-T16 NOT_RUN",
+  "historical_results": [
+    [
+      420,
+      413,
+      7
+    ],
+    [
+      759,
+      754,
+      5
+    ],
+    [
+      783,
+      782,
+      1
+    ]
+  ],
+  "scope": "Actual cryptography, synthetic policy/settlement, no product integration"
+}
