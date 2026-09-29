@@ -64,7 +64,12 @@ for id,updates,extra,expected in [
  c=dict(ChainID=a['chain_id'],GenesisHash=a['genesis_hash'],ModuleID=a['exchange_module_id'],MarketID=a['market_id'],MarketConfigVersion=a['market_config_version'],RegisteredKey=base64.b64encode(bytes.fromhex(extra.get('RegisteredKey',pk))).decode(),RegisteredKeyType=extra.get('RegisteredKeyType','ML-DSA-65'),Height=extra.get('Height',999),Epoch=int(a['owner_epoch']),MaxPrice=1000000,MaxQuantity=1000000,ActiveFeeBPS=extra.get('BPS',0))
  if 'Expected' in extra:c['ChainID']=extra['Expected']['chain_id']
  r['C']=c;policy_inputs.append(dict(id=id,request=r,expected=expected))
- for lang in ps:check(id,lang,r,dict(code=expected))
+ if id=='fee-ge-receive':
+  r.update(Op='decision',SnapshotID='synthetic-1',Snapshot=dict(id='synthetic-1',source='SYNTHETIC',height='999',expiry_height=a['expiry_height'],epoch_matches=True,revoked=False,id_state='NEW',cumulative_ok=True,confirmed_balance_ok=True,q=a['max_qty_lots'],p=a['limit_price_ticks'],active_bps='25',cap=a['max_fee_bps']))
+  r['C']['SnapshotID']='synthetic-1'
+  for lang in ps:check(id,lang,r,dict(code='OK',decision=dict(authentication=dict(status='PASS',code='OK'),snapshot_policy=dict(status='REJECTED',code=expected,source='SYNTHETIC',snapshot_id='synthetic-1'),ack='NOT_CONNECTED',wal_replay='NOT_RUN',ledger='NOT_CONNECTED')))
+ else:
+  for lang in ps:check(id,lang,r,dict(code=expected))
 for field,bits in [('protocol_version',32),('max_qty_lots',64)]:
  for value in [str(2**bits),'01','-1','1e0','1\n','1\r']:
   for lang in ps:check('integer-'+field+'-'+value,lang,dict(Op='encode',Name='OrderV1',API={**m,field:value},Domain=domains['OrderV1']),dict(code='INTEGER_RANGE'))
@@ -75,6 +80,7 @@ for receive,bps,expected in [('1000',0,dict(code='OK',fee='0')),('1000',25,dict(
  for lang in ps:check('fee-'+receive+'-'+str(bps),lang,dict(Op='fee',Receive=receive,BPS=bps),expected)
 for lang in ps:
  check('identifier-newline',lang,dict(Op='encode',Name='OrderV1',API={**m,'chain_id':'nus-dev-1\n'},Domain=domains['OrderV1']),dict(code='NON_CANONICAL_WIRE'))
+exec((ROOT/'security/rc3_cases.py').read_text())
 for p in ps.values():p.stdin.close();assert p.wait()==0
 (E/'generated.json').write_text(json.dumps(generated,indent=2)+'\n')
 (E/'policy-inputs.json').write_text(json.dumps(policy_inputs,indent=2)+'\n')

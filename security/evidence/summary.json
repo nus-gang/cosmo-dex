@@ -1,84 +1,194 @@
 {
-  "total": 420,
-  "passed": 413,
+  "total": 759,
+  "passed": 754,
   "failures": [
     {
-      "id": "fee-cap-u32",
-      "language": "Rust",
-      "expected": {
-        "code": "OK"
-      },
-      "actual": {
-        "code": "FEE_CAP"
-      },
-      "passed": false
-    },
-    {
-      "id": "fee-ge-receive",
-      "language": "Go",
-      "expected": {
-        "code": "FEE_GE_RECEIVE"
-      },
-      "actual": {
-        "code": "OK"
-      },
-      "passed": false
-    },
-    {
-      "id": "fee-ge-receive",
-      "language": "TS",
-      "expected": {
-        "code": "FEE_GE_RECEIVE"
-      },
-      "actual": {
-        "code": "OK"
-      },
-      "passed": false
-    },
-    {
-      "id": "registered-key-type",
-      "language": "Rust",
-      "expected": {
-        "code": "ACCOUNT_KEY_MISMATCH"
-      },
-      "actual": {
-        "code": "OK"
-      },
-      "passed": false
-    },
-    {
-      "id": "fee-0-0",
-      "language": "Go",
-      "expected": {
-        "code": "OK",
-        "fee": "0"
-      },
-      "actual": {
-        "code": "FEE_GE_RECEIVE",
-        "fee": ""
-      },
-      "passed": false
-    },
-    {
-      "id": "fee-0-0",
+      "id": "rc3-signed-side-invalid",
       "language": "Rust",
       "expected": {
         "code": "OK",
-        "fee": "0"
+        "decision": {
+          "authentication": {
+            "status": "PASS",
+            "code": "OK"
+          },
+          "snapshot_policy": {
+            "status": "REJECTED",
+            "code": "MARKET_LIMIT",
+            "source": "SYNTHETIC",
+            "snapshot_id": "synthetic-1"
+          },
+          "ack": "NOT_CONNECTED",
+          "wal_replay": "NOT_RUN",
+          "ledger": "NOT_CONNECTED"
+        }
       },
       "actual": {
-        "code": "FEE_GE_RECEIVE"
+        "code": "OK",
+        "decision": {
+          "ack": "NOT_CONNECTED",
+          "authentication": {
+            "code": "OK",
+            "status": "PASS"
+          },
+          "ledger": "NOT_CONNECTED",
+          "snapshot_policy": {
+            "code": "OK",
+            "snapshot_id": "synthetic-1",
+            "source": "SYNTHETIC",
+            "status": "PASS"
+          },
+          "wal_replay": "NOT_RUN"
+        }
       },
       "passed": false
     },
     {
-      "id": "fee-1000-10001",
+      "id": "rc3-signed-side-invalid",
       "language": "TS",
       "expected": {
-        "code": "BPS_RANGE"
+        "code": "OK",
+        "decision": {
+          "authentication": {
+            "status": "PASS",
+            "code": "OK"
+          },
+          "snapshot_policy": {
+            "status": "REJECTED",
+            "code": "MARKET_LIMIT",
+            "source": "SYNTHETIC",
+            "snapshot_id": "synthetic-1"
+          },
+          "ack": "NOT_CONNECTED",
+          "wal_replay": "NOT_RUN",
+          "ledger": "NOT_CONNECTED"
+        }
       },
       "actual": {
-        "code": "FEE_GE_RECEIVE"
+        "code": "OK",
+        "decision": {
+          "authentication": {
+            "status": "PASS",
+            "code": "OK"
+          },
+          "snapshot_policy": {
+            "status": "PASS",
+            "code": "OK",
+            "source": "SYNTHETIC",
+            "snapshot_id": "synthetic-1"
+          },
+          "ack": "NOT_CONNECTED",
+          "wal_replay": "NOT_RUN",
+          "ledger": "NOT_CONNECTED"
+        }
+      },
+      "passed": false
+    },
+    {
+      "id": "rc3-signed-order-type-invalid",
+      "language": "Rust",
+      "expected": {
+        "code": "OK",
+        "decision": {
+          "authentication": {
+            "status": "PASS",
+            "code": "OK"
+          },
+          "snapshot_policy": {
+            "status": "REJECTED",
+            "code": "MARKET_LIMIT",
+            "source": "SYNTHETIC",
+            "snapshot_id": "synthetic-1"
+          },
+          "ack": "NOT_CONNECTED",
+          "wal_replay": "NOT_RUN",
+          "ledger": "NOT_CONNECTED"
+        }
+      },
+      "actual": {
+        "code": "OK",
+        "decision": {
+          "ack": "NOT_CONNECTED",
+          "authentication": {
+            "code": "OK",
+            "status": "PASS"
+          },
+          "ledger": "NOT_CONNECTED",
+          "snapshot_policy": {
+            "code": "OK",
+            "snapshot_id": "synthetic-1",
+            "source": "SYNTHETIC",
+            "status": "PASS"
+          },
+          "wal_replay": "NOT_RUN"
+        }
+      },
+      "passed": false
+    },
+    {
+      "id": "rc3-signed-order-type-invalid",
+      "language": "TS",
+      "expected": {
+        "code": "OK",
+        "decision": {
+          "authentication": {
+            "status": "PASS",
+            "code": "OK"
+          },
+          "snapshot_policy": {
+            "status": "REJECTED",
+            "code": "MARKET_LIMIT",
+            "source": "SYNTHETIC",
+            "snapshot_id": "synthetic-1"
+          },
+          "ack": "NOT_CONNECTED",
+          "wal_replay": "NOT_RUN",
+          "ledger": "NOT_CONNECTED"
+        }
+      },
+      "actual": {
+        "code": "OK",
+        "decision": {
+          "authentication": {
+            "status": "PASS",
+            "code": "OK"
+          },
+          "snapshot_policy": {
+            "status": "PASS",
+            "code": "OK",
+            "source": "SYNTHETIC",
+            "snapshot_id": "synthetic-1"
+          },
+          "ack": "NOT_CONNECTED",
+          "wal_replay": "NOT_RUN",
+          "ledger": "NOT_CONNECTED"
+        }
+      },
+      "passed": false
+    },
+    {
+      "id": "rc3-epoch-flag-binding",
+      "language": "Rust",
+      "expected": {
+        "invariant": "stale epoch must not produce policy PASS"
+      },
+      "actual": {
+        "code": "OK",
+        "decision": {
+          "ack": "NOT_CONNECTED",
+          "authentication": {
+            "code": "OK",
+            "status": "PASS"
+          },
+          "ledger": "NOT_CONNECTED",
+          "snapshot_policy": {
+            "code": "OK",
+            "snapshot_id": "synthetic-1",
+            "source": "SYNTHETIC",
+            "status": "PASS"
+          },
+          "wal_replay": "NOT_RUN"
+        }
       },
       "passed": false
     }

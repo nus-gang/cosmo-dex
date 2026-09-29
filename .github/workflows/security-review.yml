@@ -25,7 +25,7 @@ jobs:
           python-version: '3.14'
       - name: Materialize pinned C/D/E/F inputs and verify identical protocol
         run: python3 security/prepare.py
-      - name: Reproduce review (known policy differences intentionally fail)
+      - name: Reproduce review (policy differences fail the gate)
         run: bash security/run.sh
       - uses: actions/upload-artifact@v4
         if: always()

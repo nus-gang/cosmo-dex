@@ -11,3 +11,6 @@ evidence/harness-build.txt
 evidence/npm-ci.txt
 evidence/ts-build.txt
 evidence/node_modules/
+
+.npm/
+ci-download/
