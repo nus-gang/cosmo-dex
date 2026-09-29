@@ -49,3 +49,20 @@ r=signed_request(extra={'Epoch':999});policy_inputs.append(dict(id='rc3-epoch-fl
 for lang in ps:
  actual=call(lang,r);d=actual.get('decision',{});ok=d.get('authentication',{}).get('status')=='PASS' and d.get('snapshot_policy',{}).get('status') in ('REJECTED','NOT_CONNECTED')
  rows.append(dict(id='rc3-epoch-flag-binding',language=lang,expected={'invariant':'stale epoch must not produce policy PASS'},actual=actual,passed=ok))
+
+# Explicit positive enum cross-product; existing cases cover invalid value 3.
+for side in ['1','2']:
+ for typ in ['1','2']:
+  r=signed_request({'side':side,'order_type':typ})
+  for lang in ps:check('fixed-enum-'+side+'-'+typ,lang,r,expect_decision())
+# Four trusted epoch/flag combinations, including both contradictions.
+for matches in [True,False]:
+ for flag in [True,False]:
+  r=signed_request(extra={} if matches else {'Epoch':999},snapshot_updates={'epoch_matches':flag})
+  ident='fixed-epoch-'+str(matches)+'-'+str(flag)
+  policy_inputs.append(dict(id=ident,request=r,expected='PASS only when both true'))
+  for lang in ps:
+   actual=call(lang,r);d=actual.get('decision',{})
+   status=d.get('snapshot_policy',{}).get('status')
+   ok=d.get('authentication',{}).get('status')=='PASS' and d.get('ack')=='NOT_CONNECTED' and (status=='PASS' if matches and flag else status in ('REJECTED','NOT_CONNECTED'))
+   rows.append(dict(id=ident,language=lang,expected={'policy':'PASS' if matches and flag else 'REJECTED/NOT_CONNECTED'},actual=actual,passed=ok))

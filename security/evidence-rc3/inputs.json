@@ -7,7 +7,7 @@
   {
     "issue": "NUS-13",
     "component": "exchange",
-    "sha": "7f9f14f35a985484cee64a5132ed26aa500c0887"
+    "sha": "d2984223fac6c9dfafc0d71ab9f86af5bf539339"
   },
   {
     "issue": "NUS-14",
@@ -17,6 +17,6 @@
   {
     "issue": "NUS-15",
     "component": "web",
-    "sha": "99ee3bf73c9e44b6e7fef6d8640af14d587ea89b"
+    "sha": "8a70632d933b58c15b5bbac9fbef25dfa7312643"
   }
 ]

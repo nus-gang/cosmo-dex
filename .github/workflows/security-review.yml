@@ -27,6 +27,13 @@ jobs:
         run: python3 security/prepare.py
       - name: Reproduce review (policy differences fail the gate)
         run: bash security/run.sh
+      - name: Real browser conformance
+        if: always()
+        run: |
+          cd web
+          npx playwright-core install --with-deps chromium
+          export CHROME_BIN="$(node --input-type=module -e "import {chromium} from 'playwright-core'; console.log(chromium.executablePath())")"
+          EVIDENCE_DIR=../security/evidence/browser npm run test:browser > ../security/evidence/browser-run.txt 2>&1
       - uses: actions/upload-artifact@v4
         if: always()
         with:

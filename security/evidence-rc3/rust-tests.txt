@@ -1,156 +1,156 @@
     Updating crates.io index
  Downloading crates ...
-  Downloaded const-oid v0.10.2
+  Downloaded bech32 v0.9.1
+  Downloaded block-buffer v0.10.4
+  Downloaded autocfg v1.5.1
+  Downloaded block-buffer v0.12.1
+  Downloaded crypto-common v0.1.7
+  Downloaded cpufeatures v0.2.17
+  Downloaded cpufeatures v0.3.1
+  Downloaded keccak v0.1.6
+  Downloaded sha1_smol v1.0.1
+  Downloaded thread_local v1.1.10
+  Downloaded lazy_static v1.5.0
+  Downloaded itoa v1.0.18
+  Downloaded scopeguard v1.2.0
+  Downloaded hex v0.4.3
   Downloaded generic-array v0.14.7
   Downloaded cfg-if v1.0.5
-  Downloaded sha1_smol v1.0.1
-  Downloaded block-buffer v0.12.1
   Downloaded crypto-common v0.2.2
-  Downloaded crossbeam v0.8.5
-  Downloaded version_check v0.9.5
-  Downloaded lazy_static v1.5.0
-  Downloaded thread_local v1.1.10
-  Downloaded hex v0.4.3
-  Downloaded cpufeatures v0.2.17
-  Downloaded scopeguard v1.2.0
-  Downloaded itoa v1.0.18
-  Downloaded keccak v0.1.6
-  Downloaded crypto-common v0.1.7
-  Downloaded cpufeatures v0.3.1
-  Downloaded digest v0.10.7
-  Downloaded nu-ansi-term v0.50.3
-  Downloaded zeroize v1.9.0
-  Downloaded crossbeam-utils v0.8.23
-  Downloaded zeroize_derive v1.5.0
-  Downloaded zmij v1.0.23
-  Downloaded tracing-log v0.2.0
-  Downloaded thiserror v2.0.21
-  Downloaded unicode-ident v1.0.26
-  Downloaded tracing-attributes v0.1.31
-  Downloaded sha2 v0.10.9
-  Downloaded parking_lot_core v0.9.12
   Downloaded either v1.18.0
-  Downloaded crossbeam-skiplist v0.1.3
-  Downloaded crossbeam-queue v0.3.14
-  Downloaded chacha20 v0.10.2
-  Downloaded pin-project-lite v0.2.17
-  Downloaded ulid v3.0.0
-  Downloaded thiserror-impl v2.0.21
-  Downloaded rand_core v0.10.1
+  Downloaded version_check v0.9.5
+  Downloaded zeroize v1.9.0
+  Downloaded nu-ansi-term v0.50.3
   Downloaded rand_core v0.6.4
+  Downloaded quote v1.0.47
+  Downloaded tracing-log v0.2.0
+  Downloaded zmij v1.0.23
+  Downloaded digest v0.10.7
+  Downloaded thiserror-impl v2.0.21
+  Downloaded thiserror v2.0.21
+  Downloaded crossbeam-utils v0.8.23
+  Downloaded crossbeam-skiplist v0.1.3
+  Downloaded chacha20 v0.10.2
+  Downloaded sha2 v0.10.9
+  Downloaded rand_core v0.10.1
   Downloaded num-integer v0.1.47
-  Downloaded dashmap v6.2.1
-  Downloaded crossbeam-deque v0.8.8
-  Downloaded autocfg v1.5.1
-  Downloaded bech32 v0.9.1
-  Downloaded smallvec v1.16.2
-  Downloaded log v0.4.34
-  Downloaded getrandom v0.4.3
-  Downloaded sha2 v0.11.0
-  Downloaded uuid v1.26.1
-  Downloaded sharded-slab v0.1.7
-  Downloaded memchr v2.8.3
-  Downloaded typenum v1.20.1
-  Downloaded rand v0.10.3
-  Downloaded hashbrown v0.14.5
-  Downloaded num-bigint v0.4.8
-  Downloaded serde_derive v1.0.229
-  Downloaded serde v1.0.229
-  Downloaded tracing-subscriber v0.3.23
-  Downloaded hybrid-array v0.4.15
-  Downloaded pricelevel v0.9.2
-  Downloaded syn v3.0.6
-  Downloaded syn v2.0.119
-  Downloaded crossbeam-channel v0.5.17
-  Downloaded bitflags v2.13.2
-  Downloaded base64 v0.22.1
-  Downloaded tracing-core v0.1.36
-  Downloaded tracing v0.1.44
+  Downloaded crossbeam-queue v0.3.14
+  Downloaded pin-project-lite v0.2.17
   Downloaded lock_api v0.4.14
-  Downloaded block-buffer v0.10.4
+  Downloaded crossbeam-deque v0.8.8
+  Downloaded crossbeam v0.8.5
+  Downloaded zeroize_derive v1.5.0
+  Downloaded smallvec v1.16.2
   Downloaded serde_core v1.0.229
   Downloaded proc-macro2 v1.0.107
-  Downloaded serde_json v1.0.151
-  Downloaded orderbook-rs v0.13.1
-  Downloaded num-traits v0.2.19
-  Downloaded quote v1.0.47
   Downloaded once_cell v1.21.4
+  Downloaded log v0.4.34
+  Downloaded num-traits v0.2.19
+  Downloaded crossbeam-channel v0.5.17
+  Downloaded uuid v1.26.1
+  Downloaded ulid v3.0.0
+  Downloaded typenum v1.20.1
+  Downloaded rand v0.10.3
+  Downloaded memchr v2.8.3
+  Downloaded num-bigint v0.4.8
+  Downloaded sharded-slab v0.1.7
+  Downloaded serde_json v1.0.151
+  Downloaded hashbrown v0.14.5
+  Downloaded tracing-subscriber v0.3.23
+  Downloaded getrandom v0.4.3
+  Downloaded pricelevel v0.9.2
+  Downloaded serde v1.0.229
+  Downloaded syn v3.0.6
+  Downloaded const-oid v0.10.2
+  Downloaded syn v2.0.119
+  Downloaded sha2 v0.11.0
+  Downloaded hybrid-array v0.4.15
+  Downloaded digest v0.11.3
+  Downloaded dashmap v6.2.1
+  Downloaded crossbeam-epoch v0.9.21
+  Downloaded tracing v0.1.44
+  Downloaded bitflags v2.13.2
+  Downloaded base64 v0.22.1
+  Downloaded unicode-ident v1.0.26
+  Downloaded tracing-core v0.1.36
+  Downloaded tracing-attributes v0.1.31
+  Downloaded serde_derive v1.0.229
+  Downloaded parking_lot_core v0.9.12
+  Downloaded orderbook-rs v0.13.1
+  Downloaded sha3 v0.10.9
   Downloaded libc v0.2.189
   Downloaded tokio v1.53.1
-  Downloaded sha3 v0.10.9
   Downloaded fips204 v0.4.6
-  Downloaded digest v0.11.3
-  Downloaded crossbeam-epoch v0.9.21
    Compiling proc-macro2 v1.0.107
    Compiling libc v0.2.189
-   Compiling unicode-ident v1.0.26
    Compiling quote v1.0.47
-   Compiling typenum v1.20.1
+   Compiling unicode-ident v1.0.26
    Compiling cfg-if v1.0.5
+   Compiling typenum v1.20.1
    Compiling version_check v0.9.5
    Compiling serde_core v1.0.229
    Compiling crossbeam-utils v0.8.23
    Compiling autocfg v1.5.1
-   Compiling serde v1.0.229
    Compiling zmij v1.0.23
+   Compiling serde v1.0.229
    Compiling generic-array v0.14.7
    Compiling num-traits v0.2.19
-   Compiling crossbeam-epoch v0.9.21
    Compiling rand_core v0.10.1
-   Compiling getrandom v0.4.3
    Compiling once_cell v1.21.4
+   Compiling getrandom v0.4.3
    Compiling serde_json v1.0.151
+   Compiling crossbeam-epoch v0.9.21
    Compiling hybrid-array v0.4.15
    Compiling memchr v2.8.3
-   Compiling syn v3.0.6
-   Compiling syn v2.0.119
    Compiling itoa v1.0.18
-   Compiling tracing-core v0.1.36
-   Compiling parking_lot_core v0.9.12
+   Compiling syn v2.0.119
+   Compiling syn v3.0.6
    Compiling cpufeatures v0.2.17
    Compiling keccak v0.1.6
+   Compiling tracing-core v0.1.36
    Compiling smallvec v1.16.2
+   Compiling parking_lot_core v0.9.12
+   Compiling crypto-common v0.2.2
    Compiling block-buffer v0.10.4
    Compiling crypto-common v0.1.7
-   Compiling block-buffer v0.12.1
    Compiling digest v0.10.7
-   Compiling crypto-common v0.2.2
+   Compiling block-buffer v0.12.1
    Compiling chacha20 v0.10.2
-   Compiling sha3 v0.10.9
-   Compiling sha2 v0.10.9
-   Compiling lazy_static v1.5.0
-   Compiling crossbeam-deque v0.8.8
-   Compiling rand_core v0.6.4
-   Compiling const-oid v0.10.2
-   Compiling pin-project-lite v0.2.17
    Compiling scopeguard v1.2.0
+   Compiling sha2 v0.10.9
+   Compiling sha3 v0.10.9
+   Compiling pin-project-lite v0.2.17
+   Compiling const-oid v0.10.2
    Compiling log v0.4.34
-   Compiling lock_api v0.4.14
-   Compiling sharded-slab v0.1.7
+   Compiling crossbeam-deque v0.8.8
+   Compiling lazy_static v1.5.0
+   Compiling rand_core v0.6.4
    Compiling tracing-log v0.2.0
+   Compiling sharded-slab v0.1.7
    Compiling rand v0.10.3
-   Compiling num-integer v0.1.47
-   Compiling cpufeatures v0.3.1
+   Compiling lock_api v0.4.14
    Compiling digest v0.11.3
+   Compiling cpufeatures v0.3.1
    Compiling thread_local v1.1.10
+   Compiling num-integer v0.1.47
    Compiling nu-ansi-term v0.50.3
    Compiling hex v0.4.3
-   Compiling num-bigint v0.4.8
    Compiling thiserror v2.0.21
-   Compiling sha1_smol v1.0.1
-   Compiling hashbrown v0.14.5
-   Compiling bech32 v0.9.1
    Compiling base64 v0.22.1
-   Compiling uuid v1.26.1
+   Compiling num-bigint v0.4.8
+   Compiling bech32 v0.9.1
+   Compiling hashbrown v0.14.5
+   Compiling sha1_smol v1.0.1
    Compiling tracing-subscriber v0.3.23
    Compiling sha2 v0.11.0
+   Compiling uuid v1.26.1
+   Compiling crossbeam-skiplist v0.1.3
+   Compiling crossbeam-queue v0.3.14
+   Compiling crossbeam-channel v0.5.17
    Compiling serde_derive v1.0.229
    Compiling thiserror-impl v2.0.21
-   Compiling crossbeam-skiplist v0.1.3
-   Compiling dashmap v6.2.1
-   Compiling crossbeam-channel v0.5.17
-   Compiling crossbeam-queue v0.3.14
    Compiling tokio v1.53.1
+   Compiling dashmap v6.2.1
    Compiling bitflags v2.13.2
    Compiling crossbeam v0.8.5
    Compiling either v1.18.0
@@ -160,10 +160,10 @@
    Compiling fips204 v0.4.6
    Compiling tracing v0.1.44
    Compiling ulid v3.0.0
-   Compiling nus-exchange-contract v0.1.0 (/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/worktrees/NUS-16-fix/exchange)
+   Compiling nus-exchange-contract v0.1.0 (/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/worktrees/NUS-16-rc3/exchange)
    Compiling pricelevel v0.9.2
    Compiling orderbook-rs v0.13.1
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.26s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.76s
      Running unittests src/lib.rs (exchange/target/debug/deps/nus_exchange_contract-c48582a6eedf9241)
 
 running 0 tests
@@ -185,29 +185,28 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
      Running tests/common_vectors.rs (exchange/target/debug/deps/common_vectors-c76c2705d0dfba82)
 
 running 10 tests
-test parser_adversarial_boundaries ... ok
-test message_vectors ... ok
-test sequenced_ioc_contract ... ok
-test integer_vectors ... ok
-test s0_exchange_vectors ... ok
 test common_policy ... ok
+test integer_vectors ... ok
+test parser_adversarial_boundaries ... ok
+test sequenced_ioc_contract ... ok
+test s0_exchange_vectors ... ok
 test strict_wire_and_amount_vectors ... ok
+test message_vectors ... ok
 test order_validation_precedence_and_binding ... ok
 test real_signature_vectors ... ok
 test cli_runner_receipt ... ok
 
-test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.37s
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.38s
 
      Running tests/rc3.rs (exchange/target/debug/deps/rc3-a6ea020e0364b37c)
 
-running 5 tests
+running 4 tests
 test common_rc3_policy_examples ... ok
 test actual_registration_and_signature_at_top_level ... ok
 test json_lines_port_uses_real_registration ... ok
 test newly_signed_cap_and_small_fill ... ok
-test signed_enum_market_and_epoch_at_admission_boundary ... ok
 
-test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.57s
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.25s
 
      Running tests/upstream_ioc.rs (exchange/target/debug/deps/upstream_ioc-6b5949e8bd1ff9ef)
 
