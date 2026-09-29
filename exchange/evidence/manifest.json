@@ -1,0 +1,14 @@
+{
+  "scope": "Rust S0 contract; no runtime integration",
+  "rustc": "1.92.0 (ded5c06cf 2025-12-08)",
+  "platform": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+  "base_commit": "889fda0",
+  "contract_sha256": "daae05c8b3b94694d9f38122bf92a74f53b83197cd667d9ad93df545d55bc3dd",
+  "vectors_sha256": "60ee56ff3ff5a754965472cfb353dd1565072dbf0985907c369a0b78237f91e0",
+  "cargo_lock_sha256": "ab4f76dd87448219ade436d508822b423b036a5131cdc732150a59e2e764e894",
+  "test_functions_passed": 12,
+  "test_log_sha256": "3a272ac4df0330cdae24ff6516274a82ca3b3700e2b26693b5529bc7835f1198",
+  "cross_language_matrix": "NOT_RUN",
+  "wal_outbox_chain_integration": "NOT_RUN",
+  "performance": "NOT_MEASURED"
+}

@@ -1,0 +1,18 @@
+name: Exchange S0 contract
+on:
+  pull_request:
+    paths: ['exchange/**', 'protocol/v1/**', '.github/workflows/exchange-contract.yml']
+  push:
+    branches: [main, nus-13-rust-contract]
+    paths: ['exchange/**', 'protocol/v1/**', '.github/workflows/exchange-contract.yml']
+permissions:
+  contents: read
+jobs:
+  rust-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install 1.92.0 --profile minimal --component rustfmt
+      - run: python3 protocol/v1/tools/check.py
+      - run: cargo +1.92.0 fmt --manifest-path exchange/Cargo.toml --check
+      - run: cargo +1.92.0 test --manifest-path exchange/Cargo.toml --locked -- --nocapture
