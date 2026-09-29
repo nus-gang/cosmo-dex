@@ -1,0 +1,34 @@
+name: S0-G independent security reproduction
+on:
+  pull_request:
+    paths: ['security/**', '.github/workflows/security-review.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pinned-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.4'
+          cache: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.21.0'
+      - uses: dtolnay/rust-toolchain@1.92.0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - name: Materialize pinned C/D/E/F inputs and verify identical protocol
+        run: python3 security/prepare.py
+      - name: Reproduce review (known policy differences intentionally fail)
+        run: bash security/run.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: s0-g-security-evidence
+          path: security/evidence/

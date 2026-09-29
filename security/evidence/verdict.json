@@ -1,0 +1,43 @@
+{
+  "review_deliverable": "READY_FOR_NATIVE_CEO_REVIEW",
+  "security_verdict": "FAIL",
+  "crypto_interop": "PASS",
+  "canonical_common_vectors": "PASS",
+  "common_business_acceptance": "FAIL",
+  "product_release": "NOT_APPROVED",
+  "differential_checks": 420,
+  "matching_checks": 413,
+  "differences": 7,
+  "findings": [
+    "G-01",
+    "G-02",
+    "G-03",
+    "G-04"
+  ],
+  "fix_retest": "NOT_RUN_NO_FIX_COMMITS",
+  "chain_state_and_direct_recovery": "NOT_RUN",
+  "repository_ci": "PENDING_EXECUTION",
+  "reviewer": "CEO",
+  "inputs": [
+    {
+      "issue": "NUS-12",
+      "component": "chain",
+      "sha": "b9c61ef6a0f5cc972b0290a39ac7510c05e3480b"
+    },
+    {
+      "issue": "NUS-13",
+      "component": "exchange",
+      "sha": "9bcbd3018a3ef9e8900368e91c983b38b658dc21"
+    },
+    {
+      "issue": "NUS-14",
+      "component": "settlement",
+      "sha": "f9b5bbf1e06a4a0c43bebc6d5bd081dc3b1892c2"
+    },
+    {
+      "issue": "NUS-15",
+      "component": "web",
+      "sha": "bb50bb9d93bdfdcd61f7b41a32e1149c5b4e1d89"
+    }
+  ]
+}
