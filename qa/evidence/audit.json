@@ -1,0 +1,29 @@
+{
+  "evidence_consistency": "PASS",
+  "s0_gate": "FAIL",
+  "product_T01_T16": "NOT_RUN",
+  "unique_comparisons": 420,
+  "matched": 413,
+  "differences": 7,
+  "matrix_subsets": {
+    "matrix-": {
+      "count": 108,
+      "passed": true
+    },
+    "matrix-codec-": {
+      "count": 27,
+      "passed": true
+    },
+    "matrix-domain-": {
+      "count": 27,
+      "passed": true
+    },
+    "matrix-context-": {
+      "count": 27,
+      "passed": true
+    }
+  },
+  "manifest_files_verified": 37,
+  "ci_summary_equal": true,
+  "summary_sha256": "756d5e175f0c07b95de0529e3951d9ab67322e12f2698549ecba92c20b2cd357"
+}

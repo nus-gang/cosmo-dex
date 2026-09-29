@@ -1,0 +1,6 @@
+{
+  "start_utc": "2026-09-29T18:03:06.986417+00:00",
+  "elapsed_seconds": 17.981924417006667,
+  "exit_code": 1,
+  "command": "bash security/run.sh"
+}

@@ -1,0 +1,54 @@
+{
+  "run_id": "20a98287-1c27-4521-aef4-d57943e5e90a",
+  "baseline": "248b9529cfb297b8d8060ef9f923a32cab2a6e3a",
+  "b_sha": "cec18c78f41aea8c2c2935bf9ade6aa0fb34f3e9",
+  "g_ci_sha": "2be2347632909e1b6a417b3823220d5abcba4745",
+  "components": [
+    {
+      "issue": "NUS-12",
+      "component": "chain",
+      "sha": "b9c61ef6a0f5cc972b0290a39ac7510c05e3480b"
+    },
+    {
+      "issue": "NUS-13",
+      "component": "exchange",
+      "sha": "9bcbd3018a3ef9e8900368e91c983b38b658dc21"
+    },
+    {
+      "issue": "NUS-14",
+      "component": "settlement",
+      "sha": "f9b5bbf1e06a4a0c43bebc6d5bd081dc3b1892c2"
+    },
+    {
+      "issue": "NUS-15",
+      "component": "web",
+      "sha": "bb50bb9d93bdfdcd61f7b41a32e1149c5b4e1d89"
+    }
+  ],
+  "contract_sha256": "daae05c8b3b94694d9f38122bf92a74f53b83197cd667d9ad93df545d55bc3dd",
+  "vectors_sha256": "60ee56ff3ff5a754965472cfb353dd1565072dbf0985907c369a0b78237f91e0",
+  "config_sha256": "7b12f8dffd4dfd07242331b975f0c440f5948074280c3a120c3232b3e674d13e",
+  "locks_sha256": {
+    "chain/go.mod": "fb92827c0549a95679bfdb793feb8cb184879e844f45e5f9be7342806ac4a5b5",
+    "chain/go.sum": "be7914402a4ac34946df904f134fc88a62163b83f0f61b59f5c265f6b4513d1b",
+    "exchange/Cargo.lock": "ab4f76dd87448219ade436d508822b423b036a5131cdc732150a59e2e764e894",
+    "web/package-lock.json": "95c1b012fce8ac96e96ee9547438b4c36d15c071e5d79faf1ab4d651261cb0fa",
+    "protocol/v1/manifest.candidate.json": "e175140bb2215ef6c32d9b8da6406dbedf53fe0c9442a58419a009ac65317eab"
+  },
+  "document_revisions": {
+    "m0-acceptance": "d4f05eaa-dd46-487b-a520-00a1cd9cda0d",
+    "m0-measurements": "8b1991b5-e355-40be-b916-c3047f9e0d86",
+    "m0-plan": "43c89779-7be5-49f5-aed7-b4ae3de0a8a4",
+    "plan": "d9c0676b-9e96-48b1-bf40-4618e1c48c15",
+    "security-doc": "8280406d-44e3-45cc-9626-cf732307899b"
+  },
+  "seed_recipe": "SHA256(UTF8(\"NUS-16 public synthetic \" + producer)), producer Go/Rust/TS; shared seed in protocol/v1/vectors/signatures.json.test_seed_hex",
+  "synthetic_only": true,
+  "validators": 0,
+  "live_chain": false,
+  "engine_ops_per_second": null,
+  "finalized_tx_per_second": null,
+  "latency": null,
+  "rpo": null,
+  "rto": null
+}

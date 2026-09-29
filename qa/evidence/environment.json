@@ -1,0 +1,9 @@
+{
+  "go": "go version go1.24.4 darwin/arm64",
+  "rust": "rustc 1.92.0 (ded5c06cf 2025-12-08)",
+  "cargo": "cargo 1.92.0 (344c4567c 2025-10-21)",
+  "node": "v24.21.0",
+  "python": "Python 3.14.0",
+  "sha": "248b9529cfb297b8d8060ef9f923a32cab2a6e3a",
+  "platform": "macOS-15.6.1-arm64-arm-64bit-Mach-O"
+}

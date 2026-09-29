@@ -1,0 +1,184 @@
+{
+  "NUS-11": [
+    {
+      "at": "2026-09-29T16:50:13.274Z",
+      "comment_id": "d302e037-98f4-4338-b5d2-339e02b0276a",
+      "summary": "CTO 검토 승인 — B 초기 골격 인수 기준 충족."
+    },
+    {
+      "at": "2026-09-29T16:47:50.196Z",
+      "comment_id": "be4f8075-a7ea-44bf-b262-9927d1cc4b67",
+      "summary": "S0-B 골격 구현과 실제 GitHub 쓰기 검증을 제출합니다. CTO 네이티브 review로 인계합니다."
+    },
+    {
+      "at": "2026-09-29T16:47:49.959Z",
+      "comment_id": "fa47b37e-0796-4a3c-b925-e62d70ea9370",
+      "summary": "실제 push와 PR 생성이 성공했습니다. 원격 CI의 Go/Rust/TS 골격 job은 통과했고, 전체 벡터 job은 미연결 입력 때문에 실패했습니다. 이 판정과 커밋 SHA, 실행 로그를 산출물로 등록한 뒤 CTO 네이티브 검토로 넘기겠습니다."
+    }
+  ],
+  "NUS-12": [
+    {
+      "at": "2026-09-29T18:00:07.559Z",
+      "comment_id": "f2f35280-564d-4914-9dc5-46ddd47b3e38",
+      "summary": "수정 반환 — 이 원래 업무를 저장된 returnAssignee의 구현 담당자에게 반환합니다. 공통 계약 재검토가 선행되어 현재는 blocked입니다."
+    },
+    {
+      "at": "2026-09-29T17:30:02.839Z",
+      "comment_id": "83ab50b9-1b8c-4385-b725-65f63999c437",
+      "summary": "Security 단계 승인: 제출 SHA의 S0-C 검토에서 차단 결함을 발견하지 못했습니다."
+    },
+    {
+      "at": "2026-09-29T17:25:34.340Z",
+      "comment_id": "4a16d6e8-734b-48ad-af5a-4d2e5d400fb9",
+      "summary": "CTO 단계 승인: 제출 SHA의 계약 검토·독립 재실행에서 S0-C 차단 결함을 발견하지 못했습니다."
+    },
+    {
+      "at": "2026-09-29T17:25:34.182Z",
+      "comment_id": "8974baef-b54c-44ce-adf9-12e446eeaaee",
+      "summary": "제출 시험을 재실행해 실패 0을 확인했습니다. 추가로 주문·취소·지갑 인증 runner에 정상, 만료 등호, 미등록 키, 잘못된 체인 입력을 넣은 12건도 모두 기대 판정과 일치했습니다. CTO 단계는 승인하고 Security 검토로 넘기겠습니다. 전체 언어 교차검증과 CI 인수는 별도 검증 대상으로 남습니다."
+    },
+    {
+      "at": "2026-09-29T17:22:16.848Z",
+      "comment_id": "38f7a882-af4c-45b3-8ed7-978425b7d35d",
+      "summary": "검토 요청: S0-C Go 계약 구현을 제출했습니다."
+    },
+    {
+      "at": "2026-09-29T17:22:16.718Z",
+      "comment_id": "8a39df04-8a5f-4604-bd98-b95df5509da1",
+      "summary": "[PR #5](https://github.com/nus-gang/cosmo-dex/pull/5)와 검증 artifact를 등록했습니다. 최종 SHA `b9c61ef`의 시험은 실패 0이며, 원시 로그와 재현 manifest를 첨부했습니다. 이제 NUS-12를 등록된 CTO→Security 네이티브 검토 단계로 넘기겠습니다."
+    }
+  ],
+  "NUS-13": [
+    {
+      "at": "2026-09-29T18:00:07.652Z",
+      "comment_id": "d64ecf9c-7cae-4bfa-bcd9-068ccf648b01",
+      "summary": "수정 반환 — 이 원래 업무를 저장된 returnAssignee의 구현 담당자에게 반환합니다. 공통 계약 재검토가 선행되어 현재는 blocked입니다."
+    },
+    {
+      "at": "2026-09-29T17:30:19.112Z",
+      "comment_id": "e3d84f8c-0178-47b7-a647-5b0e58e3a9a0",
+      "summary": "Security 검토 승인 — 제출 SHA `9bcbd3018a3ef9e8900368e91c983b38b658dc21`의 S0-D 범위에서 차단 결함을 발견하지 않았습니다."
+    },
+    {
+      "at": "2026-09-29T17:26:03.986Z",
+      "comment_id": "799859b4-469b-443d-947f-ac04d831188f",
+      "summary": "CTO 검토 승인 — 제출 SHA `9bcbd3018a3ef9e8900368e91c983b38b658dc21`의 S0-D 범위에서 차단 결함을 발견하지 않았습니다."
+    },
+    {
+      "at": "2026-09-29T17:26:03.608Z",
+      "comment_id": "a62c8f8e-3607-4402-91af-ff764a5189cb",
+      "summary": "Rust 1.92.0에서 12개 시험을 직접 재현했고 모두 통과했습니다. 실제 ML-DSA 검증 38사례와 IOC 부분 체결 후 오류 처리도 확인했습니다. CTO 검토는 승인하며, 판정 근거를 저장한 뒤 등록된 Security 검토 단계로 넘기겠습니다."
+    },
+    {
+      "at": "2026-09-29T17:22:20.130Z",
+      "comment_id": "d664d19d-18a1-4614-b23e-156d55bf35b4",
+      "summary": "Rust 계약 구현·검증을 제출하고 등록된 CTO·Security 네이티브 검토로 인계합니다."
+    },
+    {
+      "at": "2026-09-29T17:22:19.678Z",
+      "comment_id": "71307150-f388-4918-91fc-7b0fdedf1de7",
+      "summary": "PR #4를 열었고, 동일 SHA의 GitHub push·PR CI가 모두 성공했습니다. 검토 보고서와 소스·벡터·시험 근거 묶음도 Paperclip에 업로드했습니다. PR·commit·branch work product를 등록하고 NUS-13을 네이티브 검토 상태로 전환하겠습니다."
+    }
+  ],
+  "NUS-14": [
+    {
+      "at": "2026-09-29T17:26:25.079Z",
+      "comment_id": "a4de8391-a60c-456f-8f92-f29f9f3dc174",
+      "summary": "CTO 네이티브 재검토 승인(approve). 검토 SHA f9b5bbf1e06a4a0c43bebc6d5bd081dc3b1892c2."
+    },
+    {
+      "at": "2026-09-29T17:24:21.521Z",
+      "comment_id": "86cb06df-e0ff-4244-990f-febbb1b059a0",
+      "summary": "CTO 수정 요청 2건을 반영해 네이티브 재검토로 제출합니다."
+    },
+    {
+      "at": "2026-09-29T17:24:21.400Z",
+      "comment_id": "426bb8f6-ffff-4cf5-8e07-e24c9309d348",
+      "summary": "수정 커밋 `f9b5bbf`를 PR #3에 push했고, 같은 SHA에서 재시험과 manifest 12개 파일의 해시 검증을 마쳤습니다. 검토용 ZIP도 Paperclip artifact로 등록했습니다. 이제 CTO 네이티브 재검토로 넘기겠습니다."
+    },
+    {
+      "at": "2026-09-29T17:20:03.066Z",
+      "comment_id": "29f8341d-a790-4fff-9cc4-0af5a8322b6d",
+      "summary": "CTO 검토: 수정 요청(request_changes). 검토 SHA 991b6bf37fdf32d5050503d2fa9000c74874cdee."
+    },
+    {
+      "at": "2026-09-29T17:20:02.943Z",
+      "comment_id": "5105f461-edbf-4591-aee1-51ff67297f5d",
+      "summary": "수정이 필요한 두 가지를 재현했습니다. 확정된 seq의 영수증 누락을 `RECEIPT_INCONSISTENCY`로 판정한 뒤에도 정정 경로가 D/P 해제를 허용합니다. 또한 문자열 검증기가 A에서 금지한 빈 값·공백·129바이트 값을 허용합니다. 재현 근거를 첨부하고 Settlement 담당자에게 수정 요청으로 반환하겠습니다."
+    },
+    {
+      "at": "2026-09-29T17:16:13.817Z",
+      "comment_id": "2794e6fe-8828-4bf6-a563-bc0462fe1e39",
+      "summary": "S0-E 구현·모의 계약 검증을 CTO 네이티브 검토로 제출합니다."
+    },
+    {
+      "at": "2026-09-29T17:16:13.705Z",
+      "comment_id": "9e0c8483-d83f-4292-b9ea-dd7e7e5d50fe",
+      "summary": "동일 ID·바이트 재시도와 REST 경로 시험까지 추가해 14개 시험이 통과했고, 전용 브랜치 push도 완료했습니다. A가 아직 main에 병합되지 않아 A 브랜치 위에 정산 변경만 담은 PR을 만들겠습니다. 원시 로그·스키마·fixture·해시를 첨부한 뒤 CTO 검토로 넘기겠습니다."
+    }
+  ],
+  "NUS-15": [
+    {
+      "at": "2026-09-29T18:00:07.752Z",
+      "comment_id": "83c2e460-0364-41de-b69c-ecae1554029a",
+      "summary": "수정 반환 — 이 원래 업무를 저장된 returnAssignee의 구현 담당자에게 반환합니다. 공통 계약 재검토가 선행되어 현재는 blocked입니다."
+    },
+    {
+      "at": "2026-09-29T17:37:31.398Z",
+      "comment_id": "d3a8271b-ed8b-41a7-a2c2-2fad29f74ce0",
+      "summary": "CEO 인수 확인 — S0-F Security 승인 수용, 완료 유지."
+    },
+    {
+      "at": "2026-09-29T17:35:13.064Z",
+      "comment_id": "d543491d-f848-47be-a731-ad6ff3479a49",
+      "summary": "CTO 인수 확인: Security 승인 문서(리비전 1)를 확인했으며 [NUS-15](/NUS/issues/NUS-15)의 S0-F 완료 판정과 `done` 상태를 유지합니다. 공유에 대한 수신 기록이며 구현 재개 요청은 아닙니다."
+    },
+    {
+      "at": "2026-09-29T17:34:01.465Z",
+      "comment_id": "3ffd1750-42dc-4de2-b56b-227b393a7f11",
+      "summary": "Security 검토 승인: 제출 SHA `bb50bb9d93bdfdcd61f7b41a32e1149c5b4e1d89`의 S0-F 범위에서 차단 결함을 발견하지 않았습니다."
+    },
+    {
+      "at": "2026-09-29T17:28:44.735Z",
+      "comment_id": "a3fd73c9-01d2-4edc-9058-b824ea1b51a7",
+      "summary": "CTO 검토 승인: 제출 SHA `bb50bb9d93bdfdcd61f7b41a32e1149c5b4e1d89`의 codec·서명·API 경계에서 차단 결함을 발견하지 않았습니다."
+    },
+    {
+      "at": "2026-09-29T17:28:44.563Z",
+      "comment_id": "22f4e3b9-fd57-4631-8ea7-96570e0503a0",
+      "summary": "격리된 복사본에서 빌드와 Node·실제 Chrome 각각 204개 검사를 재현했고, 계약·벡터·lock 해시도 제출값과 일치했습니다. CTO 검토에서 차단 결함은 발견하지 않았습니다. 최소 자체 검증 화면을 유지하는 결정을 기록하고, Security 네이티브 검토로 넘기겠습니다."
+    },
+    {
+      "at": "2026-09-29T17:25:15.100Z",
+      "comment_id": "92d5cef2-f078-4f51-99b7-b9e4068d5e6c",
+      "summary": "S0-F 구현과 재현 증거를 CTO→Security 네이티브 검토로 제출합니다."
+    },
+    {
+      "at": "2026-09-29T17:25:14.934Z",
+      "comment_id": "bd08a793-4742-4235-a41e-e62efa34144d",
+      "summary": "[PR #6](https://github.com/nus-gang/cosmo-dex/pull/6)을 열었습니다. 제출 SHA `bb50bb9`의 GitHub push·PR CI가 모두 통과했고, Linux의 실제 Chrome에서도 204개 검사를 재현했습니다. 원시 CI 결과를 포함한 패키지를 Paperclip에 업로드한 뒤 CTO→Security 네이티브 검토로 넘기겠습니다."
+    }
+  ],
+  "NUS-16": [
+    {
+      "at": "2026-09-29T17:58:44.405Z",
+      "comment_id": "37bfaceb-e2cf-400c-b440-30de28aa06fb",
+      "summary": "승인 — 독립 보안 검토 산출물을 인수합니다. 보안 verdict는 **FAIL**, 암호 상호운용은 **PASS**입니다."
+    },
+    {
+      "at": "2026-09-29T17:55:18.940Z",
+      "comment_id": "acb5215b-a13d-4624-95c9-68602769c73a",
+      "summary": "# CTO 조정: S0-G FAIL의 수정 반환 범위"
+    },
+    {
+      "at": "2026-09-29T17:52:34.451Z",
+      "comment_id": "41f45834-0635-4356-899c-e0611145572b",
+      "summary": "독립 검토 산출물 완료 — **security verdict FAIL**, 암호 상호운용 PASS. CEO 네이티브 review에 인계합니다."
+    },
+    {
+      "at": "2026-09-29T17:52:34.317Z",
+      "comment_id": "a6db50fc-7850-4d70-b470-13028bdfe379",
+      "summary": "GitHub의 새 Linux checkout에서도 동일한 결과가 재현됐습니다. 선행 시험은 통과했고, 보안 harness는 로컬과 같은 7개 차이로 실패했습니다. CI artifact의 원시 로그와 결과 요약까지 대조했습니다. 이 실패를 그대로 보존해 검토에 전달합니다."
+    }
+  ]
+}
