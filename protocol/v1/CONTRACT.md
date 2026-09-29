@@ -1,4 +1,4 @@
-# S0 계약 v1.0.0-rc2
+# S0 계약 v1.0.0-rc3
 
 CTO 결정, 2026-09-29. 상태: **계약 단계 Security·QA 검토 대기, 독립 최종 검증 전**. 승인 범위는 S0-A~H이며 제품 통합·실자산 정책이 아니다.
 
@@ -18,7 +18,7 @@ ML-DSA-65 pure, FIPS context empty. raw pk=1952B, signature=3309B, owner=SHA256(
 
 서명 frame은 u32be(domain length)||ASCII domain||u64be(body length)||canonical body. ORDER/CANCEL/WALLET_AUTH 및 BATCH_ID/BATCH_HASH/FILL_ID는 baseline 그대로. TX는 SDK SIGN_MODE_DIRECT 경로이며 이 frame과 교환 금지. TransferStableV1은 직접 ML-DSA frame이 아니라 체인 TX body 안의 메시지다. payment_hash=SHA256(frame(`NUS/PAYMENT_ID/V1`,canonical TransferStableV1)); 권한 서명은 TX이며 이 hash는 멱등성 전용이다.
 
-검사 우선순위: RESOURCE_LIMIT → NON_CANONICAL_WIRE/INTEGER_RANGE → UNSUPPORTED_VERSION → CONTEXT_MISMATCH → KEY_LENGTH/ADDRESS_MISMATCH/ACCOUNT_KEY_UNREGISTERED/ACCOUNT_KEY_MISMATCH → INVALID_SIGNATURE → ID_CONFLICT → EPOCH_MISMATCH/ORDER_REVOKED/EXPIRED → MARKET_LIMIT/FEE_CAP/FEE_GE_RECEIVE → CUMULATIVE_QTY_EXCEEDED/INSUFFICIENT_CONFIRMED_BALANCE. 여러 실패가 있으면 이 순서, 동순위는 schema tag순. 외부 응답은 `code`, `retryable` boolean, `state`, 확정 관측 `height`를 포함하며 다른 사용자의 계정 정보는 공개하지 않는다. 저장된 동일 요청 재시도는 wire/context/auth 검증 후 이전 결과를 반환하고 현시점 만료로 성공 영수증을 덮어쓰지 않는다.
+검사 우선순위: RESOURCE_LIMIT → NON_CANONICAL_WIRE/INTEGER_RANGE → UNSUPPORTED_VERSION → CONTEXT_MISMATCH → KEY_LENGTH/ADDRESS_MISMATCH/ACCOUNT_KEY_UNREGISTERED/ACCOUNT_KEY_MISMATCH → INVALID_SIGNATURE → ID_CONFLICT → EPOCH_MISMATCH/ORDER_REVOKED/EXPIRED → MARKET_LIMIT/BPS_RANGE/FEE_CAP/FEE_GE_RECEIVE → CUMULATIVE_QTY_EXCEEDED/INSUFFICIENT_CONFIRMED_BALANCE. 여러 실패가 있으면 이 순서, 동순위는 schema tag순. 외부 응답은 `code`, `retryable` boolean, `state`, 확정 관측 `height`를 포함하며 다른 사용자의 계정 정보는 공개하지 않는다. 저장된 동일 요청 재시도는 wire/context/auth 검증 후 이전 결과를 반환하고 현시점 만료로 성공 영수증을 덮어쓰지 않는다.
 
 ## 만료·체결·정수
 
@@ -53,3 +53,7 @@ runtime manifest는 git SHA, contract/vector/config hash, Go/Rust/Node 및 lock 
 ## SEC-A-01·02 보완 (rc2)
 
 rc1 atoms/base64 문구의 충돌을 API 십진 문자열로 해소했다. M0 십진 금액 규칙을 유지하며 기존 wire/tag/서명 바이트는 변경하지 않았다. `amount-codec.json`은 0/1/2^64/U128_MAX의 왕복과 비정규/범위/폭 거절을 고정한다. `message-codec.json`은 완전한 API JSON·fields·canonical bytes, PAYMENT_ID frame/hash 및 송금 변경·과거 영수증 사례를 제공한다. fixture의 genesis/주소/tx_hash는 합성이며 TX 서명 성공을 뜻하지 않는다. receipt 원본은 보존 batch fixture의 chain/genesis/market/seq/id/hash에 연결했다. lookup context가 다른 영수증은 NOT_FOUND_AT_HEIGHT이며 다른 context의 receipt를 반환하지 않는다. state 사례의 wire/context/auth 선검사는 성공으로 가정하며 제품 영속성·서명·경합 증거가 아니다.
+
+## G-01~04 정렬 (rc3)
+
+`DECISION-PORT.md`의 수수료 순서·U32 cap·등록 key type·단계별 판정 및 API mapping을 규범으로 추가한다. 충돌 시 rc3 명시 규칙이 이전 일반 문구보다 우선한다. wire/tag/서명 도메인 및 DEV 설정은 변경하지 않았다. rc2의 독립 보안 FAIL·7차이는 이 변경으로 소급 PASS가 되지 않는다. 수정 후 제품 differential/암호/CI 재시험은 NOT_RUN이다.
