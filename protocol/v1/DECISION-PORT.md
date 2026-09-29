@@ -27,3 +27,7 @@ snapshot 필드: id, source, height, expiry_height, epoch_matches, revoked, id_s
 `max_fee_bps`는 wire U32의 **서명된 상한**이다. 10001/U32_MAX도 유효 cap이며 활성 비율이 아니다. 활성 비율은 별도로 0..10000이어야 하고 active<=cap, 초과 시 FEE_CAP. cap 초과 U32는 INTEGER_RANGE. active=10000은 범위상 유효하나 양수 수취액 fee=receive이므로 수수료 검사에서 거절된다. 큰 cap은 활성 비율 제한을 완화하지 않는다.
 
 공통 API mapping: INTEGER_RANGE/BPS_RANGE/FEE_CAP/FEE_GE_RECEIVE/ACCOUNT_KEY_UNREGISTERED/ACCOUNT_KEY_MISMATCH는 동일 code를 유지하고 HTTP 400, retryable=false, state=REJECTED로 매핑한다. 이는 제출 전 정책 거절이며 REJECTED_FINAL(확정 TX 실패)과 다르다. height는 신뢰된 관측 높이의 십진 문자열, 없으면 null이다. NOT_CONNECTED/NOT_RUN은 시험 상태이며 사용자 주문 승인/거절 API로 변환하지 않는다. 상세 key/account bytes는 오류 응답에 노출하지 않는다.
+
+## rc4 명확화 — snapshot 출력
+
+부분/모순 snapshot의 ID 의미·binding 판정은 [G-FIX-01 ADR](adr/G-FIX-01.md)이 우선한다. snapshot_id는 원본 입력의 진단용 관측 ID이며 완전성/결합/승인 증거가 아니다. 누락/null ID만 null, 그 밖의 문자열은 보존한다. 인증 PASS 뒤 필수 입력 누락 또는 context/서명과의 binding 모순은 정책 NOT_CONNECTED/code=null. 인증 실패는 정책 NOT_RUN. 정책·ACK의 승인 기준은 그대로 유지한다. `vectors/snapshot-output.json`의 전체 출력을 함께 소비한다. rc3 검토 이력은 보존하며 rc4는 독립 Security→QA 검토 전이다.
