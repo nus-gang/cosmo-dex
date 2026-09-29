@@ -162,9 +162,16 @@ fn integer_vectors() {
             Ok(n) => n.to_string(),
             Err(e) => e.into(),
         };
-        assert_eq!(actual, c[5], "{}", c[0]);
+        // CONTRACT rc3 explicitly takes precedence; retain the historical M0 vector unchanged.
+        let expected = if c[0] == "I20" {
+            assert_eq!(&c[1..6], &["fee", "0", "0", "0", "FEE_GE_RECEIVE"]);
+            "0"
+        } else {
+            c[5]
+        };
+        assert_eq!(actual, expected, "{}", c[0]);
     }
-    println!("PASS integer_boundaries=32");
+    println!("PASS integer_boundaries=32 (I20 superseded by rc3 fee-0)");
 }
 #[test]
 fn common_policy() {
@@ -225,11 +232,13 @@ fn order_validation_precedence_and_binding() {
     let sig = h(&v["signature_hex"]);
     let pk = h(&v["public_key_hex"]);
     let mut ctx = OrderContext {
+        snapshot_id: "same-snapshot",
         chain_id: "nus-m0-local",
         genesis_hash: "1111111111111111111111111111111111111111111111111111111111111111",
         exchange_module_id: "x/exchange",
         market_id: "BASE-QUOTE",
         market_config_version: 1,
+        registered_key_type: Some("ML-DSA-65"),
         registered_key: Some(&pk),
         epoch: 7,
         height: 999,
@@ -330,6 +339,6 @@ fn cli_runner_receipt() {
         String::from_utf8_lossy(&out.stderr)
     );
     let receipt: Value = serde_json::from_slice(&out.stdout).unwrap();
-    assert_eq!(receipt["contract_revision"], "1.0.0-rc2");
+    assert_eq!(receipt["contract_revision"], "1.0.0-rc3");
     assert_eq!(receipt["results"].as_array().unwrap().len(), 38);
 }

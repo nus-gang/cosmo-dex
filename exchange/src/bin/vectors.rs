@@ -71,6 +71,6 @@ fn main() {
     }
     println!(
         "{}",
-        json!({"contract_revision":"1.0.0-rc2","vectors_sha256":digest,"results":results})
+        json!({"contract_revision":"1.0.0-rc3","vectors_sha256":digest,"results":results})
     );
 }

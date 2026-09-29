@@ -19,6 +19,9 @@ pub fn fee(receive: u128, bps: u32) -> Result<u128> {
     if bps > 10000 {
         return Err("BPS_RANGE");
     }
+    if bps == 0 {
+        return Ok(0);
+    }
     let n = (BigUint::from(receive) * BigUint::from(bps) + BigUint::from(9999u32))
         / BigUint::from(10000u32);
     let fee = n.to_u128().ok_or("INTEGER_RANGE")?;
@@ -51,11 +54,13 @@ pub fn fill(q: u64, p: u64, bps: u32) -> Result<(u128, u128, u128, u128)> {
 
 /// Values must originate from the confirmed account/context snapshot, never the request.
 pub struct OrderContext<'a> {
+    pub snapshot_id: &'a str,
     pub chain_id: &'a str,
     pub genesis_hash: &'a str,
     pub exchange_module_id: &'a str,
     pub market_id: &'a str,
     pub market_config_version: u64,
+    pub registered_key_type: Option<&'a str>,
     pub registered_key: Option<&'a [u8]>,
     pub epoch: u64,
     pub height: u64,
@@ -64,7 +69,7 @@ pub struct OrderContext<'a> {
     pub available: u128,
     pub fee_bps: u32,
 }
-pub fn validate_order(raw: &[u8], sig: &[u8], ctx: &OrderContext<'_>) -> Result<Value> {
+pub fn authenticate_order(raw: &[u8], sig: &[u8], ctx: &OrderContext<'_>) -> Result<Value> {
     let o = Codec::default().decode("OrderV1", raw)?;
     if o["protocol_version"] != "1" {
         return Err("UNSUPPORTED_VERSION");
@@ -95,12 +100,17 @@ pub fn validate_order(raw: &[u8], sig: &[u8], ctx: &OrderContext<'_>) -> Result<
         return Err("ADDRESS_MISMATCH");
     }
     let registered = ctx.registered_key.ok_or("ACCOUNT_KEY_UNREGISTERED")?;
-    if registered != pk {
+    let key_type = ctx.registered_key_type.ok_or("NOT_CONNECTED")?;
+    if key_type != "ML-DSA-65" || registered != pk {
         return Err("ACCOUNT_KEY_MISMATCH");
     }
     if !codec::verify_raw(&pk, &codec::frame("NUS/ORDER/V1", raw), sig, &[]) {
         return Err("INVALID_SIGNATURE");
     }
+    Ok(o)
+}
+pub fn validate_order(raw: &[u8], sig: &[u8], ctx: &OrderContext<'_>) -> Result<Value> {
+    let o = authenticate_order(raw, sig, ctx)?;
     if integer(&o["owner_epoch"], 64)? != ctx.epoch as u128 {
         return Err("EPOCH_MISMATCH");
     }
@@ -119,7 +129,10 @@ pub fn validate_order(raw: &[u8], sig: &[u8], ctx: &OrderContext<'_>) -> Result<
         return Err("MARKET_LIMIT");
     }
     let cap = integer(&o["max_fee_bps"], 32)?;
-    if cap > 10000 || ctx.fee_bps > 10000 || ctx.fee_bps as u128 > cap {
+    if ctx.fee_bps > 10000 {
+        return Err("BPS_RANGE");
+    }
+    if ctx.fee_bps as u128 > cap {
         return Err("FEE_CAP");
     }
     let (base, quote, _, _) = fill(q, p, ctx.fee_bps)?;
