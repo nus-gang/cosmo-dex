@@ -1,0 +1,23 @@
+{
+  "http_status": 200,
+  "body": {
+    "code": "COMMITTED",
+    "retryable": false,
+    "state": "COMMITTED",
+    "height": "100",
+    "observed_height": "100",
+    "indexer_height": "100",
+    "stale": false,
+    "receipt": {
+      "protocol_version": "1",
+      "chain_id": "nus-m0-local",
+      "genesis_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+      "market_id": "BASE-QUOTE",
+      "batch_seq": "1",
+      "batch_id": "cecd2ab91c1e54c4c856c039d39f03546cc00d12dda17d58dcb2472c487c86df",
+      "batch_hash": "4be8474ab577b66dcf05e75d13c390994ed8bbebedb77bdf6e3c11fb4f1e4684",
+      "committed_height": "90",
+      "tx_hash": "7777777777777777777777777777777777777777777777777777777777777777"
+    }
+  }
+}

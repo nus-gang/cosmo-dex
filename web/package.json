@@ -1,13 +1,27 @@
 {
-  "name": "@cosmo-dex/web",
-  "version": "0.0.0",
+  "name": "@nus/wallet-contract",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "test": "node --test test/*.test.mjs"
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "npm run typecheck && node scripts/build.mjs",
+    "test:browser": "node scripts/browser.mjs",
+    "vectors": "node --experimental-strip-types scripts/vectors.ts"
+  },
+  "dependencies": {
+    "@noble/post-quantum": "0.4.1",
+    "@noble/hashes": "1.8.0",
+    "@scure/base": "1.2.6"
   },
   "devDependencies": {
-    "typescript": "5.8.3"
+    "@types/node": "24.5.2",
+    "typescript": "5.9.2",
+    "esbuild": "0.25.10",
+    "playwright-core": "1.55.1"
+  },
+  "engines": {
+    "node": ">=22.18.0"
   }
 }

@@ -1,0 +1,3 @@
+PASS Python independent bytes/hash comparison: 3 signatures, 2 fills, 10 batches; no crypto/parser/state verification
+PASS 8 reference wire shape examples; no product parser claim
+PASS amount codec 17, complete message bytes 14, wire 10, state examples 17; reference only

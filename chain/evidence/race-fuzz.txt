@@ -1,0 +1,8 @@
+?   	github.com/nus-gang/cosmo-dex/chain/cmd/contract-runner	[no test files]
+ok  	github.com/nus-gang/cosmo-dex/chain/contract	1.612s
+fuzz: elapsed: 0s, gathering baseline coverage: 0/2 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 2/2 completed, now fuzzing with 10 workers
+fuzz: elapsed: 3s, execs: 680710 (226891/sec), new interesting: 73 (total: 75)
+fuzz: elapsed: 5s, execs: 1144442 (220565/sec), new interesting: 77 (total: 79)
+PASS
+ok  	github.com/nus-gang/cosmo-dex/chain/contract	5.295s

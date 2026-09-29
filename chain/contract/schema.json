@@ -1,0 +1,536 @@
+{
+  "OrderV1": [
+    {
+      "tag": 1,
+      "name": "protocol_version",
+      "type": "u32",
+      "repeated": false
+    },
+    {
+      "tag": 2,
+      "name": "chain_id",
+      "type": "s",
+      "repeated": false
+    },
+    {
+      "tag": 3,
+      "name": "genesis_hash",
+      "type": "h",
+      "repeated": false
+    },
+    {
+      "tag": 4,
+      "name": "exchange_module_id",
+      "type": "s",
+      "repeated": false
+    },
+    {
+      "tag": 5,
+      "name": "market_id",
+      "type": "s",
+      "repeated": false
+    },
+    {
+      "tag": 6,
+      "name": "market_config_version",
+      "type": "u64",
+      "repeated": false
+    },
+    {
+      "tag": 7,
+      "name": "owner",
+      "type": "a",
+      "repeated": false
+    },
+    {
+      "tag": 8,
+      "name": "owner_pubkey",
+      "type": "pk",
+      "repeated": false
+    },
+    {
+      "tag": 9,
+      "name": "order_id",
+      "type": "h",
+      "repeated": false
+    },
+    {
+      "tag": 10,
+      "name": "owner_epoch",
+      "type": "u64",
+      "repeated": false
+    },
+    {
+      "tag": 11,
+      "name": "side",
+      "type": "u32",
+      "repeated": false
+    },
+    {
+      "tag": 12,
+      "name": "limit_price_ticks",
+      "type": "u64",
+      "repeated": false
+    },
+    {
+      "tag": 13,
+      "name": "max_qty_lots",
+      "type": "u64",
+      "repeated": false
+    },
+    {
+      "tag": 14,
+      "name": "max_fee_bps",
+      "type": "u32",
+      "repeated": false
+    },
+    {
+      "tag": 15,
+      "name": "fee_asset_policy_id",
+      "type": "s",
+      "repeated": false
+    },
+    {
+      "tag": 16,
+      "name": "expiry_height",
+      "type": "u64",
+      "repeated": false
+    },
+    {
+      "tag": 17,
+      "name": "order_type",
+      "type": "u32",
+      "repeated": false
+    }
+  ],
+  "CancelV1": [
+    {
+      "tag": 1,
+      "name": "protocol_version",
+      "type": "u32",
+      "repeated": false
+    },
+    {
+      "tag": 2,
+      "name": "chain_id",
+      "type": "s",
+      "repeated": false
+    },
+    {
+      "tag": 3,
+      "name": "genesis_hash",
+      "type": "h",
+      "repeated": false
+    },
+    {
+      "tag": 4,
+      "name": "market_id",
+      "type": "s",
+      "repeated": false
+    },
+    {
+      "tag": 5,
+      "name": "owner",
+      "type": "a",
+      "repeated": false
+    },
+    {
+      "tag": 6,
+      "name": "owner_epoch",
+      "type": "u64",
+      "repeated": false
+    },
+    {
+      "tag": 7,
+      "name": "order_id",
+      "type": "h",
+      "repeated": false
+    },
+    {
+      "tag": 8,
+      "name": "order_hash",
+      "type": "h",
+      "repeated": false
+    },
+    {
+      "tag": 9,
+      "name": "cancel_nonce",
+      "type": "h",
+      "repeated": false
+    },
+    {
+      "tag": 10,
+      "name": "expiry_height",
+      "type": "u64",
+      "repeated": false
+    },
+    {
+      "tag": 11,
+      "name": "exchange_module_id",
+      "type": "s",
+      "repeated": false
+    }
+  ],
+  "WalletChallengeV1": [
+    {
+      "tag": 1,
+      "name": "protocol_version",
+      "type": "u32",
+      "repeated": false
+    },
+    {
+      "tag": 2,
+      "name": "chain_id",
+      "type": "s",
+      "repeated": false
+    },
+    {
+      "tag": 3,
+      "name": "server_origin",
+      "type": "s",
+      "repeated": false
+    },
+    {
+      "tag": 4,
+      "name": "audience",
+      "type": "s",
+      "repeated": false
+    },
+    {
+      "tag": 5,
+      "name": "owner",
+      "type": "a",
+      "repeated": false
+    },
+    {
+      "tag": 6,
+      "name": "challenge_nonce",
+      "type": "h",
+      "repeated": false
+    },
+    {
+      "tag": 7,
+      "name": "expiry_time",
+      "type": "u64",
+      "repeated": false
+    },
+    {
+      "tag": 8,
+      "name": "genesis_hash",
+      "type": "h",
+      "repeated": false
+    },
+    {
+      "tag": 9,
+      "name": "issued_at",
+      "type": "u64",
+      "repeated": false
+    }
+  ],
+  "SignedOrderV1": [
+    {
+      "tag": 1,
+      "name": "order",
+      "type": "OrderV1",
+      "repeated": false
+    },
+    {
+      "tag": 2,
+      "name": "signature",
+      "type": "sig",
+      "repeated": false
+    }
+  ],
+  "FillV1": [
+    {
+      "tag": 1,
+      "name": "fill_id",
+      "type": "h",
+      "repeated": false
+    },
+    {
+      "tag": 2,
+      "name": "maker_order_ref",
+      "type": "h",
+      "repeated": false
+    },
+    {
+      "tag": 3,
+      "name": "taker_order_ref",
+      "type": "h",
+      "repeated": false
+    },
+    {
+      "tag": 4,
+      "name": "buyer_order_ref",
+      "type": "h",
+      "repeated": false
+    },
+    {
+      "tag": 5,
+      "name": "seller_order_ref",
+      "type": "h",
+      "repeated": false
+    },
+    {
+      "tag": 6,
+      "name": "execution_price_ticks",
+      "type": "u64",
+      "repeated": false
+    },
+    {
+      "tag": 7,
+      "name": "quantity_lots",
+      "type": "u64",
+      "repeated": false
+    },
+    {
+      "tag": 8,
+      "name": "fee_policy_version",
+      "type": "u64",
+      "repeated": false
+    },
+    {
+      "tag": 9,
+      "name": "command_seq",
+      "type": "u64",
+      "repeated": false
+    },
+    {
+      "tag": 10,
+      "name": "match_index",
+      "type": "u32",
+      "repeated": false
+    }
+  ],
+  "BatchV1": [
+    {
+      "tag": 1,
+      "name": "protocol_version",
+      "type": "u32",
+      "repeated": false
+    },
+    {
+      "tag": 2,
+      "name": "chain_id",
+      "type": "s",
+      "repeated": false
+    },
+    {
+      "tag": 3,
+      "name": "market_id",
+      "type": "s",
+      "repeated": false
+    },
+    {
+      "tag": 4,
+      "name": "operator_epoch",
+      "type": "u64",
+      "repeated": false
+    },
+    {
+      "tag": 5,
+      "name": "batch_seq",
+      "type": "u64",
+      "repeated": false
+    },
+    {
+      "tag": 6,
+      "name": "previous_batch_hash",
+      "type": "h",
+      "repeated": false
+    },
+    {
+      "tag": 7,
+      "name": "batch_id",
+      "type": "h",
+      "repeated": false
+    },
+    {
+      "tag": 8,
+      "name": "new_signed_orders",
+      "type": "SignedOrderV1",
+      "repeated": true
+    },
+    {
+      "tag": 9,
+      "name": "fills",
+      "type": "FillV1",
+      "repeated": true
+    },
+    {
+      "tag": 10,
+      "name": "genesis_hash",
+      "type": "h",
+      "repeated": false
+    },
+    {
+      "tag": 11,
+      "name": "exchange_module_id",
+      "type": "s",
+      "repeated": false
+    },
+    {
+      "tag": 12,
+      "name": "market_config_version",
+      "type": "u64",
+      "repeated": false
+    }
+  ],
+  "FillIdentityV1": [
+    {
+      "tag": 1,
+      "name": "chain_id",
+      "type": "s",
+      "repeated": false
+    },
+    {
+      "tag": 2,
+      "name": "market_id",
+      "type": "s",
+      "repeated": false
+    },
+    {
+      "tag": 3,
+      "name": "operator_epoch",
+      "type": "u64",
+      "repeated": false
+    },
+    {
+      "tag": 4,
+      "name": "command_seq",
+      "type": "u64",
+      "repeated": false
+    },
+    {
+      "tag": 5,
+      "name": "match_index",
+      "type": "u32",
+      "repeated": false
+    }
+  ],
+  "TransferStableV1": [
+    {
+      "tag": 1,
+      "name": "protocol_version",
+      "type": "u32",
+      "repeated": false
+    },
+    {
+      "tag": 2,
+      "name": "chain_id",
+      "type": "s",
+      "repeated": false
+    },
+    {
+      "tag": 3,
+      "name": "genesis_hash",
+      "type": "h",
+      "repeated": false
+    },
+    {
+      "tag": 4,
+      "name": "sender",
+      "type": "a",
+      "repeated": false
+    },
+    {
+      "tag": 5,
+      "name": "recipient",
+      "type": "a",
+      "repeated": false
+    },
+    {
+      "tag": 6,
+      "name": "denom",
+      "type": "s",
+      "repeated": false
+    },
+    {
+      "tag": 7,
+      "name": "amount_atoms",
+      "type": "atoms",
+      "repeated": false
+    },
+    {
+      "tag": 8,
+      "name": "max_service_fee_atoms",
+      "type": "atoms",
+      "repeated": false
+    },
+    {
+      "tag": 9,
+      "name": "policy_version",
+      "type": "u64",
+      "repeated": false
+    },
+    {
+      "tag": 10,
+      "name": "payment_id",
+      "type": "h",
+      "repeated": false
+    },
+    {
+      "tag": 11,
+      "name": "expiry_height",
+      "type": "u64",
+      "repeated": false
+    }
+  ],
+  "BatchReceiptV1": [
+    {
+      "tag": 1,
+      "name": "protocol_version",
+      "type": "u32",
+      "repeated": false
+    },
+    {
+      "tag": 2,
+      "name": "chain_id",
+      "type": "s",
+      "repeated": false
+    },
+    {
+      "tag": 3,
+      "name": "genesis_hash",
+      "type": "h",
+      "repeated": false
+    },
+    {
+      "tag": 4,
+      "name": "market_id",
+      "type": "s",
+      "repeated": false
+    },
+    {
+      "tag": 5,
+      "name": "batch_seq",
+      "type": "u64",
+      "repeated": false
+    },
+    {
+      "tag": 6,
+      "name": "batch_id",
+      "type": "h",
+      "repeated": false
+    },
+    {
+      "tag": 7,
+      "name": "batch_hash",
+      "type": "h",
+      "repeated": false
+    },
+    {
+      "tag": 8,
+      "name": "committed_height",
+      "type": "u64",
+      "repeated": false
+    },
+    {
+      "tag": 9,
+      "name": "tx_hash",
+      "type": "h",
+      "repeated": false
+    }
+  ]
+}

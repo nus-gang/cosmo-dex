@@ -1,0 +1,51 @@
+   Compiling nus-exchange-contract v0.1.0 (/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/worktrees/NUS-13/exchange)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.71s
+     Running unittests src/lib.rs (worktrees/NUS-13/exchange/target/debug/deps/nus_exchange_contract-c48582a6eedf9241)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/vectors.rs (worktrees/NUS-13/exchange/target/debug/deps/vectors-bef514c259cc39ca)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/common_vectors.rs (worktrees/NUS-13/exchange/target/debug/deps/common_vectors-6836d39c4fa1c1d5)
+
+running 10 tests
+PASS policy=13
+PASS integer_boundaries=32
+test common_policy ... ok
+test integer_vectors ... ok
+test parser_adversarial_boundaries ... ok
+test sequenced_ioc_contract ... ok
+PASS S0 exchange cases=15; receipt/transfer state belongs to Settlement/Chain
+test s0_exchange_vectors ... ok
+PASS complete_message_codec=14
+test message_vectors ... ok
+PASS wire=18 amount_codec=17
+test strict_wire_and_amount_vectors ... ok
+test order_validation_precedence_and_binding ... ok
+PASS ML-DSA-65 positives=3 negatives=35, independent API→wire→frame→SHA256
+test real_signature_vectors ... ok
+test cli_runner_receipt ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.38s
+
+     Running tests/upstream_ioc.rs (worktrees/NUS-13/exchange/target/debug/deps/upstream_ioc-06971ab8c929c4eb)
+
+running 2 tests
+PASS actual orderbook-rs 0.13.1: IOC requested=5, callback filled=3, Err, release R=200, retain D=300/P=3000
+test real_cancel_and_zero_fill_ioc ... ok
+test real_ioc_error_retains_callback_debits ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests nus_exchange_contract
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

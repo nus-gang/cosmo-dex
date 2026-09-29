@@ -1,42 +1,58 @@
 #!/usr/bin/env python3
-"""CI wiring. Missing integration inputs BLOCK (exit 2), never silently pass."""
-import argparse, hashlib, json, subprocess, sys
+"""Fail-closed oracle gate. Reports raw logs and exact per-lane case coverage."""
+import argparse,datetime,hashlib,json,subprocess,sys,time
 from pathlib import Path
-p=argparse.ArgumentParser()
-p.add_argument('--repo',type=Path,required=True)
-p.add_argument('--config',type=Path,default=Path(__file__).resolve().parent/'manifest.json')
-p.add_argument('--output',type=Path,required=True)
-a=p.parse_args(); c=json.loads(a.config.read_text()); report={'status':'BLOCKED','lanes':{},'missing':[]}
-for k in ('contract_revision','vectors','vectors_sha256'):
- if not c.get(k): report['missing'].append(k)
-for lang in ('go','rust','ts'):
- lane=c['lanes'][lang]
- if not (a.repo/lane['cwd']).is_dir(): report['missing'].append(lang+':cwd')
- if not lane.get('vectors'): report['missing'].append(lang+':vector-command')
-try:
- if report['missing']: sys.exit(2)
- vector=a.repo/c['vectors']
- if hashlib.sha256(vector.read_bytes()).hexdigest()!=c['vectors_sha256']: raise ValueError('vector hash mismatch')
- outputs=[]
- for lang in ('go','rust','ts'):
-  lane=c['lanes'][lang]; result={}; report['lanes'][lang]=result
-  for phase in ('build','test','vectors'):
-   argv=lane[phase]
-   if not isinstance(argv,list) or not argv or not all(isinstance(x,str) for x in argv): raise ValueError('argv array required')
-   # Literal arguments, no shell expansion; {vectors} is the sole placeholder.
-   argv=[x.replace('{vectors}',str(vector.resolve())) for x in argv]
-   run=subprocess.run(argv,cwd=a.repo/lane['cwd'],capture_output=True,text=True,timeout=600)
-   result[phase]={'exit_code':run.returncode,'stdout':run.stdout,'stderr':run.stderr}
-   if run.returncode: raise ValueError(lang+':'+phase+' failed')
-   if phase=='vectors': outputs.append(json.loads(run.stdout))
- # Agreed runners emit {contract_revision, vectors_sha256, results:[{id,sign_bytes_hex,valid,...}]}.
- for o in outputs:
-  if o.get('contract_revision')!=c['contract_revision'] or o.get('vectors_sha256')!=c['vectors_sha256'] or not o.get('results'): raise ValueError('invalid vector receipt')
- if outputs[0]!=outputs[1] or outputs[1]!=outputs[2]: raise ValueError('cross-language mismatch')
- report['status']='PASS'
-except Exception as e:
- report['status']='FAIL'; report['error']=str(e); sys.exit(1)
-finally:
- a.output.parent.mkdir(parents=True,exist_ok=True)
- a.output.write_text(json.dumps(report,indent=2)+'\n')
- print(json.dumps({'status':report['status'],'missing':report['missing']}))
+def validate_receipt(receipt, expected, revision, vector_hash):
+ if receipt.get('contract_revision')!=revision or receipt.get('vectors_sha256')!=vector_hash:raise ValueError('receipt revision/hash mismatch')
+ rows=receipt.get('results')
+ if not isinstance(rows,list):raise ValueError('missing results')
+ ids=[r['id'] for r in rows]
+ if len(ids)!=len(set(ids)):raise ValueError('duplicate result ID')
+ if set(ids)!=set(expected):raise ValueError('missing/extra result IDs')
+ for row in rows:
+  if json.dumps(row['actual'],sort_keys=True)!=json.dumps(expected[row['id']],sort_keys=True):raise ValueError('oracle mismatch: '+row['id'])
+def main():
+ p=argparse.ArgumentParser();p.add_argument('--repo',type=Path,required=True);p.add_argument('--config',type=Path,required=True);p.add_argument('--output',type=Path,required=True);a=p.parse_args()
+ root=a.repo.resolve();c=json.loads(a.config.read_text());report={'status':'FAIL','started_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'lanes':{},'missing':[],'boundaries':c.get('boundaries')};a.output.parent.mkdir(parents=True,exist_ok=True)
+ def run(name,argv,cwd,input=None):
+  start=time.monotonic();r=subprocess.run(argv,cwd=cwd,input=input,capture_output=True,text=True,timeout=900)
+  report.setdefault('commands',{})[name]={'argv':argv,'cwd':str(Path(cwd).relative_to(root)),'seconds':time.monotonic()-start,'exit_code':r.returncode,'stdout':r.stdout,'stderr':r.stderr}
+  (a.output.parent/(name+'.stdout.log')).write_text(r.stdout);(a.output.parent/(name+'.stderr.log')).write_text(r.stderr)
+  if r.returncode:raise ValueError(name+' failed')
+  return r.stdout
+ try:
+  for k in ('contract_revision','vectors','vectors_sha256'):
+   if not c.get(k):report['missing'].append(k)
+  for lang in ('go','rust','ts'):
+   if not c['lanes'][lang].get('vectors'):report['missing'].append(lang+':vector-command')
+  if report['missing']:report['status']='BLOCKED';return 2
+  if not c.get('cases') or not c.get('files_sha256'):raise ValueError('missing pinned oracle/source hashes')
+  for f,h in c['files_sha256'].items():
+   if hashlib.sha256((root/f).read_bytes()).hexdigest()!=h:raise ValueError('input hash mismatch: '+f)
+  if hashlib.sha256((root/c['vectors']).read_bytes()).hexdigest()!=c['vectors_sha256']:raise ValueError('vector hash mismatch')
+  ids=[x['id'] for x in c['cases']]
+  if len(ids)!=len(set(ids)):raise ValueError('duplicate oracle ID')
+  report['commit']=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()
+  report['manifest_sha256']=hashlib.sha256(a.config.read_bytes()).hexdigest()
+  run('manifest-check',['python3','ops/ci/build_manifest.py','--check'],root)
+  run('protocol-reference',['python3','protocol/v1/tools/check.py'],root)
+  for lang,lane in c['lanes'].items():
+   cwd=root/lane['cwd']
+   for phase in ('build','test'):run(lang+'-'+phase,lane[phase],cwd)
+   selected=[x for x in c['cases'] if lang in x['lanes']]
+   request=[dict(x['request'],id=x['id']) for x in selected]
+   rows=json.loads(run(lang+'-vectors',lane['vectors'],cwd,json.dumps(request)))
+   receipt={'contract_revision':c['contract_revision'],'vectors_sha256':c['vectors_sha256'],'results':rows}
+   # Receipt metadata comes from verified immutable input, rows only from actual library calls.
+   validate_receipt(receipt,{x['id']:x['expected'] for x in selected},c['contract_revision'],c['vectors_sha256'])
+   report['lanes'][lang]={'status':'PASS','receipt':receipt,'scope_counts':{s:sum(x['scope']==s for x in selected) for s in {x['scope'] for x in selected}}}
+  run('settlement-regression',['python3','settlement/v1/test_contract.py'],root)
+  before={f:hashlib.sha256((root/f).read_bytes()).hexdigest() for f in ['settlement/v1/api.schema.json','settlement/v1/fixtures.json']}
+  run('settlement-generate',['python3','settlement/v1/generate.py'],root)
+  if before!={f:hashlib.sha256((root/f).read_bytes()).hexdigest() for f in before}:raise ValueError('E generated artifacts changed')
+  report['e_consumed_hashes']={f:c['files_sha256'][f] for f in ['protocol/v1/schema.json','protocol/v1/vectors/message-codec.json','protocol/v1/vectors/s0-cases.json']}
+  report['status']='PASS';return 0
+ except Exception as e:report['error']=str(e);return 1
+ finally:
+  report['finished_utc']=datetime.datetime.now(datetime.timezone.utc).isoformat();a.output.write_text(json.dumps(report,indent=2)+'\n');print(json.dumps({k:report[k] for k in ['status','missing','error'] if k in report}))
+if __name__=='__main__':sys.exit(main())
