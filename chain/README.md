@@ -74,3 +74,11 @@ snapshot의 필드와 타입은 protocol/v1/DECISION-PORT.md와 같다. Context.
 공통 snapshot-output 60건은 명시적으로 인증 결과를 주입해 production과 공유하는 내부 정책 경계를 검사한다. 실제 암호 60건으로 집계하지 않는다. 기존 실제 재서명 14건과 추가 binding 6건은 DecideOrder의 실제 ML-DSA 경로로 검증한다. 기존 rc3 원시 로그는 보존했다.
 
 결합 검사를 정책 계산보다 먼저 수행하며 모순이면 NOT_CONNECTED/code=null로 반환한다. 인증 실패 시 NOT_RUN, ACK/ledger 미연결 및 WAL NOT_RUN은 유지한다. Go Context는 확정 상태 공급자가 구성하는 typed 입력이므로 Height/Epoch의 0도 명시적인 값이다. JSON adapter는 누락 상태를 0으로 채워 이 Context를 구성해서는 안 된다. 실제 앱/원자 상태/ACK/WAL, 전체 언어 differential 및 CI는 이 제출에서 NOT_RUN이다.
+
+## CTO-RC4-01 JSON 입력 수정
+
+`Context.UnmarshalJSON`은 Height/Epoch의 누락·null을 별도로 보존한다. DecideOrder는 인증 결과를 유지하고, 둘 중 하나가 누락/null이면 snapshot 정책을 NOT_CONNECTED/code=null로 반환한다. 명시적 숫자 0과 네이티브 Go Context의 0은 실제 값으로 검사한다. JSON decode 후 typed Context를 새로 조립해 presence를 잃어버려서는 안 된다.
+
+`TestJSONLContextPresence`는 실제 runner 바이너리를 빌드하여 공개 공통 ML-DSA 주문 fixture를 stdin에 전달한다. Height=0 정책 PASS, Epoch=0 정책 EPOCH_MISMATCH 대조군 2건과 Height/Epoch 누락·null 4건을 검사한다. 6건 모두 인증 PASS, 원본 snapshot_id 보존, ACK/ledger NOT_CONNECTED, WAL NOT_RUN을 요구한다. 이는 합성 상태 입력 시험이며 실제 ACK/원장 증거가 아니다.
+
+재현: `bash chain/test.sh` 또는 chain에서 `GOTOOLCHAIN=local go test -mod=readonly -count=1 -v ./cmd/contract-runner -run TestJSONLContextPresence`. 원시 결과: `chain/evidence/rc4-presence-tests.jsonl`. 기존 rc4 결과 및 보안 FAIL·7차이·783/782/1은 그대로 보존한다.

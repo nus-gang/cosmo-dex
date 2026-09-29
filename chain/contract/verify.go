@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
 	"math/big"
 	"net/url"
 	"strconv"
@@ -43,6 +44,8 @@ func VerifyCrypto(pk, message, signature []byte) bool {
 // Context must come from confirmed state, never from the submitted message.
 // The caller owns immutable market configuration and atomic state/replay checks.
 type Context struct {
+	// JSON input must distinguish absent/null binding values from explicit zero.
+	heightMissing, epochMissing                                   bool
 	SnapshotID                                                    string // Immutable snapshot identity for the rc3 decision port.
 	ChainID, GenesisHash, ModuleID, MarketID, MarketConfigVersion string
 	RegisteredKey                                                 []byte
@@ -53,6 +56,32 @@ type Context struct {
 	Origin, Audience                                              string
 	Now                                                           uint64
 	NonceConsumed                                                 bool
+}
+
+// UnmarshalJSON preserves binding presence for JSON adapters. Native Go callers
+// supply typed values directly; their zero Height/Epoch remain explicit values.
+func (c *Context) UnmarshalJSON(data []byte) error {
+	type plain Context
+	var decoded struct {
+		*plain
+		Height *uint64
+		Epoch  *uint64
+	}
+	var next Context
+	decoded.plain = (*plain)(&next)
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	next.heightMissing = decoded.Height == nil
+	next.epochMissing = decoded.Epoch == nil
+	if decoded.Height != nil {
+		next.Height = *decoded.Height
+	}
+	if decoded.Epoch != nil {
+		next.Epoch = *decoded.Epoch
+	}
+	*c = next
+	return nil
 }
 
 var domains = map[string]string{"OrderV1": "NUS/ORDER/V1", "CancelV1": "NUS/CANCEL/V1", "WalletChallengeV1": "NUS/WALLET_AUTH/V1"}

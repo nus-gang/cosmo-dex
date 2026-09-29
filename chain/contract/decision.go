@@ -150,7 +150,14 @@ func DecideOrder(body, sig []byte, c Context, s *Snapshot) Decision {
 	auth := AuthenticateOrder(body, sig, c)
 	m, _ := Decode("OrderV1", body)
 	height, epoch := strconv.FormatUint(c.Height, 10), strconv.FormatUint(c.Epoch, 10)
-	d := decideAuthenticated(auth, m, &c.SnapshotID, &height, &epoch, s)
+	heightBinding, epochBinding := &height, &epoch
+	if c.heightMissing {
+		heightBinding = nil
+	}
+	if c.epochMissing {
+		epochBinding = nil
+	}
+	d := decideAuthenticated(auth, m, &c.SnapshotID, heightBinding, epochBinding, s)
 	if d.SnapshotPolicy.Status == "PASS" && (number(m, "side") < 1 || number(m, "side") > 2 || number(m, "order_type") < 1 || number(m, "order_type") > 2 || m["fee_asset_policy_id"] != "RECEIVE_ASSET_V1") {
 		d.SnapshotPolicy.Result = result(Code("MARKET_LIMIT"))
 	}
