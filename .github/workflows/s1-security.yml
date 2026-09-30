@@ -1,0 +1,35 @@
+name: S1 Security
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  security:
+    name: S1 independent security
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.5'
+          cache-dependency-path: chain/app/go.sum
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.node-version'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Build actual chain
+        working-directory: chain/app
+        run: sh scripts/build.sh
+      - name: Install pinned signing implementation
+        working-directory: web
+        run: npm ci --ignore-scripts
+      - name: Run independent live security cases
+        run: python3 security/s1/live.py --binary "$PWD/chain/app/bin/nusd" --home "${{ runner.temp }}/security-devnet" --output "$PWD/.evidence/security"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: s1-security-public-evidence
+          path: .evidence/security
+          include-hidden-files: true
+          if-no-files-found: error
