@@ -1,0 +1,26 @@
+syntax = "proto3";
+package nus.exchange.v1;
+import "cosmos/msg/v1/msg.proto";
+option go_package = "github.com/nus-gang/cosmo-dex/chain/app/x/exchange/types";
+// Each field is nonempty; integers are canonical decimal strings.
+// These SDK messages do not change nus.protocol.v1 S0 wire types.
+message MsgDeposit {
+  option (cosmos.msg.v1.signer) = "owner";
+  string owner = 1;
+  string denom = 2;
+  string amount_atoms = 3;
+  bytes request_id = 4;
+  string expected_epoch = 5;
+  string expiry_height = 6;
+  bytes genesis_hash = 7;
+}
+message MsgWithdraw {
+  option (cosmos.msg.v1.signer) = "owner";
+  string owner = 1;
+  string denom = 2;
+  string amount_atoms = 3;
+  bytes request_id = 4;
+  string expected_epoch = 5;
+  string expiry_height = 6;
+  bytes genesis_hash = 7;
+}
