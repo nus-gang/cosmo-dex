@@ -51,9 +51,13 @@ c=dict(schema_version=2,contract_revision=lock['inputs']['A']['commit'],contract
  'go':dict(cwd='chain',build=['go','build','-mod=readonly','./...'],test=['go','test','-mod=readonly','-count=1','-v','./...'],vectors=['go','run','-mod=readonly','../ops/ci/ports/go.go']),
  'rust':dict(cwd='exchange',build=['cargo','build','--locked'],test=['cargo','test','--locked','--','--nocapture'],vectors=['cargo','run','--quiet','--locked','--manifest-path','../ops/ci/ports/rust/Cargo.toml']),
  'ts':dict(cwd='web',build=['npm','run','build'],test=['npm','test'],vectors=['node','--experimental-strip-types','../ops/ci/ports/ts.ts'])})
+# S1 chain/app is a separate Go module, built/tested by s1-chain.yml.
+# Keep this boundary explicit: unknown nested modules remain S0 inputs.
+S1_CHAIN_APP = R/'chain/app'
 files={}
 for folder in ['protocol/v1','chain','exchange','web','settlement']:
  for p in sorted((R/folder).rglob('*')):
+  if p.is_relative_to(S1_CHAIN_APP):continue
   if p.is_file() and not any(x in p.parts for x in ['evidence','node_modules','target','dist','__pycache__']) and p.name!='.DS_Store':files[str(p.relative_to(R))]=digest(p.relative_to(R))
 for p in ['ops/ci/rc4.py','ops/ci/vectors.py','ops/ci/build_manifest.py','ops/ci/cto-input.json','ops/ci/input-lock.json','ops/ci/required-cases.json','ops/ci/ports/go.go','ops/ci/ports/ts.ts','ops/ci/ports/rust/Cargo.toml','ops/ci/ports/rust/Cargo.lock','ops/ci/ports/rust/src/main.rs']:
  if (R/p).exists():files[p]=digest(p)

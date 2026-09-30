@@ -1,0 +1,20 @@
+name: S1 chain
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  chain:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: chain/app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.5'
+          cache-dependency-path: chain/app/go.sum
+      - run: sh scripts/check-toolchain.sh
+      - run: go test -mod=readonly -race ./...
+      - run: go build -mod=readonly -trimpath -o bin/nusd ./cmd/nusd
+      - run: python3 scripts/genesis-input-test.py --binary bin/nusd --operator-accounts config/operator-accounts.json --output /tmp/genesis-input-tests
