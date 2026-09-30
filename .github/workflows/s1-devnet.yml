@@ -24,3 +24,5 @@ jobs:
         with:
           name: s1-four-validator-evidence
           path: .evidence/s1-ci/
+          include-hidden-files: true
+          if-no-files-found: error

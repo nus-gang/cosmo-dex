@@ -157,6 +157,11 @@ def main():
         report['error'] = str(error)
         raise
     finally:
+        if a.managed:
+            try:
+                control(a.home, "start")
+            except Exception as cleanup_error:
+                report["managed_restore_error"] = str(cleanup_error)
         if process:
             process.terminate()
             try:
