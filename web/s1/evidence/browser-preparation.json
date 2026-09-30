@@ -1,0 +1,23 @@
+{
+  "browser": "154.0.8037.92",
+  "checks": [
+    "two random public keys",
+    "genesis pin",
+    "reset",
+    "390px layout",
+    "no API calls during key preparation"
+  ],
+  "pageErrors": [],
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "method": "GET",
+      "path": "/wallet.js"
+    }
+  ],
+  "actualChain": "NOT_RUN",
+  "actualRest": "NOT_CONNECTED"
+}
