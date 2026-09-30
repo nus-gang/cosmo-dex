@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
 """Run a real single-validator CometBFT smoke. No mocks; public test keys only."""
 import argparse, hashlib, json, pathlib, subprocess, time
-p=argparse.ArgumentParser();p.add_argument('--binary',required=True);p.add_argument('--output',required=True);p.add_argument('--port',type=int,default=28757);a=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('--binary',required=True);p.add_argument('--output',required=True);p.add_argument('--operator-accounts',required=True);p.add_argument('--port',type=int,default=28757);a=p.parse_args()
 binary=str(pathlib.Path(a.binary).resolve());out=pathlib.Path(a.output).resolve();out.mkdir(parents=True,exist_ok=False);home=out/'node';rpc=f'tcp://127.0.0.1:{a.port}';p2p=f'tcp://127.0.0.1:{a.port-1}'
 def run(*args,success=True):
  r=subprocess.run([binary,*args],capture_output=True,text=True,timeout=40)
  if success and r.returncode: raise RuntimeError(f'{args}: {r.stderr} {r.stdout}')
  return r
-init=json.loads(run('init','--home',str(home),'--rpc',rpc,'--p2p',p2p).stdout);gh=init['genesis_hash'];(out/'init.json').write_text(json.dumps(init,indent=2))
+operators_path=pathlib.Path(a.operator_accounts).resolve()
+operators=json.loads(operators_path.read_text())
+assert len(operators)==4
+expected_operators={op['address']:op['gas_atoms'] for op in operators}
+expected_gas=2000000000+sum(int(op['gas_atoms']) for op in operators)
+assert run('init','--home',str(home),success=False).returncode!=0
+assert not home.exists(), 'invalid init created partial home'
+init=json.loads(run('init','--home',str(home),'--rpc',rpc,'--p2p',p2p,'--operator-accounts',str(operators_path)).stdout);gh=init['genesis_hash'];(out/'init.json').write_text(json.dumps(init,indent=2))
 proc=None;log=None
 
 def start(label):
@@ -29,7 +36,11 @@ def snapshot():return json.loads(run('snapshot','--rpc',rpc).stdout)
 def conserved(s):
  assert sum(int(u['exchange_atoms']) for u in s['accounts'])==int(s['module_atoms'])
  assert sum(int(u['bank_atoms']) for u in s['accounts'])+int(s['module_atoms'])==2000000000000
- assert sum(int(u['gas_atoms']) for u in s['accounts'])+int(s['gas_collector_atoms'])==2000000000
+ assert len(s['accounts'])==2 and len(s['operator_accounts'])==4
+ assert {op['owner']:op['gas_atoms'] for op in s['operator_accounts']}==expected_operators
+ assert all(op['bank_atoms']=='0' and op['sequence']=='0' and not op['exchange_signer'] and op['initial_gas_atoms']==op['gas_atoms'] for op in s['operator_accounts'])
+ assert sum(int(u['gas_atoms']) for u in s['accounts']+s['operator_accounts'])+int(s['gas_collector_atoms'])==expected_gas
+ assert int(s['gas_supply'])==int(s['genesis_gas_supply'])==expected_gas
 
 def tx(label,user,op,amount,rid,extra=(),success=True):
  r=run('tx','--rpc',rpc,'--user',str(user),'--op',op,'--amount',str(amount),'--request-id',f'{rid:064x}','--expiry','1000000',*extra,success=success)
@@ -40,6 +51,7 @@ def tx(label,user,op,amount,rid,extra=(),success=True):
  (out/(label+'.json')).write_text(json.dumps(d,indent=2));conserved(snapshot());return d
 try:
  before=start('first-start');conserved(before)
+ (out/'initial-ledger.json').write_text(json.dumps(before,indent=2))
  for u in range(2):
   tx(f'user{u}-deposit',u,'deposit',1000000,1)
   tx(f'user{u}-withdraw',u,'withdraw',400000,2)
@@ -62,6 +74,6 @@ try:
  assert pre==post
  assert receipts==[json.loads(run('receipt','--rpc',rpc,'--user',str(u),'--request-id',f'{2:064x}').stdout) for u in range(2)]
  (out/'ledger.json').write_text(json.dumps(post,indent=2));(out/'receipts.json').write_text(json.dumps(receipts,indent=2))
- manifest={'scope':'real single-validator CometBFT; not AT01/AT05','version':json.loads(run('version').stdout),'binary_sha256':hashlib.sha256(pathlib.Path(binary).read_bytes()).hexdigest(),'genesis_sha256':gh,'config_sha256':hashlib.sha256((home/'config/config.toml').read_bytes()).hexdigest(),'checks':['two-user deposit/withdraw','same request re-sign no double pay','overdraft rollback','ID conflict','bad signature','same TxRaw replay rejection','DEVQUOTE and DEVGAS conservation','restart ledger and receipts identical'],'status':'PASS'}
+ manifest={'scope':'real single-validator CometBFT; not AT01/AT05','version':json.loads(run('version').stdout),'binary_sha256':hashlib.sha256(pathlib.Path(binary).read_bytes()).hexdigest(),'genesis_sha256':gh,'operator_accounts_sha256':hashlib.sha256(operators_path.read_bytes()).hexdigest(),'gas_supply_atoms':str(expected_gas),'config_sha256':hashlib.sha256((home/'config/config.toml').read_bytes()).hexdigest(),'checks':['missing operator allocation init rejected before writes','four funded operators remain excluded from exchange signer set','operator allocations and gas genesis supply persist','two-user deposit/withdraw','same request re-sign no double pay','overdraft rollback','ID conflict','bad signature','same TxRaw replay rejection','DEVQUOTE and DEVGAS conservation','restart ledger and receipts identical'],'status':'PASS'}
  (out/'manifest.json').write_text(json.dumps(manifest,indent=2));print(json.dumps(manifest,indent=2))
 finally:stop()

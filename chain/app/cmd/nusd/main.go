@@ -81,6 +81,7 @@ func main() {
 	expiry := f.String("expiry", "", "exclusive expiry, default height + 100")
 	output := f.String("out", "", "write signed TxRaw without submitting")
 	file := f.String("file", "", "signed TxRaw file")
+	operatorsFile := f.String("operator-accounts", "", "required init JSON file: four operator addresses and DEVGAS gas_atoms")
 	hashFlag := f.String("genesis-hash", "", "required pinned genesis hash for start")
 	must(f.Parse(os.Args[2:]))
 	c, txcfg := app.Encoding()
@@ -90,6 +91,16 @@ func main() {
 	}
 	cfg := config(*home, *rpc, *p2paddr)
 	if cmd == "init" {
+		operatorsRaw, e := os.ReadFile(*operatorsFile)
+		must(e)
+		// Reuse strict genesis decoding so unknown allocation fields are rejected.
+		state, e := json.Marshal(struct {
+			PublicKeys       [][]byte        `json:"public_keys"`
+			OperatorAccounts json.RawMessage `json:"operator_accounts"`
+		}{[][]byte{key(0).PubKey().Bytes(), key(1).PubKey().Bytes()}, operatorsRaw})
+		must(e)
+		genesis, e := app.DecodeGenesis(state)
+		must(e)
 		if _, e := os.Stat(cfg.GenesisFile()); !os.IsNotExist(e) {
 			must(fmt.Errorf("home already initialized or inaccessible"))
 		}
@@ -100,7 +111,7 @@ func main() {
 		must(e)
 		_, e = p2p.LoadOrGenNodeKey(cfg.NodeKeyFile())
 		must(e)
-		state, e := json.Marshal(app.Genesis{PublicKeys: [][]byte{key(0).PubKey().Bytes(), key(1).PubKey().Bytes()}})
+		state, e = json.Marshal(genesis)
 		must(e)
 		g := &cmttypes.GenesisDoc{GenesisTime: time.Now().UTC(), ChainID: ex.ChainID, InitialHeight: 1, ConsensusParams: cmttypes.DefaultConsensusParams(), Validators: []cmttypes.GenesisValidator{{Address: pub.Address(), PubKey: pub, Power: 10, Name: "local-validator"}}, AppState: state}
 		must(g.SaveAs(cfg.GenesisFile()))

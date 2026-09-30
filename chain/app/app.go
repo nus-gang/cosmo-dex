@@ -6,6 +6,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
+	"math"
 	"strconv"
 
 	"cosmossdk.io/log/v2"
@@ -39,9 +41,120 @@ import (
 
 const Version = "s1-dev-1"
 
-type Genesis struct {
-	PublicKeys [][]byte `json:"public_keys"`
+type OperatorAccount struct {
+	Address  string `json:"address"`
+	GasAtoms string `json:"gas_atoms"`
 }
+type Genesis struct {
+	PublicKeys       [][]byte          `json:"public_keys"`
+	OperatorAccounts []OperatorAccount `json:"operator_accounts"`
+}
+
+// Validate rejects malformed allocation before any SDK state is written.
+func (g Genesis) Validate() error {
+	if len(g.PublicKeys) != 2 {
+		return fmt.Errorf("exactly two test users required")
+	}
+	if len(g.OperatorAccounts) != 4 {
+		return fmt.Errorf("exactly four operator accounts required")
+	}
+	seen := map[string]bool{}
+	seen[authtypes.NewModuleAddress("disabled-authority").String()] = true
+	for name := range modulePermissions() {
+		seen[authtypes.NewModuleAddress(name).String()] = true
+	}
+	for _, raw := range g.PublicKeys {
+		if len(raw) != 1952 {
+			return fmt.Errorf("INVALID_KEY")
+		}
+		address := sdk.AccAddress((&mldsa65.PubKey{Key: raw}).Address()).String()
+		if seen[address] {
+			return fmt.Errorf("DUPLICATE_ACCOUNT")
+		}
+		seen[address] = true
+	}
+	total := uint64(2000000000)
+	for _, op := range g.OperatorAccounts {
+		addr, err := sdk.AccAddressFromBech32(op.Address)
+		if err != nil || len(addr) != 20 || addr.String() != op.Address {
+			return fmt.Errorf("INVALID_OPERATOR_ADDRESS")
+		}
+		if seen[op.Address] {
+			return fmt.Errorf("DUPLICATE_ACCOUNT")
+		}
+		seen[op.Address] = true
+		amount, err := ex.Uint(op.GasAtoms)
+		if err != nil || amount == 0 || amount > math.MaxUint64-total {
+			return fmt.Errorf("INVALID_OPERATOR_GAS")
+		}
+		total += amount
+	}
+	return nil
+}
+
+func modulePermissions() map[string][]string {
+	return map[string][]string{ex.Module: nil, authtypes.FeeCollectorName: nil}
+}
+
+// encoding/json normally accepts repeated fields. Reject ambiguity even when
+// repeated field names use different JSON escapes.
+func uniqueJSONValue(d *json.Decoder) error {
+	token, err := d.Token()
+	if err != nil {
+		return err
+	}
+	delim, ok := token.(json.Delim)
+	if !ok {
+		return nil
+	}
+	switch delim {
+	case '{':
+		seen := map[string]bool{}
+		for d.More() {
+			key, err := d.Token()
+			if err != nil {
+				return err
+			}
+			name, ok := key.(string)
+			if !ok || seen[name] {
+				return fmt.Errorf("DUPLICATE_JSON_FIELD")
+			}
+			seen[name] = true
+			if err := uniqueJSONValue(d); err != nil {
+				return err
+			}
+		}
+	case '[':
+		for d.More() {
+			if err := uniqueJSONValue(d); err != nil {
+				return err
+			}
+		}
+	default:
+		return fmt.Errorf("INVALID_JSON_DELIMITER")
+	}
+	_, err = d.Token()
+	return err
+}
+
+func DecodeGenesis(raw []byte) (Genesis, error) {
+	var g Genesis
+	syntax := json.NewDecoder(bytes.NewReader(raw))
+	syntax.UseNumber()
+	if err := uniqueJSONValue(syntax); err != nil {
+		return g, err
+	}
+	decoder := json.NewDecoder(bytes.NewReader(raw))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&g); err != nil {
+		return g, err
+	}
+	if err := decoder.Decode(new(any)); err != io.EOF {
+		return g, fmt.Errorf("trailing genesis data")
+	}
+	return g, g.Validate()
+}
+
 type App struct {
 	*baseapp.BaseApp
 	Auth        authkeeper.AccountKeeper
@@ -86,7 +199,7 @@ func New(db dbm.DB, hash []byte, logger log.Logger) (*App, error) {
 	ck := storetypes.NewKVStoreKey("consensus")
 	b.MountStores(ak, bk, ek, ck)
 	authority := authtypes.NewModuleAddress("disabled-authority").String()
-	auth := authkeeper.NewAccountKeeper(c, runtime.NewKVStoreService(ak), authtypes.ProtoBaseAccount, map[string][]string{ex.Module: nil, authtypes.FeeCollectorName: nil}, addresscodec.NewBech32Codec("nus"), "nus", authority)
+	auth := authkeeper.NewAccountKeeper(c, runtime.NewKVStoreService(ak), authtypes.ProtoBaseAccount, modulePermissions(), addresscodec.NewBech32Codec("nus"), "nus", authority)
 	bank := bankkeeper.NewBaseKeeper(c, runtime.NewKVStoreService(bk), auth, map[string]bool{authtypes.NewModuleAddress(ex.Module).String(): true}, authority, logger)
 	cons := consensuskeeper.NewKeeper(c, runtime.NewKVStoreService(ck), authority, nil)
 	b.SetParamStore(cons.ParamsStore)
@@ -160,6 +273,9 @@ func (a *App) guard(ctx sdk.Context, t sdk.Tx) error {
 	if e != nil || !bytes.Equal(addr, pub.Address()) {
 		return fmt.Errorf("UNAUTHORIZED")
 	}
+	if !ctx.KVStore(a.Exchange.Key).Has([]byte("user/" + owner)) {
+		return fmt.Errorf("UNAUTHORIZED")
+	}
 	account := a.Auth.GetAccount(ctx, addr)
 	if account == nil || account.GetPubKey() == nil || !account.GetPubKey().Equals(&pub) {
 		return fmt.Errorf("UNREGISTERED_KEY")
@@ -173,28 +289,23 @@ func (a *App) init(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseI
 	if req.ChainId != ex.ChainID {
 		return nil, fmt.Errorf("WRONG_CHAIN")
 	}
-	var g Genesis
-	if e := json.Unmarshal(req.AppStateBytes, &g); e != nil {
-		return nil, e
-	}
-	if len(g.PublicKeys) != 2 {
-		return nil, fmt.Errorf("exactly two test users required")
+	g, err := DecodeGenesis(req.AppStateBytes)
+	if err != nil {
+		return nil, err
 	}
 	accounts := authtypes.GenesisAccounts{}
 	balances := []banktypes.Balance{}
-	seen := map[string]bool{}
 	for _, raw := range g.PublicKeys {
-		if len(raw) != 1952 {
-			return nil, fmt.Errorf("INVALID_KEY")
-		}
 		pub := &mldsa65.PubKey{Key: raw}
 		addr := sdk.AccAddress(pub.Address())
-		if seen[addr.String()] {
-			return nil, fmt.Errorf("DUPLICATE_ACCOUNT")
-		}
-		seen[addr.String()] = true
 		accounts = append(accounts, authtypes.NewBaseAccount(addr, pub, uint64(len(accounts)), 0))
 		balances = append(balances, banktypes.Balance{Address: addr.String(), Coins: sdk.NewCoins(sdk.NewCoin(ex.Quote, sdkmath.NewInt(1000000000000)), sdk.NewCoin(ex.Gas, sdkmath.NewInt(1000000000)))})
+	}
+	for _, op := range g.OperatorAccounts {
+		addr, _ := sdk.AccAddressFromBech32(op.Address)
+		amount, _ := sdkmath.NewIntFromString(op.GasAtoms)
+		accounts = append(accounts, authtypes.NewBaseAccount(addr, nil, uint64(len(accounts)), 0))
+		balances = append(balances, banktypes.Balance{Address: op.Address, Coins: sdk.NewCoins(sdk.NewCoin(ex.Gas, amount))})
 	}
 	a.Auth.InitGenesis(ctx, *authtypes.NewGenesisState(authtypes.DefaultParams(), accounts))
 	a.Auth.GetModuleAccount(ctx, ex.Module)
@@ -202,7 +313,15 @@ func (a *App) init(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseI
 	bg := banktypes.DefaultGenesisState()
 	bg.Balances = balances
 	a.Bank.InitGenesis(ctx, bg)
-	ctx.KVStore(a.Exchange.Key).Set([]byte("genesis"), a.GenesisHash)
+	store := ctx.KVStore(a.Exchange.Key)
+	store.Set([]byte("genesis"), a.GenesisHash)
+	store.Set([]byte("genesis_gas_supply"), []byte(a.Bank.GetSupply(ctx, ex.Gas).Amount.String()))
+	for _, raw := range g.PublicKeys {
+		store.Set([]byte("user/"+sdk.AccAddress((&mldsa65.PubKey{Key: raw}).Address()).String()), []byte{1})
+	}
+	for _, op := range g.OperatorAccounts {
+		store.Set([]byte("operator/"+op.Address), []byte(op.GasAtoms))
+	}
 	return &abci.ResponseInitChain{Validators: req.Validators}, a.Exchange.Invariant(ctx)
 }
 func (a *App) snapshot(ctx sdk.Context) (map[string]any, error) {
@@ -218,6 +337,22 @@ func (a *App) snapshot(ctx sdk.Context) (map[string]any, error) {
 		return false
 	})
 	out["accounts"] = users
+	operators := []map[string]any{}
+	a.Auth.IterateAccounts(ctx, func(ac sdk.AccountI) bool {
+		initial := ctx.KVStore(a.Exchange.Key).Get([]byte("operator/" + ac.GetAddress().String()))
+		if initial == nil {
+			return false
+		}
+		operators = append(operators, map[string]any{
+			"owner": ac.GetAddress().String(), "account_number": strconv.FormatUint(ac.GetAccountNumber(), 10),
+			"sequence": strconv.FormatUint(ac.GetSequence(), 10), "gas_atoms": a.Bank.GetBalance(ctx, ac.GetAddress(), ex.Gas).Amount.String(),
+			"bank_atoms":        a.Bank.GetBalance(ctx, ac.GetAddress(), ex.Quote).Amount.String(),
+			"initial_gas_atoms": string(initial), "exchange_signer": false,
+		})
+		return false
+	})
+	out["operator_accounts"] = operators
+	out["genesis_gas_supply"] = string(ctx.KVStore(a.Exchange.Key).Get([]byte("genesis_gas_supply")))
 	out["module_atoms"] = a.Bank.GetBalance(ctx, authtypes.NewModuleAddress(ex.Module), ex.Quote).Amount.String()
 	out["gas_collector_atoms"] = a.Bank.GetBalance(ctx, authtypes.NewModuleAddress(authtypes.FeeCollectorName), ex.Gas).Amount.String()
 	out["quote_supply"] = a.Bank.GetSupply(ctx, ex.Quote).Amount.String()

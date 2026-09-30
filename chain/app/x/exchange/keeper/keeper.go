@@ -215,6 +215,10 @@ func (k Keeper) Invariant(ctx sdk.Context) error {
 	if !k.Bank.GetSupply(ctx, Quote).Amount.Equal(sdkmath.NewInt(2000000000000)) {
 		return fmt.Errorf("SUPPLY_INVARIANT")
 	}
+	initialGas, ok := sdkmath.NewIntFromString(string(ctx.KVStore(k.Key).Get([]byte("genesis_gas_supply"))))
+	if !ok || !k.Bank.GetSupply(ctx, Gas).Amount.Equal(initialGas) {
+		return fmt.Errorf("GAS_SUPPLY_INVARIANT")
+	}
 	quote, gas := sdkmath.ZeroInt(), sdkmath.ZeroInt()
 	k.Bank.IterateAllBalances(ctx, func(_ sdk.AccAddress, c sdk.Coin) bool {
 		if c.Denom == Quote {

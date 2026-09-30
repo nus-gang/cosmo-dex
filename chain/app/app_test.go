@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -18,6 +19,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	ex "github.com/nus-gang/cosmo-dex/chain/app/x/exchange/keeper"
 	ext "github.com/nus-gang/cosmo-dex/chain/app/x/exchange/types"
@@ -52,7 +54,7 @@ func newFixture(t *testing.T) *fixture {
 	a, e := New(f.db, f.hash, log.NewNopLogger())
 	mustTest(t, e)
 	f.a = a
-	g, e := json.Marshal(Genesis{[][]byte{f.keys[0].PubKey().Bytes(), f.keys[1].PubKey().Bytes()}})
+	g, e := json.Marshal(Genesis{PublicKeys: [][]byte{f.keys[0].PubKey().Bytes(), f.keys[1].PubKey().Bytes()}, OperatorAccounts: testOperators(t)})
 	mustTest(t, e)
 	params := cmttypes.DefaultConsensusParams().ToProto()
 	_, e = a.InitChain(&abci.RequestInitChain{ChainId: ex.ChainID, AppStateBytes: g, ConsensusParams: &params})
@@ -120,9 +122,13 @@ func (f *fixture) conserved(t *testing.T) {
 		v, _ = sdkmath.NewIntFromString(u["gas_atoms"].(string))
 		g = g.Add(v)
 	}
+	for _, op := range s["operator_accounts"].([]map[string]any) {
+		v, _ := sdkmath.NewIntFromString(op["gas_atoms"].(string))
+		g = g.Add(v)
+	}
 	module, _ := sdkmath.NewIntFromString(s["module_atoms"].(string))
 	collector, _ := sdkmath.NewIntFromString(s["gas_collector_atoms"].(string))
-	if !c.Equal(module) || b.Add(module).String() != "2000000000000" || g.Add(collector).String() != "2000000000" {
+	if !c.Equal(module) || b.Add(module).String() != "2000000000000" || g.Add(collector).String() != "6000000000" {
 		t.Fatalf("conservation failed %v", s)
 	}
 }
@@ -309,5 +315,163 @@ func TestReloadGenesisBinding(t *testing.T) {
 	}
 	if _, e = New(f.db, bytes.Repeat([]byte{8}, 32), log.NewNopLogger()); e == nil {
 		t.Fatal("changed genesis accepted")
+	}
+}
+
+func testOperators(t *testing.T) []OperatorAccount {
+	t.Helper()
+	out := []OperatorAccount{}
+	for i := 0; i < 4; i++ {
+		seed := make([]byte, 32)
+		seed[0] = byte(i + 3)
+		key, err := mldsa65.GenPrivKeyFromSeed(seed)
+		mustTest(t, err)
+		out = append(out, OperatorAccount{sdk.AccAddress(key.PubKey().Address()).String(), "1000000000"})
+	}
+	return out
+}
+
+func TestOperatorGenesisValidation(t *testing.T) {
+	f := newFixture(t)
+	makeGenesis := func() Genesis {
+		return Genesis{PublicKeys: [][]byte{f.keys[0].PubKey().Bytes(), f.keys[1].PubKey().Bytes()}, OperatorAccounts: testOperators(t)}
+	}
+	cases := []struct {
+		name string
+		edit func(*Genesis)
+	}{
+		{"missing", func(g *Genesis) { g.OperatorAccounts = nil }},
+		{"three", func(g *Genesis) { g.OperatorAccounts = g.OperatorAccounts[:3] }},
+		{"five", func(g *Genesis) { g.OperatorAccounts = append(g.OperatorAccounts, g.OperatorAccounts[0]) }},
+		{"duplicate", func(g *Genesis) { g.OperatorAccounts[1] = g.OperatorAccounts[0] }},
+		{"user_overlap", func(g *Genesis) { g.OperatorAccounts[0].Address = f.owner(0) }},
+		{"module", func(g *Genesis) { g.OperatorAccounts[0].Address = authtypes.NewModuleAddress(ex.Module).String() }},
+		{"collector", func(g *Genesis) {
+			g.OperatorAccounts[0].Address = authtypes.NewModuleAddress(authtypes.FeeCollectorName).String()
+		}},
+		{"authority", func(g *Genesis) {
+			g.OperatorAccounts[0].Address = authtypes.NewModuleAddress("disabled-authority").String()
+		}},
+		{"bad_address", func(g *Genesis) { g.OperatorAccounts[0].Address = "nus1bad" }},
+		{"uppercase_address", func(g *Genesis) { g.OperatorAccounts[0].Address = strings.ToUpper(g.OperatorAccounts[0].Address) }},
+		{"short_address", func(g *Genesis) { g.OperatorAccounts[0].Address = sdk.AccAddress([]byte{1}).String() }},
+		{"zero", func(g *Genesis) { g.OperatorAccounts[0].GasAtoms = "0" }},
+		{"negative", func(g *Genesis) { g.OperatorAccounts[0].GasAtoms = "-1" }},
+		{"leading_zero", func(g *Genesis) { g.OperatorAccounts[0].GasAtoms = "01" }},
+		{"fraction", func(g *Genesis) { g.OperatorAccounts[0].GasAtoms = "1.0" }},
+		{"empty", func(g *Genesis) { g.OperatorAccounts[0].GasAtoms = "" }},
+		{"u64_overflow", func(g *Genesis) { g.OperatorAccounts[0].GasAtoms = "18446744073709551616" }},
+		{"total_overflow", func(g *Genesis) { g.OperatorAccounts[0].GasAtoms = "18446744073709551615" }},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			g := makeGenesis()
+			tc.edit(&g)
+			raw, err := json.Marshal(g)
+			mustTest(t, err)
+			if _, err = DecodeGenesis(raw); err == nil {
+				t.Fatal("invalid allocation accepted")
+			}
+		})
+	}
+	t.Run("unknown_quote_allocation", func(t *testing.T) {
+		raw, err := json.Marshal(makeGenesis())
+		mustTest(t, err)
+		raw = bytes.Replace(raw, []byte(`"gas_atoms":"1000000000"`), []byte(`"gas_atoms":"1000000000","quote_atoms":"1"`), 1)
+		if _, err = DecodeGenesis(raw); err == nil {
+			t.Fatal("unknown allocation accepted")
+		}
+	})
+	for _, field := range []string{`"gas_atoms":"1000000000"`, `"gas_\u0061toms":"1000000000"`} {
+		t.Run("duplicate_field_"+field, func(t *testing.T) {
+			raw, err := json.Marshal(makeGenesis())
+			mustTest(t, err)
+			raw = bytes.Replace(raw, []byte(`"gas_atoms":"1000000000"`), []byte(`"gas_atoms":"1000000000",`+field), 1)
+			if _, err = DecodeGenesis(raw); err == nil {
+				t.Fatal("duplicate field accepted")
+			}
+		})
+	}
+	t.Run("numeric_atoms", func(t *testing.T) {
+		raw, err := json.Marshal(makeGenesis())
+		mustTest(t, err)
+		raw = bytes.Replace(raw, []byte(`"gas_atoms":"1000000000"`), []byte(`"gas_atoms":1000000000`), 1)
+		if _, err = DecodeGenesis(raw); err == nil {
+			t.Fatal("number accepted")
+		}
+	})
+	t.Run("u64_total_boundary", func(t *testing.T) {
+		g := makeGenesis()
+		g.OperatorAccounts[0].GasAtoms = "18446744071709551612"
+		for i := 1; i < 4; i++ {
+			g.OperatorAccounts[i].GasAtoms = "1"
+		}
+		mustTest(t, g.Validate())
+		g.OperatorAccounts[3].GasAtoms = "2"
+		if g.Validate() == nil {
+			t.Fatal("sum overflow accepted")
+		}
+	})
+}
+
+func TestOperatorsCannotTransactAndPersist(t *testing.T) {
+	f := newFixture(t)
+	for i := 0; i < 4; i++ {
+		seed := make([]byte, 32)
+		seed[0] = byte(i + 3)
+		key, err := mldsa65.GenPrivKeyFromSeed(seed)
+		mustTest(t, err)
+		f.keys = append(f.keys, key)
+	}
+	for i := 2; i < 6; i++ {
+		addr := sdk.AccAddress(f.keys[i].PubKey().Address())
+		ac := f.a.Auth.GetAccount(f.ctx(t), addr)
+		if ac == nil || ac.GetPubKey() != nil || ac.GetAccountNumber() != uint64(i) {
+			t.Fatalf("bad operator account: %v", ac)
+		}
+		for _, withdraw := range []bool{false, true} {
+			msg := f.message(i, byte(20+i), withdraw, "1", "0")
+			r := f.block(t, f.sign(t, i, msg, ex.ChainID))
+			if r.Code == 0 || !strings.Contains(r.Log, "UNAUTHORIZED") {
+				t.Fatal(r)
+			}
+			if f.a.Auth.GetAccount(f.ctx(t), addr).GetSequence() != 0 ||
+				f.a.Bank.GetBalance(f.ctx(t), addr, ex.Gas).Amount.String() != "1000000000" {
+				t.Fatal("operator ante effects persisted")
+			}
+		}
+	}
+	for i := 0; i < 2; i++ {
+		for n, withdraw := range []bool{false, true} {
+			r := f.block(t, f.sign(t, i, f.message(i, byte(n+1), withdraw, "10", "0"), ex.ChainID))
+			if r.Code != 0 {
+				t.Fatal(r)
+			}
+		}
+	}
+	f.conserved(t)
+	before, err := f.a.snapshot(f.ctx(t))
+	mustTest(t, err)
+	a, err := New(f.db, f.hash, log.NewNopLogger())
+	mustTest(t, err)
+	f.a = a
+	f.block(t, nil)
+	after, err := f.a.snapshot(f.ctx(t))
+	mustTest(t, err)
+	delete(before, "observed_height")
+	delete(after, "observed_height")
+	if !reflect.DeepEqual(before, after) {
+		t.Fatal("restart changed ledger")
+	}
+	f.conserved(t)
+	for _, op := range after["operator_accounts"].([]map[string]any) {
+		if op["bank_atoms"] != "0" || op["gas_atoms"] != "1000000000" || op["exchange_signer"] != false {
+			t.Fatal(op)
+		}
+	}
+	ctx, _ := f.ctx(t).CacheContext()
+	ctx.KVStore(a.Exchange.Key).Set([]byte("genesis_gas_supply"), []byte("1"))
+	if err = a.Exchange.Invariant(ctx); err == nil || !strings.Contains(err.Error(), "GAS_SUPPLY_INVARIANT") {
+		t.Fatal("gas genesis binding missing", err)
 	}
 }
