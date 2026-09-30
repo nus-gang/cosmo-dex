@@ -1,7 +1,7 @@
 # S1 로컬 4검증인 개발망
 
 실제 `chain/app`의 nusd(BaseApp/CometBFT) 4개를 같은 호스트에서 구동한다.
-공개 합성 사용자 2명, DEVQUOTE 하나와 별도 DEVGAS만 사용한다.
+테스트 사용자 2명, DEVQUOTE 하나와 별도 DEVGAS만 사용한다.
 노드 중단 시험은 호스트/랙/지역 분산, 분산 WAL 복제, 운영 키 격리,
 독립 비상 회수 또는 운영 SLA 검증이 아니다.
 
@@ -147,3 +147,29 @@ DEVQUOTE 지갑 합+module=genesis 공급 및 module=확정 거래소 잔고 합
 백업 복원 시험이 아니며, 전체 호스트 유실의 RPO/RTO는 미측정이다.
 프로세스 중단/복귀에서 관측한 지연은 해당 호스트의 실험값일 뿐 서비스 보장이 아니다.
 장기 200,000 engine ops/s·3,000 finalized TX/s도 이번 시험의 성능 보장이 아니다.
+
+## 지갑 공개키로 새 개발망 초기화
+
+[공개키 입력 규약](../../chain/app/USER-PUBLIC-KEYS.md)을 따른다. 지갑에서 내보낸
+정확히 두 canonical standard base64 ML-DSA-65 공개키(각 1952 bytes)의 JSON 배열을
+사용한다. 객체 wrapper·개인키·seed는 전달하지 않는다.
+
+```sh
+python3 ops/s1/devnet.py init --home .runtime/s1-wallet --user-public-keys users.json
+python3 ops/s1/devnet.py serve --home .runtime/s1-wallet
+```
+
+Paperclip에서는 위 serve를 직접 시작하지 않고 해당 home을 지정한 관리 runtime 설정을
+사용한다. init은 네 노드의 사용자 공개키와 운영자 배분을 포함한 최종 genesis bytes를
+동기화하고 manifest의 새 genesis hash를 pin한다. 기존 home은 거부한다.
+
+재설정 순서: 지갑 제출과 관리 runtime 정지 → 기존 home 보존 → 새 빈 home에 공개키로
+init → 네 genesis hash 일치 확인 → 새 home으로 관리 runtime 설정/기동 →
+이전 TX/sequence/epoch/receipt 캐시 폐기 → snapshot에서 새 주소와 genesis 확인.
+새 request_id로 지갑이 DIRECT 서명한 TX를 기존 broadcast 경로로 제출한다.
+사용자가 거래한 기존 원장을 이 과정에서 재사용하지 않는다.
+
+공개키 옵션을 생략하면 fixture 동작을 보존한다. 위 실제 거래 예시의
+`tx --user`, `receipt --user`와 현재 `integration.py`는 fixture 전용이다.
+사용자 공개키 개발망에 fixture 통합 시험을 실행하지 않는다.
+공개키 초기화 검증과 실제 사용자 지갑 TX/4검증인 합의 검증은 별도 증거로 기록한다.

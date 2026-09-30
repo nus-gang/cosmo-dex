@@ -16,7 +16,9 @@ jobs:
       - name: Build pinned real app
         working-directory: chain/app
         run: sh scripts/build.sh
-      - name: Real four-validator TX, halt, recovery and persistence
+      - name: Public-key genesis propagation and reset guards
+        run: python3 ops/s1/init-test.py
+      - name: Real four-validator consensus
         run: python3 ops/s1/integration.py --home .runtime/s1-ci --output .evidence/s1-ci
       - name: Upload public test evidence (no validator private keys)
         if: always()

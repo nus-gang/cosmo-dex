@@ -51,11 +51,13 @@ def init(a):
     os.umask(0o077)
     root.mkdir(parents=True, mode=0o700)
     nodes, validators, genesis = [], [], None
+    user_keys = getattr(a, 'user_public_keys', None)
+    user_args = [] if user_keys is None else ['--user-public-keys', user_keys.resolve()]
     for i in range(4):
         home = root / f'node{i}'
         port = a.base_port + i * 10
         cli(binary, 'init', '--home', home, '--operator-accounts', a.operators.resolve(),
-            '--rpc', f'tcp://127.0.0.1:{port+1}', '--p2p', f'tcp://127.0.0.1:{port}')
+            '--rpc', f'tcp://127.0.0.1:{port+1}', '--p2p', f'tcp://127.0.0.1:{port}', *user_args)
         g = json.loads((home / 'config/genesis.json').read_text())
         genesis = genesis or g
         val = g['validators'][0]
@@ -236,6 +238,7 @@ def main():
     p.add_argument('--binary', type=Path, default=ROOT/'chain/app/bin/nusd')
     p.add_argument('--operators', type=Path, default=ROOT/'chain/app/config/operator-accounts.json')
     p.add_argument('--base-port', type=int, default=28656)
+    p.add_argument('--user-public-keys', type=Path, help='JSON array of two public keys; init only')
     p.add_argument('--node', default='all')
     a = p.parse_args()
     a.home = a.home.resolve()
