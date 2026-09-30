@@ -3,8 +3,13 @@ package app
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -51,12 +56,24 @@ func newFixture(t *testing.T) *fixture {
 		mustTest(t, e)
 		f.keys = append(f.keys, k)
 	}
+	return fixtureWithKeys(t, f.keys, nil, nil)
+}
+
+func fixtureWithKeys(t *testing.T, keys []mldsa65.PrivKey, genesis, hash []byte) *fixture {
+	t.Helper()
+	f := &fixture{hash: bytes.Repeat([]byte{3}, 32), keys: keys}
+	if hash != nil {
+		f.hash = hash
+	}
 	f.db = dbm.NewMemDB()
 	a, e := New(f.db, f.hash, log.NewNopLogger())
 	mustTest(t, e)
 	f.a = a
 	g, e := json.Marshal(Genesis{PublicKeys: [][]byte{f.keys[0].PubKey().Bytes(), f.keys[1].PubKey().Bytes()}, OperatorAccounts: testOperators(t)})
 	mustTest(t, e)
+	if genesis != nil {
+		g = genesis
+	}
 	params := cmttypes.DefaultConsensusParams().ToProto()
 	_, e = a.InitChain(&abci.RequestInitChain{ChainId: ex.ChainID, AppStateBytes: g, ConsensusParams: &params})
 	mustTest(t, e)
@@ -508,5 +525,67 @@ func TestOperatorsCannotTransactAndPersist(t *testing.T) {
 	ctx.KVStore(a.Exchange.Key).Set([]byte("genesis_gas_supply"), []byte("1"))
 	if err = a.Exchange.Invariant(ctx); err == nil || !strings.Contains(err.Error(), "GAS_SUPPLY_INVARIANT") {
 		t.Fatal("gas genesis binding missing", err)
+	}
+}
+
+// End-to-end CLI genesis -> real SDK DIRECT signature -> FinalizeBlock/Commit.
+// Random private material exists only in memory, never in files or logs.
+func TestUserPublicKeysCLIDirect(t *testing.T) {
+	binary := os.Getenv("NUSD_BINARY")
+	if binary == "" {
+		t.Skip("set NUSD_BINARY to run CLI integration")
+	}
+	keys := make([]mldsa65.PrivKey, 2)
+	pubs := make([][]byte, 2)
+	for i := range keys {
+		seed := make([]byte, 32)
+		_, err := rand.Read(seed)
+		mustTest(t, err)
+		keys[i], err = mldsa65.GenPrivKeyFromSeed(seed)
+		mustTest(t, err)
+		pubs[i] = keys[i].PubKey().Bytes()
+	}
+	dir := t.TempDir()
+	pubfile, opsfile := filepath.Join(dir, "users.json"), filepath.Join(dir, "operators.json")
+	raw, err := json.Marshal(pubs)
+	mustTest(t, err)
+	mustTest(t, os.WriteFile(pubfile, raw, 0600))
+	raw, err = json.Marshal(testOperators(t))
+	mustTest(t, err)
+	mustTest(t, os.WriteFile(opsfile, raw, 0600))
+	home := filepath.Join(dir, "node")
+	out, err := exec.Command(binary, "init", "--home", home, "--operator-accounts", opsfile, "--user-public-keys", pubfile).CombinedOutput()
+	if err != nil {
+		t.Fatalf("init failed: %v %s", err, out)
+	}
+	var result struct {
+		Users []string `json:"users"`
+	}
+	mustTest(t, json.Unmarshal(out, &result))
+	raw, err = os.ReadFile(filepath.Join(home, "config/genesis.json"))
+	mustTest(t, err)
+	var doc struct {
+		State json.RawMessage `json:"app_state"`
+	}
+	mustTest(t, json.Unmarshal(raw, &doc))
+	hash := sha256.Sum256(raw)
+	f := fixtureWithKeys(t, keys, doc.State, hash[:])
+	for i := range keys {
+		if result.Users[i] != f.owner(i) {
+			t.Fatal("CLI address does not match generated key")
+		}
+		for n, withdraw := range []bool{false, true} {
+			tx := f.sign(t, i, f.message(i, byte(n+1), withdraw, "1000000", "0"), ex.ChainID)
+			r := f.block(t, tx)
+			if r.Code != 0 {
+				t.Fatal(r.Log)
+			}
+			f.conserved(t)
+			t.Logf("user=%d withdraw=%t DIRECT committed height=%d code=%d", i, withdraw, f.h, r.Code)
+		}
+		p := f.a.Exchange.Position(f.ctx(t), f.owner(i))
+		if p.Amount != "0" || p.Epoch != "1" || f.a.Auth.GetAccount(f.ctx(t), sdk.AccAddress(keys[i].PubKey().Address())).GetSequence() != 2 {
+			t.Fatal("unexpected final user state")
+		}
 	}
 }

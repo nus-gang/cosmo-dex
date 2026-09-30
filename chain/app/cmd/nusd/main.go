@@ -81,6 +81,7 @@ func main() {
 	expiry := f.String("expiry", "", "exclusive expiry, default height + 100")
 	output := f.String("out", "", "write signed TxRaw without submitting")
 	file := f.String("file", "", "signed TxRaw file")
+	userKeysFile := f.String("user-public-keys", "", "optional init JSON file: exactly two canonical base64 ML-DSA-65 public keys")
 	operatorsFile := f.String("operator-accounts", "", "required init JSON file: four operator addresses and DEVGAS gas_atoms")
 	hashFlag := f.String("genesis-hash", "", "required pinned genesis hash for start")
 	must(f.Parse(os.Args[2:]))
@@ -93,11 +94,24 @@ func main() {
 	if cmd == "init" {
 		operatorsRaw, e := os.ReadFile(*operatorsFile)
 		must(e)
+		var publicKeys [][]byte
+		userKeysProvided := false
+		f.Visit(func(fl *flag.Flag) {
+			if fl.Name == "user-public-keys" {
+				userKeysProvided = true
+			}
+		})
+		if userKeysProvided {
+			publicKeys, e = readUserPublicKeys(*userKeysFile)
+			must(e)
+		} else {
+			publicKeys = [][]byte{key(0).PubKey().Bytes(), key(1).PubKey().Bytes()}
+		}
 		// Reuse strict genesis decoding so unknown allocation fields are rejected.
 		state, e := json.Marshal(struct {
 			PublicKeys       [][]byte        `json:"public_keys"`
 			OperatorAccounts json.RawMessage `json:"operator_accounts"`
-		}{[][]byte{key(0).PubKey().Bytes(), key(1).PubKey().Bytes()}, operatorsRaw})
+		}{publicKeys, operatorsRaw})
 		must(e)
 		genesis, e := app.DecodeGenesis(state)
 		must(e)
@@ -119,7 +133,15 @@ func main() {
 		raw, e := os.ReadFile(cfg.GenesisFile())
 		must(e)
 		h := sha256.Sum256(raw)
-		emit(map[string]any{"genesis_hash": hex.EncodeToString(h[:]), "users": []string{sdk.AccAddress(key(0).PubKey().Address()).String(), sdk.AccAddress(key(1).PubKey().Address()).String()}, "warning": "PUBLIC SYNTHETIC TEST KEYS; single validator smoke, not AT01"})
+		users := make([]string, len(genesis.PublicKeys))
+		for i, raw := range genesis.PublicKeys {
+			users[i] = sdk.AccAddress((&mldsa65.PubKey{Key: raw}).Address()).String()
+		}
+		warning := "PUBLIC SYNTHETIC TEST KEYS; single validator smoke, not AT01"
+		if userKeysProvided {
+			warning = "USER PUBLIC KEYS; synthetic assets; single validator smoke, not AT01"
+		}
+		emit(map[string]any{"genesis_hash": hex.EncodeToString(h[:]), "users": users, "warning": warning})
 		return
 	}
 	if cmd == "start" {
