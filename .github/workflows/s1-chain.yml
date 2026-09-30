@@ -17,3 +17,4 @@ jobs:
       - run: sh scripts/check-toolchain.sh
       - run: go test -mod=readonly -race ./...
       - run: go build -mod=readonly -trimpath -o bin/nusd ./cmd/nusd
+      - run: python3 scripts/genesis-input-test.py --binary bin/nusd --operator-accounts config/operator-accounts.json --output /tmp/genesis-input-tests

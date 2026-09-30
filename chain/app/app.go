@@ -98,7 +98,7 @@ func modulePermissions() map[string][]string {
 
 // encoding/json normally accepts repeated fields. Reject ambiguity even when
 // repeated field names use different JSON escapes.
-func uniqueJSONValue(d *json.Decoder) error {
+func uniqueJSONValue(d *json.Decoder, context string) error {
 	token, err := d.Token()
 	if err != nil {
 		return err
@@ -120,13 +120,20 @@ func uniqueJSONValue(d *json.Decoder) error {
 				return fmt.Errorf("DUPLICATE_JSON_FIELD")
 			}
 			seen[name] = true
-			if err := uniqueJSONValue(d); err != nil {
+			// Struct decoding matches case-insensitively; enforce exact decoded
+			// schema names before handing values to encoding/json.
+			allowed := context == "genesis" && (name == "public_keys" || name == "operator_accounts") ||
+				context == "operator_accounts" && (name == "address" || name == "gas_atoms")
+			if !allowed {
+				return fmt.Errorf("UNKNOWN_JSON_FIELD: %s", name)
+			}
+			if err := uniqueJSONValue(d, name); err != nil {
 				return err
 			}
 		}
 	case '[':
 		for d.More() {
-			if err := uniqueJSONValue(d); err != nil {
+			if err := uniqueJSONValue(d, context); err != nil {
 				return err
 			}
 		}
@@ -141,7 +148,7 @@ func DecodeGenesis(raw []byte) (Genesis, error) {
 	var g Genesis
 	syntax := json.NewDecoder(bytes.NewReader(raw))
 	syntax.UseNumber()
-	if err := uniqueJSONValue(syntax); err != nil {
+	if err := uniqueJSONValue(syntax, "genesis"); err != nil {
 		return g, err
 	}
 	decoder := json.NewDecoder(bytes.NewReader(raw))

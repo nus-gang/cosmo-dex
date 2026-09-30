@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -412,6 +413,40 @@ func TestOperatorGenesisValidation(t *testing.T) {
 			t.Fatal("sum overflow accepted")
 		}
 	})
+}
+
+func TestGenesisExactFieldNames(t *testing.T) {
+	f := newFixture(t)
+	raw, err := json.Marshal(Genesis{PublicKeys: [][]byte{f.keys[0].PubKey().Bytes(), f.keys[1].PubKey().Bytes()}, OperatorAccounts: testOperators(t)})
+	mustTest(t, err)
+	_, err = DecodeGenesis(raw)
+	mustTest(t, err)
+	for _, field := range []string{"public_keys", "operator_accounts", "address", "gas_atoms"} {
+		for _, alias := range []string{strings.ToUpper(field), strings.ToUpper(field[:1]) + field[1:]} {
+			for _, mode := range []string{"alias_only", "alias_first", "alias_last"} {
+				t.Run(field+"/"+alias+"/"+mode, func(t *testing.T) {
+					replacement := `"` + alias + `":`
+					if mode == "alias_first" {
+						replacement += `null,"` + field + `":`
+					}
+					if mode == "alias_last" {
+						replacement = `"` + field + `":null,` + replacement
+					}
+					candidate := bytes.Replace(raw, []byte(`"`+field+`":`), []byte(replacement), 1)
+					if _, err := DecodeGenesis(candidate); err == nil || !strings.Contains(err.Error(), "UNKNOWN_JSON_FIELD") {
+						t.Fatalf("case alias not rejected by exact-name check: %v", err)
+					}
+				})
+			}
+		}
+		t.Run(field+"/escaped_duplicate", func(t *testing.T) {
+			escaped := `\u` + fmt.Sprintf("%04x", field[0]) + field[1:]
+			candidate := bytes.Replace(raw, []byte(`"`+field+`":`), []byte(`"`+escaped+`":null,"`+field+`":`), 1)
+			if _, err := DecodeGenesis(candidate); err == nil {
+				t.Fatal("escaped duplicate accepted")
+			}
+		})
+	}
 }
 
 func TestOperatorsCannotTransactAndPersist(t *testing.T) {

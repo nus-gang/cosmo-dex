@@ -88,3 +88,13 @@ revision `384211b6-c795-46ec-9c53-04d7d4ca0bff`. 저장소의
 4개 공개 주소는 ASCII `nus-s1-dev-1/operator/mock/{i}` (i=1..4)의 SHA256
 앞 20 bytes를 nus Bech32로 인코딩했다. private/public key를 생성하지 않은
 배분용 합성 주소이며 서명 가능한 운영 지갑이나 비상 가스 사용을 입증하지 않는다.
+
+### R2: genesis 필드명 경계
+
+`DecodeGenesis`는 상위 `public_keys`/`operator_accounts`, 운영 계정의 `address`/`gas_atoms`만 정확한 대소문자로 허용한다. case alias, 추가 필드, JSON escape로 표현한 중복 키도 거절한다. CLI `init`은 이 검증을 home 생성 전에 수행한다.
+
+```sh
+python3 scripts/genesis-input-test.py --binary bin/nusd --operator-accounts config/operator-accounts.json --output /tmp/nus-genesis-input-tests
+```
+
+이 시험은 잘못된 입력 16개가 실패하고 home을 생성하지 않음을 검증한다. 정상 초기화·거래·재시작은 기존 `scripts/smoke.py`로 검증한다.
