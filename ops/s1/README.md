@@ -60,15 +60,24 @@ hash 및 `version.execution_sha`다. 키는 첨부/CI artifact에 포함하지 �
 
 ## 실제 거래
 
+새 fixture 개발망의 거래소 잔고가 0인 계정에서 한 번 실행한다.
+예치 확정을 확인한 뒤 출금하고, 출금 확정 뒤 snapshot을 다시 조회한다.
+
 ```sh
 chain/app/bin/nusd snapshot --rpc http://127.0.0.1:28657
-chain/app/bin/nusd tx --rpc http://127.0.0.1:28657 --user 0 --op deposit --amount 1000000 --request-id 0000000000000000000000000000000000000000000000000000000000000001
-chain/app/bin/nusd tx --rpc http://127.0.0.1:28657 --user 0 --op withdraw --amount 400000 --request-id 0000000000000000000000000000000000000000000000000000000000000002
+chain/app/bin/nusd tx --rpc http://127.0.0.1:28657 --user 0 --op deposit --amount 100000000 --request-id 0000000000000000000000000000000000000000000000000000000000000001
+chain/app/bin/nusd receipt --rpc http://127.0.0.1:28657 --user 0 --request-id 0000000000000000000000000000000000000000000000000000000000000001
+# 예치 확정을 확인한 뒤 다음 출금을 실행한다.
+chain/app/bin/nusd tx --rpc http://127.0.0.1:28657 --user 0 --op withdraw --amount 40000000 --request-id 0000000000000000000000000000000000000000000000000000000000000002
 chain/app/bin/nusd receipt --rpc http://127.0.0.1:28657 --user 0 --request-id 0000000000000000000000000000000000000000000000000000000000000002
 ```
 
-두 번째 사용자는 `--user 1`이다. 금액은 정규 십진 정수 atoms이며
-100 DEVQUOTE=1,000,000 atoms, 40=400,000, 확정 거래소 잔고 60=600,000이다.
+두 번째 사용자는 위 명령의 `--user 0`을 모두 `--user 1`로 바꿔 실행한다.
+금액은 정규 십진 정수 atoms다. [S1 계약](../../protocol/s1/CONTRACT.md)의
+`decimals=6`에 따라 1 DEVQUOTE=1,000,000 atoms이므로,
+100 DEVQUOTE=100,000,000 atoms, 40=40,000,000, 확정 거래소 잔고 60=60,000,000이다.
+출금 확정 후 `snapshot`을 다시 실행해 해당 계정의 `exchange_atoms`가
+`60000000`인지 확인한다. [브라우저 시연](../../web/s1/README.md#입출금-시연-절차)도 같은 금액이다.
 수수료는 별도 DEVGAS다. CheckTx 성공/HTTP 200을 확정으로 취급하지 않는다.
 확정은 실제 inclusion height>0, check_tx.code=0, tx_result.code=0과 영수증으로
 확인한다. 응답이 유실되면 기존 request ID/TxRaw/hash로 조회한다. 결과 확인 전
@@ -89,6 +98,12 @@ python3 ops/s1/integration.py --home .runtime/s1-test --output .evidence/s1-test
 # 이미 실행 중인 관리 runtime에 연결하는 시험 (새롭고 거래 전인 home 필요)
 python3 ops/s1/integration.py --managed --home .runtime/s1 --output .evidence/s1-managed
 ```
+
+`integration.py`의 합성 입력은 사용자 시연과 별개로 유지한다. 각 사용자에게
+1,000,000 atoms(1 DEVQUOTE)를 예치하고 400,000 atoms(0.4 DEVQUOTE)를 출금해
+600,000 atoms(0.6 DEVQUOTE)의 확정 거래소 잔고를 검사한다.
+작은 금액 입력으로도 원장 보존식과 합의·복구 검사는 유효하며, 이 문서 정정은
+기존 시험의 입력·판정이나 자산 소수점 규약을 변경하지 않는다.
 
 시험 순서: 4개 서로 다른 검증인·동등 power·공통 genesis → 같은 높이 block ID/app hash
 및 3개 이상 commit 서명 → 두 사용자 입출금/보존식 → 1개 정지 후 실제 TX 확정 →
