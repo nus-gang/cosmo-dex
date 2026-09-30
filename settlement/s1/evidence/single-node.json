@@ -1,0 +1,112 @@
+{
+  "status": "PASS",
+  "scope": "real single validator + HTTP, not four-validator/browser acceptance",
+  "genesis_sha256": "1843b297621bbd06765448e8859f1c38ca716be0015df6bd2f4dd2fa9b1070b4",
+  "binary_sha256": "906701ffff651686db666c4e7ab6d588394ce16fd302f21004afc1478d04100c",
+  "binary_version": {
+    "app": "s1-dev-1",
+    "comet": "v0.40.0",
+    "execution_sha": "ab3e8a8eebe47439a8102b30367396faa291e296",
+    "sdk": "v0.55.0"
+  },
+  "transactions": [
+    {
+      "observed_height": "2",
+      "cursor_height": "2",
+      "query_latency_ms": "3",
+      "indexer_mode": "DIRECT_COMMITTED_QUERY",
+      "block_time": "2026-09-30T15:20:35.26422Z",
+      "freshness_ms": "1215",
+      "tx_hash": "6AA3524A0443EE5E963802367C7DEFD2915F1AC616B5BF06937ACDF82EB3EA4D",
+      "state": "COMMITTED",
+      "height": "2",
+      "code": "0",
+      "codespace": "",
+      "gas_wanted": "500000",
+      "gas_used": "259555"
+    },
+    {
+      "observed_height": "3",
+      "cursor_height": "3",
+      "query_latency_ms": "2",
+      "indexer_mode": "DIRECT_COMMITTED_QUERY",
+      "block_time": "2026-09-30T15:20:36.293957Z",
+      "freshness_ms": "1093",
+      "tx_hash": "8867B0041F000B4BCE1E8FF58F8525A9ED91033C349A46DE0F208CC0AAFB91C9",
+      "state": "COMMITTED",
+      "height": "3",
+      "code": "0",
+      "codespace": "",
+      "gas_wanted": "500000",
+      "gas_used": "251287"
+    },
+    {
+      "observed_height": "4",
+      "cursor_height": "4",
+      "query_latency_ms": "2",
+      "indexer_mode": "DIRECT_COMMITTED_QUERY",
+      "block_time": "2026-09-30T15:20:37.323477Z",
+      "freshness_ms": "1145",
+      "tx_hash": "C34FBA8EF8C43D89C6B8645329AF369A3954B52AEBC7CC4A55970B5E9D4DFEA9",
+      "state": "COMMITTED",
+      "height": "4",
+      "code": "0",
+      "codespace": "",
+      "gas_wanted": "500000",
+      "gas_used": "259978"
+    },
+    {
+      "observed_height": "5",
+      "cursor_height": "5",
+      "query_latency_ms": "2",
+      "indexer_mode": "DIRECT_COMMITTED_QUERY",
+      "block_time": "2026-09-30T15:20:38.351699Z",
+      "freshness_ms": "1203",
+      "tx_hash": "2DDE9356822C39132808AD3435003E375C16DD1FAB76222EF98D40307D27DBC6",
+      "state": "COMMITTED",
+      "height": "5",
+      "code": "0",
+      "codespace": "",
+      "gas_wanted": "500000",
+      "gas_used": "251704"
+    }
+  ],
+  "receipts": [
+    {
+      "chain_id": "nus-s1-dev-1",
+      "genesis_hash": "1843b297621bbd06765448e8859f1c38ca716be0015df6bd2f4dd2fa9b1070b4",
+      "owner": "nus1t2jkcgyvcwxky9hs7rh7nmsmgmx2r7uwsvvqu7",
+      "request_id": "0000000000000000000000000000000000000000000000000000000000000002",
+      "request_hash": "8db6dc3ceffe4be23c9dc13699e30702dd9aa4e134c9b2ffd3ad8f700193ecb5",
+      "operation": "WITHDRAW",
+      "denom": "DEVQUOTE",
+      "amount_atoms": "40000000",
+      "committed_height": "5",
+      "original_tx_hash": "2DDE9356822C39132808AD3435003E375C16DD1FAB76222EF98D40307D27DBC6",
+      "epoch_before": "0",
+      "epoch_after": "1",
+      "state": "COMMITTED"
+    },
+    {
+      "chain_id": "nus-s1-dev-1",
+      "genesis_hash": "1843b297621bbd06765448e8859f1c38ca716be0015df6bd2f4dd2fa9b1070b4",
+      "owner": "nus1tn6u55netmpkyk4z5nmc394qt4e8h6g2439eaw",
+      "request_id": "0000000000000000000000000000000000000000000000000000000000000002",
+      "request_hash": "91442d82f449411820b695af6023b65fb9dd134579e5e68f600b521d4dfc2965",
+      "operation": "WITHDRAW",
+      "denom": "DEVQUOTE",
+      "amount_atoms": "40000000",
+      "committed_height": "3",
+      "original_tx_hash": "8867B0041F000B4BCE1E8FF58F8525A9ED91033C349A46DE0F208CC0AAFB91C9",
+      "epoch_before": "0",
+      "epoch_after": "1",
+      "state": "COMMITTED"
+    }
+  ],
+  "checks": [
+    "two users deposit 100 withdraw 40 balance 60",
+    "exact-byte duplicate no double payout",
+    "chain and REST restart preserve ledger and receipts",
+    "empty journal rebuild from chain"
+  ]
+}

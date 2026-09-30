@@ -1,0 +1,13 @@
+test_checktx_never_committed (test_server.GatewayTests.test_checktx_never_committed) ... ok
+test_inclusion_and_failed_delivery (test_server.GatewayTests.test_inclusion_and_failed_delivery) ... ok
+test_index_entry_without_block_inclusion_rejected (test_server.GatewayTests.test_index_entry_without_block_inclusion_rejected) ... ok
+test_indexer_unavailable_stays_unknown (test_server.GatewayTests.test_indexer_unavailable_stays_unknown) ... ok
+test_lost_response_persisted_and_restart (test_server.GatewayTests.test_lost_response_persisted_and_restart) ... ok
+test_query_response_codec (test_server.GatewayTests.test_query_response_codec) ... ok
+test_reject_envelope_and_noncanonical_base64 (test_server.GatewayTests.test_reject_envelope_and_noncanonical_base64) ... ok
+test_snapshot_height_and_conservation_fail_closed (test_server.GatewayTests.test_snapshot_height_and_conservation_fail_closed) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.028s
+
+OK
