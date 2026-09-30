@@ -1,8 +1,8 @@
 # S1 지갑·REST 통합 후보
 
 NUS-22 승인 Plan의 두 사용자·DEVQUOTE 입출금 범위다. S0 파일을 바꾸지 않고
-`web/s1`에 격리했다. 기반 Chain commit은
-`ab3e8a8eebe47439a8102b30367396faa291e296`이다.
+`web/s1`에 격리했다. C/D 승인 후보 `2f1e498d6a591d63fa74c7285b9d396173d1476c`를 인수했다.
+공개키 genesis 입력과 실제 REST 계약 수정을 포함한다.
 
 ## 실행
 
@@ -62,5 +62,62 @@ Go golden 3건 message/body/auth/SignDoc 일치와 Go 서명 검증, 정수 경�
 두 사용자 100→40→60, 응답 유실·UNKNOWN 잠금·동일 bytes 재전송을 검증했다.
 이 통합 후보는 해당 수정과 Wallet 8d3892c를 포함한다. 검증 원본·화면은
 Paperclip NUS-29 첨부와 NUS-21 통합 결과 문서에 있다. 독립 보안 심사·main 인수는
-아직 완료하지 않았다.
+NUS-21 후보 심사와 별개로 NUS-22 제품 심사 및 main 인수가 필요하다.
 Helix/WS/거래 화면/백업은 추가하지 않았다. 기존 lockfile 의존성을 재사용한다.
+
+## 전체 로컬 실행 안내
+
+저장소 root에서 Go 1.26.5로 `cd chain/app && sh scripts/build.sh`를 실행한다.
+위 web 설치/build/serve 명령으로 화면을 먼저 열고 **두 시험 계정 생성**을 누른다.
+화면의 공개키 JSON 배열만 저장소 밖 `users.json` 파일로 저장한다. 같은 탭을 유지한다.
+별도 터미널의 저장소 root에서 다음을 실행한다(Paperclip 토큰 불필요).
+
+```sh
+python3 ops/s1/devnet.py init --home .runtime/wallet --user-public-keys users.json
+python3 ops/s1/devnet.py serve --home .runtime/wallet
+```
+
+다른 터미널에서 `.runtime/wallet/manifest.json`의 `genesis_sha256`을 읽는다.
+그 값을 아래 `<HASH>`와 화면 genesis 입력에 동일하게 넣는다.
+
+```sh
+python3 settlement/s1/server.py --rpc http://127.0.0.1:28657 \
+  --genesis-hash <HASH> --journal .runtime/wallet/txs.sqlite \
+  --port 8787 --origin http://127.0.0.1:8080
+```
+
+각 계정에서 위 시연을 실행한다. 60.000001 출금은 `INSUFFICIENT_BALANCE`로
+서명·POST 전에 거절된다. 이는 UI 사전검사이며 체인 자체 거절 검증을 대신하지 않는다.
+사용을 마치면 모든 TX를 조회한 뒤 reset하고 각 터미널에서 Ctrl-C로 종료한다.
+다음 세션은 새로운 키와 **다른 빈 home**으로 init한다. 기존 home을 덮어쓰지 않는다.
+브라우저 키를 닫은 뒤 기존 계정에 다시 접근할 수 있는 백업/복구 기능은 없다.
+공개키 배열은 키 복구 파일이 아니다.
+
+Paperclip의 지속 서비스는 관리 runtime 설정·start를 사용한다. 아래 자동시험은
+유한한 자식 프로세스이며 공유 SRE 개발망을 변경하지 않고 finally에서 모두 종료한다.
+
+## 재현 가능한 브라우저 통합 시험
+
+```sh
+# web에서 실행. 체인 binary는 위 명령으로 먼저 빌드한다.
+S1_TEST_SCRATCH=<새_전용_디렉터리> node s1/integration.mjs ../.evidence/wallet
+```
+
+Paperclip에서는 주입된 `PAPERCLIP_RUN_SCRATCH_DIR`를 사용한다. `CHROME_BIN`으로
+Chrome 경로를 지정할 수 있다(macOS 기본 Chrome 경로 사용). `S1_BINARY`를 지정하면
+그 바이너리의 실행 SHA/hash를 manifest에 기록한다. 출력 디렉터리는 공개 증거만
+포함하며 home/DB/검증인 키는 scratch에 남는다. 이를 첨부하지 않는다.
+
+시험 전용 포트는 Wallet 18081, REST 18787, 검증인 P2P/RPC 30656/30657부터
+10씩 증가하는 네 쌍이다. 포트가 사용 중이면 먼저 해당 시험 프로세스가 종료됐는지
+확인한다. 다른 서비스의 포트를 재사용하거나 프로세스를 강제 종료하지 않는다.
+
+검증: 두 브라우저 무작위 키, 공개키 genesis, 실제 4검증인 합의·SDK DIRECT 수락,
+각 100→40→60, 응답 유실 후 원래 hash 조회, UNKNOWN 중 새 서명 잠금,
+중복 클릭 1 POST, 같은 bytes 재전송 불변, 두 계정 초과출금 사전 거절,
+공개 SignDoc 서명·receipt 대사, 390px 표시, 완료 후 reset.
+`result.json`, 공개키, 화면 PNG를 증거로 저장한다. 강제 응답 유실·UNKNOWN은
+브라우저 route에서 주입한 시험 조건이다. 실제 네트워크 자연 장애로 보고하지 않는다.
+
+S1 Wallet browser integration CI는 항상 실행되며 자체 새 4검증인으로 동일 시험을
+수행한다. 로컬 PASS와 원격 head CI 결과는 별도로 기록한다.

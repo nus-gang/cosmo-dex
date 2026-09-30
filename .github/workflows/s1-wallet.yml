@@ -1,0 +1,40 @@
+name: S1 Wallet
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  wallet:
+    name: S1 Wallet browser integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.5'
+          cache-dependency-path: chain/app/go.sum
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.node-version'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Build real chain
+        working-directory: chain/app
+        run: sh scripts/build.sh
+      - name: Browser and DIRECT verification
+        working-directory: web
+        env:
+          S1_TEST_SCRATCH: ${{ runner.temp }}/wallet-s1
+          CHROME_BIN: /usr/bin/google-chrome
+        run: |
+          npm ci --ignore-scripts
+          ./node_modules/.bin/tsc -p s1/tsconfig.json
+          node --experimental-strip-types --test s1/direct.test.ts
+          node s1/integration.mjs ../.evidence/wallet
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: s1-wallet-public-evidence
+          path: .evidence/wallet
+          include-hidden-files: true
+          if-no-files-found: error
