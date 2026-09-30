@@ -1,0 +1,46 @@
+=== RUN   TestTwoUsersAtomicRetryAndSequence
+--- PASS: TestTwoUsersAtomicRetryAndSequence (0.03s)
+=== RUN   TestRejectedTransactionsRollback
+=== RUN   TestRejectedTransactionsRollback/zero
+=== RUN   TestRejectedTransactionsRollback/leading_zero
+=== RUN   TestRejectedTransactionsRollback/negative
+=== RUN   TestRejectedTransactionsRollback/limit
+=== RUN   TestRejectedTransactionsRollback/u128_overflow
+=== RUN   TestRejectedTransactionsRollback/epoch
+=== RUN   TestRejectedTransactionsRollback/epoch_overflow
+=== RUN   TestRejectedTransactionsRollback/expiry_equal
+=== RUN   TestRejectedTransactionsRollback/genesis
+=== RUN   TestRejectedTransactionsRollback/owner
+=== RUN   TestRejectedTransactionsRollback/chain
+=== RUN   TestRejectedTransactionsRollback/signature
+--- PASS: TestRejectedTransactionsRollback (0.08s)
+    --- PASS: TestRejectedTransactionsRollback/zero (0.01s)
+    --- PASS: TestRejectedTransactionsRollback/leading_zero (0.01s)
+    --- PASS: TestRejectedTransactionsRollback/negative (0.01s)
+    --- PASS: TestRejectedTransactionsRollback/limit (0.01s)
+    --- PASS: TestRejectedTransactionsRollback/u128_overflow (0.01s)
+    --- PASS: TestRejectedTransactionsRollback/epoch (0.01s)
+    --- PASS: TestRejectedTransactionsRollback/epoch_overflow (0.01s)
+    --- PASS: TestRejectedTransactionsRollback/expiry_equal (0.01s)
+    --- PASS: TestRejectedTransactionsRollback/genesis (0.01s)
+    --- PASS: TestRejectedTransactionsRollback/owner (0.01s)
+    --- PASS: TestRejectedTransactionsRollback/chain (0.01s)
+    --- PASS: TestRejectedTransactionsRollback/signature (0.01s)
+=== RUN   TestWithdrawAndBankBypass
+--- PASS: TestWithdrawAndBankBypass (0.01s)
+=== RUN   TestMaximumAmountAndInsufficientBank
+--- PASS: TestMaximumAmountAndInsufficientBank (0.01s)
+=== RUN   TestExpiredRetryPreservesReceipt
+--- PASS: TestExpiredRetryPreservesReceipt (0.01s)
+=== RUN   TestFailedMessageConsumesOnlyGasAndSequence
+--- PASS: TestFailedMessageConsumesOnlyGasAndSequence (0.01s)
+=== RUN   TestKeeperEpochOverflowRollsBack
+--- PASS: TestKeeperEpochOverflowRollsBack (0.01s)
+=== RUN   TestReloadGenesisBinding
+--- PASS: TestReloadGenesisBinding (0.01s)
+PASS
+ok  	github.com/nus-gang/cosmo-dex/chain/app	0.807s
+?   	github.com/nus-gang/cosmo-dex/chain/app/cmd/nusd	[no test files]
+?   	github.com/nus-gang/cosmo-dex/chain/app/cmd/sdk-probe	[no test files]
+?   	github.com/nus-gang/cosmo-dex/chain/app/x/exchange/keeper	[no test files]
+?   	github.com/nus-gang/cosmo-dex/chain/app/x/exchange/types	[no test files]
