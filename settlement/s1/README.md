@@ -1,5 +1,7 @@
 # S1 실제 RPC REST 후보
 
+> 현재 제품 기준 main `32781aa97d62ec747e7a25c10fdb8b58030d79f2`에서 실제 브라우저 통합과 S1 인수가 완료됐다. 아래 후보 SHA·미완료 목록은 개발 당시 기록이다. 현재 [사용자 시작 안내](../../docs/quickstart.md)와 [인수 근거](../../docs/verification.md)를 확인한다.
+
 [NUS-21](/NUS/issues/NUS-21). A 계약 d41be80fc325cf76b47b35b3f9b37359544e363e,
 실제 Chain 바이너리 ab3e8a8eebe47439a8102b30367396faa291e296를 소비한다.
 S0 `settlement/v1`을 변경하지 않는다. Python 표준 라이브러리만 사용한다.

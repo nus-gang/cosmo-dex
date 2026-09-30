@@ -1,5 +1,7 @@
 # S1 지갑·REST 통합 후보
 
+> 현재 제품 기준 main `32781aa97d62ec747e7a25c10fdb8b58030d79f2`에서 S1 인수가 완료됐다. 처음 실행하면 [사용자 시작 안내](../../docs/quickstart.md)를 따른다. 아래 후보 SHA·검토 대기 표현은 개발 당시 기록이며 현재 인수 근거는 [검증 기록](../../docs/verification.md)에 연결한다.
+
 NUS-22 승인 Plan의 두 사용자·DEVQUOTE 입출금 범위다. S0 파일을 바꾸지 않고
 `web/s1`에 격리했다. C/D 승인 후보 `2f1e498d6a591d63fa74c7285b9d396173d1476c`를 인수했다.
 공개키 genesis 입력과 실제 REST 계약 수정을 포함한다.
