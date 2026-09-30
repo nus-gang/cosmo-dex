@@ -6980,7 +6980,7 @@
     "settlement/v1/test_contract.py": "ca1bab6726e727d46313016f211ca3824661f1f2f516df03b3a23c185a19851d",
     "ops/ci/rc4.py": "147755d2a90f6bce1093a1909bccd9964896b6c8a0c14bc6f309fd78976a6669",
     "ops/ci/vectors.py": "f6ea1599707ed9a324ea4614df26f219494523d9cd74f23101c54d74557a927a",
-    "ops/ci/build_manifest.py": "390ee306161ea4307ee6872de5b869c28b818d1de41f8832862127ec2589c77a",
+    "ops/ci/build_manifest.py": "49b14b47ba6bb41e94a95978f435bfb4e8a4fc64c38a7d8dbf9f4326a2f44a2e",
     "ops/ci/cto-input.json": "05abeba166e00de2de12be35bd36c186a706cc9aada93ff666840927f2da7e9d",
     "ops/ci/input-lock.json": "74c372e468c6e5c90e719956785cc5894671e9113887d19d868e3bc09d697106",
     "ops/ci/required-cases.json": "749cd26f07c7d8dd451023c84fd7e29243c83dfe5a11c7997ea61234e8a40075",

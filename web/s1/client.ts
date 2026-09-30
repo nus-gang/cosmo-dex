@@ -8,7 +8,7 @@ export class WalletClient {
   #closed = false;
   genesis = "";
   readonly transport: typeof fetch;
-  constructor(transport: typeof fetch = fetch) { this.transport = transport; }
+  constructor(transport: typeof fetch = fetch.bind(globalThis)) { this.transport = transport; }
   bindGenesis(hash: string) { unhex(hash); if (this.history.length || this.genesis) throw Error("NETWORK_ALREADY_BOUND"); this.genesis = hash; }
   publicKeys() { return this.keys.map(k => base64.encode(k.publicKey)); }
   close() { this.#closed = true; this.keys.forEach(k => k.destroy()); }
@@ -20,7 +20,7 @@ export class WalletClient {
     const network: Network = await this.#get('/s1/network');
     if (network.genesis_hash !== this.genesis || network.chain_id !== 'nus-s1-dev-1' || network.denom !== 'DEVQUOTE' || network.decimals !== '6' || network.gas_denom !== 'DEVGAS') throw Error('NETWORK_MISMATCH');
     const a: Account = await this.#get(`/s1/accounts/${key.owner}`);
-    if (a.state !== 'COMMITTED' || a.owner !== key.owner || a.public_key_type !== 'ML-DSA-65' || a.public_key_base64 !== base64.encode(key.publicKey)) throw Error('ACCOUNT_KEY_MISMATCH');
+    if (a.state !== 'COMMITTED' || a.owner !== key.owner || a.public_key_type !== '/cosmos.crypto.mldsa65.PubKey' || a.public_key_base64 !== base64.encode(key.publicKey)) throw Error('ACCOUNT_KEY_MISMATCH');
     for (const name of ['account_number', 'sequence', 'epoch', 'observed_height', 'bank_atoms', 'exchange_atoms', 'gas_atoms'] as const) integer(a[name]);
     return a;
   }

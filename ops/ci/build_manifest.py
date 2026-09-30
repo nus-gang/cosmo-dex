@@ -51,9 +51,9 @@ c=dict(schema_version=2,contract_revision=lock['inputs']['A']['commit'],contract
  'go':dict(cwd='chain',build=['go','build','-mod=readonly','./...'],test=['go','test','-mod=readonly','-count=1','-v','./...'],vectors=['go','run','-mod=readonly','../ops/ci/ports/go.go']),
  'rust':dict(cwd='exchange',build=['cargo','build','--locked'],test=['cargo','test','--locked','--','--nocapture'],vectors=['cargo','run','--quiet','--locked','--manifest-path','../ops/ci/ports/rust/Cargo.toml']),
  'ts':dict(cwd='web',build=['npm','run','build'],test=['npm','test'],vectors=['node','--experimental-strip-types','../ops/ci/ports/ts.ts'])})
-# S1 app and REST have dedicated real integration jobs; preserve S0 inputs.
+# S1 app, REST and Wallet have dedicated integration jobs; preserve S0 inputs.
 # Keep this boundary explicit: unknown nested modules remain S0 inputs.
-S1_ROOTS = (R/'chain/app', R/'settlement/s1')
+S1_ROOTS = (R/'chain/app', R/'settlement/s1', R/'web/s1')
 files={}
 for folder in ['protocol/v1','chain','exchange','web','settlement']:
  for p in sorted((R/folder).rglob('*')):

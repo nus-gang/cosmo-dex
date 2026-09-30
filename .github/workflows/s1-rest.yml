@@ -18,6 +18,18 @@ jobs:
           python3 ops/ci/build_manifest.py --check
           python3 -m unittest discover -s tests -p test_manifest_boundary.py -v
           python3 -m unittest discover -s settlement/s1 -v
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.node-version'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Wallet REST contract regression
+        working-directory: web
+        run: |
+          npm ci --ignore-scripts
+          ./node_modules/.bin/tsc -p s1/tsconfig.json
+          node --experimental-strip-types --test s1/direct.test.ts
+          node s1/build.mjs
       - name: Build pinned real app
         working-directory: chain/app
         run: sh scripts/build.sh

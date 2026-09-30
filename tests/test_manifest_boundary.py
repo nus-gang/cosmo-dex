@@ -32,7 +32,7 @@ class ManifestBoundary(unittest.TestCase):
         self.check(True)
 
     def test_s1_add_change_remove(self):
-        for folder in ('chain/app', 'settlement/s1'):
+        for folder in ('chain/app', 'settlement/s1', 'web/s1'):
             with self.subTest(folder=folder):
                 app = self.root / folder
                 app.mkdir()
@@ -62,7 +62,7 @@ class ManifestBoundary(unittest.TestCase):
         self.check(True)
 
     def test_unknown_nested_module_and_similar_prefix_fail(self):
-        for folder in ('chain/other', 'chain/application', 'chain/contract/app', 'settlement/s10', 'settlement/v1/s1'):
+        for folder in ('chain/other', 'chain/application', 'chain/contract/app', 'settlement/s10', 'settlement/v1/s1', 'web/s10', 'web/src/s1'):
             with self.subTest(folder=folder):
                 path = self.root / folder
                 path.mkdir(parents=True)

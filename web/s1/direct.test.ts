@@ -24,7 +24,7 @@ function fixture() {
   const w = new WalletClient((async (path, options) => {
     const url = String(path);
     if (url === '/s1/network') return Response.json({ genesis_hash: '11'.repeat(32), chain_id: 'nus-s1-dev-1', denom: 'DEVQUOTE', decimals: '6', gas_denom: 'DEVGAS' });
-    if (url.startsWith('/s1/accounts/')) return Response.json({ owner: w.keys[0].owner, public_key_type: 'ML-DSA-65', public_key_base64: w.publicKeys()[0], account_number: '7', sequence: '3', epoch: '0', bank_atoms: '1000000000', exchange_atoms: '60000000', gas_atoms: '1000000', observed_height: '12', state: 'COMMITTED' });
+    if (url.startsWith('/s1/accounts/')) return Response.json({ owner: w.keys[0].owner, public_key_type: '/cosmos.crypto.mldsa65.PubKey', public_key_base64: w.publicKeys()[0], account_number: '7', sequence: '3', epoch: '0', bank_atoms: '1000000000', exchange_atoms: '60000000', gas_atoms: '1000000', observed_height: '12', state: 'COMMITTED' });
     if (options?.method === 'POST') { posts++; assert.deepEqual(Object.keys(JSON.parse(String(options.body))), ['tx_bytes']); if (failPost) throw Error('lost response'); return Response.json({}, { status: 202 }); }
     return txResult ? Response.json(txResult) : new Response('{}', { status: 404 });
   }) as typeof fetch);
