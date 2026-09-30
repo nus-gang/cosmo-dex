@@ -2,27 +2,39 @@ import { SessionKey, base64, hex, unhex, integer, type Input } from './direct.ts
 export interface Network { chain_id: string; genesis_hash: string; contract_version: string; denom: string; decimals: string; gas_denom: string; observed_height: string }
 export interface Account { owner: string; public_key_type: string; public_key_base64: string; account_number: string; sequence: string; epoch: string; bank_atoms: string; exchange_atoms: string; gas_atoms: string; observed_height: string; state: string }
 export interface Entry { input: Input; tx_bytes: string; tx_hash: string; state: 'PENDING' | 'SUBMISSION_UNKNOWN' | 'COMMITTED' | 'REJECTED_FINAL'; height?: string }
+export interface AccountObservation extends Account { network_height: string; queried_at: string; lag_blocks: string }
 export class WalletClient {
   readonly keys = [new SessionKey(), new SessionKey()];
   readonly history: Entry[] = [];
   #closed = false;
   genesis = "";
+  #accountHeights = new Map<string, bigint>();
+  #networkHeight = 0n;
   readonly transport: typeof fetch;
   constructor(transport: typeof fetch = fetch.bind(globalThis)) { this.transport = transport; }
   bindGenesis(hash: string) { unhex(hash); if (this.history.length || this.genesis) throw Error("NETWORK_ALREADY_BOUND"); this.genesis = hash; }
   publicKeys() { return this.keys.map(k => base64.encode(k.publicKey)); }
   close() { this.#closed = true; this.keys.forEach(k => k.destroy()); }
   async #get(path: string) { const r = await this.transport(path, { cache: 'no-store', signal: AbortSignal.timeout(10000) }); if (!r.ok) throw Error(`API_${r.status}`); return r.json(); }
-  async account(index: number): Promise<Account> {
+  async account(index: number): Promise<AccountObservation> {
     if (this.#closed) throw Error('SESSION_CLOSED');
     if (!this.genesis) throw Error('GENESIS_NOT_PINNED');
     const key = this.keys[index]; if (!key) throw Error('ACCOUNT');
     const network: Network = await this.#get('/s1/network');
     if (network.genesis_hash !== this.genesis || network.chain_id !== 'nus-s1-dev-1' || network.denom !== 'DEVQUOTE' || network.decimals !== '6' || network.gas_denom !== 'DEVGAS') throw Error('NETWORK_MISMATCH');
+    const networkHeight = integer(network.observed_height);
+    this.#networkHeight = networkHeight > this.#networkHeight ? networkHeight : this.#networkHeight;
     const a: Account = await this.#get(`/s1/accounts/${key.owner}`);
     if (a.state !== 'COMMITTED' || a.owner !== key.owner || a.public_key_type !== '/cosmos.crypto.mldsa65.PubKey' || a.public_key_base64 !== base64.encode(key.publicKey)) throw Error('ACCOUNT_KEY_MISMATCH');
     for (const name of ['account_number', 'sequence', 'epoch', 'observed_height', 'bank_atoms', 'exchange_atoms', 'gas_atoms'] as const) integer(a[name]);
-    return a;
+    if (this.#closed) throw Error('SESSION_CLOSED');
+    const height = integer(a.observed_height);
+    const minimum = this.history.filter(e => e.input.owner === key.owner && e.height)
+      .reduce((h, e) => integer(e.height!) > h ? integer(e.height!) : h, this.#accountHeights.get(key.owner) ?? 0n);
+    if (height < minimum) throw Error(`STALE_ACCOUNT: 계정 조회 높이 ${height} < 확인된 확정 높이 ${minimum} · network 높이 ${this.#networkHeight}`);
+    this.#accountHeights.set(key.owner, height);
+    return { ...a, network_height: this.#networkHeight.toString(), queried_at: new Date().toISOString(),
+      lag_blocks: (this.#networkHeight > height ? this.#networkHeight - height : 0n).toString() };
   }
   async submit(index: number, operation: Input['operation'], amount: string): Promise<Entry> {
     const key = this.keys[index];

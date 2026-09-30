@@ -4,6 +4,6 @@
 <button id="create">두 시험 계정 생성</button><details><summary>genesis 준비용 공개키 배열 (비밀 없음)</summary><pre id="public"></pre></details>
 <p>공개키 배열로 개발망을 초기화한 뒤 실제 genesis SHA256을 고정하세요. 키를 만든 탭은 닫지 마세요.</p>
 <label>genesis SHA256 <input id="genesis" size="64" autocomplete="off"></label><button id="bind">genesis 고정</button>
-<label>계정 <select id="account"><option value="0">시험 사용자 1</option><option value="1">시험 사용자 2</option></select></label><button id="refresh">확정 잔고 조회</button><pre id="balance"></pre>
+<label>계정 <select id="account"><option value="0">시험 사용자 1</option><option value="1">시험 사용자 2</option></select></label><button id="refresh">확정 잔고 조회</button><p id="freshness" role="status">조회 전 · 최신성 미확인</p><pre id="balance"></pre>
 <label>동작 <select id="operation"><option value="DEPOSIT">예치</option><option value="WITHDRAW">내 지갑으로 출금</option></select></label><label>DEVQUOTE 금액 <input id="amount" value="100" inputmode="decimal"></label>
 <p>서명 조건: 수수료 1000 DEVGAS atoms · gas limit 500000 · 만료는 조회 높이 +100. 실패에도 가스가 소비될 수 있습니다.</p><button id="submit">위 조건으로 로컬 서명·제출</button><button id="resolve">TX 결과 조회</button><p id="status" role="status">계정 생성 전입니다.</p><pre id="history"></pre><button id="reset">세션 키 폐기 / reset</button><script src="/wallet.js"></script></html>
