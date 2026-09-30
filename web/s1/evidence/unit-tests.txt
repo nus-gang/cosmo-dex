@@ -1,0 +1,16 @@
+✔ Go golden S1-DIRECT-01: message/body/auth/SignDoc and signature (11.75425ms)
+✔ Go golden S1-DIRECT-02: message/body/auth/SignDoc and signature (4.145291ms)
+✔ Go golden S1-DIRECT-03: message/body/auth/SignDoc and signature (3.567625ms)
+✔ decimal input rejects rounding, exponent, leading zeros and overflow (0.276125ms)
+✔ random session keys differ; closed session cannot sign (6.916916ms)
+✔ lost response keeps same hash and locks next signature; 404 cannot fail TX (35.90125ms)
+✔ wrong hash, zero height, inconsistent result cannot confirm (12.327417ms)
+✔ excess withdrawal never signs/submits (5.914583ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 179.291917

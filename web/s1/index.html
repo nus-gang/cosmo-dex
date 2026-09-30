@@ -1,0 +1,9 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'"><title>NUS S1 테스트 지갑</title>
+<style>body{font:16px system-ui;background:#101522;color:#eef2ff;max-width:900px;margin:32px auto;padding:20px}button,input,select{font:inherit;padding:10px;margin:6px}button{cursor:pointer}input,select{max-width:95%;box-sizing:border-box}pre{white-space:pre-wrap;overflow-wrap:anywhere;padding:16px;background:#1e293b}details pre{max-height:180px;overflow:auto}label{display:block}p{line-height:1.6}</style>
+<h1>S1 테스트 지갑</h1><p>로컬 개발망·합성 자산 전용. 탭 메모리에만 키를 유지하며 새로고침·탭 종료 후 복구할 수 없습니다. 확정 잔고만 표시합니다.</p>
+<button id="create">두 시험 계정 생성</button><details><summary>genesis 준비용 공개키 배열 (비밀 없음)</summary><pre id="public"></pre></details>
+<p>공개키 배열로 개발망을 초기화한 뒤 실제 genesis SHA256을 고정하세요. 키를 만든 탭은 닫지 마세요.</p>
+<label>genesis SHA256 <input id="genesis" size="64" autocomplete="off"></label><button id="bind">genesis 고정</button>
+<label>계정 <select id="account"><option value="0">시험 사용자 1</option><option value="1">시험 사용자 2</option></select></label><button id="refresh">확정 잔고 조회</button><pre id="balance"></pre>
+<label>동작 <select id="operation"><option value="DEPOSIT">예치</option><option value="WITHDRAW">내 지갑으로 출금</option></select></label><label>DEVQUOTE 금액 <input id="amount" value="100" inputmode="decimal"></label>
+<p>서명 조건: 수수료 1000 DEVGAS atoms · gas limit 500000 · 만료는 조회 높이 +100. 실패에도 가스가 소비될 수 있습니다.</p><button id="submit">위 조건으로 로컬 서명·제출</button><button id="resolve">TX 결과 조회</button><p id="status" role="status">계정 생성 전입니다.</p><pre id="history"></pre><button id="reset">세션 키 폐기 / reset</button><script src="/wallet.js"></script></html>
