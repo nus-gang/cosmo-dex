@@ -9,6 +9,7 @@ test: build
 	cd chain && GOTOOLCHAIN=local go test -mod=readonly ./...
 	cd exchange && cargo test --locked
 	cd web && npm test
+	python3 tests/test_manifest_boundary.py
 	python3 tests/test_vector_gate.py
 	python3 tests/test_runtime.py
 scaffold: bootstrap test
