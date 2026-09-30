@@ -1,0 +1,26 @@
+name: S1 devnet
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  devnet:
+    name: S1 four-validator integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.5'
+          cache-dependency-path: chain/app/go.sum
+      - name: Build pinned real app
+        working-directory: chain/app
+        run: sh scripts/build.sh
+      - name: Real four-validator TX, halt, recovery and persistence
+        run: python3 ops/s1/integration.py --home .runtime/s1-ci --output .evidence/s1-ci
+      - name: Upload public test evidence (no validator private keys)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: s1-four-validator-evidence
+          path: .evidence/s1-ci/
