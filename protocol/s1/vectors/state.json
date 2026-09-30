@@ -1,0 +1,16 @@
+{
+  "profile": "SYNTHETIC_EXPECTATIONS_NOT_APP_RESULTS",
+  "columns": ["bank", "exchange", "module", "epoch"],
+  "cases": [
+    {"id":"S1-STATE-01","op":"deposit","before":["100","0","0","0"],"amount":"60","after":["40","60","60","0"],"expected":"COMMITTED"},
+    {"id":"S1-STATE-02","op":"withdraw","before":["40","60","60","0"],"amount":"20","after":["60","40","40","1"],"expected":"COMMITTED"},
+    {"id":"S1-STATE-03","op":"duplicate_withdraw","before":["60","40","40","1"],"amount":"20","after":["60","40","40","1"],"expected":"ALREADY_COMMITTED","note":"same ID/body; old epoch and now expired; original receipt retained"},
+    {"id":"S1-STATE-04","op":"withdraw","before":["60","40","40","1"],"amount":"41","after":["60","40","40","1"],"expected":"INSUFFICIENT_CONFIRMED_BALANCE"},
+    {"id":"S1-STATE-05","op":"deposit","before":["60","40","40","1"],"amount":"61","after":["60","40","40","1"],"expected":"INSUFFICIENT_BANK_BALANCE"},
+    {"id":"S1-STATE-06","op":"withdraw","before":["60","40","40","18446744073709551615"],"amount":"1","after":["60","40","40","18446744073709551615"],"expected":"INTEGER_RANGE"},
+    {"id":"S1-STATE-07","op":"withdraw","before":["60","40","40","1"],"amount":"1","height":"100","expiry_height":"100","after":["60","40","40","1"],"expected":"EXPIRED"},
+    {"id":"S1-STATE-08","op":"withdraw","before":["60","40","40","1"],"amount":"1","expected_epoch":"0","after":["60","40","40","1"],"expected":"EPOCH_MISMATCH"},
+    {"id":"S1-STATE-09","op":"conflicting_id","before":["60","40","40","1"],"amount":"21","after":["60","40","40","1"],"expected":"ID_CONFLICT"},
+    {"id":"S1-STATE-10","op":"response_lost","before":["60","40","40","1"],"amount":"20","after":["60","40","40","1"],"expected":"SUBMISSION_UNKNOWN","note":"no inferred rollback or automatic new ID"}
+  ]
+}

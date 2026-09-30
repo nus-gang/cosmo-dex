@@ -1,0 +1,30 @@
+{
+  "contract_version": "s1-dev-1-rc1",
+  "s0_baseline": "df4da26463824de4f9450a478047d3c07d8fc308",
+  "sdk": "v0.55.0",
+  "cometbft": "v0.40.0",
+  "app_go": "1.26.5",
+  "app_execution": "NOT_RUN",
+  "files": {
+    ".gitignore": "32dae3052f331ee34d628ef535709b301259a45df7c7522c4d35dcf49873f00b",
+    "CONTRACT.md": "7f9c170e8a7090b0f0e31738d352915c09d11ff8725fde4c6e3cbfb5caa395d6",
+    "README.md": "82e044229caae9fbf47f4127ad1be782304a14babeae5c950b3c466f04255fb1",
+    "evidence/LICENSE-comet": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "evidence/LICENSE-sdk": "4792d3e59df05487004c7f2f42e3b067f565c9029c3aa4cd389f6dfbc7128f26",
+    "evidence/comet-go.mod": "bc57a84a4e1ad8c2a4da0d8e9e4577848fc9391b56d4a134845dd677b099417b",
+    "evidence/sdk-UPGRADING.md": "bea33ef0a343b8b55c683a46fea1c2f81319bf6969869487addffbe2acfa7bfb",
+    "evidence/sdk-go.mod": "ae71dc8c9e248b5dad40c6f7ed0b6f8cdc30fadad6bf3dff55e39d9466cb01ac",
+    "evidence/sdk-keys.proto": "e89645029adc73146d078f90ec7f6aea5ea6612b89a2a73d9d456f0f479a0913",
+    "evidence/sdk-mldsa65.go": "5bee04968438f83ab5d2e2b7a463d4ae59f2d23ad08c4a42f6aa97e6edce3c1e",
+    "evidence/sdk-sigverify.go": "087af6b6fceffa42f7080bcdf05763ee4832191a241082e02ef88ebec2bcb3ea",
+    "evidence/sdk-tx.proto": "6d694815814303538b08e6bb01da889de5fed3c1b15cb504668741f1f36491e1",
+    "messages.proto": "3c2a869c280f1fc519d922aef730e38a7517729af126c5f0271b7b4d640d3bea",
+    "tools/check.py": "810a32ee6cb83074819764c839b2b21155f4c055665f73080f658176049ddf50",
+    "tools/codec.py": "2d09968936280b253cd54de1489e9073318ed928a13ac8911e1586197a3be9d4",
+    "tools/generate.py": "19b30d5ade7e29bb63b8b75e0aae8eab667ceed876931e7965bbb8647f1f5978",
+    "tools/seal.py": "1a6d5f1cfda0b2772bef4818e842bc0f91a71a8f1ea9d8db84835396c8a9aed8",
+    "tools/sign-vectors.go": "f94070fe7253d91ab50cacf05503a7a139251146b4c874042d148ba9f668087f",
+    "vectors/direct.json": "535759ddf977a101457bf830ad69573371d4830172767a44975497e7f1d1e2b9",
+    "vectors/state.json": "8dfacab3d4a98067617243563556f4b804f269ed14337dfd399d640e2eae12da"
+  }
+}
