@@ -1,0 +1,19 @@
+# DOC-1 문서 인벤토리
+
+조사 기준: remote main `32781aa97d62ec747e7a25c10fdb8b58030d79f2` (2026-09-30 `git ls-remote`). 초기 공유 checkout `7942e93`은 기준으로 사용하지 않았다. 격리 브랜치 `docs/nus-34-s1-baseline`에서 정비한다.
+
+| 원본 | 권위·기존 상태 | 누락·불일치와 이번 처리 |
+|---|---|---|
+| [README](../README.md), [목차](README.md) | 저장소 진입점, S0/골격 미연결 설명 | S1 지원 범위·역할별 경로·quickstart 연결 |
+| Paperclip 사용자 안내 | 승인된 32781aa9 실행 안내 | [quickstart](quickstart.md)로 재사용; 원본 revision·검증 출처 보존 |
+| [web/s1](../web/s1/README.md) | Wallet 기능·시험·세션 수명 | 후보 시점과 현재 main 구분; 전체 초보자 경로 연결 |
+| [ops/s1](../ops/s1/README.md) | supervisor·포트·health/log·중단·원장 보존 | 재작성 없이 목차/quickstart에서 연결; fixture/사용자 키 구분 |
+| [settlement/s1](../settlement/s1/README.md) | REST/journal·상태 의미·최초 실패 | 과거 미병합/미완료 문구를 당시 상태로 명시; 현행 main 근거 연결 |
+| [chain/app](../chain/app/README.md), [공개키](../chain/app/USER-PUBLIC-KEYS.md) | SDK·CLI·genesis 구현 | 원본 유지; 권위 링크 및 fixture 주의 추가 |
+| [S1 계약](../protocol/s1/CONTRACT.md), [schema](../protocol/s1/messages.proto) | 규범과 pin, 제안 당시 이력 포함 | 재정의하지 않고 [API 안내](api.md)에서 연결 |
+| [S0-B 개발 기록](development.md) | 초기 버전·미연결 당시 설명 | 역사 표기 추가, 현재 [기여 지침](contributing.md) 연결 |
+| [S0 통합](s0-main-integration.md), [protocol/v1](../protocol/v1/README.md) | S0 범위·고정 규약·원본 SHA | 보존; S1과 다른 범위임을 상위 목차에 명시 |
+| [보안 기록](../security/README.md), [QA rc4](../qa-rc4/REPORT.md) | 독립 원시 증거와 판정 | 기존 기록 수정 없음; [검증 기록](verification.md)에서 최신 인수와 구분 |
+| [M0 설계](../ops/OPERATIONS-M0.md), 원본 PDF | 설계 목표 | 현재 운영 기능으로 재서술하지 않고 원본 접근 경로 제공 |
+
+새 문서는 구성·API 탐색, 검증 출처, 변경 기록, 문서 영향 기여 지침이다. 상세 규약·운영 명령·기존 보안 및 실패 기록의 사본을 새로 만들지 않는다. 중복된 실행 순서는 새 사용자의 재현에 필요한 최소 범위로 quickstart에 모으며 상세 시험은 원본으로 연결한다.
