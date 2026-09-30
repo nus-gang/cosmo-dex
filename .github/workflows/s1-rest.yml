@@ -1,0 +1,32 @@
+name: S1 REST
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  rest:
+    name: S1 REST four-validator integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.5'
+          cache-dependency-path: chain/app/go.sum
+      - name: S0 boundary and REST failure cases
+        run: |
+          python3 ops/ci/build_manifest.py --check
+          python3 -m unittest discover -s tests -p test_manifest_boundary.py -v
+          python3 -m unittest discover -s settlement/s1 -v
+      - name: Build pinned real app
+        working-directory: chain/app
+        run: sh scripts/build.sh
+      - name: Real REST and four-validator transactions
+        run: python3 settlement/s1/four_validator.py --home .runtime/rest-ci --output .evidence/rest-ci
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: s1-rest-evidence
+          path: .evidence/rest-ci/result.json
+          include-hidden-files: true
+          if-no-files-found: error

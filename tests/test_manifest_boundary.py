@@ -32,15 +32,17 @@ class ManifestBoundary(unittest.TestCase):
         self.check(True)
 
     def test_s1_add_change_remove(self):
-        app = self.root / 'chain/app'
-        app.mkdir()
-        for name in ('go.mod', 'new.go'):
-            (app / name).write_text('synthetic S1 input\n')
-        self.check(True)
-        (app / 'new.go').write_text('changed S1 input\n')
-        self.check(True)
-        shutil.rmtree(app)
-        self.check(True)
+        for folder in ('chain/app', 'settlement/s1'):
+            with self.subTest(folder=folder):
+                app = self.root / folder
+                app.mkdir()
+                for name in ('go.mod', 'new.go'):
+                    (app / name).write_text('synthetic S1 input\n')
+                self.check(True)
+                (app / 'new.go').write_text('changed S1 input\n')
+                self.check(True)
+                shutil.rmtree(app)
+                self.check(True)
 
     def test_s0_source_changes_and_deletions_fail(self):
         for name in ('chain/contract/amount.go', 'chain/go.mod',
@@ -60,7 +62,7 @@ class ManifestBoundary(unittest.TestCase):
         self.check(True)
 
     def test_unknown_nested_module_and_similar_prefix_fail(self):
-        for folder in ('chain/other', 'chain/application', 'chain/contract/app'):
+        for folder in ('chain/other', 'chain/application', 'chain/contract/app', 'settlement/s10', 'settlement/v1/s1'):
             with self.subTest(folder=folder):
                 path = self.root / folder
                 path.mkdir(parents=True)

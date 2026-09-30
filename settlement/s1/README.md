@@ -56,6 +56,28 @@ smoke는 29756/29757 포트의 임시 단일 노드와 임의 포트 REST를 구
 단위시험의 RPC doubles는 응답 유실·index 누락·높이/보존 불일치 경계를 검증하며 실제 체인
 성공 근거로 사용하지 않는다.
 
-미완료: [NUS-20](/NUS/issues/NUS-20) 4검증인 개발망 통합,
+## 4검증인 REST 검증
+
+```sh
+# 이미 실행 중인 관리 개발망에 연결한다. 노드 stop/reset은 하지 않는다.
+python3 settlement/s1/four_validator.py --managed --home <C_runtime_home> --output <새_증거_디렉터리>
+# CI: 독립적인 4검증인 자식 프로세스를 만들고 finally에서 모두 종료한다.
+python3 settlement/s1/four_validator.py --home .runtime/rest-ci --output .evidence/rest-ci
+```
+
+C 후보 `6f869c1a10bd28b5d5bba0990151df5fb39c4b3d`의 관리 RPC
+`http://127.0.0.1:28657`, genesis
+`61b147973985b60dec19545d049706f1dfc08cf28b35a43b12b70dc6e4b406d2`에 대해 PASS.
+공개 fixture 두 사용자의 실제 서명 TX/HTTP 제출·출금, 실제 broadcast 응답 유실 후
+원래 hash 복구, 동일 bytes 중복 제출 시 원장/sequence 불변, REST 재시작 및 빈
+journal의 잔고·영수증·TX 복원을 검증했다. 사용자 번호는 snapshot 배열 순서가 아닌
+실제 genesis 공개키로 매핑한다. 공유 개발망의 초기 잔고 대신 전후 증감을 대사한다.
+시험 첫 실행은 이 순서 가정 때문에 영수증 조회 404로 실패했으며 수정 후 통과했다.
+
+`S1 REST four-validator integration`은 push/PR마다 항상 실행한다.
+S0 manifest에서 정확히 `settlement/s1`만 전용 CI 경계로 제외하며, S0 원본·oracle·coverage
+해시는 유지한다. 경계 시험은 S0 변경/삭제와 유사 경로 추가를 계속 거부함을 확인한다.
+
+미완료:
 [NUS-22](/NUS/issues/NUS-22) 실제 브라우저 통합, CTO→Security 독립 검토, main CI/독립 QA.
 현재 산출물은 미병합 후보이며 AT01/05/06/07 또는 S1 전체 완료가 아니다.
