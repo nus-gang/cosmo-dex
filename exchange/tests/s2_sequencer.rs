@@ -1879,3 +1879,77 @@ fn service_gate_rejects_mismatched_duplicate_observation() {
     assert!(service.observation().is_none());
     assert_eq!(service.state().sequence(), 0);
 }
+
+#[test]
+fn public_book_committed_aggregation_hash_and_restart() {
+    use nus_exchange_contract::s2::{
+        journal::MAX_PAYLOAD, recovery::SignedRecovery, service::Service,
+    };
+    let dir = std::path::PathBuf::from(std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR").unwrap())
+        .join(format!(
+            "book-{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+    let (initial, obs) = setup(100, 0);
+    let mut service = Service::new(SignedRecovery::create(&dir, initial.clone(), "OPEN").unwrap());
+    assert_eq!(service.book().unwrap()["asks"], json!([]));
+    service
+        .observe(initial.snapshot().clone(), obs, NOW, MAX_PAYLOAD)
+        .unwrap();
+    let mut snapshots = vec![service.book().unwrap()];
+    for (id, price) in [(91, 11000), (92, 10000), (93, 11000)] {
+        let (raw, sig, owner) = changed(
+            "order",
+            &[
+                ("order_id", json!(format!("{id:02x}").repeat(32))),
+                ("limit_price_ticks", json!(price.to_string())),
+            ],
+        );
+        service
+            .submit("ORDER", &raw, &sig, &owner, NOW, MAX_PAYLOAD)
+            .unwrap();
+    }
+    let book = service.book().unwrap();
+    assert_eq!(
+        book["asks"],
+        json!([
+            {"price_ticks":"10000","qty_lots":"2000","order_count":"1"},
+            {"price_ticks":"11000","qty_lots":"4000","order_count":"2"}
+        ])
+    );
+    let (raw, sig, owner) = input("buyer-order");
+    service
+        .submit("ORDER", &raw, &sig, &owner, NOW, MAX_PAYLOAD)
+        .unwrap();
+    let partial = service.book().unwrap();
+    assert_eq!(partial["asks"][0]["qty_lots"], "1000");
+    assert_ne!(book["content_hash"], partial["content_hash"]);
+    snapshots.extend([book, partial.clone()]);
+    service.rpc_failed();
+    assert_eq!(service.book().unwrap(), partial);
+    drop(service);
+    let service = Service::new(SignedRecovery::open(&dir, initial, "OPEN").unwrap());
+    assert_eq!(service.book().unwrap(), partial);
+    for value in &snapshots {
+        let mut body = value.clone();
+        let hash = body
+            .as_object_mut()
+            .unwrap()
+            .remove("content_hash")
+            .unwrap();
+        assert_eq!(
+            hash,
+            sha256(&codec::frame("NUS/S2/BOOK/V1", &canonical(&body).unwrap()))
+        );
+        let text = serde_json::to_string(value).unwrap();
+        for private in ["owner", "order_id", "signature", "canonical_b64"] {
+            assert!(!text.contains(private));
+        }
+    }
+    if let Ok(path) = std::env::var("S2_BOOK_EXPORT") {
+        std::fs::write(path, serde_json::to_vec_pretty(&snapshots).unwrap()).unwrap();
+    }
+}

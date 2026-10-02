@@ -7,7 +7,8 @@ use super::{
     sequencer::Candidate,
     snapshot::{Observation, Snapshot},
 };
-use serde_json::Value;
+use serde_json::{Value, json};
+use std::collections::BTreeMap;
 
 pub struct Service {
     engine: SignedRecovery,
@@ -46,6 +47,52 @@ impl Service {
             Err("CATCHING_UP") => ("CATCHING_UP", "CATCHING_UP"),
             Err(reason) => ("STALE", reason),
         }
+    }
+    /// Public book from exactly one committed engine sequence. Runtime health
+    /// is deliberately separate: failed observations cannot change this hash.
+    /// No owner, order identifier or signed evidence is exposed.
+    pub fn book(&self) -> Result<Value> {
+        let state = self.state();
+        let mut bids = BTreeMap::<u64, (u64, u32)>::new();
+        let mut asks = BTreeMap::<u64, (u64, u32)>::new();
+        for order in state.orders().values() {
+            if !matches!(order.status.as_str(), "OPEN" | "PARTIALLY_FILLED")
+                || order.live.remaining == 0
+            {
+                continue;
+            }
+            let levels = match order.live.side {
+                super::ledger::Side::Buy => &mut bids,
+                super::ledger::Side::Sell => &mut asks,
+            };
+            let level = levels.entry(order.live.price).or_default();
+            level.0 = level
+                .0
+                .checked_add(order.live.remaining)
+                .ok_or(Error::ResourceLimit)?;
+            level.1 = level.1.checked_add(1).ok_or(Error::ResourceLimit)?;
+        }
+        if bids.len() > 200 || asks.len() > 200 {
+            return Err(Error::ResourceLimit);
+        }
+        let level = |(price, (qty, count)): (u64, (u64, u32))| {
+            json!({"price_ticks":price.to_string(), "qty_lots":qty.to_string(),
+                "order_count":count.to_string()})
+        };
+        let mut book = json!({
+            "context":state.snapshot().value()["body"]["context"],
+            "stream_seq":state.sequence().to_string(),
+            "revision":state.sequence().to_string(),
+            "snapshot_id":state.snapshot().id(),
+            "observed_height":state.snapshot().height().to_string(),
+            "bids":bids.into_iter().rev().map(level).collect::<Vec<_>>(),
+            "asks":asks.into_iter().map(level).collect::<Vec<_>>()
+        });
+        book["content_hash"] = json!(super::journal::sha256(&crate::codec::frame(
+            "NUS/S2/BOOK/V1",
+            &super::journal::canonical(&book)?
+        )));
+        Ok(book)
     }
     pub fn observation(&self) -> Option<&Observation> {
         self.observation.as_ref()
