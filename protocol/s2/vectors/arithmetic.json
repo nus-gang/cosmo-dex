@@ -1,0 +1,112 @@
+{
+  "cases": [
+    {
+      "id": "demo-fill-0bps",
+      "q": "1000",
+      "execution_ticks": "10000",
+      "buy_limit_ticks": "10000",
+      "bps": "0",
+      "cap": "0",
+      "expected": {
+        "base": "1000000",
+        "quote": "10000000",
+        "buy_D": "10000000",
+        "sell_D": "1000000",
+        "buyer_P": "1000000",
+        "seller_P": "10000000",
+        "fee_base": "0",
+        "fee_quote": "0"
+      }
+    },
+    {
+      "id": "price-improvement",
+      "q": "1000",
+      "execution_ticks": "9000",
+      "buy_limit_ticks": "10000",
+      "bps": "0",
+      "cap": "0",
+      "expected": {
+        "base": "1000000",
+        "quote": "9000000",
+        "buy_D": "10000000",
+        "sell_D": "1000000",
+        "buyer_P": "1000000",
+        "seller_P": "9000000",
+        "fee_base": "0",
+        "fee_quote": "0"
+      }
+    },
+    {
+      "id": "fee25",
+      "q": "1000",
+      "execution_ticks": "10000",
+      "buy_limit_ticks": "10000",
+      "bps": "25",
+      "cap": "25",
+      "expected": {
+        "base": "1000000",
+        "quote": "10000000",
+        "buy_D": "10000000",
+        "sell_D": "1000000",
+        "buyer_P": "997500",
+        "seller_P": "9975000",
+        "fee_base": "2500",
+        "fee_quote": "25000"
+      }
+    },
+    {
+      "id": "ceil-small",
+      "q": "1",
+      "execution_ticks": "401",
+      "buy_limit_ticks": "401",
+      "bps": "25",
+      "cap": "4294967295",
+      "expected": {
+        "base": "1000",
+        "quote": "401",
+        "buy_D": "401",
+        "sell_D": "1000",
+        "buyer_P": "997",
+        "seller_P": "399",
+        "fee_base": "3",
+        "fee_quote": "2"
+      }
+    },
+    {
+      "id": "fee-ge-receive",
+      "q": "1",
+      "execution_ticks": "1",
+      "buy_limit_ticks": "1",
+      "bps": "25",
+      "cap": "25",
+      "error": "FEE_GE_RECEIVE"
+    },
+    {
+      "id": "fee-cap",
+      "q": "1000",
+      "execution_ticks": "10000",
+      "buy_limit_ticks": "10000",
+      "bps": "25",
+      "cap": "24",
+      "error": "FEE_CAP"
+    },
+    {
+      "id": "bps-over",
+      "q": "1",
+      "execution_ticks": "401",
+      "buy_limit_ticks": "401",
+      "bps": "10001",
+      "cap": "4294967295",
+      "error": "BPS_RANGE"
+    }
+  ],
+  "split_fee": {
+    "receive_parts": [
+      "401",
+      "401"
+    ],
+    "bps": "25",
+    "expected_split": "4",
+    "expected_combined": "3"
+  }
+}

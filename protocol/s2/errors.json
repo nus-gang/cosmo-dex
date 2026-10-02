@@ -1,0 +1,108 @@
+{
+  "inherit": "protocol/v1/CONTRACT.md + DECISION-PORT.md + protocol/s1/CONTRACT.md",
+  "fallback_http_status": "422",
+  "new_errors": [
+    {
+      "code": "RESOURCE_LIMIT",
+      "http_status": "413",
+      "retryable": false,
+      "state": "REJECTED"
+    },
+    {
+      "code": "UNAUTHORIZED",
+      "http_status": "401",
+      "retryable": false,
+      "state": "REJECTED"
+    },
+    {
+      "code": "FORBIDDEN",
+      "http_status": "403",
+      "retryable": false,
+      "state": "REJECTED"
+    },
+    {
+      "code": "ID_CONFLICT",
+      "http_status": "409",
+      "retryable": false,
+      "state": "REJECTED"
+    },
+    {
+      "code": "ORDER_NOT_FOUND",
+      "http_status": "404",
+      "retryable": false,
+      "state": "REJECTED"
+    },
+    {
+      "code": "EXPIRY_MARGIN",
+      "http_status": "422",
+      "retryable": false,
+      "state": "REJECTED"
+    },
+    {
+      "code": "OPEN_ORDER_LIMIT",
+      "http_status": "422",
+      "retryable": false,
+      "state": "REJECTED"
+    },
+    {
+      "code": "UNSETTLED_HOLD",
+      "http_status": "409",
+      "retryable": false,
+      "state": "REJECTED"
+    },
+    {
+      "code": "STALE_SNAPSHOT",
+      "http_status": "503",
+      "retryable": true,
+      "state": "REJECTED"
+    },
+    {
+      "code": "CATCHING_UP",
+      "http_status": "503",
+      "retryable": true,
+      "state": "REJECTED"
+    },
+    {
+      "code": "HEIGHT_REGRESSION",
+      "http_status": "503",
+      "retryable": false,
+      "state": "REJECTED"
+    },
+    {
+      "code": "SNAPSHOT_CONFLICT",
+      "http_status": "503",
+      "retryable": false,
+      "state": "REJECTED"
+    },
+    {
+      "code": "SNAPSHOT_UNAVAILABLE",
+      "http_status": "503",
+      "retryable": true,
+      "state": "REJECTED"
+    },
+    {
+      "code": "RECOVERY_REQUIRED",
+      "http_status": "503",
+      "retryable": false,
+      "state": "SUBMISSION_UNKNOWN"
+    },
+    {
+      "code": "WRITER_ALREADY_RUNNING",
+      "http_status": "503",
+      "retryable": false,
+      "state": "REJECTED"
+    },
+    {
+      "code": "SUBMISSION_UNKNOWN",
+      "http_status": "202",
+      "retryable": true,
+      "state": "SUBMISSION_UNKNOWN"
+    },
+    {
+      "code": "NOT_FOUND_AT_SEQ",
+      "http_status": "404",
+      "retryable": true,
+      "state": "NOT_FOUND_AT_SEQ"
+    }
+  ]
+}

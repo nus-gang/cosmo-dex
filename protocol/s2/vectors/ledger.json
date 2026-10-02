@@ -1,0 +1,190 @@
+{
+  "unit": "atoms",
+  "scope": "synthetic expectations; runtime must obtain C by actual deposits",
+  "steps": [
+    {
+      "id": "deposited",
+      "A_BASE": {
+        "C": "10000000",
+        "R": "0",
+        "D": "0",
+        "P": "0",
+        "A": "10000000"
+      },
+      "A_QUOTE": {
+        "C": "0",
+        "R": "0",
+        "D": "0",
+        "P": "0",
+        "A": "0"
+      },
+      "B_BASE": {
+        "C": "0",
+        "R": "0",
+        "D": "0",
+        "P": "0",
+        "A": "0"
+      },
+      "B_QUOTE": {
+        "C": "100000000",
+        "R": "0",
+        "D": "0",
+        "P": "0",
+        "A": "100000000"
+      }
+    },
+    {
+      "id": "sell-2",
+      "A_BASE": {
+        "C": "10000000",
+        "R": "2000000",
+        "D": "0",
+        "P": "0",
+        "A": "8000000"
+      },
+      "A_QUOTE": {
+        "C": "0",
+        "R": "0",
+        "D": "0",
+        "P": "0",
+        "A": "0"
+      },
+      "B_BASE": {
+        "C": "0",
+        "R": "0",
+        "D": "0",
+        "P": "0",
+        "A": "0"
+      },
+      "B_QUOTE": {
+        "C": "100000000",
+        "R": "0",
+        "D": "0",
+        "P": "0",
+        "A": "100000000"
+      }
+    },
+    {
+      "id": "buy-1-fill",
+      "A_BASE": {
+        "C": "10000000",
+        "R": "1000000",
+        "D": "1000000",
+        "P": "0",
+        "A": "8000000"
+      },
+      "A_QUOTE": {
+        "C": "0",
+        "R": "0",
+        "D": "0",
+        "P": "10000000",
+        "A": "0"
+      },
+      "B_BASE": {
+        "C": "0",
+        "R": "0",
+        "D": "0",
+        "P": "1000000",
+        "A": "0"
+      },
+      "B_QUOTE": {
+        "C": "100000000",
+        "R": "0",
+        "D": "10000000",
+        "P": "0",
+        "A": "90000000"
+      }
+    },
+    {
+      "id": "cancel-remainder",
+      "A_BASE": {
+        "C": "10000000",
+        "R": "0",
+        "D": "1000000",
+        "P": "0",
+        "A": "9000000"
+      },
+      "A_QUOTE": {
+        "C": "0",
+        "R": "0",
+        "D": "0",
+        "P": "10000000",
+        "A": "0"
+      },
+      "B_BASE": {
+        "C": "0",
+        "R": "0",
+        "D": "0",
+        "P": "1000000",
+        "A": "0"
+      },
+      "B_QUOTE": {
+        "C": "100000000",
+        "R": "0",
+        "D": "10000000",
+        "P": "0",
+        "A": "90000000"
+      }
+    },
+    {
+      "id": "A-direct-withdraw-9-correct-component",
+      "A_BASE": {
+        "C": "1000000",
+        "R": "0",
+        "D": "0",
+        "P": "0",
+        "A": "1000000"
+      },
+      "A_QUOTE": {
+        "C": "0",
+        "R": "0",
+        "D": "0",
+        "P": "0",
+        "A": "0"
+      },
+      "B_BASE": {
+        "C": "0",
+        "R": "0",
+        "D": "0",
+        "P": "0",
+        "A": "0"
+      },
+      "B_QUOTE": {
+        "C": "100000000",
+        "R": "0",
+        "D": "0",
+        "P": "0",
+        "A": "100000000"
+      }
+    }
+  ],
+  "negative_orders": [
+    {
+      "id": "P-is-not-available",
+      "owner_asset": "B_BASE",
+      "after": "buy-1-fill",
+      "new_reserve": "1000",
+      "expected": "INSUFFICIENT_CONFIRMED_BALANCE"
+    },
+    {
+      "id": "overreserve",
+      "owner_asset": "B_QUOTE",
+      "after": "buy-1-fill",
+      "new_reserve": "90000001",
+      "expected": "INSUFFICIENT_CONFIRMED_BALANCE"
+    }
+  ],
+  "ioc": {
+    "requested_lots": "5000",
+    "filled_lots": "3000",
+    "limit_ticks": "10000",
+    "actual_ticks": "9000",
+    "upstream_return": "Err",
+    "callback_count": "1",
+    "expected_R": "0",
+    "expected_D": "30000000",
+    "expected_P_base": "3000000",
+    "released_R": "20000000",
+    "price_improvement_held": "3000000"
+  }
+}
