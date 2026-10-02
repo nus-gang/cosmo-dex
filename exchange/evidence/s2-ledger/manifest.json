@@ -1,0 +1,21 @@
+{
+  "observed_at": "2026-10-02T16:21:01.923020+00:00",
+  "base_code_sha": "af673927e1e00cc2479f8a03da82a6b82e7bd1e3",
+  "contract_sha256": "2e103517c344f21c2b97fbe7e977f0e614c32c704b0f54978c5bb1fb3ae6ab0f",
+  "config_sha256": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+  "genesis": "NOT_RUN: component synthetic balances only",
+  "environment": "macOS arm64; Rust 1.92.0; locked dependencies",
+  "files_sha256": {
+    "exchange/src/s2/ledger.rs": "8f88ce80bdea27a3112a629f9bcec24b10bb0edc70fa3432bb1335fffed37d12",
+    "exchange/tests/s2_ledger.rs": "9bc1273c2e6a6cbdfd8d4c1d54eebf97eabe0744f395b80f621abf359023f3cd",
+    "exchange/Cargo.lock": "ab4f76dd87448219ade436d508822b423b036a5131cdc732150a59e2e764e894",
+    "protocol/s2/profile.json": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f"
+  },
+  "commands": [
+    "cargo test --locked --manifest-path exchange/Cargo.toml --test s2_ledger",
+    "cargo clippy --locked --manifest-path exchange/Cargo.toml --all-targets -- -D warnings"
+  ],
+  "result": "5 tests PASS; 1444 arithmetic combinations; clippy PASS",
+  "test_seconds": 0.04,
+  "throughput_cpu_rss": "NOT_MEASURED"
+}
