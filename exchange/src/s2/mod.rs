@@ -14,3 +14,5 @@ pub mod record;
 pub mod recovery;
 
 pub mod service;
+
+pub mod private_view;

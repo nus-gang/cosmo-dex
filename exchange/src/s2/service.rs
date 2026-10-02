@@ -126,6 +126,12 @@ impl Service {
             "fresh": self.admission(now).0 == "OPEN"
         })
     }
+    /// Owner must come from a verified session, never a query parameter.
+    /// Returns private LedgerView components; live Status is attached separately.
+    pub fn private_page(&self, owner: &str, cursor: Option<&str>) -> Result<Value> {
+        super::private_view::page(self.state(), owner, cursor, 200, 1000)
+            .map_err(Error::InvalidRecord)
+    }
     pub fn observation(&self) -> Option<&Observation> {
         self.observation.as_ref()
     }

@@ -1997,3 +1997,98 @@ fn observation_projection_retains_success_and_never_invents_restart_freshness() 
     drop(service);
     std::fs::remove_dir_all(dir).unwrap();
 }
+
+#[test]
+fn private_pages_bind_owner_sequence_and_exclude_counterparty_evidence() {
+    use nus_exchange_contract::s2::private_view::page;
+    let (mut state, obs) = setup(100, 0);
+    let (raw, sig, seller) = input("order");
+    state = state
+        .submit("ORDER", &raw, &sig, &seller, &obs, NOW)
+        .unwrap()
+        .0;
+    let (raw, sig, buyer) = input("buyer-order");
+    state = state
+        .submit("ORDER", &raw, &sig, &buyer, &obs, NOW)
+        .unwrap()
+        .0;
+    let (raw, sig, _) = changed("order", &[("order_id", json!("ab".repeat(32)))]);
+    state = state
+        .submit("ORDER", &raw, &sig, &seller, &obs, NOW)
+        .unwrap()
+        .0;
+    let first = page(&state, &seller, None, 1, 1).unwrap();
+    assert_eq!(first["orders"].as_array().unwrap().len(), 1);
+    assert_eq!(first["fills"].as_array().unwrap().len(), 1);
+    assert_eq!(
+        first["fills"][0]["own_order_id"],
+        first["orders"][0]["order_id"]
+    );
+    let cursor = first["next_cursor"].as_str().unwrap();
+    assert_ne!(cursor, "END");
+    let second = page(&state, &seller, Some(cursor), 1, 1).unwrap();
+    assert_eq!(second["orders"][0]["order_id"], "ab".repeat(32));
+    assert_eq!(second["fills"], json!([]));
+    assert_eq!(second["next_cursor"], "END");
+    assert_eq!(
+        page(&state, &buyer, Some(cursor), 1, 1),
+        Err("SNAPSHOT_CONFLICT")
+    );
+    assert_eq!(
+        page(&state, "unknown", None, 1, 1),
+        Err("ACCOUNT_KEY_UNREGISTERED")
+    );
+    for bad in ["END", "???", "e30="] {
+        assert_eq!(
+            page(&state, &seller, Some(bad), 1, 1),
+            Err("SNAPSHOT_CONFLICT")
+        );
+    }
+    assert_eq!(page(&state, &seller, None, 201, 1), Err("PAGE_LIMIT"));
+    let buy = page(&state, &buyer, None, 200, 1000).unwrap();
+    assert_ne!(
+        buy["fills"][0]["own_order_id"],
+        first["fills"][0]["own_order_id"]
+    );
+    assert_eq!(buy["fills"][0]["fill_id"], first["fills"][0]["fill_id"]);
+    let text = serde_json::to_string(&first).unwrap();
+    assert!(!text.contains(&buyer));
+    for private in [
+        "signature",
+        "order_wire",
+        "buyer_order_hash",
+        "seller_order_hash",
+        "buy_D",
+        "export_state",
+    ] {
+        assert!(!text.contains(private));
+    }
+    let (next, _) = state.prepare_withdraw(&seller).unwrap();
+    assert_eq!(
+        page(&next, &seller, Some(cursor), 1, 1),
+        Err("SNAPSHOT_CONFLICT")
+    );
+    let mut changed_cursor: Value =
+        serde_json::from_slice(&STANDARD.decode(cursor).unwrap()).unwrap();
+    for key in ["context_hash", "orders"] {
+        let old = changed_cursor[key].clone();
+        changed_cursor[key] = if key == "orders" {
+            json!(999)
+        } else {
+            json!("other-genesis")
+        };
+        let bad = STANDARD.encode(serde_json::to_vec(&changed_cursor).unwrap());
+        assert_eq!(
+            page(&state, &seller, Some(&bad), 1, 1),
+            Err("SNAPSHOT_CONFLICT")
+        );
+        changed_cursor[key] = old;
+    }
+    if let Ok(path) = std::env::var("S2_PRIVATE_EXPORT") {
+        std::fs::write(
+            path,
+            serde_json::to_vec_pretty(&vec![first, second, buy]).unwrap(),
+        )
+        .unwrap();
+    }
+}
