@@ -12,3 +12,5 @@ pub mod sequencer;
 pub mod record;
 
 pub mod recovery;
+
+pub mod service;

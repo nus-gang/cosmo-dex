@@ -1719,3 +1719,163 @@ fn withdrawal_failed_marker_never_publishes_or_returns_receipt() {
     assert!(SignedRecovery::open(&dir, initial, "OPEN").is_err());
     std::fs::remove_dir_all(dir).unwrap();
 }
+
+#[test]
+fn service_gate_reobserves_after_restart_and_keeps_original_receipts() {
+    use nus_exchange_contract::s2::{
+        journal::MAX_PAYLOAD, recovery::SignedRecovery, service::Service,
+    };
+    let root = std::path::PathBuf::from(std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR").unwrap());
+    let dir = root.join(format!(
+        "service-gate-restart-{}",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    let (initial, obs) = setup(100, 0);
+    let mut service = Service::new(SignedRecovery::create(&dir, initial.clone(), "OPEN").unwrap());
+    let (raw, sig, owner) = input("order");
+    assert_eq!(
+        service.admission(NOW),
+        ("CATCHING_UP", "OBSERVATION_REQUIRED")
+    );
+    assert!(
+        service
+            .submit("ORDER", &raw, &sig, &owner, NOW, MAX_PAYLOAD)
+            .is_err()
+    );
+    assert_eq!(service.state().sequence(), 0);
+    service
+        .observe(initial.snapshot().clone(), obs.clone(), NOW, MAX_PAYLOAD)
+        .unwrap();
+    assert_eq!(service.admission(NOW + 5000), ("OPEN", "OK"));
+    assert_eq!(service.admission(NOW + 5001), ("STALE", "STALE"));
+    let receipt = service
+        .submit("ORDER", &raw, &sig, &owner, NOW, MAX_PAYLOAD)
+        .unwrap();
+    service.rpc_failed();
+    assert_eq!(service.admission(NOW), ("STALE", "RPC_UNAVAILABLE"));
+    assert_eq!(
+        service
+            .submit("ORDER", &raw, &sig, &owner, NOW, MAX_PAYLOAD)
+            .unwrap(),
+        receipt
+    );
+    let (new_raw, new_sig, _) = changed("order", &[("order_id", json!("90".repeat(32)))]);
+    assert!(
+        service
+            .submit("ORDER", &new_raw, &new_sig, &owner, NOW, MAX_PAYLOAD)
+            .is_err()
+    );
+    assert_eq!(service.state().sequence(), 1);
+    drop(service);
+    let mut service = Service::new(SignedRecovery::open(&dir, initial.clone(), "OPEN").unwrap());
+    assert_eq!(service.admission(NOW).0, "CATCHING_UP");
+    assert_eq!(
+        service
+            .submit("ORDER", &raw, &sig, &owner, NOW, MAX_PAYLOAD)
+            .unwrap(),
+        receipt
+    );
+    assert!(
+        service
+            .submit("ORDER", &new_raw, &new_sig, &owner, NOW, MAX_PAYLOAD)
+            .is_err()
+    );
+    service
+        .observe(initial.snapshot().clone(), obs, NOW, MAX_PAYLOAD)
+        .unwrap();
+    assert_eq!(
+        service
+            .submit("ORDER", &new_raw, &new_sig, &owner, NOW, MAX_PAYLOAD)
+            .unwrap()["command_seq"],
+        "2"
+    );
+}
+
+#[test]
+fn service_gate_gap_catchup_and_conflict_are_fail_closed() {
+    use nus_exchange_contract::s2::{
+        journal::MAX_PAYLOAD, recovery::SignedRecovery, service::Service,
+    };
+    let root = std::path::PathBuf::from(std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR").unwrap());
+    let dir = root.join(format!(
+        "service-gate-catchup-{}",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    let (initial, obs) = setup(100, 0);
+    let mut service = Service::new(SignedRecovery::create(&dir, initial.clone(), "OPEN").unwrap());
+    service
+        .observe(initial.snapshot().clone(), obs.clone(), NOW, MAX_PAYLOAD)
+        .unwrap();
+    let (gap, gap_obs) = setup(102, 0);
+    assert!(
+        service
+            .observe(gap.snapshot().clone(), gap_obs.clone(), NOW, MAX_PAYLOAD)
+            .is_err()
+    );
+    assert_eq!(service.admission(NOW).0, "CATCHING_UP");
+    assert_eq!(service.state().snapshot().height(), 100);
+    service
+        .observe(initial.snapshot().clone(), obs.clone(), NOW, MAX_PAYLOAD)
+        .unwrap();
+    assert_eq!(service.admission(NOW).0, "CATCHING_UP");
+    let (next, mut next_obs) = setup(101, 0);
+    next_obs.catching_up = true;
+    service
+        .observe(next.snapshot().clone(), next_obs, NOW, MAX_PAYLOAD)
+        .unwrap();
+    assert_eq!(service.admission(NOW).0, "CATCHING_UP");
+    service
+        .observe(gap.snapshot().clone(), gap_obs, NOW, MAX_PAYLOAD)
+        .unwrap();
+    assert_eq!(service.admission(NOW).0, "OPEN");
+    assert!(
+        service
+            .observe(initial.snapshot().clone(), obs, NOW, MAX_PAYLOAD)
+            .is_err()
+    );
+    assert_eq!(
+        service.admission(NOW),
+        ("RECOVERY_REQUIRED", "HEIGHT_REGRESSION")
+    );
+    service.rpc_failed();
+    assert_eq!(service.admission(NOW).0, "RECOVERY_REQUIRED");
+    let (current, current_obs) = setup(102, 0);
+    assert!(
+        service
+            .observe(current.snapshot().clone(), current_obs, NOW, MAX_PAYLOAD)
+            .is_err()
+    );
+    assert_eq!(service.state().snapshot().height(), 102);
+}
+
+#[test]
+fn service_gate_rejects_mismatched_duplicate_observation() {
+    use nus_exchange_contract::s2::{
+        journal::MAX_PAYLOAD, recovery::SignedRecovery, service::Service,
+    };
+    let root = std::path::PathBuf::from(std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR").unwrap());
+    let dir = root.join(format!(
+        "service-gate-observation-{}",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    let (initial, mut obs) = setup(100, 0);
+    let mut service = Service::new(SignedRecovery::create(&dir, initial.clone(), "OPEN").unwrap());
+    obs.cursor_height = 101;
+    assert!(
+        service
+            .observe(initial.snapshot().clone(), obs, NOW, MAX_PAYLOAD)
+            .is_err()
+    );
+    assert_eq!(service.admission(NOW).0, "RECOVERY_REQUIRED");
+    assert!(service.observation().is_none());
+    assert_eq!(service.state().sequence(), 0);
+}

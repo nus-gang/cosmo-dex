@@ -141,6 +141,31 @@ impl SignedRecovery {
         now: u64,
         maximum_correction_payload_bytes: usize,
     ) -> Result<Value> {
+        self.submit_admitted(
+            kind,
+            raw,
+            signature,
+            session_owner,
+            observation,
+            now,
+            maximum_correction_payload_bytes,
+            None,
+        )
+    }
+    /// Service gate errors are applied after authentication and duplicate lookup,
+    /// but before any new binding, journal write, or state publication.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn submit_admitted(
+        &mut self,
+        kind: &str,
+        raw: &[u8],
+        signature: &[u8],
+        session_owner: &str,
+        observation: &Observation,
+        now: u64,
+        maximum_correction_payload_bytes: usize,
+        admission_error: Option<&'static str>,
+    ) -> Result<Value> {
         if self.recovery_required {
             return Err(Error::RecoveryRequired("POISONED_SESSION"));
         }
@@ -160,6 +185,9 @@ impl SignedRecovery {
                 .receipt(session_owner, outcome.seq)
                 .cloned()
                 .ok_or(Error::RecoveryRequired("MISSING_ORIGINAL_RECEIPT"));
+        }
+        if let Some(reason) = admission_error {
+            return Err(Error::InvalidRecord(reason));
         }
         let prepared = SignedRecord::prepare(
             &self.state,
