@@ -1524,3 +1524,198 @@ fn local_action_rejects_malformed_input_without_binding_or_effect() {
         "UNSUPPORTED_VERSION"
     );
 }
+
+#[test]
+fn withdrawal_records_commit_replay_original_receipts_and_reject_tampering() {
+    use nus_exchange_contract::s2::{
+        journal::{Journal, MAX_PAYLOAD},
+        record::SignedRecord,
+        recovery::SignedRecovery,
+    };
+    let root = std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(std::env::temp_dir);
+    let dir = root.join(format!("s2-withdraw-record-{}", std::process::id()));
+    let (initial, obs) = setup(100, 0);
+    let mut engine = SignedRecovery::create(&dir, initial.clone(), "OPEN").unwrap();
+    let (raw, sig, seller) = input("order");
+    engine
+        .submit("ORDER", &raw, &sig, &seller, &obs, NOW, MAX_PAYLOAD)
+        .unwrap();
+    let (raw, sig, buyer) = input("buyer-order");
+    engine
+        .submit("ORDER", &raw, &sig, &buyer, &obs, NOW, MAX_PAYLOAD)
+        .unwrap();
+    let before = engine.state().clone();
+    let previous = engine.commit().clone();
+    let raw = local_input("cd");
+    let receipt = engine
+        .submit(
+            "WITHDRAW_PREPARE",
+            &raw,
+            &[],
+            &seller,
+            &obs,
+            NOW,
+            MAX_PAYLOAD,
+        )
+        .unwrap();
+    assert_eq!(receipt["code"], "UNSETTLED_HOLD");
+    assert!(engine.state().is_frozen(&seller));
+    assert!(
+        engine
+            .state()
+            .ledger()
+            .balance(&seller, Asset::Base)
+            .unwrap()
+            .d
+            > 0
+    );
+    let commit = engine.commit().clone();
+    assert_eq!(
+        engine
+            .submit(
+                "WITHDRAW_PREPARE",
+                &raw,
+                &[],
+                &seller,
+                &obs,
+                NOW + 9000,
+                MAX_PAYLOAD
+            )
+            .unwrap(),
+        receipt
+    );
+    assert_eq!(engine.commit(), &commit);
+    assert!(engine.receipt(&buyer, 3).is_none());
+    let state_hash = engine.state().state_hash("OPEN").unwrap();
+    drop(engine);
+    let mut recovered = SignedRecovery::open(&dir, initial.clone(), "OPEN").unwrap();
+    assert_eq!(recovered.state().state_hash("OPEN").unwrap(), state_hash);
+    assert_eq!(
+        recovered
+            .submit(
+                "WITHDRAW_PREPARE",
+                &raw,
+                &[],
+                &seller,
+                &obs,
+                NOW + 9000,
+                MAX_PAYLOAD
+            )
+            .unwrap(),
+        receipt
+    );
+    let next = next_snapshot(recovered.state(), Some(&seller), 10_000_000);
+    let fresh = Observation {
+        snapshot_id: next.id().into(),
+        cursor_height: next.height(),
+        ..obs.clone()
+    };
+    recovered.advance(next, &fresh, NOW, MAX_PAYLOAD).unwrap();
+    let abort = recovered
+        .submit(
+            "WITHDRAW_ABORT",
+            &raw,
+            &[],
+            &seller,
+            &fresh,
+            NOW,
+            MAX_PAYLOAD,
+        )
+        .unwrap();
+    assert_eq!(abort["code"], "OK");
+    assert!(!recovered.state().is_frozen(&seller));
+    let final_hash = recovered.state().state_hash("OPEN").unwrap();
+    drop(recovered);
+    let recovered = SignedRecovery::open(&dir, initial.clone(), "OPEN").unwrap();
+    assert_eq!(recovered.state().state_hash("OPEN").unwrap(), final_hash);
+    assert_eq!(recovered.receipt(&seller, 3), Some(&receipt));
+    assert_eq!(recovered.receipt(&seller, 5), Some(&abort));
+    drop(recovered);
+    let (journal, records) =
+        Journal::open(&dir, initial.snapshot().value()["body"]["context"].clone()).unwrap();
+    let record = &records[2];
+    SignedRecord::replay(&before, record, "OPEN", &previous).unwrap();
+    for field in [
+        "signature",
+        "request_wire",
+        "result_hash",
+        "state_json",
+        "extra",
+    ] {
+        let mut bad = record.clone();
+        bad[field] = json!("tampered");
+        assert!(
+            SignedRecord::replay(&before, &bad, "OPEN", &previous).is_err(),
+            "{field}"
+        );
+    }
+    if let Ok(path) = std::env::var("S2_LOCAL_RECORD_OUTPUT") {
+        std::fs::write(path, serde_json::to_vec(&records).unwrap()).unwrap();
+    }
+    drop(journal);
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn withdrawal_failed_marker_never_publishes_or_returns_receipt() {
+    use nus_exchange_contract::s2::{journal::MAX_PAYLOAD, recovery::SignedRecovery};
+    let root = std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(std::env::temp_dir);
+    let dir = root.join(format!("s2-withdraw-failure-{}", std::process::id()));
+    let (initial, obs) = setup(100, 0);
+    let mut engine = SignedRecovery::create(&dir, initial.clone(), "OPEN").unwrap();
+    let (_, _, owner) = input("order");
+    // Preflight refusal does not consume an ID or freeze the owner.
+    assert!(
+        engine
+            .submit(
+                "WITHDRAW_PREPARE",
+                &local_input("ab"),
+                &[],
+                &owner,
+                &obs,
+                NOW,
+                MAX_PAYLOAD + 1
+            )
+            .is_err()
+    );
+    assert_eq!(engine.state().sequence(), 0);
+    // Force atomic marker replacement to fail after the WAL write.
+    std::fs::remove_file(dir.join("commit.marker")).unwrap();
+    std::fs::create_dir(dir.join("commit.marker")).unwrap();
+    assert!(
+        engine
+            .submit(
+                "WITHDRAW_PREPARE",
+                &local_input("ab"),
+                &[],
+                &owner,
+                &obs,
+                NOW,
+                MAX_PAYLOAD
+            )
+            .is_err()
+    );
+    assert!(engine.recovery_required());
+    assert!(!engine.state().is_frozen(&owner));
+    assert!(engine.receipt(&owner, 1).is_none());
+    assert!(
+        engine
+            .submit(
+                "WITHDRAW_PREPARE",
+                &local_input("ab"),
+                &[],
+                &owner,
+                &obs,
+                NOW,
+                MAX_PAYLOAD
+            )
+            .is_err()
+    );
+    drop(engine);
+    assert!(SignedRecovery::open(&dir, initial, "OPEN").is_err());
+    std::fs::remove_dir_all(dir).unwrap();
+}

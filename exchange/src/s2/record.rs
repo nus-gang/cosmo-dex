@@ -1,4 +1,4 @@
-//! Contract result/record projection for private signed-command candidates.
+//! Contract result/record projection for signed commands and authenticated local actions.
 //! This does not own admission, correction capacity or recovery. The service must
 //! retain the candidate privately until journal append succeeds, and index the
 //! original record/receipt for retries rather than projecting a duplicate again.
@@ -43,6 +43,7 @@ impl SignedRecord {
         let name = match kind {
             "ORDER" => "OrderV1",
             "CANCEL" => "CancelV1",
+            "WITHDRAW_PREPARE" | "WITHDRAW_ABORT" => "LocalAction",
             _ => return Err("RECORD_KIND"),
         };
         let a = before.state_json(mode)?;
@@ -72,8 +73,16 @@ impl SignedRecord {
         } else {
             binding["id"].as_str().unwrap().to_owned()
         };
-        let (raw, sig) = after.evidence(kind, owner, &id).ok_or("RECORD_BINDING")?;
-        let wire = Codec::default().decode(name, raw)?;
+        let (raw, sig) = if name == "LocalAction" {
+            (
+                after
+                    .local_evidence(kind, owner, &id)
+                    .ok_or("RECORD_BINDING")?,
+                &[][..],
+            )
+        } else {
+            after.evidence(kind, owner, &id).ok_or("RECORD_BINDING")?
+        };
         let (changed, affected) = changes(&a, &b)?;
         let created: Vec<_> = b["fills"]
             .as_array()
@@ -110,14 +119,9 @@ impl SignedRecord {
         Ok(Self {
             record,
             result,
-            owner: wire["owner"].clone(),
-            epoch: wire["owner_epoch"].clone(),
-            request_id: wire[if kind == "ORDER" {
-                "order_id"
-            } else {
-                "cancel_nonce"
-            }]
-            .clone(),
+            owner: binding["owner"].clone(),
+            epoch: binding["owner_epoch"].clone(),
+            request_id: binding["id"].clone(),
         })
     }
     /// Re-execute a signed record from its recorded context. Never trust the
@@ -133,6 +137,7 @@ impl SignedRecord {
         let name = match kind {
             "ORDER" => "OrderV1",
             "CANCEL" => "CancelV1",
+            "WITHDRAW_PREPARE" | "WITHDRAW_ABORT" => "LocalAction",
             _ => return Err("REPLAY_KIND"),
         };
         let decode = |field: &str| {
@@ -142,7 +147,31 @@ impl SignedRecord {
         };
         let raw = decode("request_wire")?;
         let sig = decode("signature")?;
-        let wire = Codec::default().decode(name, &raw)?;
+        let owner = if name == "LocalAction" {
+            // Local actions authenticate at ingress. Their owner is persisted in
+            // the sole binding introduced at this sequence; it is not a signature.
+            // Rebuild the entire transition below and compare every stored byte.
+            let state: Value =
+                serde_json::from_slice(&decode("state_json")?).map_err(|_| "REPLAY_ENCODING")?;
+            let bindings: Vec<_> = state["bindings"]
+                .as_array()
+                .ok_or("REPLAY_OWNER")?
+                .iter()
+                .filter(|b| b["first_command_seq"] == record["command_seq"])
+                .collect();
+            if bindings.len() != 1 || bindings[0]["kind"] != kind {
+                return Err("REPLAY_OWNER");
+            }
+            bindings[0]["owner"]
+                .as_str()
+                .ok_or("REPLAY_OWNER")?
+                .to_owned()
+        } else {
+            Codec::default().decode(name, &raw)?["owner"]
+                .as_str()
+                .ok_or("REPLAY_OWNER")?
+                .to_owned()
+        };
         let now = codec::integer(&record["recorded_at_unix_ms"], 64)? as u64;
         let obs = &record["observation"];
         let observation = Observation {
@@ -155,14 +184,14 @@ impl SignedRecord {
             query_latency_ms: codec::integer(&obs["query_latency_ms"], 64)? as u64,
             catching_up: obs["catching_up"].as_bool().ok_or("REPLAY_OBSERVATION")?,
         };
-        let (after, outcome, duplicate) = before.submit(
-            kind,
-            &raw,
-            &sig,
-            wire["owner"].as_str().ok_or("REPLAY_OWNER")?,
-            &observation,
-            now,
-        )?;
+        let (after, outcome, duplicate) = if name == "LocalAction" {
+            if !sig.is_empty() {
+                return Err("REPLAY_SIGNATURE");
+            }
+            before.local_action(kind, &raw, &owner, &observation, now)?
+        } else {
+            before.submit(kind, &raw, &sig, &owner, &observation, now)?
+        };
         if duplicate {
             return Err("REPLAY_DUPLICATE");
         }

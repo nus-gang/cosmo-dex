@@ -1,5 +1,5 @@
 //! Signed-command and chain-snapshot recovery with a serialized local commit boundary.
-//! No network effects. Withdraw records and service admission are not implemented.
+//! No network effects. Service admission is enforced by the caller.
 use super::{
     journal::{self, Commit, Error, Journal, Result, canonical, sha256},
     record::{SignedRecord, SnapshotRecord},
@@ -75,7 +75,7 @@ impl SignedRecovery {
             let mut receipts = BTreeMap::new();
             for record in records {
                 let (next, signed) = match record["command_kind"].as_str() {
-                    Some("ORDER" | "CANCEL") => {
+                    Some("ORDER" | "CANCEL" | "WITHDRAW_PREPARE" | "WITHDRAW_ABORT") => {
                         let (next, prepared) =
                             SignedRecord::replay(&state, &record, mode, &previous)
                                 .map_err(Error::RecoveryRequired)?;
@@ -144,10 +144,17 @@ impl SignedRecovery {
         if self.recovery_required {
             return Err(Error::RecoveryRequired("POISONED_SESSION"));
         }
-        let (candidate, outcome, duplicate) = self
-            .state
-            .submit(kind, raw, signature, session_owner, observation, now)
-            .map_err(Error::InvalidRecord)?;
+        let transition = match kind {
+            "WITHDRAW_PREPARE" | "WITHDRAW_ABORT" if signature.is_empty() => self
+                .state
+                .local_action(kind, raw, session_owner, observation, now),
+            "ORDER" | "CANCEL" => {
+                self.state
+                    .submit(kind, raw, signature, session_owner, observation, now)
+            }
+            _ => Err("UNSUPPORTED_VERSION"),
+        };
+        let (candidate, outcome, duplicate) = transition.map_err(Error::InvalidRecord)?;
         if duplicate {
             return self
                 .receipt(session_owner, outcome.seq)
