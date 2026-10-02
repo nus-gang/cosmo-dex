@@ -61,7 +61,7 @@ pub struct Account {
 }
 /// Expected values come from the run manifest and registered genesis, never the
 /// submitted snapshot. Test fixtures explicitly supply their synthetic context.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Binding {
     context: Value,
     market: Value,
@@ -261,6 +261,7 @@ impl Binding {
             }
         }
         Ok(Snapshot {
+            binding: self.clone(),
             value,
             accounts,
             height,
@@ -270,12 +271,17 @@ impl Binding {
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Snapshot {
+    binding: Binding,
     value: Value,
     accounts: Vec<Account>,
     height: u64,
     block_time: u64,
 }
 impl Snapshot {
+    /// Decode another observation against the original manifest binding.
+    pub fn decode_related(&self, raw: &[u8]) -> Result<Self> {
+        self.binding.decode(raw)
+    }
     pub fn value(&self) -> &Value {
         &self.value
     }

@@ -1193,3 +1193,183 @@ fn persisted_bootstrap_recovers_and_rejects_missing_corrupt_or_wrong_anchor() {
         std::fs::remove_dir_all(dir).unwrap();
     }
 }
+
+#[test]
+fn snapshot_correction_commits_replays_and_preserves_receipts() {
+    use nus_exchange_contract::s2::{
+        journal::{Commit, MAX_PAYLOAD},
+        record::SnapshotRecord,
+        recovery::SignedRecovery,
+    };
+    let root = std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(std::env::temp_dir);
+    let dir = root.join(format!("s2-snapshot-commit-{}", std::process::id()));
+    let (initial, obs) = setup(100, 0);
+    let mut engine = SignedRecovery::create(&dir, initial.clone(), "OPEN").unwrap();
+    let (raw, sig, seller) = input("order");
+    let receipt = engine
+        .submit("ORDER", &raw, &sig, &seller, &obs, NOW, MAX_PAYLOAD)
+        .unwrap();
+    let (raw, sig, buyer) = input("buyer-order");
+    engine
+        .submit("ORDER", &raw, &sig, &buyer, &obs, NOW, MAX_PAYLOAD)
+        .unwrap();
+    let before = engine.state().clone();
+    let previous = engine.commit().clone();
+    let next = next_snapshot(&before, Some(&seller), 10_000_000);
+    let observation = Observation {
+        snapshot_id: next.id().into(),
+        cursor_height: next.height(),
+        ..obs.clone()
+    };
+    let (expected, prepared) =
+        SnapshotRecord::prepare(&before, next.clone(), &observation, NOW, "OPEN", &previous)
+            .unwrap();
+    let prepared = prepared.unwrap();
+    assert_eq!(prepared.record()["command_kind"], "CORRECTION");
+    assert_eq!(
+        prepared.result()["corrected_fill_ids"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+    for field in [
+        "signature",
+        "external_event_ids",
+        "result_hash",
+        "state_json",
+        "extra",
+    ] {
+        let mut bad = prepared.record().clone();
+        bad[field] = json!("tampered");
+        assert!(
+            SnapshotRecord::replay(&before, &bad, "OPEN", &previous).is_err(),
+            "{field}"
+        );
+    }
+    assert!(
+        SnapshotRecord::replay(
+            &before,
+            prepared.record(),
+            "OPEN",
+            &Commit {
+                command_seq: 0,
+                record_hash: "0".repeat(64),
+                end_offset: 0
+            }
+        )
+        .is_err()
+    );
+    assert_eq!(
+        engine
+            .advance(next.clone(), &observation, NOW, MAX_PAYLOAD)
+            .unwrap(),
+        Some(prepared.result().clone())
+    );
+    assert_eq!(
+        engine.state().state_hash("OPEN").unwrap(),
+        expected.state_hash("OPEN").unwrap()
+    );
+    assert_eq!(
+        engine
+            .state()
+            .ledger()
+            .balance(&seller, Asset::Base)
+            .unwrap()
+            .c,
+        0
+    );
+    assert_eq!(
+        engine
+            .state()
+            .ledger()
+            .balance(&buyer, Asset::Base)
+            .unwrap()
+            .p,
+        0
+    );
+    assert_eq!(engine.receipt(&seller, 1), Some(&receipt));
+    assert!(engine.receipt(&seller, 3).is_none());
+    let wal = std::fs::read(dir.join("journal.wal")).unwrap();
+    assert_eq!(
+        engine
+            .advance(next, &observation, NOW, MAX_PAYLOAD)
+            .unwrap(),
+        None
+    );
+    assert_eq!(std::fs::read(dir.join("journal.wal")).unwrap(), wal);
+    // A subsequent ordinary snapshot is a separate non-correction record.
+    let next = next_snapshot(engine.state(), None, 0);
+    let observation = Observation {
+        snapshot_id: next.id().into(),
+        cursor_height: next.height(),
+        ..observation
+    };
+    let result = engine
+        .advance(next, &observation, NOW, MAX_PAYLOAD)
+        .unwrap()
+        .unwrap();
+    assert_eq!(result["kind"], "SNAPSHOT");
+    let hash = engine.state().state_hash("OPEN").unwrap();
+    drop(engine);
+    let recovered = SignedRecovery::open(&dir, initial, "OPEN").unwrap();
+    assert_eq!(recovered.commit().command_seq, 4);
+    assert_eq!(recovered.state().state_hash("OPEN").unwrap(), hash);
+    assert_eq!(recovered.receipt(&seller, 1), Some(&receipt));
+    if let Ok(path) = std::env::var("S2_SNAPSHOT_RECORD_OUTPUT") {
+        std::fs::write(
+            path,
+            serde_json::to_vec(&json!([
+                {"type":"JournalRecord","value":prepared.record()},
+                {"type":"CommandResult","value":prepared.result()},
+                {"type":"Correction","value":prepared.correction().unwrap()}
+            ]))
+            .unwrap(),
+        )
+        .unwrap();
+    }
+    drop(recovered);
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn correction_marker_failure_keeps_old_ledger_and_requires_recovery() {
+    use nus_exchange_contract::s2::{journal::MAX_PAYLOAD, recovery::SignedRecovery};
+    let root = std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(std::env::temp_dir);
+    let dir = root.join(format!("s2-correction-failure-{}", std::process::id()));
+    let (initial, obs) = setup(100, 0);
+    let mut engine = SignedRecovery::create(&dir, initial.clone(), "OPEN").unwrap();
+    let (raw, sig, seller) = input("order");
+    engine
+        .submit("ORDER", &raw, &sig, &seller, &obs, NOW, MAX_PAYLOAD)
+        .unwrap();
+    let before = engine.state().state_hash("OPEN").unwrap();
+    let next = next_snapshot(engine.state(), Some(&seller), 10_000_000);
+    let observation = Observation {
+        snapshot_id: next.id().into(),
+        cursor_height: next.height(),
+        ..obs
+    };
+    std::fs::create_dir(dir.join("marker.tmp")).unwrap();
+    assert!(
+        engine
+            .advance(next.clone(), &observation, NOW, MAX_PAYLOAD)
+            .is_err()
+    );
+    assert!(engine.recovery_required());
+    assert_eq!(engine.state().state_hash("OPEN").unwrap(), before);
+    let wal = std::fs::read(dir.join("journal.wal")).unwrap();
+    assert!(
+        engine
+            .advance(next, &observation, NOW, MAX_PAYLOAD)
+            .is_err()
+    );
+    drop(engine);
+    assert!(SignedRecovery::open(&dir, initial, "OPEN").is_err());
+    assert_eq!(std::fs::read(dir.join("journal.wal")).unwrap(), wal);
+    std::fs::remove_dir_all(dir).unwrap();
+}

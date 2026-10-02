@@ -20,7 +20,10 @@ exec(compile(ast.Module(body=[validator], type_ignores=[]), 'contract valid()', 
 projections = json.loads(Path(sys.argv[1]).read_text())
 count = 0
 for state in projections:
-    if 'record' in state:
+    if 'type' in state and 'value' in state:
+        namespace['valid']({'$ref': '#/$defs/' + state['type']}, state['value'])
+        count += 1
+    elif 'record' in state:
         for key, definition in [('record', 'JournalRecord'), ('result', 'CommandResult'), ('receipt', 'CommandReceipt')]:
             namespace['valid']({'$ref': '#/$defs/' + definition}, state[key])
             count += 1

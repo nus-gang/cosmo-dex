@@ -1,12 +1,10 @@
-//! Signed-prefix recovery and serialized local commit boundary. No network effects.
-//! The caller supplies the verified bootstrap snapshot, not the last embedded
-//! state. Internal snapshot/withdraw/correction records are deliberately rejected
-//! until their semantic replay is implemented. This is not yet service startup.
+//! Signed-command and chain-snapshot recovery with a serialized local commit boundary.
+//! No network effects. Withdraw records and service admission are not implemented.
 use super::{
     journal::{self, Commit, Error, Journal, Result, canonical, sha256},
-    record::SignedRecord,
+    record::{SignedRecord, SnapshotRecord},
     sequencer::Candidate,
-    snapshot::{Binding, Observation},
+    snapshot::{Binding, Observation, Snapshot},
 };
 use serde_json::Value;
 use std::{collections::BTreeMap, path::Path};
@@ -76,8 +74,20 @@ impl SignedRecovery {
             let mut previous = Commit::zero();
             let mut receipts = BTreeMap::new();
             for record in records {
-                let (next, prepared) = SignedRecord::replay(&state, &record, mode, &previous)
-                    .map_err(Error::RecoveryRequired)?;
+                let (next, signed) = match record["command_kind"].as_str() {
+                    Some("ORDER" | "CANCEL") => {
+                        let (next, prepared) =
+                            SignedRecord::replay(&state, &record, mode, &previous)
+                                .map_err(Error::RecoveryRequired)?;
+                        (next, Some(prepared))
+                    }
+                    Some("SNAPSHOT" | "CORRECTION") => {
+                        let (next, _) = SnapshotRecord::replay(&state, &record, mode, &previous)
+                            .map_err(Error::RecoveryRequired)?;
+                        (next, None)
+                    }
+                    _ => return Err(Error::RecoveryRequired("REPLAY_KIND")),
+                };
                 let bytes = journal::frame(&canonical(&record)?)?;
                 let commit = Commit {
                     command_seq: next.sequence(),
@@ -87,9 +97,11 @@ impl SignedRecovery {
                         .checked_add(bytes.len() as u64)
                         .ok_or(Error::RecoveryRequired("OFFSET_OVERFLOW"))?,
                 };
-                let receipt = prepared.receipt(&commit).map_err(Error::RecoveryRequired)?;
-                if receipts.insert(commit.command_seq, receipt).is_some() {
-                    return Err(Error::RecoveryRequired("DUPLICATE_RECEIPT"));
+                if let Some(prepared) = signed {
+                    let receipt = prepared.receipt(&commit).map_err(Error::RecoveryRequired)?;
+                    if receipts.insert(commit.command_seq, receipt).is_some() {
+                        return Err(Error::RecoveryRequired("DUPLICATE_RECEIPT"));
+                    }
                 }
                 previous = commit;
                 state = next;
@@ -116,7 +128,7 @@ impl SignedRecovery {
     /// The transport must authenticate `session_owner` and enforce the global
     /// admission gate before calling this serial (&mut self) commit boundary.
     /// The capacity argument must be a proven conservative correction bound;
-    /// this component does not yet derive that bound or permit internal events.
+    /// this component does not yet derive that bound.
     /// No candidate state or receipt escapes before the journal fsync completes.
     #[allow(clippy::too_many_arguments)]
     pub fn submit(
@@ -172,6 +184,45 @@ impl SignedRecovery {
         self.state = candidate;
         self.recovery_required = false;
         Ok(receipt)
+    }
+    /// Called only by the trusted chain adapter under the same writer lock.
+    /// Duplicate observations do not append. A correction uses reserved capacity;
+    /// no corrected state is published until the complete journal commit succeeds.
+    pub fn advance(
+        &mut self,
+        snapshot: Snapshot,
+        observation: &Observation,
+        now: u64,
+        maximum_correction_payload_bytes: usize,
+    ) -> Result<Option<Value>> {
+        if self.recovery_required {
+            return Err(Error::RecoveryRequired("POISONED_SESSION"));
+        }
+        let (candidate, prepared) = SnapshotRecord::prepare(
+            &self.state,
+            snapshot,
+            observation,
+            now,
+            &self.mode,
+            self.journal.commit(),
+        )
+        .map_err(Error::InvalidRecord)?;
+        let Some(prepared) = prepared else {
+            return Ok(None);
+        };
+        if maximum_correction_payload_bytes > journal::MAX_PAYLOAD {
+            return Err(Error::ResourceLimit);
+        }
+        journal::frame(&canonical(prepared.record())?)?;
+        self.recovery_required = true;
+        self.journal.append(
+            prepared.record(),
+            maximum_correction_payload_bytes,
+            prepared.correction().is_some(),
+        )?;
+        self.state = candidate;
+        self.recovery_required = false;
+        Ok(Some(prepared.result().clone()))
     }
     pub fn recovery_required(&self) -> bool {
         self.recovery_required
