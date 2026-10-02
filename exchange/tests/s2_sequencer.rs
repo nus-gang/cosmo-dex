@@ -824,38 +824,28 @@ fn signed_records_fsync_reopen_and_deterministically_replay_full_results() {
     let (journal, records) = Journal::open(&dir, context).unwrap();
     let mut replay = initial;
     for (i, record) in records.iter().enumerate() {
-        let kind = record["command_kind"].as_str().unwrap();
-        let raw = STANDARD
-            .decode(record["request_wire"].as_str().unwrap())
-            .unwrap();
-        let sig = STANDARD
-            .decode(record["signature"].as_str().unwrap())
-            .unwrap();
-        let wire = Codec::default()
-            .decode(
-                if kind == "ORDER" {
-                    "OrderV1"
-                } else {
-                    "CancelV1"
-                },
-                &raw,
-            )
-            .unwrap();
-        let (next, outcome, duplicate) = replay
-            .submit(kind, &raw, &sig, wire["owner"].as_str().unwrap(), &obs, NOW)
-            .unwrap();
-        assert!(!duplicate);
-        let prepared = SignedRecord::prepare(
-            &replay,
-            &next,
-            &outcome,
-            kind,
-            &obs,
-            NOW,
-            "OPEN",
-            &commits[i],
-        )
-        .unwrap();
+        let (next, prepared) = SignedRecord::replay(&replay, record, "OPEN", &commits[i]).unwrap();
+        // Even internally well-framed JSON is not authoritative semantic state.
+        for field in [
+            "after_state_hash",
+            "before_state_hash",
+            "result_hash",
+            "signature_hash",
+            "state_json",
+            "result_json",
+            "previous_commit_hash",
+        ] {
+            let mut tampered = record.clone();
+            tampered[field] = json!("00");
+            assert!(
+                SignedRecord::replay(&replay, &tampered, "OPEN", &commits[i]).is_err(),
+                "{field}"
+            );
+        }
+        let mut tampered = record.clone();
+        tampered["unexpected"] = json!(true);
+        assert!(SignedRecord::replay(&replay, &tampered, "OPEN", &commits[i]).is_err());
+        assert!(SignedRecord::replay(&next, record, "OPEN", &commits[i]).is_err());
         assert_eq!(prepared.record(), record);
         assert_eq!(prepared.receipt(&commits[i + 1]).unwrap(), receipts[i]);
         replay = next;

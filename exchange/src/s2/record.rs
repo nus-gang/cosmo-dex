@@ -152,6 +152,67 @@ impl SignedRecord {
             .clone(),
         })
     }
+    /// Re-execute a signed record from its recorded context. Never trust the
+    /// embedded state/result as a recovery snapshot. The caller must first
+    /// verify journal framing/commit markers and replay every preceding event.
+    pub fn replay(
+        before: &Candidate,
+        record: &Value,
+        mode: &str,
+        previous: &Commit,
+    ) -> Result<(Candidate, Self)> {
+        let kind = record["command_kind"].as_str().ok_or("REPLAY_KIND")?;
+        let name = match kind {
+            "ORDER" => "OrderV1",
+            "CANCEL" => "CancelV1",
+            _ => return Err("REPLAY_KIND"),
+        };
+        let decode = |field: &str| {
+            STANDARD
+                .decode(record[field].as_str().ok_or("REPLAY_ENCODING")?)
+                .map_err(|_| "REPLAY_ENCODING")
+        };
+        let raw = decode("request_wire")?;
+        let sig = decode("signature")?;
+        let wire = Codec::default().decode(name, &raw)?;
+        let now = codec::integer(&record["recorded_at_unix_ms"], 64)? as u64;
+        let obs = &record["observation"];
+        let observation = Observation {
+            snapshot_id: obs["snapshot_id"]
+                .as_str()
+                .ok_or("REPLAY_OBSERVATION")?
+                .into(),
+            cursor_height: codec::integer(&obs["cursor_height"], 64)? as u64,
+            received_at: codec::integer(&obs["received_at_unix_ms"], 64)? as u64,
+            query_latency_ms: codec::integer(&obs["query_latency_ms"], 64)? as u64,
+            catching_up: obs["catching_up"].as_bool().ok_or("REPLAY_OBSERVATION")?,
+        };
+        let (after, outcome, duplicate) = before.submit(
+            kind,
+            &raw,
+            &sig,
+            wire["owner"].as_str().ok_or("REPLAY_OWNER")?,
+            &observation,
+            now,
+        )?;
+        if duplicate {
+            return Err("REPLAY_DUPLICATE");
+        }
+        let prepared = Self::prepare(
+            before,
+            &after,
+            &outcome,
+            kind,
+            &observation,
+            now,
+            mode,
+            previous,
+        )?;
+        if prepared.record() != record {
+            return Err("REPLAY_RECORD_MISMATCH");
+        }
+        Ok((after, prepared))
+    }
     pub fn record(&self) -> &Value {
         &self.record
     }
