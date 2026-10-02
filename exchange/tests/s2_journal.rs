@@ -274,3 +274,46 @@ fn marker_write_failure_poisoning_preserves_unknown_tail() {
     assert_eq!(j.commit().command_seq, 0);
     assert!(fs::metadata(d.0.join("journal.wal")).unwrap().len() > 0);
 }
+
+#[test]
+fn status_revision_reservations_survive_restart_and_fail_closed() {
+    let d = Dir::new();
+    let mut j = Journal::create(&d.0, context()).unwrap();
+    assert!(j.reserve_status_revisions(0).is_err());
+    assert_eq!(j.reserve_status_revisions(100).unwrap(), 1..=100);
+    let commit = j.commit().clone();
+    drop(j); // only the first revision might have been published
+    let (mut j, records) = Journal::open(&d.0, context()).unwrap();
+    assert!(records.is_empty());
+    assert_eq!(j.reserve_status_revisions(10).unwrap(), 101..=110);
+    assert_eq!(j.commit(), &commit);
+    let original = fs::read(d.0.join("status.revision")).unwrap();
+    fs::write(d.0.join("status.revision.tmp"), b"interrupted").unwrap();
+    assert!(j.reserve_status_revisions(10).is_err());
+    assert_eq!(fs::read(d.0.join("status.revision")).unwrap(), original);
+    assert!(j.reserve_status_revisions(10).is_err());
+}
+
+#[test]
+fn status_revision_missing_corrupt_or_exhausted_never_resets() {
+    for mode in ["missing", "corrupt", "exhausted", "binding"] {
+        let d = Dir::new();
+        let mut j = Journal::create(&d.0, context()).unwrap();
+        let path = d.0.join("status.revision");
+        match mode {
+            "missing" => fs::remove_file(&path).unwrap(),
+            "corrupt" => fs::write(&path, b"S2W1").unwrap(),
+            _ => {
+                let v = json!({"context":if mode == "binding" {json!({})} else {context()},
+                    "reserved_through":u64::MAX.to_string()});
+                fs::write(
+                    &path,
+                    journal::frame(&journal::canonical(&v).unwrap()).unwrap(),
+                )
+                .unwrap();
+            }
+        }
+        assert!(j.reserve_status_revisions(1).is_err(), "{mode}");
+        assert!(j.reserve_status_revisions(1).is_err(), "{mode}");
+    }
+}

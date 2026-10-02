@@ -198,6 +198,14 @@ impl Journal {
             commit: Commit::zero(),
             poisoned: false,
         };
+        let mut revisions = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(path.join("status.revision"))?;
+        revisions.write_all(&frame(&canonical(
+            &json!({"context": this.context, "reserved_through":"0"}),
+        )?)?)?;
+        revisions.sync_all()?;
         this.reserve()?;
         this.write_marker(&Commit::zero(), None)?;
         Ok(this)
@@ -261,6 +269,49 @@ impl Journal {
             return Err(Error::RecoveryRequired("BOOTSTRAP_SIZE"));
         }
         Ok(bytes)
+    }
+    /// Reserve response revisions under the journal's OS writer lock. Unused
+    /// numbers are skipped on restart. This is not an engine command sequence.
+    /// Old journals without this sidecar require explicit offline migration;
+    /// absence must never silently reset the externally visible counter.
+    pub fn reserve_status_revisions(
+        &mut self,
+        count: u64,
+    ) -> Result<std::ops::RangeInclusive<u64>> {
+        if self.poisoned {
+            return Err(Error::RecoveryRequired("POISONED_SESSION"));
+        }
+        if count == 0 {
+            return Err(Error::InvalidRecord("EMPTY_REVISION_RANGE"));
+        }
+        self.poisoned = true;
+        let temporary = self.dir.join("status.revision.tmp");
+        if temporary.exists() {
+            return Err(Error::RecoveryRequired("UNCERTAIN_STATUS_REVISION"));
+        }
+        let destination = self.dir.join("status.revision");
+        let mut file = File::open(&destination)?;
+        let (value, _, _) =
+            read_frame(&mut file)?.ok_or(Error::RecoveryRequired("EMPTY_STATUS_REVISION"))?;
+        let previous = decimal(&value, "reserved_through")?;
+        if read_frame(&mut file)?.is_some()
+            || value != json!({"context":self.context,"reserved_through":previous.to_string()})
+        {
+            return Err(Error::RecoveryRequired("STATUS_REVISION_BINDING"));
+        }
+        let end = previous.checked_add(count).ok_or(Error::ResourceLimit)?;
+        let mut next = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temporary)?;
+        next.write_all(&frame(&canonical(&json!({
+            "context":self.context,"reserved_through":end.to_string()
+        }))?)?)?;
+        next.sync_all()?;
+        fs::rename(temporary, destination)?;
+        sync_dir(&self.dir)?;
+        self.poisoned = false;
+        Ok((previous + 1)..=end)
     }
     pub fn commit(&self) -> &Commit {
         &self.commit
