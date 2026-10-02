@@ -1373,3 +1373,154 @@ fn correction_marker_failure_keeps_old_ledger_and_requires_recovery() {
     assert_eq!(std::fs::read(dir.join("journal.wal")).unwrap(), wal);
     std::fs::remove_dir_all(dir).unwrap();
 }
+
+fn local_input(byte: &str) -> Vec<u8> {
+    canonical(&json!({"request_id":byte.repeat(32)})).unwrap()
+}
+#[test]
+fn local_prepare_retry_preserves_sequence_evidence_and_original_epoch() {
+    let (initial, obs) = setup(100, 0);
+    let (raw, sig, owner) = input("order");
+    let (before, order, _) = initial
+        .submit("ORDER", &raw, &sig, &owner, &obs, NOW)
+        .unwrap();
+    let raw = local_input("ab");
+    let (state, result, duplicate) = before
+        .local_action("WITHDRAW_PREPARE", &raw, &owner, &obs, NOW)
+        .unwrap();
+    assert!(!duplicate);
+    assert_eq!(result.code, "OK");
+    assert_eq!(result.seq, 2);
+    assert!(state.is_frozen(&owner));
+    assert_eq!(state.orders()[&order.hash].live.remaining, 0);
+    assert_eq!(state.ledger().balance(&owner, Asset::Base).unwrap().r, 0);
+    let snapshot = next_snapshot(&state, Some(&owner), 0);
+    let (advanced, _) = state.advance(snapshot).unwrap();
+    let (retry, again, duplicate) = advanced
+        .local_action("WITHDRAW_PREPARE", &raw, &owner, &obs, NOW + 9000)
+        .unwrap();
+    assert!(duplicate);
+    assert_eq!(again, result);
+    assert_eq!(
+        retry.state_hash("OPEN").unwrap(),
+        advanced.state_hash("OPEN").unwrap()
+    );
+    assert_eq!(
+        retry.local_evidence("WITHDRAW_PREPARE", &owner, &"ab".repeat(32)),
+        Some(raw.as_slice())
+    );
+    let projected = retry.state_json("OPEN").unwrap();
+    let binding = projected["bindings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|b| b["kind"] == "WITHDRAW_PREPARE")
+        .unwrap();
+    assert_eq!(binding["owner_epoch"], "0");
+    assert_eq!(binding["first_command_seq"], "2");
+    assert_eq!(binding["request_hash"], sha256(&raw));
+}
+#[test]
+fn local_action_owner_and_kind_have_independent_id_namespaces() {
+    let (state, obs) = setup(100, 0);
+    let (_, _, owner) = input("order");
+    let (_, _, other) = input("buyer-order");
+    let raw = local_input("cd");
+    let (state, _, _) = state
+        .local_action("WITHDRAW_PREPARE", &raw, &owner, &obs, NOW)
+        .unwrap();
+    let (state, outcome, duplicate) = state
+        .local_action("WITHDRAW_PREPARE", &raw, &other, &obs, NOW)
+        .unwrap();
+    assert!(!duplicate);
+    assert_eq!(outcome.seq, 2);
+    let (state, outcome, duplicate) = state
+        .local_action("WITHDRAW_ABORT", &raw, &other, &obs, NOW)
+        .unwrap();
+    assert!(!duplicate);
+    assert_eq!(outcome.code, "STALE");
+    assert_eq!(outcome.seq, 3);
+    assert!(state.is_frozen(&other));
+    let (again, result, duplicate) = state
+        .local_action("WITHDRAW_ABORT", &raw, &other, &obs, NOW)
+        .unwrap();
+    assert!(duplicate);
+    assert_eq!(result, outcome);
+    assert_eq!(again.sequence(), 3);
+    assert_eq!(
+        state
+            .local_action("WITHDRAW_PREPARE", &raw, "foreign", &obs, NOW)
+            .unwrap_err(),
+        "ACCOUNT_KEY_UNREGISTERED"
+    );
+}
+#[test]
+fn local_action_abort_requires_new_snapshot_and_never_restores_orders() {
+    let (state, obs) = setup(100, 0);
+    let (raw, sig, owner) = input("order");
+    let (state, order, _) = state
+        .submit("ORDER", &raw, &sig, &owner, &obs, NOW)
+        .unwrap();
+    let (state, _, _) = state
+        .local_action("WITHDRAW_PREPARE", &local_input("11"), &owner, &obs, NOW)
+        .unwrap();
+    let snapshot = next_snapshot(&state, None, 0);
+    let fresh = Observation {
+        snapshot_id: snapshot.id().into(),
+        cursor_height: snapshot.height(),
+        ..obs
+    };
+    let (state, _) = state.advance(snapshot).unwrap();
+    let raw = local_input("22");
+    let (after, result, duplicate) = state
+        .local_action("WITHDRAW_ABORT", &raw, &owner, &fresh, NOW)
+        .unwrap();
+    assert!(!duplicate);
+    assert_eq!(result.code, "OK");
+    assert!(!after.is_frozen(&owner));
+    assert_eq!(after.orders()[&order.hash].status, "CANCELLED_OFFCHAIN");
+    let (reapplied, same, _) = state
+        .local_action("WITHDRAW_ABORT", &raw, &owner, &fresh, NOW)
+        .unwrap();
+    assert_eq!(same, result);
+    assert_eq!(
+        reapplied.state_hash("OPEN").unwrap(),
+        after.state_hash("OPEN").unwrap()
+    );
+    let (_, retry, duplicate) = after
+        .local_action("WITHDRAW_ABORT", &raw, &owner, &fresh, NOW + 9000)
+        .unwrap();
+    assert!(duplicate);
+    assert_eq!(retry, result);
+}
+#[test]
+fn local_action_rejects_malformed_input_without_binding_or_effect() {
+    let (state, obs) = setup(100, 0);
+    let (_, _, owner) = input("order");
+    let id = "ef".repeat(32);
+    let invalid = [
+        format!("{{\"request_id\":\"{id}\",\"request_id\":\"{id}\"}}"),
+        format!("{{\"request_id\":\"{id}\",\"owner\":\"{owner}\"}}"),
+        format!("{{ \"request_id\":\"{id}\"}}"),
+        format!("{{\"request_id\":\"{}\"}}", "EF".repeat(32)),
+        "{\"request_id\":null}".into(),
+        "[]".into(),
+        "{\"request_id\":\"short\"}".into(),
+    ];
+    let before = state.state_hash("OPEN").unwrap();
+    for raw in invalid {
+        assert_eq!(
+            state
+                .local_action("WITHDRAW_PREPARE", raw.as_bytes(), &owner, &obs, NOW)
+                .unwrap_err(),
+            "LOCAL_ACTION_FORMAT"
+        );
+        assert_eq!(state.state_hash("OPEN").unwrap(), before);
+    }
+    assert_eq!(
+        state
+            .local_action("SNAPSHOT", &local_input("ef"), &owner, &obs, NOW)
+            .unwrap_err(),
+        "UNSUPPORTED_VERSION"
+    );
+}

@@ -31,6 +31,12 @@ struct Bound {
     signature: Vec<u8>,
 }
 #[derive(Clone, Debug)]
+struct LocalBound {
+    epoch: u64,
+    outcome: Outcome,
+    raw: Vec<u8>,
+}
+#[derive(Clone, Debug)]
 pub struct Order {
     pub live: LiveOrder,
     pub epoch: u64,
@@ -52,6 +58,7 @@ pub struct Candidate {
     ledger: Ledger,
     seq: u64,
     bindings: BTreeMap<(String, String, String), Bound>,
+    local_bindings: BTreeMap<(String, String, String), LocalBound>,
     orders: BTreeMap<String, Order>,
     frozen: BTreeMap<String, u64>,
     fill_order: Vec<String>,
@@ -70,6 +77,7 @@ impl Candidate {
             ledger,
             seq: 0,
             bindings: BTreeMap::new(),
+            local_bindings: BTreeMap::new(),
             orders: BTreeMap::new(),
             frozen: BTreeMap::new(),
             fill_order: Vec::new(),
@@ -174,6 +182,15 @@ impl Candidate {
                 ),
                 json!({"owner":owner, "owner_epoch":epoch.to_string(), "kind":kind, "id":id,
                     "request_hash":b.hash, "first_command_seq":b.outcome.seq.to_string()}),
+            ));
+        }
+        for ((kind, owner, id), bound) in &self.local_bindings {
+            let raw_owner = STANDARD.decode(owner).map_err(|_| "ADDRESS_MISMATCH")?;
+            bindings.push((
+                (raw_owner, bound.epoch, id.clone(), kind.clone()),
+                json!({"owner":owner, "owner_epoch":bound.epoch.to_string(), "kind":kind,
+                    "id":id, "request_hash":bound.outcome.hash,
+                    "first_command_seq":bound.outcome.seq.to_string()}),
             ));
         }
         bindings.sort_by(|a, b| a.0.cmp(&b.0));
@@ -309,6 +326,86 @@ impl Candidate {
         next.seq = next.seq.checked_add(1).ok_or("INTEGER_OVERFLOW")?;
         next.frozen.remove(owner);
         Ok(next)
+    }
+    /// Session-authenticated local action. The API must derive session_owner
+    /// from authentication, never from a client-supplied owner field. Raw input
+    /// is canonical LocalAction JSON, preserving bytes for future journal replay.
+    /// The returned candidate is private and is NOT a durable acknowledgement.
+    pub fn local_action(
+        &self,
+        kind: &str,
+        raw: &[u8],
+        session_owner: &str,
+        observation: &Observation,
+        now: u64,
+    ) -> Result<(Self, Outcome, bool)> {
+        if !matches!(kind, "WITHDRAW_PREPARE" | "WITHDRAW_ABORT") {
+            return Err("UNSUPPORTED_VERSION");
+        }
+        // LocalAction has one fixed-width field. Bound before parse/allocation.
+        if raw.len() > 81 {
+            return Err("LOCAL_ACTION_FORMAT");
+        }
+        let value: Value = serde_json::from_slice(raw).map_err(|_| "LOCAL_ACTION_FORMAT")?;
+        let object = value.as_object().ok_or("LOCAL_ACTION_FORMAT")?;
+        let id = value["request_id"].as_str().ok_or("LOCAL_ACTION_FORMAT")?;
+        if object.len() != 1
+            || id.len() != 64
+            || !id
+                .bytes()
+                .all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c))
+            || canonical(&value).map_err(|_| "LOCAL_ACTION_FORMAT")? != raw
+        {
+            return Err("LOCAL_ACTION_FORMAT");
+        }
+        let account = self
+            .snapshot
+            .accounts()
+            .iter()
+            .find(|a| a.owner == session_owner)
+            .ok_or("ACCOUNT_KEY_UNREGISTERED")?;
+        let key = (kind.to_owned(), session_owner.to_owned(), id.to_owned());
+        let hash = sha256(raw);
+        if let Some(bound) = self.local_bindings.get(&key) {
+            if bound.raw != raw || bound.outcome.hash != hash {
+                return Err("ID_CONFLICT");
+            }
+            return Ok((self.clone(), bound.outcome.clone(), true));
+        }
+        let (next, code) = if kind == "WITHDRAW_PREPARE" {
+            self.prepare_withdraw(session_owner)?
+        } else {
+            match self.abort_withdraw(session_owner, observation, now) {
+                Ok(next) => (next, "OK"),
+                Err(code @ ("WITHDRAW_NOT_PREPARED" | "STALE")) => {
+                    let mut next = self.clone();
+                    next.seq = next.seq.checked_add(1).ok_or("INTEGER_OVERFLOW")?;
+                    (next, code)
+                }
+                Err(code) => return Err(code),
+            }
+        };
+        let mut next = next;
+        let outcome = Outcome {
+            seq: next.seq,
+            hash,
+            code: code.into(),
+            fills: vec![],
+        };
+        next.local_bindings.insert(
+            key,
+            LocalBound {
+                epoch: account.epoch,
+                outcome: outcome.clone(),
+                raw: raw.to_vec(),
+            },
+        );
+        Ok((next, outcome, false))
+    }
+    pub fn local_evidence(&self, kind: &str, owner: &str, id: &str) -> Option<&[u8]> {
+        self.local_bindings
+            .get(&(kind.into(), owner.into(), id.into()))
+            .map(|bound| bound.raw.as_slice())
     }
     pub fn ledger(&self) -> &Ledger {
         &self.ledger
