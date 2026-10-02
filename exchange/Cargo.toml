@@ -17,5 +17,4 @@ num-bigint = "0.4"
 num-traits = "0.2"
 bech32 = "0.9"
 
-[dev-dependencies]
 orderbook-rs = { version = "=0.13.1", default-features = false }
