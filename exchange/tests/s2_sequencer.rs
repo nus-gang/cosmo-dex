@@ -978,3 +978,145 @@ fn automatic_signed_recovery_preserves_semantic_corruption_and_rejects_wrong_boo
         std::fs::remove_dir_all(dir).unwrap();
     }
 }
+
+#[test]
+fn signed_commit_boundary_publishes_after_fsync_and_retries_original_receipt() {
+    use nus_exchange_contract::s2::{
+        journal::{Journal, MAX_PAYLOAD},
+        recovery::SignedRecovery,
+    };
+    let root = std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(std::env::temp_dir);
+    let dir = root.join(format!("s2-commit-boundary-{}", std::process::id()));
+    let (initial, obs) = setup(100, 0);
+    drop(Journal::create(&dir, initial.snapshot().value()["body"]["context"].clone()).unwrap());
+    let mut engine = SignedRecovery::open(&dir, initial.clone(), "OPEN").unwrap();
+    let (raw, sig, owner) = input("order");
+    let before = engine.state().state_hash("OPEN").unwrap();
+    // The fixture ceiling is not a derived production correction-size bound.
+    assert!(
+        engine
+            .submit("ORDER", &raw, &sig, &owner, &obs, NOW, MAX_PAYLOAD + 1)
+            .is_err()
+    );
+    assert_eq!(engine.state().state_hash("OPEN").unwrap(), before);
+    assert_eq!(engine.commit().command_seq, 0);
+    assert!(!engine.recovery_required());
+    assert!(
+        engine
+            .submit("ORDER", &raw, &sig, "other-owner", &obs, NOW, MAX_PAYLOAD)
+            .is_err()
+    );
+    let original = engine
+        .submit("ORDER", &raw, &sig, &owner, &obs, NOW, MAX_PAYLOAD)
+        .unwrap();
+    assert_eq!(original["durability"], "LOCAL_FSYNC");
+    assert_eq!(original["state"], "LOCAL_ACCEPTED");
+    assert_eq!(engine.commit().command_seq, 1);
+    assert_eq!(
+        engine
+            .state()
+            .ledger()
+            .balance(&owner, Asset::Base)
+            .unwrap()
+            .r,
+        2_000_000
+    );
+    let (buy_raw, buy_sig, buyer) = input("buyer-order");
+    engine
+        .submit("ORDER", &buy_raw, &buy_sig, &buyer, &obs, NOW, MAX_PAYLOAD)
+        .unwrap();
+    let (cancel_raw, cancel_sig, _) = input("cancel");
+    engine
+        .submit(
+            "CANCEL",
+            &cancel_raw,
+            &cancel_sig,
+            &owner,
+            &obs,
+            NOW,
+            MAX_PAYLOAD,
+        )
+        .unwrap();
+    let hash = engine.state().state_hash("OPEN").unwrap();
+    let wal = std::fs::read(dir.join("journal.wal")).unwrap();
+    let marker = std::fs::read(dir.join("commit.marker")).unwrap();
+    // A changed current order and stale observation cannot rewrite the receipt.
+    assert_eq!(
+        engine
+            .submit(
+                "ORDER",
+                &raw,
+                &sig,
+                &owner,
+                &obs,
+                NOW + 100_000,
+                MAX_PAYLOAD
+            )
+            .unwrap(),
+        original
+    );
+    assert_eq!(engine.commit().command_seq, 3);
+    drop(engine);
+    let mut recovered = SignedRecovery::open(&dir, initial, "OPEN").unwrap();
+    assert_eq!(recovered.state().state_hash("OPEN").unwrap(), hash);
+    assert_eq!(
+        recovered
+            .submit(
+                "ORDER",
+                &raw,
+                &sig,
+                &owner,
+                &obs,
+                NOW + 100_000,
+                MAX_PAYLOAD
+            )
+            .unwrap(),
+        original
+    );
+    assert_eq!(std::fs::read(dir.join("journal.wal")).unwrap(), wal);
+    assert_eq!(std::fs::read(dir.join("commit.marker")).unwrap(), marker);
+    drop(recovered);
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn failed_append_keeps_candidate_private_and_closes_signed_commit_boundary() {
+    use nus_exchange_contract::s2::{
+        journal::{Journal, MAX_PAYLOAD},
+        recovery::SignedRecovery,
+    };
+    let root = std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(std::env::temp_dir);
+    let dir = root.join(format!("s2-commit-failure-{}", std::process::id()));
+    let (initial, obs) = setup(100, 0);
+    drop(Journal::create(&dir, initial.snapshot().value()["body"]["context"].clone()).unwrap());
+    let mut engine = SignedRecovery::open(&dir, initial.clone(), "OPEN").unwrap();
+    let (raw, sig, owner) = input("order");
+    let before = engine.state().state_hash("OPEN").unwrap();
+    // Force marker creation failure after WAL sync, using the real append path.
+    std::fs::create_dir(dir.join("marker.tmp")).unwrap();
+    assert!(
+        engine
+            .submit("ORDER", &raw, &sig, &owner, &obs, NOW, MAX_PAYLOAD)
+            .is_err()
+    );
+    assert!(engine.recovery_required());
+    assert_eq!(engine.state().state_hash("OPEN").unwrap(), before);
+    assert!(engine.receipt(&owner, 1).is_none());
+    assert_eq!(engine.commit().command_seq, 0);
+    let wal = std::fs::read(dir.join("journal.wal")).unwrap();
+    assert!(!wal.is_empty());
+    assert!(
+        engine
+            .submit("ORDER", &raw, &sig, &owner, &obs, NOW, MAX_PAYLOAD)
+            .is_err()
+    );
+    assert_eq!(std::fs::read(dir.join("journal.wal")).unwrap(), wal);
+    drop(engine);
+    assert!(SignedRecovery::open(&dir, initial, "OPEN").is_err());
+    assert_eq!(std::fs::read(dir.join("journal.wal")).unwrap(), wal);
+    std::fs::remove_dir_all(dir).unwrap();
+}
