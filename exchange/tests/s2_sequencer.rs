@@ -884,5 +884,97 @@ fn signed_records_fsync_reopen_and_deterministically_replay_full_results() {
         }
     );
     drop(journal);
+    let recovered =
+        nus_exchange_contract::s2::recovery::SignedRecovery::open(&dir, setup(100, 0).0, "OPEN")
+            .unwrap();
+    assert_eq!(recovered.state().state_hash("OPEN").unwrap(), final_hash);
+    assert_eq!(recovered.commit(), &commits[4]);
+    for receipt in &receipts {
+        let seq = receipt["command_seq"].as_str().unwrap().parse().unwrap();
+        let owner = receipt["owner"].as_str().unwrap();
+        assert_eq!(recovered.receipt(owner, seq), Some(receipt));
+        assert!(recovered.receipt("unauthorized", seq).is_none());
+    }
+    assert!(recovered.receipt(&owner, 999).is_none());
+    assert!(matches!(
+        Journal::open(
+            &dir,
+            recovered.state().snapshot().value()["body"]["context"].clone()
+        ),
+        Err(journal::Error::WriterAlreadyRunning)
+    ));
+    drop(recovered);
     std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn automatic_signed_recovery_preserves_semantic_corruption_and_rejects_wrong_bootstrap() {
+    use nus_exchange_contract::s2::{
+        journal::Journal, record::SignedRecord, recovery::SignedRecovery,
+    };
+    let root = std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(std::env::temp_dir);
+    let (initial, obs) = setup(100, 0);
+    let (raw, sig, owner) = input("order");
+    let (next, outcome, _) = initial
+        .submit("ORDER", &raw, &sig, &owner, &obs, NOW)
+        .unwrap();
+    for tamper in [false, true] {
+        let dir = root.join(format!("s2-auto-recovery-{}-{tamper}", std::process::id()));
+        let mut journal =
+            Journal::create(&dir, initial.snapshot().value()["body"]["context"].clone()).unwrap();
+        let prepared = SignedRecord::prepare(
+            &initial,
+            &next,
+            &outcome,
+            "ORDER",
+            &obs,
+            NOW,
+            "OPEN",
+            journal.commit(),
+        )
+        .unwrap();
+        let mut record = prepared.record().clone();
+        if tamper {
+            record["after_state_hash"] = json!("00".repeat(32));
+        }
+        journal.append(&record, 16_777_216, false).unwrap();
+        drop(journal);
+        let wal_before = std::fs::read(dir.join("journal.wal")).unwrap();
+        let marker_before = std::fs::read(dir.join("commit.marker")).unwrap();
+        let bootstrap = if tamper {
+            initial.clone()
+        } else {
+            setup(101, 0).0
+        };
+        assert!(SignedRecovery::open(&dir, bootstrap, "OPEN").is_err());
+        assert_eq!(std::fs::read(dir.join("journal.wal")).unwrap(), wal_before);
+        assert_eq!(
+            std::fs::read(dir.join("commit.marker")).unwrap(),
+            marker_before
+        );
+        let evidence: Vec<_> = std::fs::read_dir(&dir)
+            .unwrap()
+            .map(|e| e.unwrap().path())
+            .filter(|p| {
+                p.file_name()
+                    .unwrap()
+                    .to_string_lossy()
+                    .starts_with("evidence-")
+            })
+            .collect();
+        assert_eq!(evidence.len(), 1);
+        assert_eq!(
+            std::fs::read(evidence[0].join("journal.wal")).unwrap(),
+            wal_before
+        );
+        // Failure released the writer lock and did not silently repair anything.
+        if !tamper {
+            assert!(SignedRecovery::open(&dir, initial.clone(), "OPEN").is_ok());
+        } else {
+            assert!(SignedRecovery::open(&dir, initial.clone(), "OPEN").is_err());
+        }
+        std::fs::remove_dir_all(dir).unwrap();
+    }
 }

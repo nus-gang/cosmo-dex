@@ -135,7 +135,7 @@ pub struct Commit {
     pub end_offset: u64,
 }
 impl Commit {
-    fn zero() -> Self {
+    pub(crate) fn zero() -> Self {
         Self {
             command_seq: 0,
             record_hash: ZERO_HASH.into(),
@@ -294,7 +294,7 @@ impl Journal {
         }
         Ok(records)
     }
-    fn preserve_evidence(&self) -> Result<()> {
+    pub(crate) fn preserve_evidence(&self) -> Result<()> {
         let stamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map_err(|_| Error::RecoveryRequired("CLOCK"))?

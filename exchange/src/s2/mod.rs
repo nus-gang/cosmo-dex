@@ -10,3 +10,5 @@ pub mod snapshot;
 pub mod sequencer;
 
 pub mod record;
+
+pub mod recovery;
