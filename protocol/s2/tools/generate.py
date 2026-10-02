@@ -35,6 +35,7 @@ d['NullableU64']={'anyOf':[{'$ref':'#/$defs/U64'},{'type':'null'}]}
 def ref(n):return {'$ref':'#/$defs/'+n}
 def enum(*v):return {'type':'string','enum':list(v)}
 def arr(n,limit=200):return {'type':'array','maxItems':limit,'items':ref(n)}
+def internal_array(n):return {'type':'array','items':ref(n)}
 def obj(n,fields):
  d[n]={'type':'object','additionalProperties':False,'required':list(fields),'properties':{k:(ref(v) if isinstance(v,str) else v) for k,v in fields.items()}}
 obj('Context',{'schema_version':enum('1'),'chain_id':'Text','genesis_hash':'Hash','contract_hash':'Hash','config_hash':'Hash','market_id':'Text','market_config_version':'U64'})
@@ -60,8 +61,8 @@ obj('Error',{'code':'Text','retryable':'Bool','state':enum('REJECTED','SUBMISSIO
 obj('ChallengeRequest',{'owner':'Bytes','origin':'Text','audience':enum('exchange-api')})
 obj('ChallengeResponse',{'wire_base64':'Bytes'})
 obj('SessionResponse',{'token':'Bytes','owner':'Bytes','origin':'Text','audience':enum('exchange-api'),'genesis_hash':'Hash','expiry_time':'U64'})
-obj('Correction',{'snapshot_id':'Hash','changed_owners':arr('Bytes',2),'affected_owners':arr('Bytes',2),'cancelled_order_hashes':arr('Hash'),'corrected_fill_ids':arr('Hash',1000),'reason':enum('OWNER_EPOCH_CHANGED'),'before_state_hash':'Hash','after_state_hash':'Hash'})
-obj('JournalRecord',{'context':'Context','command_seq':'U64','previous_commit_hash':'Hash','command_kind':enum('ORDER','CANCEL','SNAPSHOT','EXPIRY','WITHDRAW_PREPARE','WITHDRAW_ABORT','CORRECTION'),'recorded_at_unix_ms':'U64','request_wire':'Bytes','signature':'Bytes','signature_hash':'Hash','snapshot':'ChainSnapshot','observation':'Observation','before_state_hash':'Hash','after_state_hash':'Hash','result_json':'Bytes','state_json':'Bytes','result_hash':'Hash','external_event_ids':arr('Hash',1000)})
+obj('Correction',{'snapshot_id':'Hash','changed_owners':arr('Bytes',2),'affected_owners':arr('Bytes',2),'cancelled_order_hashes':internal_array('Hash'),'corrected_fill_ids':internal_array('Hash'),'reason':enum('OWNER_EPOCH_CHANGED'),'before_state_hash':'Hash','after_state_hash':'Hash'})
+obj('JournalRecord',{'context':'Context','command_seq':'U64','previous_commit_hash':'Hash','command_kind':enum('ORDER','CANCEL','SNAPSHOT','EXPIRY','WITHDRAW_PREPARE','WITHDRAW_ABORT','CORRECTION'),'recorded_at_unix_ms':'U64','request_wire':'Bytes','signature':'Bytes','signature_hash':'Hash','snapshot':'ChainSnapshot','observation':'Observation','before_state_hash':'Hash','after_state_hash':'Hash','result_json':'Bytes','state_json':'Bytes','result_hash':'Hash','external_event_ids':internal_array('Hash')})
 obj('CommitMarker',{'schema_version':enum('1'),'genesis_hash':'Hash','contract_hash':'Hash','last_command_seq':'U64','record_hash':'Hash','end_offset':'U64'})
 obj('LocalAction',{'request_id':'Hash'})
 obj('Binding',{'owner':'Bytes','owner_epoch':'U64','kind':enum('ORDER','CANCEL','WITHDRAW_PREPARE','WITHDRAW_ABORT'),'id':'Hash','request_hash':'Hash','first_command_seq':'U64'})
@@ -69,10 +70,9 @@ obj('StoredOrder',{'owner':'Bytes','view':'OrderView','order_wire':'Bytes','sign
 obj('EngineAccount',{'owner':'Bytes','owner_epoch':'U64','ledger':arr('LedgerRow',2),'withdraw_frozen':'Bool'})
 obj('OutboxFill',{'fill_id':'Hash','maker_order_hash':'Hash','taker_order_hash':'Hash','buyer_order_hash':'Hash','seller_order_hash':'Hash','command_seq':'U64','match_index':'U32','quantity_lots':'U64','execution_price_ticks':'U64','fee_policy_version':'U64','fee_base_atoms':'Atoms','fee_quote_atoms':'Atoms','buy_D':'Atoms','sell_D':'Atoms','buyer_P':'Atoms','seller_P':'Atoms','snapshot_id':'Hash','state':enum('PENDING','CORRECTED'),'revision':'U64','reason':'Text','export_state':enum('HELD_S2'),'submission_enabled':'Bool'})
 obj('ResultIndex',{'command_seq':'U64','request_hash':'Hash','result_hash':'Hash'})
-obj('EngineState',{'context':'Context','last_command_seq':'U64','chain_snapshot':'ChainSnapshot','mode':'Text','accounts':arr('EngineAccount',2),'orders':arr('StoredOrder'),'fills':arr('OutboxFill'),'bindings':arr('Binding')})
-for k in ['orders','fills','bindings']:d['EngineState']['properties'][k].pop('maxItems')
+obj('EngineState',{'context':'Context','last_command_seq':'U64','chain_snapshot':'ChainSnapshot','mode':'Text','accounts':arr('EngineAccount',2),'orders':internal_array('StoredOrder'),'fills':internal_array('OutboxFill'),'bindings':internal_array('Binding')})
 obj('LedgerChange',{'owner':'Bytes','before':'LedgerRow','after':'LedgerRow'})
-obj('CommandResult',{'command_seq':'U64','kind':'Text','request_hash':'Hash','code':'Text','state':enum('LOCAL_ACCEPTED','REJECTED'),'observed_height':'U64','snapshot_id':'Hash','affected_order_hashes':arr('Hash'),'created_fill_ids':arr('Hash',1000),'corrected_fill_ids':arr('Hash',1000),'ledger_changes':arr('LedgerChange',4),'after_state_hash':'Hash'})
+obj('CommandResult',{'command_seq':'U64','kind':'Text','request_hash':'Hash','code':'Text','state':enum('LOCAL_ACCEPTED','REJECTED'),'observed_height':'U64','snapshot_id':'Hash','affected_order_hashes':internal_array('Hash'),'created_fill_ids':internal_array('Hash'),'corrected_fill_ids':internal_array('Hash'),'ledger_changes':arr('LedgerChange',4),'after_state_hash':'Hash'})
 # root clients validate the named definition to avoid ambiguous envelopes.
 s['oneOf']=[ref(n) for n in ['ChainSnapshot','Network','SignedCommand','CommandReceipt','LedgerView','BookSnapshot','Error','ChallengeRequest','ChallengeResponse','SessionResponse','Correction','JournalRecord','CommitMarker']]
 write('schema.json',s)
@@ -192,3 +192,50 @@ write('vectors/matching.json',{'scope':'normalized expectations, not runtime exe
  {'id':'ioc-price-bound','makers':[{'id':'s1','seq':'1','p':'10001','q':'1000'}],'buy_limit':'10000','buy_qty':'1000','expected_fill_makers':[]}],
  'stp':{'makers':[{'id':'other','owner':'B','price':'9000','qty':'1000'},{'id':'self','owner':'A','price':'10000','qty':'1000'},{'id':'later','owner':'C','price':'10000','qty':'1000'}],'taker_owner':'A','taker_qty':'3000','taker_limit':'10000','expected_fills':['other'],'expected_cancelled_qty':'2000','expected_reason':'STP_CANCELLED'},
  'cancel_ordering':[{'first':'CANCEL','second':'MATCH','expected_fill_qty':'0','expected_R':'0','expected_D':'0'},{'first':'MATCH','second':'CANCEL','expected_fill_qty':'1000','expected_R':'0','expected_D':'1000000'}]})
+
+# SEC-S2A-01: sequential, confirmed-funded fills can exceed API page limits.
+# IDs and state hashes below are shape/model fixtures, not signed runtime orders.
+boundaries=[]
+for n in (199,200,1000,1001):
+ for bps in (0,25):
+  base_fee,quote_fee=(0,0) if bps==0 else (3,25)
+  names=[f'order-{i}' for i in range(n+1)]
+  order_ids=[sha(name.encode()) for name in names]
+  fill_ids=[sha(f'fill-{i}'.encode()) for i in range(n)]
+  expected={'affected_orders':str(n+1),'corrected_fills':str(n),'cancelled_orders':'1',
+   'seller_base_before':row(10000000,1000,n*1000),
+   'seller_quote_before':row(0,P=n*(10000-quote_fee)),
+   'buyer_base_before':row(0,P=n*(1000-base_fee)),
+   'buyer_quote_before':row(100000000,D=n*10000),
+   'seller_base_after':row(1000000),'seller_quote_after':row(0),
+   'buyer_base_after':row(0),'buyer_quote_after':row(100000000),
+   'pending_fee_base_before':str(n*base_fee),'pending_fee_quote_before':str(n*quote_fee),
+   'pending_fee_base_after':'0','pending_fee_quote_after':'0',
+   'maker_filled_before':str(n),'maker_filled_after':str(n),'maker_corrected_after':str(n),
+   'maker_cancelled_after':'1','taker_filled_after':'1','taker_corrected_after':'1',
+   'seller_epoch_after':'1','buyer_epoch_after':'0','logical_commits':'1','effect_count':'1'}
+  seller_owner=base64.b64encode(bytes.fromhex(keys[0]['owner_raw_hex'])).decode()
+  buyer_owner=base64.b64encode(bytes.fromhex(keys[1]['owner_raw_hex'])).decode()
+  correction={'snapshot_id':'33'*32,'changed_owners':[seller_owner],
+   'affected_owners':sorted([seller_owner,buyer_owner],key=base64.b64decode),
+   'cancelled_order_hashes':[order_ids[0]],'corrected_fill_ids':fill_ids,
+   'reason':'OWNER_EPOCH_CHANGED','before_state_hash':'44'*32,'after_state_hash':'55'*32}
+  changes=[]
+  for who,raw in [('seller',seller_owner),('buyer',buyer_owner)]:
+   for asset in ['base','quote']:
+    changes.append({'owner':raw,'before':{'denom':'DEV'+asset.upper(),**expected[f'{who}_{asset}_before']},'after':{'denom':'DEV'+asset.upper(),**expected[f'{who}_{asset}_after']}})
+  changes.sort(key=lambda c:(base64.b64decode(c['owner']),c['before']['denom']))
+  result={'command_seq':str(n+(n+1)//2+2),'kind':'CORRECTION','request_hash':'66'*32,'code':'OWNER_EPOCH_CHANGED',
+   'state':'LOCAL_ACCEPTED','observed_height':str(101+(n+1)//2),'snapshot_id':correction['snapshot_id'],
+   'affected_order_hashes':order_ids,'created_fill_ids':[],'corrected_fill_ids':fill_ids,
+   'ledger_changes':changes,'after_state_hash':correction['after_state_hash']}
+  boundaries.append({'id':f'fills-{n}-orders-{n+1}-fee-{bps}',
+   'input':{'fill_count':str(n),'fee_bps':str(bps),'maker_qty_lots':str(n+1),'taker_qty_lots':'1',
+    'price_ticks':'10000','seller_C_base':'10000000','buyer_C_quote':'100000000',
+    'seller_withdraw_base':'9000000','max_live_orders':'2','expiry_delta_blocks':'100','maker_expiry_delta_blocks':'1000',
+    'snapshot_sequence':'initial H100/seq0; maker expiry H1100; two sequential takers per fresh consecutive height from H101; withdrawal at next height in runtime'},
+   'expected':expected,'correction':correction,'result':result,
+   'result_hash':sha(frame('NUS/S2/RESULT/V1',canonical(result)))})
+write('vectors/correction-boundaries.json',{'scope':'synthetic schema/economic/atomic replay model only; state/snapshot/request hashes are placeholders, IDs are deterministic labels, no actual TX/signature/crash evidence',
+ 'runtime_required':'C/F/H: actual signed orders, fresh consecutive snapshots, direct withdrawal, fsync crash/marker replay, capacity reserve fault injection',
+ 'cases':boundaries})

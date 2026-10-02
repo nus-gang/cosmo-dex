@@ -1074,14 +1074,12 @@
         },
         "cancelled_order_hashes": {
           "type": "array",
-          "maxItems": 200,
           "items": {
             "$ref": "#/$defs/Hash"
           }
         },
         "corrected_fill_ids": {
           "type": "array",
-          "maxItems": 1000,
           "items": {
             "$ref": "#/$defs/Hash"
           }
@@ -1178,7 +1176,6 @@
         },
         "external_event_ids": {
           "type": "array",
-          "maxItems": 1000,
           "items": {
             "$ref": "#/$defs/Hash"
           }
@@ -1563,21 +1560,18 @@
         },
         "affected_order_hashes": {
           "type": "array",
-          "maxItems": 200,
           "items": {
             "$ref": "#/$defs/Hash"
           }
         },
         "created_fill_ids": {
           "type": "array",
-          "maxItems": 1000,
           "items": {
             "$ref": "#/$defs/Hash"
           }
         },
         "corrected_fill_ids": {
           "type": "array",
-          "maxItems": 1000,
           "items": {
             "$ref": "#/$defs/Hash"
           }

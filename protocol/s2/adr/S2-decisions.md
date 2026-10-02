@@ -21,6 +21,8 @@ M0 Exchange 결과/CTO 재심사에서 IOC Err+fill callback과 헤더 length �
 - **S2-03 epoch 정정**: S2는 정산 미제출이므로 epoch 변경 owner가 속한 pending-fill 연결 성분 전체를 보수적으로 정정하고 관련 잔량을 종료한다. 기존 순서를 rematch하여 이미 성공한 fill ID/결과를 조용히 바꾸는 방식은 채택하지 않는다. 상대방의 독립 주문도 연결 성분이면 종료될 수 있으나 결과를 명시하고 새 서명 주문으로만 재개한다. P 재사용 금지·최악 D 유지·기록 보존을 지킨다. S3 in-flight settlement에는 재사용 불가. 담당 CTO/Exchange, Security/QA 필수 심사.
 - **S2-04 로컬 인증**: S0 HTTPS default를 보존하고 S2 profile에만 loopback HTTP 5173 두 origin을 열어 기존 소형 UI를 확장한다. 실제 WalletChallenge와 세션·개인조회 권한을 추가한다. bearer token은 짧은 메모리 세션, 서버 키 수집 없음. 담당 CTO/Settlement/Wallet/Security.
 
+- **S2-05 정정 용량과 조회 페이지 분리 (SEC-S2A-01, rc2)**: 누적 1001 fills/201 영향 주문은 두 계정·동시 주문 2개로 도달 가능하다. 내부 Correction/CommandResult/JournalRecord 이력 배열에서 API 페이지 maxItems를 제거한다. 읽기 페이지 200 orders/1000 fills와 16MiB journal frame은 유지하며, 신규 접수 전에 전체 이력의 최대 정정 직렬화/디스크 공간을 확보한다. 직접 TX 제한, 이력 truncate, 분할 공개, 임의 초기화는 사용하지 않는다. 1000/1001 fill·200/201 영향 주문에 0/25bps 전량 역분개와 논리 commit/replay 기대값을 고정한다. 명세 모델과 실제 IO 검증을 구분한다. 담당 CTO, Security→QA 재심사, 실제 용량/crash 검증 C/F/H.
+
 ## DEC-01~12 상태·주인·목표
 
 모든 기술 합의 owner는 CTO, 사업/실운영 결정은 CEO가 별도 승인한다. 이번 S2 결정은 로컬 테스트에 한정하며 S0/S1 ADR을 삭제/소급 변경하지 않는다.

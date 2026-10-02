@@ -1,4 +1,4 @@
-# S2 실행 계약 1.0.0-rc1
+# S2 실행 계약 1.0.0-rc2
 
 2026-10-02 · CTO · [NUS-36](/NUS/issues/NUS-36). Security → QA 검토 후보이며 두 단계 완료 전 의존 구현을 열지 않는다. 승인 근거: [S2 Plan 6판](/NUS/issues/NUS-1#document-plan), revision `678c8648-d439-4f7b-9252-9d1cae507562`, 수락 `5890775a-9722-4af4-abf3-c9e1550453b1`. 기준 원격 main `24029b811e5ec798bbe57f769de3d3f254c90ab7`, tree `52478090ff2c3225ded1be53ec22efb2a47727d2`. 공유 작업 루트의 초기 HEAD는 기준이 아니다.
 
@@ -57,6 +57,8 @@ fill_id=SHA256(frame(NUS/FILL_ID/V1, canonical FillIdentityV1(chain_id,market_id
 3. 동일 H의 전체 새 C/E/등록키/설정을 적용하고 원장 합산과 A>=0을 재검증한다. 영향을 받지 않은 주문 FIFO/ID는 보존한다. 정정 계획·원본/결과 hash·새 snapshot/cursor·outbox 상태를 하나의 journal commit으로 기록한다. 중간 crash면 공개하지 않고 같은 correction을 재생한다.
 4. 영속화와 신선도·cursor 검사 뒤 OPEN으로 재개한다. 불변식/이벤트 근거 불일치면 RECOVERY_REQUIRED를 유지한다. 동일 snapshot 재관측과 재시작은 정정 효과 1회다. 클라이언트는 revision 증가로 양측 정정을 수신한다.
 
+`Correction`/`CommandResult`/영속 state의 ID 배열은 전체 이력이며 API의 orders 200/fills 1000 페이지 제한을 적용하지 않는다. `CommandResult.affected_order_hashes`에는 정정된 fill이 참조하는 과거 terminal 주문과 이번에 종료하는 open 주문을 모두 원 admission_seq순으로, 중복 없이 기록한다. `Correction.cancelled_order_hashes`에는 이번에 미체결 잔량을 종료한 주문만 같은 순서로 기록한다. corrected_fill_ids는 모든 정정 fill을 (command_seq,match_index)순으로 중복 없이 포함하며 두 객체의 목록이 일치해야 한다. 누적 체결 수는 동시 open 주문 한도와 다르다. ID를 200/1000에서 자르거나 페이지별로 원장을 commit하지 않는다. 정정 전 성공 receipt는 보존하고 최신 view만 갱신한다.
+
 정정은 체인 정산 실패 receipt가 아니라 **S2에서 제출하지 않은 잠정 체결의 폐기**다. S3의 in-flight 배치가 존재하면 이 정책을 그대로 적용할 수 없다. 실제 출금↔정산 블록 순서 T04 또는 정산 의존 T16 전체 PASS를 뜻하지 않는다. 직접 출금 이후 D/P를 임의 초기화하거나 원본 기록을 삭제하지 않는다.
 
 ## 6. WAL·snapshot·복구
@@ -64,6 +66,10 @@ fill_id=SHA256(frame(NUS/FILL_ID/V1, canonical FillIdentityV1(chain_id,market_id
 단일 프로세스 writer의 OS advisory exclusive lock을 journal 디렉터리 전체에 잡고 생존 동안 유지한다. 두 번째 프로세스는 `WRITER_ALREADY_RUNNING`으로 종료한다. PID 파일만으로 대체하지 않는다. 네트워크 파일시스템/자동 failover/분산 fencing은 범위 밖이다.
 
 명령은 비공개 후보 상태에 적용하고 canonical JSON JournalRecord에 원문·signature hash·등록키 증거·snapshot/context·기록시각·명령 seq·이전 commit hash·예약 변화·매칭 결과·전체 복구에 필요한 상태/결과·fills/outbox/외부 event를 담는다. JSON hash 규칙은 schema 문서 참조. 권장 파일 framing은 `S2W1` 4B + payload_length u32be + payload SHA256 32B + 앞40B SHA256 32B + canonical payload이며 총 header 72B다. header 검증 전에 length를 신뢰하지 않고 payload 최대 16777216 bytes를 적용한다. record hash=SHA256(전체 frame).
+
+**정정 용량 확보:** 16MiB는 한 journal payload의 물리 상한이며 내부 배열의 건수 한도가 아니다. 신규 효과를 저장하기 전에 현재 후보 상태 전체와 두 owner 모두의 epoch 변경·모든 pending fill 역분개·모든 open 잔량 취소를 포함하는 최대 정정 후보를 구성한다. 누적 주문/서명/binding/outbox를 빠짐없이 유지하고, 새 snapshot의 숫자·epoch·revision·시각·seq는 각 schema 최대 자릿수, 상태/사유 문자열은 허용되는 최대 길이, base64/JSON escaping과 result 배열까지 포함한 보수적 실제 인코딩 길이로 상한을 계산한다. 신규 record와 최대 정정 record 각각이 max_journal_payload_bytes 이하여야 한다. 이전 정정 목록까지 누적해 새 result에 다시 싣지 않는다.
+
+일반 append와 별도로 최대 정정 frame(header 72B 포함) 및 marker/temp 교체에 필요한 디스크 공간을 writer가 예약·유지한다. 예약은 일반 요청/WAL snapshot이 소비하지 못한다. 경계는 `<=` 허용, 1 byte 초과 또는 예약 확보 실패는 **신규 접수 전에** RESOURCE_LIMIT이며 성공 binding/예약/seq 효과가 없다. 이미 LOCAL_ACCEPTED한 주문의 필수 정정에는 해당 예약을 사용한다. 실제 IO 실패·공간 외부 훼손 시에는 증거를 보존하고 RECOVERY_REQUIRED로 닫지만 ID truncate/GC/빈 원장/부분 공개를 허용하지 않는다. 정정 후 예약을 다시 확보하기 전 신규 접수를 열지 않는다. 직접 체인 TX는 이 로컬 용량 검사나 엔진 허가를 요구하지 않는다. C/F/H는 실제 직렬화 한계·예약 소진·crash 시험을 수행해야 하며 A의 명세 fixture만으로 저장 용량/내구성 PASS를 주장하지 않는다.
 
 append/fsync WAL → 독립 commit marker 파일에 seq/record hash/end offset 원자 교체(temp fsync, rename, directory fsync) → 상태 공개/영수증 응답 순서. marker와 payload/outbox는 같은 논리 commit 경계다. marker보다 뒤의 완전 record는 UNKNOWN tail이며 복구 시 증거 보존 후 같은 결정으로 완료하거나 실패 정지한다; 성공 응답으로 간주하지 않는다. marker가 가리키는 frame 부재·checksum/hash/seq 불일치, 완료 frame 손상, header 손상은 RECOVERY_REQUIRED로 중지한다. marker의 seq 이하를 자동 truncate/빈 genesis 성공 복구하지 않는다. fsync 의미/OS·파일시스템과 macOS full-fsync 미검증 한계를 manifest에 기록한다.
 

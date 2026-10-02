@@ -13,7 +13,7 @@ INHERITED=['protocol/v1/CONTRACT.md','protocol/v1/DECISION-PORT.md','protocol/v1
 INHERITED += [str(p.relative_to(ROOT)) for p in sorted((ROOT/'protocol/v1/vectors').glob('*')) if p.is_file()]
 files={str(p.relative_to(ROOT)):sha(p.read_bytes()) for p in sorted(R.rglob('*')) if p.is_file() and p.name!='manifest.json' and '__pycache__' not in str(p)}
 files.update({p:sha((ROOT/p).read_bytes()) for p in INHERITED})
-manifest={'version':'s2-1.0.0-rc1','status':'Security_QA_review_pending','base_main_sha':'24029b811e5ec798bbe57f769de3d3f254c90ab7','base_tree':'52478090ff2c3225ded1be53ec22efb2a47727d2','hash_algorithm':'SHA256(sorted sha256 + two spaces + repo relative path + LF)','contract_sha256':aggregate(files),'config_sha256':files['protocol/s2/profile.json'],'vectors_sha256':aggregate({k:v for k,v in files.items() if k.startswith('protocol/s2/vectors/')}),'files_sha256':files,'runtime':{'genesis_hash':None,'code_sha':None,'binary_hash':None,'acceptance':'NOT_RUN; B-J must provide actual evidence'}}
+manifest={'version':'s2-1.0.0-rc2','status':'Security_QA_review_pending','base_main_sha':'24029b811e5ec798bbe57f769de3d3f254c90ab7','base_tree':'52478090ff2c3225ded1be53ec22efb2a47727d2','hash_algorithm':'SHA256(sorted sha256 + two spaces + repo relative path + LF)','contract_sha256':aggregate(files),'config_sha256':files['protocol/s2/profile.json'],'vectors_sha256':aggregate({k:v for k,v in files.items() if k.startswith('protocol/s2/vectors/')}),'files_sha256':files,'runtime':{'genesis_hash':None,'code_sha':None,'binary_hash':None,'acceptance':'NOT_RUN; B-J must provide actual evidence'}}
 if sys.argv[1:]==['--seal']:
  (R/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n');print('sealed',manifest['contract_sha256']);sys.exit()
 assert not sys.argv[1:]
@@ -145,6 +145,8 @@ for c in load('vectors/envelopes.json')['cases']:
  try:valid({'$ref':'#/$defs/'+c['schema']},c['value']);r='VALID'
  except (AssertionError,ValueError):r='INVALID'
  expect(r,c['expected'],c['id'])
+from check_correction import check as check_correction
+check_correction(load, cfg, defs, valid, expect, hjson)
 for c in load('vectors/hashes.json')['cases']:
  expect(canon(c['body']).hex(),c['canonical_hex'],c['id']+'/json');expect(hjson(c['domain'],c['body']),c['sha256'],c['id']+'/hash')
 snap=load('vectors/snapshot.json')['snapshot'];expect(hjson('NUS/S2/SNAPSHOT/V1',snap['body']),snap['snapshot_id'],'snapshot hash')
