@@ -4,7 +4,7 @@ use super::{
     journal::sha256,
     ledger::{Asset, Ledger, Side},
     matching::{self, LiveOrder, Remainder, Tif},
-    snapshot::{Observation, Snapshot},
+    snapshot::{Advance, Observation, Snapshot},
 };
 use crate::{
     Result,
@@ -12,7 +12,7 @@ use crate::{
     policy,
 };
 use serde_json::{Value, json};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Outcome {
@@ -37,6 +37,13 @@ pub struct Order {
     pub status: String,
     pub filled: u64,
 }
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Correction {
+    pub affected_owners: Vec<String>,
+    pub affected_order_hashes: Vec<String>,
+    pub cancelled_order_hashes: Vec<String>,
+    pub corrected_fill_ids: Vec<String>,
+}
 #[derive(Clone, Debug)]
 pub struct Candidate {
     snapshot: Snapshot,
@@ -44,6 +51,8 @@ pub struct Candidate {
     seq: u64,
     bindings: BTreeMap<(String, String, String), Bound>,
     orders: BTreeMap<String, Order>,
+    frozen: BTreeMap<String, u64>,
+    fill_order: Vec<String>,
 }
 impl Candidate {
     pub fn new(snapshot: Snapshot) -> Result<Self> {
@@ -59,7 +68,118 @@ impl Candidate {
             seq: 0,
             bindings: BTreeMap::new(),
             orders: BTreeMap::new(),
+            frozen: BTreeMap::new(),
+            fill_order: Vec::new(),
         })
+    }
+    pub fn snapshot(&self) -> &Snapshot {
+        &self.snapshot
+    }
+    pub fn is_frozen(&self, owner: &str) -> bool {
+        self.frozen.contains_key(owner)
+    }
+    /// Private atomic correction candidate. The caller must persist the input,
+    /// correction, state and outbox together before publishing this snapshot.
+    pub fn advance(&self, snapshot: Snapshot) -> Result<(Self, Correction)> {
+        let mut correction = Correction {
+            affected_owners: vec![],
+            affected_order_hashes: vec![],
+            cancelled_order_hashes: vec![],
+            corrected_fill_ids: vec![],
+        };
+        let changed = match self.snapshot.advance(&snapshot)? {
+            Advance::Duplicate => return Ok((self.clone(), correction)),
+            Advance::Next {
+                epoch_changed_owners,
+            } => epoch_changed_owners,
+        };
+        let mut owners: BTreeSet<String> = changed.into_iter().collect();
+        loop {
+            let before = owners.len();
+            for fill in self.ledger.fills().values().filter(|f| !f.corrected) {
+                if owners.contains(&fill.buyer) || owners.contains(&fill.seller) {
+                    owners.insert(fill.buyer.clone());
+                    owners.insert(fill.seller.clone());
+                }
+            }
+            if owners.len() == before {
+                break;
+            }
+        }
+        let mut next = self.clone();
+        next.seq = next.seq.checked_add(1).ok_or("INTEGER_OVERFLOW")?;
+        let mut affected = BTreeSet::new();
+        for id in &self.fill_order {
+            let fill = self.ledger.fill(id).ok_or("LEDGER_RECONCILIATION")?;
+            if !fill.corrected && owners.contains(&fill.buyer) {
+                affected.insert(fill.buy_order.clone());
+                affected.insert(fill.sell_order.clone());
+                next.ledger.correct_fill(id)?;
+                correction.corrected_fill_ids.push(id.clone());
+            }
+        }
+        let mut ordered: Vec<_> = self.orders.values().collect();
+        ordered.sort_by_key(|o| o.live.admission_seq);
+        for old in ordered {
+            let hash = &old.live.hash;
+            let impacted = owners.contains(&old.live.owner);
+            let expired = old.live.expiry_height <= snapshot.height();
+            if old.live.remaining > 0 && (impacted || expired) {
+                next.ledger.cancel(hash)?;
+                let order = next.orders.get_mut(hash).unwrap();
+                order.live.remaining = 0;
+                order.status = if impacted { "CORRECTED" } else { "EXPIRED" }.into();
+                if impacted {
+                    affected.insert(hash.clone());
+                    correction.cancelled_order_hashes.push(hash.clone());
+                }
+            }
+            if affected.contains(hash) {
+                next.orders.get_mut(hash).unwrap().status = "CORRECTED".into();
+                correction.affected_order_hashes.push(hash.clone());
+            }
+        }
+        for a in snapshot.accounts() {
+            next.ledger.set_confirmed(&a.owner, a.confirmed)?;
+        }
+        next.ledger.validate()?;
+        next.snapshot = snapshot;
+        correction.affected_owners = owners.into_iter().collect();
+        Ok((next, correction))
+    }
+    /// Authenticated API session owner; no authority to sign or gate chain TXs.
+    pub fn prepare_withdraw(&self, owner: &str) -> Result<(Self, &'static str)> {
+        self.ledger.balance(owner, Asset::Base)?;
+        let mut next = self.clone();
+        next.seq = next.seq.checked_add(1).ok_or("INTEGER_OVERFLOW")?;
+        next.frozen.insert(owner.into(), self.snapshot.height());
+        for order in next
+            .orders
+            .values_mut()
+            .filter(|o| o.live.owner == owner && o.live.remaining > 0)
+        {
+            next.ledger.cancel(&order.live.hash)?;
+            order.live.remaining = 0;
+            order.status = "CANCELLED_OFFCHAIN".into();
+        }
+        let hold = [Asset::Base, Asset::Quote].into_iter().any(|asset| {
+            let b = next.ledger.balance(owner, asset).unwrap();
+            b.d != 0 || b.p != 0
+        });
+        next.ledger.validate()?;
+        Ok((next, if hold { "UNSETTLED_HOLD" } else { "OK" }))
+    }
+    pub fn abort_withdraw(&self, owner: &str, observation: &Observation, now: u64) -> Result<Self> {
+        let height = self.frozen.get(owner).ok_or("WITHDRAW_NOT_PREPARED")?;
+        if self.snapshot.height() <= *height {
+            return Err("STALE");
+        }
+        self.snapshot.freshness(observation, now)?;
+        self.ledger.validate()?;
+        let mut next = self.clone();
+        next.seq = next.seq.checked_add(1).ok_or("INTEGER_OVERFLOW")?;
+        next.frozen.remove(owner);
+        Ok(next)
     }
     pub fn ledger(&self) -> &Ledger {
         &self.ledger
@@ -190,6 +310,9 @@ impl Candidate {
                 let p = integer(&v["limit_price_ticks"], 64)? as u64;
                 policy::fill(q, p, bps)?;
                 self.snapshot.freshness(observation, now)?;
+                if self.is_frozen(owner) {
+                    return Err("WITHDRAW_FROZEN");
+                }
                 next.place(&v, &hash, bps, &mut outcome)?;
             } else {
                 next.cancel(&v)?;
@@ -199,6 +322,7 @@ impl Candidate {
         if let Err(code) = effect {
             // Adapter/invariant failures must not become ordinary rejections.
             if ![
+                "WITHDRAW_FROZEN",
                 "EPOCH_MISMATCH",
                 "EXPIRED",
                 "EXPIRY_MARGIN",
@@ -315,6 +439,7 @@ impl Candidate {
                 "PARTIALLY_FILLED"
             }
             .into();
+            self.fill_order.push(fill_id.clone());
             outcome.fills.push(fill_id);
         }
         let filled = taker.remaining - matched.remaining;

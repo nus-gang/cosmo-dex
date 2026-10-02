@@ -103,6 +103,18 @@ impl Ledger {
             .get_mut(&(owner.to_owned(), asset))
             .ok_or("UNKNOWN_OWNER")
     }
+    pub fn fills(&self) -> &BTreeMap<String, Fill> {
+        &self.fills
+    }
+    /// Only after the sequencer has corrected epoch-dependent obligations.
+    pub(crate) fn set_confirmed(&mut self, owner: &str, amounts: [u128; 2]) -> Result<()> {
+        self.transaction(|next| {
+            for (asset, c) in [(Asset::Base, amounts[0]), (Asset::Quote, amounts[1])] {
+                next.balance_mut(owner, asset)?.c = c;
+            }
+            Ok(())
+        })
+    }
     pub fn fill(&self, id: &str) -> Option<&Fill> {
         self.fills.get(id)
     }

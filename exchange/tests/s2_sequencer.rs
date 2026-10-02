@@ -375,3 +375,227 @@ fn sequential_signed_requests_cannot_overreserve_confirmed_funds() {
     assert_eq!(state.sequence(), 6);
     assert_eq!(state.orders().len(), 5);
 }
+
+fn next_snapshot(
+    state: &Candidate,
+    epoch_owner: Option<&str>,
+    withdraw_base: u128,
+) -> nus_exchange_contract::s2::snapshot::Snapshot {
+    let mut v = state.snapshot().value().clone();
+    v["body"]["observed_height"] = json!((state.snapshot().height() + 1).to_string());
+    if let Some(owner) = epoch_owner {
+        for a in v["body"]["accounts"].as_array_mut().unwrap() {
+            if a["owner"] == owner {
+                let epoch: u64 = a["owner_epoch"].as_str().unwrap().parse().unwrap();
+                a["owner_epoch"] = json!((epoch + 1).to_string());
+                let c: u128 = a["balances"][0]["confirmed_atoms"]
+                    .as_str()
+                    .unwrap()
+                    .parse()
+                    .unwrap();
+                let bank: u128 = a["balances"][0]["bank_atoms"]
+                    .as_str()
+                    .unwrap()
+                    .parse()
+                    .unwrap();
+                a["balances"][0]["confirmed_atoms"] = json!((c - withdraw_base).to_string());
+                a["balances"][0]["bank_atoms"] = json!((bank + withdraw_base).to_string());
+            }
+        }
+        let module: u128 = v["body"]["supplies"][0]["module_atoms"]
+            .as_str()
+            .unwrap()
+            .parse()
+            .unwrap();
+        v["body"]["supplies"][0]["module_atoms"] = json!((module - withdraw_base).to_string());
+    }
+    v["snapshot_id"] = json!(sha256(&codec::frame(
+        "NUS/S2/SNAPSHOT/V1",
+        &canonical(&v["body"]).unwrap()
+    )));
+    let body = &v["body"];
+    let binding = Binding::new(
+        body["context"].clone(),
+        body["market"].clone(),
+        [
+            STANDARD
+                .decode(body["accounts"][0]["owner"].as_str().unwrap())
+                .unwrap(),
+            STANDARD
+                .decode(body["accounts"][1]["owner"].as_str().unwrap())
+                .unwrap(),
+        ],
+        [2_000_000_000_000; 2],
+    )
+    .unwrap();
+    binding.decode(&serde_json::to_vec(&v).unwrap()).unwrap()
+}
+#[test]
+fn epoch_correction_preserves_lifetime_fills_and_original_receipt() {
+    let (state, obs) = setup(100, 0);
+    let (raw, sig, seller) = input("order");
+    let (state, sell, _) = state
+        .submit("ORDER", &raw, &sig, &seller, &obs, NOW)
+        .unwrap();
+    let (br, bs, buyer) = input("buyer-order");
+    let (state, buy, _) = state.submit("ORDER", &br, &bs, &buyer, &obs, NOW).unwrap();
+    let snapshot = next_snapshot(&state, Some(&seller), 10_000_000);
+    let (next, correction) = state.advance(snapshot.clone()).unwrap();
+    assert_eq!(correction.affected_owners.len(), 2);
+    assert_eq!(
+        correction.affected_order_hashes,
+        vec![sell.hash.clone(), buy.hash.clone()]
+    );
+    assert_eq!(correction.cancelled_order_hashes, vec![sell.hash.clone()]);
+    assert_eq!(correction.corrected_fill_ids, buy.fills);
+    for owner in [&seller, &buyer] {
+        for asset in [Asset::Base, Asset::Quote] {
+            let b = next.ledger().balance(owner, asset).unwrap();
+            assert_eq!((b.r, b.d, b.p), (0, 0, 0));
+        }
+    }
+    assert_eq!(next.ledger().balance(&seller, Asset::Base).unwrap().c, 0);
+    assert_eq!(next.orders()[&sell.hash].filled, 1000);
+    assert_eq!(next.orders()[&buy.hash].filled, 1000);
+    assert_eq!(next.orders()[&buy.hash].status, "CORRECTED");
+    assert_eq!(state.orders()[&sell.hash].status, "PARTIALLY_FILLED");
+    let (_, original, duplicate) = next
+        .submit("ORDER", &raw, &sig, &seller, &obs, NOW)
+        .unwrap();
+    assert!(duplicate);
+    assert_eq!(original, sell);
+    let (again, c) = next.advance(snapshot).unwrap();
+    assert_eq!(again.sequence(), next.sequence());
+    assert!(c.corrected_fill_ids.is_empty());
+    assert_eq!(again.ledger(), next.ledger());
+    let (replayed, c2) = state.advance(next.snapshot().clone()).unwrap();
+    assert_eq!(replayed.ledger(), next.ledger());
+    assert_eq!(c2, correction);
+}
+#[test]
+fn withdraw_cancels_only_open_reserve_and_retains_pending_hold() {
+    let (state, obs) = setup(100, 0);
+    let (raw, sig, seller) = input("order");
+    let (state, sell, _) = state
+        .submit("ORDER", &raw, &sig, &seller, &obs, NOW)
+        .unwrap();
+    let (br, bs, buyer) = input("buyer-order");
+    let (state, _, _) = state.submit("ORDER", &br, &bs, &buyer, &obs, NOW).unwrap();
+    let (next, code) = state.prepare_withdraw(&seller).unwrap();
+    assert_eq!(code, "UNSETTLED_HOLD");
+    assert!(next.is_frozen(&seller));
+    assert_eq!(next.orders()[&sell.hash].live.remaining, 0);
+    let b = next.ledger().balance(&seller, Asset::Base).unwrap();
+    assert_eq!((b.r, b.d), (0, 1_000_000));
+    assert_eq!(
+        next.ledger().balance(&seller, Asset::Quote).unwrap().p,
+        10_000_000
+    );
+    let (raw, sig, _) = changed("order", &[("order_id", json!("aa".repeat(32)))]);
+    assert_eq!(
+        next.submit("ORDER", &raw, &sig, &seller, &obs, NOW)
+            .unwrap()
+            .1
+            .code,
+        "WITHDRAW_FROZEN"
+    );
+    assert_eq!(
+        next.abort_withdraw(&seller, &obs, NOW).unwrap_err(),
+        "STALE"
+    );
+    let (next, _) = next.advance(next_snapshot(&next, None, 0)).unwrap();
+    let obs = Observation {
+        snapshot_id: next.snapshot().id().into(),
+        cursor_height: 101,
+        ..obs
+    };
+    let next = next.abort_withdraw(&seller, &obs, NOW).unwrap();
+    assert!(!next.is_frozen(&seller));
+    assert_eq!(next.orders()[&sell.hash].live.remaining, 0);
+}
+#[test]
+fn empty_pending_withdraw_is_ready_and_unknown_owner_is_rejected() {
+    let (state, obs) = setup(100, 0);
+    assert_eq!(
+        state.prepare_withdraw("foreign").unwrap_err(),
+        "UNKNOWN_OWNER"
+    );
+    let (raw, sig, owner) = input("order");
+    let (state, out, _) = state
+        .submit("ORDER", &raw, &sig, &owner, &obs, NOW)
+        .unwrap();
+    let (next, code) = state.prepare_withdraw(&owner).unwrap();
+    assert_eq!(code, "OK");
+    assert_eq!(next.orders()[&out.hash].live.remaining, 0);
+    assert_eq!(next.ledger().balance(&owner, Asset::Base).unwrap().r, 0);
+}
+#[test]
+fn continuous_snapshot_expires_orders_without_epoch_correction() {
+    let (state, obs) = setup(198, 0);
+    let (raw, sig, owner) = input("order");
+    let (state, out, _) = state
+        .submit("ORDER", &raw, &sig, &owner, &obs, NOW)
+        .unwrap();
+    let (state, c) = state.advance(next_snapshot(&state, None, 0)).unwrap();
+    assert!(c.affected_order_hashes.is_empty());
+    assert_eq!(state.orders()[&out.hash].live.remaining, 2000);
+    let (next, c) = state.advance(next_snapshot(&state, None, 0)).unwrap();
+    assert!(c.corrected_fill_ids.is_empty());
+    assert_eq!(next.orders()[&out.hash].status, "EXPIRED");
+    assert_eq!(next.ledger().balance(&owner, Asset::Base).unwrap().r, 0);
+    assert_eq!(
+        next.advance(state.snapshot().clone()).unwrap_err(),
+        "HEIGHT_REGRESSION"
+    );
+}
+
+#[test]
+fn correction_includes_counterparty_followup_and_fill_execution_order() {
+    let (state, obs) = setup(100, 0);
+    let (raw, sig, seller) = input("order");
+    let (state, sell, _) = state
+        .submit("ORDER", &raw, &sig, &seller, &obs, NOW)
+        .unwrap();
+    let (raw, sig, buyer) = input("buyer-order");
+    let (state, buy1, _) = state
+        .submit("ORDER", &raw, &sig, &buyer, &obs, NOW)
+        .unwrap();
+    let (raw, sig, _) = changed("buyer-order", &[("order_id", json!("ab".repeat(32)))]);
+    let (state, buy2, _) = state
+        .submit("ORDER", &raw, &sig, &buyer, &obs, NOW)
+        .unwrap();
+    let (raw, sig, _) = changed("buyer-order", &[("order_id", json!("ac".repeat(32)))]);
+    let (state, followup, _) = state
+        .submit("ORDER", &raw, &sig, &buyer, &obs, NOW)
+        .unwrap();
+    let (next, c) = state
+        .advance(next_snapshot(&state, Some(&seller), 10_000_000))
+        .unwrap();
+    assert_eq!(
+        c.affected_order_hashes,
+        vec![sell.hash, buy1.hash, buy2.hash, followup.hash.clone()]
+    );
+    assert_eq!(c.cancelled_order_hashes, vec![followup.hash]);
+    assert_eq!(c.corrected_fill_ids, [buy1.fills, buy2.fills].concat());
+    assert_eq!(next.ledger().balance(&buyer, Asset::Quote).unwrap().r, 0);
+    assert_eq!(next.ledger().balance(&buyer, Asset::Quote).unwrap().d, 0);
+}
+#[test]
+fn disconnected_counterparty_order_retains_fifo_and_reserve() {
+    let (state, obs) = setup(100, 0);
+    let (raw, sig, buyer) = input("buyer-order");
+    let (state, buy, _) = state
+        .submit("ORDER", &raw, &sig, &buyer, &obs, NOW)
+        .unwrap();
+    let (_, _, seller) = input("order");
+    let (next, c) = state
+        .advance(next_snapshot(&state, Some(&seller), 10_000_000))
+        .unwrap();
+    assert!(c.affected_order_hashes.is_empty());
+    assert_eq!(next.orders()[&buy.hash].live.admission_seq, 1);
+    assert_eq!(next.orders()[&buy.hash].live.remaining, 1000);
+    assert_eq!(
+        next.ledger().balance(&buyer, Asset::Quote),
+        state.ledger().balance(&buyer, Asset::Quote)
+    );
+}
