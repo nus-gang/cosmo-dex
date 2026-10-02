@@ -94,6 +94,38 @@ impl Service {
         )));
         Ok(book)
     }
+    /// Contract Observation projection. Before live re-observation, zero receipt
+    /// time and maximum ages denote unknown freshness, never a successful RPC.
+    /// A failed RPC retains the last success metadata but closes `fresh`.
+    pub fn observation_view(&self, now: u64) -> Value {
+        let snapshot = self.state().snapshot();
+        let block_time = snapshot.value()["body"]["block_time_unix_ms"]
+            .as_str()
+            .expect("validated snapshot timestamp")
+            .parse::<u64>()
+            .expect("validated snapshot timestamp");
+        let (received_at, cursor, latency, success_age, catching_up) = match &self.observation {
+            Some(observation) => (
+                observation.received_at,
+                observation.cursor_height,
+                observation.query_latency_ms,
+                now.checked_sub(observation.received_at).unwrap_or(u64::MAX),
+                observation.catching_up || snapshot.height() < self.required_height,
+            ),
+            None => (0, snapshot.height(), 0, u64::MAX, true),
+        };
+        json!({
+            "snapshot_id": snapshot.id(),
+            "observed_height": snapshot.height().to_string(),
+            "cursor_height": cursor.to_string(),
+            "received_at_unix_ms": received_at.to_string(),
+            "block_age_ms": now.saturating_sub(block_time).to_string(),
+            "query_latency_ms": latency.to_string(),
+            "last_success_age_ms": success_age.to_string(),
+            "catching_up": catching_up,
+            "fresh": self.admission(now).0 == "OPEN"
+        })
+    }
     pub fn observation(&self) -> Option<&Observation> {
         self.observation.as_ref()
     }

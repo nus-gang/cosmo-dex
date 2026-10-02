@@ -1953,3 +1953,47 @@ fn public_book_committed_aggregation_hash_and_restart() {
         std::fs::write(path, serde_json::to_vec_pretty(&snapshots).unwrap()).unwrap();
     }
 }
+
+#[test]
+fn observation_projection_retains_success_and_never_invents_restart_freshness() {
+    use nus_exchange_contract::s2::{
+        journal::MAX_PAYLOAD, recovery::SignedRecovery, service::Service,
+    };
+    let root = std::path::PathBuf::from(std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR").unwrap());
+    let dir = root.join(format!(
+        "observation-{}",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    let (initial, mut obs) = setup(100, 0);
+    let mut service = Service::new(SignedRecovery::create(&dir, initial.clone(), "OPEN").unwrap());
+    let unknown = service.observation_view(NOW);
+    assert_eq!(unknown["fresh"], false);
+    assert_eq!(unknown["catching_up"], true);
+    assert_eq!(unknown["received_at_unix_ms"], "0");
+    assert_eq!(unknown["last_success_age_ms"], u64::MAX.to_string());
+    obs.query_latency_ms = 7;
+    service
+        .observe(initial.snapshot().clone(), obs, NOW, MAX_PAYLOAD)
+        .unwrap();
+    let fresh = service.observation_view(NOW + 5000);
+    assert_eq!(fresh["fresh"], true);
+    assert_eq!(fresh["last_success_age_ms"], "5000");
+    assert_eq!(fresh["query_latency_ms"], "7");
+    assert_eq!(service.observation_view(NOW + 5001)["fresh"], false);
+    let backward = service.observation_view(NOW - 1);
+    assert_eq!(backward["fresh"], false);
+    assert_eq!(backward["last_success_age_ms"], u64::MAX.to_string());
+    service.rpc_failed();
+    let failed = service.observation_view(NOW);
+    assert_eq!(failed["fresh"], false);
+    assert_eq!(failed["received_at_unix_ms"], NOW.to_string());
+    assert_eq!(failed["snapshot_id"], fresh["snapshot_id"]);
+    drop(service);
+    let service = Service::new(SignedRecovery::open(&dir, initial, "OPEN").unwrap());
+    assert_eq!(service.observation_view(NOW), unknown);
+    drop(service);
+    std::fs::remove_dir_all(dir).unwrap();
+}
