@@ -2092,3 +2092,89 @@ fn private_pages_bind_owner_sequence_and_exclude_counterparty_evidence() {
         .unwrap();
     }
 }
+
+#[test]
+fn ledger_view_combines_committed_owner_state_with_live_global_and_local_gates() {
+    use nus_exchange_contract::s2::{
+        journal::MAX_PAYLOAD, recovery::SignedRecovery, service::Service,
+    };
+    let dir = std::path::PathBuf::from(std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR").unwrap())
+        .join(format!(
+            "ledger-view-{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+    let (initial, obs) = setup(100, 0);
+    let (_, _, seller) = input("order");
+    let (_, _, buyer) = input("buyer-order");
+    let mut service = Service::new(SignedRecovery::create(&dir, initial.clone(), "OPEN").unwrap());
+    let mut exports = Vec::new();
+    let unknown = service.ledger_view(&seller, None, NOW).unwrap();
+    assert_eq!(unknown["status"]["mode"], "CATCHING_UP");
+    assert!(service.ledger_view("unknown", None, NOW).is_err());
+    exports.push(unknown);
+    service
+        .observe(initial.snapshot().clone(), obs, NOW, MAX_PAYLOAD)
+        .unwrap();
+    let open = service.ledger_view(&seller, None, NOW).unwrap();
+    assert_eq!(open["status"]["mode"], "OPEN");
+    assert_eq!(open, service.ledger_view(&seller, None, NOW).unwrap());
+    let stale = service.ledger_view(&seller, None, NOW + 5001).unwrap();
+    assert_eq!(stale["status"]["mode"], "STALE");
+    assert_eq!(stale["revision"], open["revision"]);
+    assert_eq!(stale["ledger"], open["ledger"]);
+    exports.extend([open, stale]);
+    let action = serde_json::to_vec(&json!({"request_id":"be".repeat(32)})).unwrap();
+    service
+        .submit("WITHDRAW_PREPARE", &action, &[], &seller, NOW, MAX_PAYLOAD)
+        .unwrap();
+    let frozen = service.ledger_view(&seller, None, NOW).unwrap();
+    assert_eq!(frozen["status"]["mode"], "WITHDRAW_FROZEN");
+    assert_eq!(
+        service.ledger_view(&buyer, None, NOW).unwrap()["status"]["mode"],
+        "OPEN"
+    );
+    assert_eq!(service.status(NOW)["mode"], "OPEN");
+    exports.push(frozen);
+    service.rpc_failed();
+    let failed = service.ledger_view(&seller, None, NOW).unwrap();
+    assert_eq!(failed["status"]["mode"], "STALE");
+    assert_eq!(failed["status"]["reason"], "RPC_UNAVAILABLE");
+    exports.push(failed);
+    drop(service);
+    let mut service = Service::new(SignedRecovery::open(&dir, initial.clone(), "OPEN").unwrap());
+    assert_eq!(
+        service.ledger_view(&seller, None, NOW).unwrap()["status"]["mode"],
+        "CATCHING_UP"
+    );
+    let (_, obs) = setup(100, 0);
+    service
+        .observe(initial.snapshot().clone(), obs, NOW, MAX_PAYLOAD)
+        .unwrap();
+    assert_eq!(
+        service.ledger_view(&seller, None, NOW).unwrap()["status"]["mode"],
+        "WITHDRAW_FROZEN"
+    );
+    for view in &exports {
+        assert_eq!(view["stream_seq"], view["status"]["stream_seq"]);
+        assert_eq!(view["revision"], view["status"]["revision"]);
+        assert_eq!(
+            view["snapshot_id"],
+            view["status"]["observation"]["snapshot_id"]
+        );
+        assert_eq!(view["context"], view["status"]["context"]);
+        assert_eq!(view["status"]["replicated"], false);
+        assert_eq!(view["status"]["settlement_submission_enabled"], false);
+    }
+    if let Ok(path) = std::env::var("S2_LEDGER_VIEW_EXPORT") {
+        let typed: Vec<_> = exports
+            .into_iter()
+            .map(|value| json!({"type":"LedgerView", "value":value}))
+            .collect();
+        std::fs::write(path, serde_json::to_vec_pretty(&typed).unwrap()).unwrap();
+    }
+    drop(service);
+    std::fs::remove_dir_all(dir).unwrap();
+}

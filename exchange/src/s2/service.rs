@@ -132,6 +132,34 @@ impl Service {
         super::private_view::page(self.state(), owner, cursor, 200, 1000)
             .map_err(Error::InvalidRecord)
     }
+    /// Status revision identifies the committed engine state. Observation ages
+    /// and the runtime gate are live metadata and do not append journal commands.
+    /// Callers must evaluate freshness on every response, even at unchanged seq.
+    pub fn status(&self, now: u64) -> Value {
+        let (mode, reason) = self.admission(now);
+        json!({
+            "context":self.state().snapshot().value()["body"]["context"],
+            "stream_seq":self.state().sequence().to_string(),
+            "revision":self.state().sequence().to_string(),
+            "mode":mode, "reason":reason,
+            "observation":self.observation_view(now),
+            "durability":"LOCAL_FSYNC", "replicated":false,
+            "settlement_submission_enabled":false
+        })
+    }
+    /// Complete owner view from one immutable committed state and one supplied
+    /// clock instant. Authentication is the outer adapter's responsibility.
+    pub fn ledger_view(&self, owner: &str, cursor: Option<&str>, now: u64) -> Result<Value> {
+        let mut page = self.private_page(owner, cursor)?;
+        let mut status = self.status(now);
+        // Global recovery/staleness takes priority over account-local freezing.
+        if status["mode"] == "OPEN" && self.state().is_frozen(owner) {
+            status["mode"] = json!("WITHDRAW_FROZEN");
+            status["reason"] = json!("WITHDRAW_FROZEN");
+        }
+        page["status"] = status;
+        Ok(page)
+    }
     pub fn observation(&self) -> Option<&Observation> {
         self.observation.as_ref()
     }
