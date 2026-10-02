@@ -2120,10 +2120,10 @@ fn ledger_view_combines_committed_owner_state_with_live_global_and_local_gates()
         .unwrap();
     let open = service.ledger_view(&seller, None, NOW).unwrap();
     assert_eq!(open["status"]["mode"], "OPEN");
-    assert_eq!(open, service.ledger_view(&seller, None, NOW).unwrap());
+    assert_eq!(open["ledger"], service.ledger_view(&seller, None, NOW).unwrap()["ledger"]);
     let stale = service.ledger_view(&seller, None, NOW + 5001).unwrap();
     assert_eq!(stale["status"]["mode"], "STALE");
-    assert_eq!(stale["revision"], open["revision"]);
+    assert_ne!(stale["revision"], open["revision"]);
     assert_eq!(stale["ledger"], open["ledger"]);
     exports.extend([open, stale]);
     let action = serde_json::to_vec(&json!({"request_id":"be".repeat(32)})).unwrap();
@@ -2136,7 +2136,7 @@ fn ledger_view_combines_committed_owner_state_with_live_global_and_local_gates()
         service.ledger_view(&buyer, None, NOW).unwrap()["status"]["mode"],
         "OPEN"
     );
-    assert_eq!(service.status(NOW)["mode"], "OPEN");
+    assert_eq!(service.status(NOW).unwrap()["mode"], "OPEN");
     exports.push(frozen);
     service.rpc_failed();
     let failed = service.ledger_view(&seller, None, NOW).unwrap();
@@ -2177,4 +2177,40 @@ fn ledger_view_combines_committed_owner_state_with_live_global_and_local_gates()
     }
     drop(service);
     std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn status_revisions_order_live_responses_restart_and_fail_closed() {
+    use nus_exchange_contract::s2::{journal::MAX_PAYLOAD, recovery::SignedRecovery, service::Service};
+    let dir = std::path::PathBuf::from(std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR").unwrap())
+        .join(format!("status-order-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    let (initial, obs) = setup(100, 0);
+    let mut service = Service::new(SignedRecovery::create(&dir, initial.clone(), "OPEN").unwrap());
+    let rev = |v: &Value| v["revision"].as_str().unwrap().parse::<u64>().unwrap();
+    let first = service.status(NOW).unwrap();
+    service.observe(initial.snapshot().clone(), obs, NOW, MAX_PAYLOAD).unwrap();
+    let open = service.status(NOW).unwrap();
+    let stale = service.status(NOW + 5001).unwrap();
+    service.rpc_failed();
+    let failed = service.status(NOW).unwrap();
+    assert_eq!(first["stream_seq"], failed["stream_seq"]);
+    assert!(rev(&first) < rev(&open) && rev(&open) < rev(&stale) && rev(&stale) < rev(&failed));
+    assert_eq!(stale["mode"], "STALE");
+    // A response delivered late is discarded by its revision even at equal seq.
+    assert!(rev(&open) < rev(&failed));
+    drop(service);
+    let mut service = Service::new(SignedRecovery::open(&dir, initial.clone(), "OPEN").unwrap());
+    let restarted = service.status(NOW).unwrap();
+    assert!(rev(&restarted) > rev(&failed));
+    assert_eq!(restarted["mode"], "CATCHING_UP");
+    // Exhaust the reserved block, then force the next durable reservation to fail.
+    for _ in 1..1024 { service.status(NOW).unwrap(); }
+    std::fs::write(dir.join("status.revision.tmp"), b"uncertain").unwrap();
+    assert!(service.status(NOW).is_err());
+    assert_eq!(service.admission(NOW).0, "RECOVERY_REQUIRED");
+    assert!(service.status(NOW).is_err());
+    drop(service);
+    let mut service = Service::new(SignedRecovery::open(&dir, initial, "OPEN").unwrap());
+    assert!(service.status(NOW).is_err());
+    assert_eq!(std::fs::read(dir.join("status.revision.tmp")).unwrap(), b"uncertain");
 }

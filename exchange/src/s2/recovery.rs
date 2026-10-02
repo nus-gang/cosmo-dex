@@ -16,6 +16,7 @@ pub struct SignedRecovery {
     receipts: BTreeMap<u64, Value>,
     mode: String,
     recovery_required: bool,
+    status_revisions: Option<std::ops::RangeInclusive<u64>>,
 }
 impl SignedRecovery {
     /// Explicitly initialize a fresh namespace. A partial initialization is left
@@ -118,6 +119,7 @@ impl SignedRecovery {
                 receipts,
                 mode: mode.into(),
                 recovery_required: false,
+                status_revisions: None,
             }),
             Err(error) => {
                 journal.preserve_evidence()?;
@@ -258,6 +260,19 @@ impl SignedRecovery {
         self.state = candidate;
         self.recovery_required = false;
         Ok(Some(prepared.result().clone()))
+    }
+    /// Each published live response gets a unique revision; unused reservations
+    /// are skipped on restart. Failure closes command admission as well.
+    pub fn next_status_revision(&mut self) -> Result<u64> {
+        if self.recovery_required {
+            return Err(Error::RecoveryRequired("POISONED_SESSION"));
+        }
+        if self.status_revisions.as_ref().is_none_or(|range| range.is_empty()) {
+            self.recovery_required = true;
+            self.status_revisions = Some(self.journal.reserve_status_revisions(1024)?);
+            self.recovery_required = false;
+        }
+        self.status_revisions.as_mut().and_then(Iterator::next).ok_or(Error::ResourceLimit)
     }
     pub fn recovery_required(&self) -> bool {
         self.recovery_required

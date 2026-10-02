@@ -1,0 +1,352 @@
+[
+  {
+    "type": "LedgerView",
+    "value": {
+      "context": {
+        "chain_id": "nus-s2-dev-1",
+        "config_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+        "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+        "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+        "market_config_version": "1",
+        "market_id": "DEVBASE/DEVQUOTE",
+        "schema_version": "1"
+      },
+      "fills": [],
+      "ledger": [
+        {
+          "A": "10000000",
+          "C": "10000000",
+          "D": "0",
+          "P": "0",
+          "R": "0",
+          "denom": "DEVBASE"
+        },
+        {
+          "A": "0",
+          "C": "0",
+          "D": "0",
+          "P": "0",
+          "R": "0",
+          "denom": "DEVQUOTE"
+        }
+      ],
+      "next_cursor": "END",
+      "observed_height": "100",
+      "orders": [],
+      "owner": "1maAbhHO4Zp8mJ90RfkN1BnPTS0=",
+      "owner_epoch": "0",
+      "revision": "1",
+      "snapshot_id": "9ff795d16f77b68bf1092f9487cd5de3e08c6ecde21fb9fab718a2024a27fc3a",
+      "status": {
+        "context": {
+          "chain_id": "nus-s2-dev-1",
+          "config_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+          "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+          "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+          "market_config_version": "1",
+          "market_id": "DEVBASE/DEVQUOTE",
+          "schema_version": "1"
+        },
+        "durability": "LOCAL_FSYNC",
+        "mode": "CATCHING_UP",
+        "observation": {
+          "block_age_ms": "0",
+          "catching_up": true,
+          "cursor_height": "100",
+          "fresh": false,
+          "last_success_age_ms": "18446744073709551615",
+          "observed_height": "100",
+          "query_latency_ms": "0",
+          "received_at_unix_ms": "0",
+          "snapshot_id": "9ff795d16f77b68bf1092f9487cd5de3e08c6ecde21fb9fab718a2024a27fc3a"
+        },
+        "reason": "OBSERVATION_REQUIRED",
+        "replicated": false,
+        "revision": "1",
+        "settlement_submission_enabled": false,
+        "stream_seq": "0"
+      },
+      "stream_seq": "0"
+    }
+  },
+  {
+    "type": "LedgerView",
+    "value": {
+      "context": {
+        "chain_id": "nus-s2-dev-1",
+        "config_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+        "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+        "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+        "market_config_version": "1",
+        "market_id": "DEVBASE/DEVQUOTE",
+        "schema_version": "1"
+      },
+      "fills": [],
+      "ledger": [
+        {
+          "A": "10000000",
+          "C": "10000000",
+          "D": "0",
+          "P": "0",
+          "R": "0",
+          "denom": "DEVBASE"
+        },
+        {
+          "A": "0",
+          "C": "0",
+          "D": "0",
+          "P": "0",
+          "R": "0",
+          "denom": "DEVQUOTE"
+        }
+      ],
+      "next_cursor": "END",
+      "observed_height": "100",
+      "orders": [],
+      "owner": "1maAbhHO4Zp8mJ90RfkN1BnPTS0=",
+      "owner_epoch": "0",
+      "revision": "2",
+      "snapshot_id": "9ff795d16f77b68bf1092f9487cd5de3e08c6ecde21fb9fab718a2024a27fc3a",
+      "status": {
+        "context": {
+          "chain_id": "nus-s2-dev-1",
+          "config_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+          "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+          "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+          "market_config_version": "1",
+          "market_id": "DEVBASE/DEVQUOTE",
+          "schema_version": "1"
+        },
+        "durability": "LOCAL_FSYNC",
+        "mode": "OPEN",
+        "observation": {
+          "block_age_ms": "0",
+          "catching_up": false,
+          "cursor_height": "100",
+          "fresh": true,
+          "last_success_age_ms": "0",
+          "observed_height": "100",
+          "query_latency_ms": "1",
+          "received_at_unix_ms": "1790956680000",
+          "snapshot_id": "9ff795d16f77b68bf1092f9487cd5de3e08c6ecde21fb9fab718a2024a27fc3a"
+        },
+        "reason": "OK",
+        "replicated": false,
+        "revision": "2",
+        "settlement_submission_enabled": false,
+        "stream_seq": "0"
+      },
+      "stream_seq": "0"
+    }
+  },
+  {
+    "type": "LedgerView",
+    "value": {
+      "context": {
+        "chain_id": "nus-s2-dev-1",
+        "config_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+        "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+        "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+        "market_config_version": "1",
+        "market_id": "DEVBASE/DEVQUOTE",
+        "schema_version": "1"
+      },
+      "fills": [],
+      "ledger": [
+        {
+          "A": "10000000",
+          "C": "10000000",
+          "D": "0",
+          "P": "0",
+          "R": "0",
+          "denom": "DEVBASE"
+        },
+        {
+          "A": "0",
+          "C": "0",
+          "D": "0",
+          "P": "0",
+          "R": "0",
+          "denom": "DEVQUOTE"
+        }
+      ],
+      "next_cursor": "END",
+      "observed_height": "100",
+      "orders": [],
+      "owner": "1maAbhHO4Zp8mJ90RfkN1BnPTS0=",
+      "owner_epoch": "0",
+      "revision": "4",
+      "snapshot_id": "9ff795d16f77b68bf1092f9487cd5de3e08c6ecde21fb9fab718a2024a27fc3a",
+      "status": {
+        "context": {
+          "chain_id": "nus-s2-dev-1",
+          "config_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+          "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+          "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+          "market_config_version": "1",
+          "market_id": "DEVBASE/DEVQUOTE",
+          "schema_version": "1"
+        },
+        "durability": "LOCAL_FSYNC",
+        "mode": "STALE",
+        "observation": {
+          "block_age_ms": "5001",
+          "catching_up": false,
+          "cursor_height": "100",
+          "fresh": false,
+          "last_success_age_ms": "5001",
+          "observed_height": "100",
+          "query_latency_ms": "1",
+          "received_at_unix_ms": "1790956680000",
+          "snapshot_id": "9ff795d16f77b68bf1092f9487cd5de3e08c6ecde21fb9fab718a2024a27fc3a"
+        },
+        "reason": "STALE",
+        "replicated": false,
+        "revision": "4",
+        "settlement_submission_enabled": false,
+        "stream_seq": "0"
+      },
+      "stream_seq": "0"
+    }
+  },
+  {
+    "type": "LedgerView",
+    "value": {
+      "context": {
+        "chain_id": "nus-s2-dev-1",
+        "config_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+        "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+        "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+        "market_config_version": "1",
+        "market_id": "DEVBASE/DEVQUOTE",
+        "schema_version": "1"
+      },
+      "fills": [],
+      "ledger": [
+        {
+          "A": "10000000",
+          "C": "10000000",
+          "D": "0",
+          "P": "0",
+          "R": "0",
+          "denom": "DEVBASE"
+        },
+        {
+          "A": "0",
+          "C": "0",
+          "D": "0",
+          "P": "0",
+          "R": "0",
+          "denom": "DEVQUOTE"
+        }
+      ],
+      "next_cursor": "END",
+      "observed_height": "100",
+      "orders": [],
+      "owner": "1maAbhHO4Zp8mJ90RfkN1BnPTS0=",
+      "owner_epoch": "0",
+      "revision": "5",
+      "snapshot_id": "9ff795d16f77b68bf1092f9487cd5de3e08c6ecde21fb9fab718a2024a27fc3a",
+      "status": {
+        "context": {
+          "chain_id": "nus-s2-dev-1",
+          "config_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+          "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+          "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+          "market_config_version": "1",
+          "market_id": "DEVBASE/DEVQUOTE",
+          "schema_version": "1"
+        },
+        "durability": "LOCAL_FSYNC",
+        "mode": "WITHDRAW_FROZEN",
+        "observation": {
+          "block_age_ms": "0",
+          "catching_up": false,
+          "cursor_height": "100",
+          "fresh": true,
+          "last_success_age_ms": "0",
+          "observed_height": "100",
+          "query_latency_ms": "1",
+          "received_at_unix_ms": "1790956680000",
+          "snapshot_id": "9ff795d16f77b68bf1092f9487cd5de3e08c6ecde21fb9fab718a2024a27fc3a"
+        },
+        "reason": "WITHDRAW_FROZEN",
+        "replicated": false,
+        "revision": "5",
+        "settlement_submission_enabled": false,
+        "stream_seq": "1"
+      },
+      "stream_seq": "1"
+    }
+  },
+  {
+    "type": "LedgerView",
+    "value": {
+      "context": {
+        "chain_id": "nus-s2-dev-1",
+        "config_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+        "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+        "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+        "market_config_version": "1",
+        "market_id": "DEVBASE/DEVQUOTE",
+        "schema_version": "1"
+      },
+      "fills": [],
+      "ledger": [
+        {
+          "A": "10000000",
+          "C": "10000000",
+          "D": "0",
+          "P": "0",
+          "R": "0",
+          "denom": "DEVBASE"
+        },
+        {
+          "A": "0",
+          "C": "0",
+          "D": "0",
+          "P": "0",
+          "R": "0",
+          "denom": "DEVQUOTE"
+        }
+      ],
+      "next_cursor": "END",
+      "observed_height": "100",
+      "orders": [],
+      "owner": "1maAbhHO4Zp8mJ90RfkN1BnPTS0=",
+      "owner_epoch": "0",
+      "revision": "8",
+      "snapshot_id": "9ff795d16f77b68bf1092f9487cd5de3e08c6ecde21fb9fab718a2024a27fc3a",
+      "status": {
+        "context": {
+          "chain_id": "nus-s2-dev-1",
+          "config_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+          "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+          "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+          "market_config_version": "1",
+          "market_id": "DEVBASE/DEVQUOTE",
+          "schema_version": "1"
+        },
+        "durability": "LOCAL_FSYNC",
+        "mode": "STALE",
+        "observation": {
+          "block_age_ms": "0",
+          "catching_up": false,
+          "cursor_height": "100",
+          "fresh": false,
+          "last_success_age_ms": "0",
+          "observed_height": "100",
+          "query_latency_ms": "1",
+          "received_at_unix_ms": "1790956680000",
+          "snapshot_id": "9ff795d16f77b68bf1092f9487cd5de3e08c6ecde21fb9fab718a2024a27fc3a"
+        },
+        "reason": "RPC_UNAVAILABLE",
+        "replicated": false,
+        "revision": "8",
+        "settlement_submission_enabled": false,
+        "stream_seq": "1"
+      },
+      "stream_seq": "1"
+    }
+  }
+]
