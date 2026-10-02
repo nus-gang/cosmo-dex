@@ -8,3 +8,5 @@ pub mod matching;
 pub mod snapshot;
 
 pub mod sequencer;
+
+pub mod record;

@@ -727,3 +727,172 @@ fn replay_preserves_full_state_hash_including_rejection_binding() {
     };
     assert_eq!(run(), run());
 }
+
+#[test]
+fn signed_records_fsync_reopen_and_deterministically_replay_full_results() {
+    use nus_exchange_contract::s2::{
+        journal::{self, Commit, Journal},
+        record::SignedRecord,
+    };
+    let root = std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(std::env::temp_dir);
+    let dir = root.join(format!("s2-record-{}", std::process::id()));
+    let (initial, obs) = setup(100, 0);
+    let context = initial.snapshot().value()["body"]["context"].clone();
+    let mut journal = Journal::create(&dir, context.clone()).unwrap();
+    let mut state = initial.clone();
+    let mut receipts = vec![];
+    let mut schemas = vec![];
+    let mut commits = vec![journal.commit().clone()];
+    let commands = vec![
+        ("ORDER", input("order")),
+        ("ORDER", input("buyer-order")),
+        (
+            "ORDER",
+            changed(
+                "buyer-order",
+                &[
+                    ("order_id", json!("fe".repeat(32))),
+                    ("max_qty_lots", json!("1000000")),
+                ],
+            ),
+        ),
+        ("CANCEL", input("cancel")),
+    ];
+    for (kind, (raw, sig, owner)) in &commands {
+        let (next, outcome, duplicate) = state.submit(kind, raw, sig, owner, &obs, NOW).unwrap();
+        assert!(!duplicate);
+        let prepared = SignedRecord::prepare(
+            &state,
+            &next,
+            &outcome,
+            kind,
+            &obs,
+            NOW,
+            "OPEN",
+            journal.commit(),
+        )
+        .unwrap();
+        assert!(prepared.receipt(journal.commit()).is_err());
+        // Fixture-only capacity ceiling. Production must derive an actual worst
+        // correction encoding; this harness is not a service admission policy.
+        let commit = journal
+            .append(prepared.record(), journal::MAX_PAYLOAD, false)
+            .unwrap();
+        let receipt = prepared.receipt(&commit).unwrap();
+        if outcome.seq == 2 {
+            assert_eq!(
+                prepared.result()["ledger_changes"]
+                    .as_array()
+                    .unwrap()
+                    .len(),
+                4
+            );
+            assert_eq!(
+                prepared.result()["affected_order_hashes"]
+                    .as_array()
+                    .unwrap()
+                    .len(),
+                2
+            );
+            assert_eq!(
+                prepared.result()["created_fill_ids"]
+                    .as_array()
+                    .unwrap()
+                    .len(),
+                1
+            );
+        }
+        if outcome.seq == 3 {
+            assert_eq!(receipt["state"], "REJECTED");
+            assert_eq!(receipt["code"], "INSUFFICIENT_AVAILABLE");
+            assert_eq!(prepared.result()["ledger_changes"], json!([]));
+        }
+        let mut wrong = commit.clone();
+        wrong.record_hash = "00".repeat(32);
+        assert!(prepared.receipt(&wrong).is_err());
+        schemas.push(
+            json!({"record":prepared.record(), "result":prepared.result(), "receipt":receipt}),
+        );
+        receipts.push(receipt);
+        commits.push(commit);
+        state = next;
+    }
+    let final_hash = state.state_hash("OPEN").unwrap();
+    drop(journal);
+    let (journal, records) = Journal::open(&dir, context).unwrap();
+    let mut replay = initial;
+    for (i, record) in records.iter().enumerate() {
+        let kind = record["command_kind"].as_str().unwrap();
+        let raw = STANDARD
+            .decode(record["request_wire"].as_str().unwrap())
+            .unwrap();
+        let sig = STANDARD
+            .decode(record["signature"].as_str().unwrap())
+            .unwrap();
+        let wire = Codec::default()
+            .decode(
+                if kind == "ORDER" {
+                    "OrderV1"
+                } else {
+                    "CancelV1"
+                },
+                &raw,
+            )
+            .unwrap();
+        let (next, outcome, duplicate) = replay
+            .submit(kind, &raw, &sig, wire["owner"].as_str().unwrap(), &obs, NOW)
+            .unwrap();
+        assert!(!duplicate);
+        let prepared = SignedRecord::prepare(
+            &replay,
+            &next,
+            &outcome,
+            kind,
+            &obs,
+            NOW,
+            "OPEN",
+            &commits[i],
+        )
+        .unwrap();
+        assert_eq!(prepared.record(), record);
+        assert_eq!(prepared.receipt(&commits[i + 1]).unwrap(), receipts[i]);
+        replay = next;
+    }
+    assert_eq!(replay.state_hash("OPEN").unwrap(), final_hash);
+    let (raw, sig, owner) = input("order");
+    let (same, outcome, duplicate) = replay
+        .submit("ORDER", &raw, &sig, &owner, &obs, NOW + 9000)
+        .unwrap();
+    assert!(duplicate);
+    assert_eq!(receipts[outcome.seq as usize - 1]["command_seq"], "1");
+    assert!(
+        SignedRecord::prepare(
+            &replay,
+            &same,
+            &outcome,
+            "ORDER",
+            &obs,
+            NOW,
+            "OPEN",
+            journal.commit()
+        )
+        .is_err()
+    );
+    // Original receipt remains successful although its latest view is cancelled.
+    assert_eq!(receipts[0]["state"], "LOCAL_ACCEPTED");
+    assert_eq!(replay.orders()[&outcome.hash].status, "CANCELLED_OFFCHAIN");
+    if let Ok(path) = std::env::var("S2_RECORD_SCHEMA_OUTPUT") {
+        std::fs::write(path, serde_json::to_vec_pretty(&schemas).unwrap()).unwrap();
+    }
+    assert_eq!(
+        journal.commit(),
+        &Commit {
+            command_seq: 4,
+            ..commits[4].clone()
+        }
+    );
+    drop(journal);
+    std::fs::remove_dir_all(dir).unwrap();
+}
