@@ -1,0 +1,34 @@
+   Compiling nus-exchange-contract v0.1.0 (/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/worktrees/NUS-38/exchange)
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-10-02 18:08:13.065 xcodebuild[23090:28458060]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 18:08:13.248 xcodebuild[23090:28457998] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-10-02 18:08:13.784 xcodebuild[24023:28459101]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 18:08:13.988 xcodebuild[24023:28459049] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-10-02 18:08:13.058 xcodebuild[23009:28457960]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 18:08:13.248 xcodebuild[23009:28457860] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-10-02 18:08:13.784 xcodebuild[24024:28459099]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 18:08:13.988 xcodebuild[24024:28459050] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: `nus-exchange-contract` (bin "vectors") generated 1 warning
+warning: `nus-exchange-contract` (bin "decision") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.39s
+     Running tests/s2_sequencer.rs (exchange/target/debug/deps/s2_sequencer-50014608d696e4d5)
+
+running 10 tests
+test invalid_signature_and_foreign_session_cannot_read_duplicate_receipt ... ok
+test ioc_partial_callback_fill_releases_only_remainder_and_keeps_worst_buy_debit ... ok
+test real_signed_partial_fill_cancel_and_duplicate_have_one_effect ... ok
+test deterministic_rejection_is_bound_and_candidate_does_not_change_source ... ok
+test epoch_expiry_margin_and_staleness_are_enforced_for_new_effects ... ok
+test pending_receipts_cannot_fund_new_orders ... ok
+test replay_of_recorded_signed_inputs_preserves_sequence_fill_id_and_ledger ... ok
+test randomized_signature_retry_preserves_original_evidence_and_body_binding ... ok
+test signed_cancel_target_nonce_and_terminal_noop_are_bound ... ok
+test sequential_signed_requests_cannot_overreserve_confirmed_funds ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+
