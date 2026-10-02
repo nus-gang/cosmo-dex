@@ -1,7 +1,7 @@
 //! Private candidate transitions, not a service or durable receipt boundary.
 //! The owner must journal input/result/outbox before publishing a returned state.
 use super::{
-    journal::sha256,
+    journal::{canonical, sha256},
     ledger::{Asset, Ledger, Side},
     matching::{self, LiveOrder, Remainder, Tif},
     snapshot::{Advance, Observation, Snapshot},
@@ -11,6 +11,7 @@ use crate::{
     codec::{self, Codec, integer},
     policy,
 };
+use base64::{Engine, engine::general_purpose::STANDARD};
 use serde_json::{Value, json};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -36,6 +37,7 @@ pub struct Order {
     pub order_id: String,
     pub status: String,
     pub filled: u64,
+    pub revision: u64,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Correction {
@@ -53,6 +55,7 @@ pub struct Candidate {
     orders: BTreeMap<String, Order>,
     frozen: BTreeMap<String, u64>,
     fill_order: Vec<String>,
+    outbox: BTreeMap<String, Value>,
 }
 impl Candidate {
     pub fn new(snapshot: Snapshot) -> Result<Self> {
@@ -70,7 +73,127 @@ impl Candidate {
             orders: BTreeMap::new(),
             frozen: BTreeMap::new(),
             fill_order: Vec::new(),
+            outbox: BTreeMap::new(),
         })
+    }
+    fn corrected_quantity(&self, hash: &str) -> Result<u64> {
+        self.ledger
+            .fills()
+            .values()
+            .filter(|f| f.corrected && (f.buy_order == hash || f.sell_order == hash))
+            .try_fold(0u64, |n, f| {
+                n.checked_add(f.quantity).ok_or("INTEGER_OVERFLOW")
+            })
+    }
+    // Entity revision changes once per atomic command, even with multiple fills.
+    fn revise_orders(&mut self, before: &Self) -> Result<()> {
+        for (hash, old) in &before.orders {
+            let corrected = self.corrected_quantity(hash)? != before.corrected_quantity(hash)?;
+            let new = self.orders.get_mut(hash).ok_or("LEDGER_RECONCILIATION")?;
+            if new.live.remaining != old.live.remaining
+                || new.filled != old.filled
+                || new.status != old.status
+                || corrected
+            {
+                new.revision = old.revision.checked_add(1).ok_or("INTEGER_OVERFLOW")?;
+            }
+        }
+        Ok(())
+    }
+    /// Full internal state projection. Never expose this object to public clients:
+    /// it contains both owners and signed order evidence. It is not a receipt or
+    /// a standalone restore format: replay must recover result/local-action indexes.
+    /// Mode is supplied by the service's admission gate, not inferred from balances.
+    pub fn state_json(&self, mode: &str) -> Result<Value> {
+        self.ledger.validate()?;
+        let mut accounts = Vec::new();
+        for a in self.snapshot.accounts() {
+            let mut rows = Vec::new();
+            for (asset, denom) in [(Asset::Base, "DEVBASE"), (Asset::Quote, "DEVQUOTE")] {
+                let b = self.ledger.balance(&a.owner, asset)?;
+                rows.push(
+                    json!({"denom":denom, "C":b.c.to_string(), "R":b.r.to_string(),
+                    "D":b.d.to_string(), "P":b.p.to_string(), "A":b.available()?.to_string()}),
+                );
+            }
+            accounts.push(json!({"owner":a.owner, "owner_epoch":a.epoch.to_string(),
+                "ledger":rows, "withdraw_frozen":self.is_frozen(&a.owner)}));
+        }
+        let mut ordered: Vec<_> = self.orders.values().collect();
+        ordered.sort_by_key(|o| o.live.admission_seq);
+        let mut orders = Vec::new();
+        for o in ordered {
+            let (raw, sig) = self
+                .evidence(
+                    "ORDER",
+                    &o.live.owner,
+                    &format!("{}:{}", o.epoch, o.order_id),
+                )
+                .ok_or("LEDGER_RECONCILIATION")?;
+            let wire = Codec::default().decode("OrderV1", raw)?;
+            let maximum = integer(&wire["max_qty_lots"], 64)? as u64;
+            let cancelled = maximum
+                .checked_sub(o.filled)
+                .and_then(|n| n.checked_sub(o.live.remaining))
+                .ok_or("LEDGER_RECONCILIATION")?;
+            orders.push(json!({"owner":o.live.owner, "order_wire":STANDARD.encode(raw),
+                "signature":STANDARD.encode(sig), "view":{
+                "order_id":o.order_id, "order_hash":o.live.hash, "owner_epoch":o.epoch.to_string(),
+                "admission_seq":o.live.admission_seq.to_string(),
+                "side":if o.live.side == Side::Buy {"BUY"} else {"SELL"},
+                "order_type":if wire["order_type"] == "1" {"LIMIT_GTC"} else {"LIMIT_IOC"},
+                "limit_price_ticks":o.live.price.to_string(), "max_qty_lots":maximum.to_string(),
+                "remaining_qty_lots":o.live.remaining.to_string(), "filled_qty_lots":o.filled.to_string(),
+                "corrected_qty_lots":self.corrected_quantity(&o.live.hash)?.to_string(),
+                "cancelled_qty_lots":cancelled.to_string(), "state":o.status, "revision":o.revision.to_string()
+            }}));
+        }
+        let mut bindings = Vec::new();
+        for ((kind, owner, _), b) in &self.bindings {
+            let v = Codec::default().decode(
+                if kind == "ORDER" {
+                    "OrderV1"
+                } else {
+                    "CancelV1"
+                },
+                &b.raw,
+            )?;
+            let id = &v[if kind == "ORDER" {
+                "order_id"
+            } else {
+                "cancel_nonce"
+            }];
+            let epoch = integer(&v["owner_epoch"], 64)? as u64;
+            let raw_owner = STANDARD.decode(owner).map_err(|_| "ADDRESS_MISMATCH")?;
+            bindings.push((
+                (
+                    raw_owner,
+                    epoch,
+                    id.as_str().unwrap().to_owned(),
+                    kind.clone(),
+                ),
+                json!({"owner":owner, "owner_epoch":epoch.to_string(), "kind":kind, "id":id,
+                    "request_hash":b.hash, "first_command_seq":b.outcome.seq.to_string()}),
+            ));
+        }
+        bindings.sort_by(|a, b| a.0.cmp(&b.0));
+        let fills: Vec<_> = self
+            .fill_order
+            .iter()
+            .map(|id| self.outbox.get(id).cloned().ok_or("LEDGER_RECONCILIATION"))
+            .collect::<Result<_>>()?;
+        let value = json!({"context":self.snapshot.value()["body"]["context"],
+            "last_command_seq":self.seq.to_string(), "chain_snapshot":self.snapshot.value(), "mode":mode,
+            "accounts":accounts, "orders":orders, "fills":fills,
+            "bindings":bindings.into_iter().map(|(_,v)|v).collect::<Vec<_>>()});
+        canonical(&value).map_err(|_| "STATE_CANONICAL")?;
+        Ok(value)
+    }
+    pub fn state_hash(&self, mode: &str) -> Result<String> {
+        Ok(sha256(&codec::frame(
+            "NUS/S2/STATE/V1",
+            &canonical(&self.state_json(mode)?).map_err(|_| "STATE_CANONICAL")?,
+        )))
     }
     pub fn snapshot(&self) -> &Snapshot {
         &self.snapshot
@@ -115,6 +238,10 @@ impl Candidate {
                 affected.insert(fill.buy_order.clone());
                 affected.insert(fill.sell_order.clone());
                 next.ledger.correct_fill(id)?;
+                let fill = next.outbox.get_mut(id).ok_or("LEDGER_RECONCILIATION")?;
+                fill["state"] = json!("CORRECTED");
+                fill["revision"] = json!("2");
+                fill["reason"] = json!("OWNER_EPOCH_CHANGED");
                 correction.corrected_fill_ids.push(id.clone());
             }
         }
@@ -145,6 +272,7 @@ impl Candidate {
         next.ledger.validate()?;
         next.snapshot = snapshot;
         correction.affected_owners = owners.into_iter().collect();
+        next.revise_orders(self)?;
         Ok((next, correction))
     }
     /// Authenticated API session owner; no authority to sign or gate chain TXs.
@@ -167,6 +295,7 @@ impl Candidate {
             b.d != 0 || b.p != 0
         });
         next.ledger.validate()?;
+        next.revise_orders(self)?;
         Ok((next, if hold { "UNSETTLED_HOLD" } else { "OK" }))
     }
     pub fn abort_withdraw(&self, owner: &str, observation: &Observation, now: u64) -> Result<Self> {
@@ -355,6 +484,7 @@ impl Candidate {
                 signature: sig.to_vec(),
             },
         );
+        next.revise_orders(self)?;
         Ok((next, outcome, false))
     }
     fn place(&mut self, v: &Value, hash: &str, bps: u32, outcome: &mut Outcome) -> Result<()> {
@@ -439,6 +569,19 @@ impl Candidate {
                 "PARTIALLY_FILLED"
             }
             .into();
+            let f = self.ledger.fill(&fill_id).ok_or("LEDGER_RECONCILIATION")?;
+            self.outbox.insert(fill_id.clone(), json!({
+                "fill_id":fill_id, "maker_order_hash":if side == Side::Buy {sell} else {buy},
+                "taker_order_hash":hash, "buyer_order_hash":buy, "seller_order_hash":sell,
+                "command_seq":self.seq.to_string(), "match_index":index.to_string(),
+                "quantity_lots":f.quantity.to_string(), "execution_price_ticks":f.price.to_string(),
+                "fee_policy_version":self.snapshot.value()["body"]["market"]["fee_policy_version"],
+                "fee_base_atoms":f.base_fee.to_string(), "fee_quote_atoms":f.quote_fee.to_string(),
+                "buy_D":f.buy_debit.to_string(), "sell_D":f.sell_debit.to_string(),
+                "buyer_P":f.base_net.to_string(), "seller_P":f.quote_net.to_string(),
+                "snapshot_id":self.snapshot.id(), "state":"PENDING", "revision":"1",
+                "reason":"S2_UNSETTLED", "export_state":"HELD_S2", "submission_enabled":false
+            }));
             self.fill_order.push(fill_id.clone());
             outcome.fills.push(fill_id);
         }
@@ -457,6 +600,7 @@ impl Candidate {
             }
             .into(),
             filled,
+            revision: 1,
         };
         order.live.remaining = matched.remaining;
         if matched.remainder != Remainder::Resting {

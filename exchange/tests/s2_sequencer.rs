@@ -599,3 +599,131 @@ fn disconnected_counterparty_order_retains_fifo_and_reserve() {
         state.ledger().balance(&buyer, Asset::Quote)
     );
 }
+
+#[test]
+fn schema_state_retains_signed_evidence_quantities_and_held_outbox() {
+    let (mut state, obs) = setup(100, 0);
+    let mut projections = vec![state.state_json("OPEN").unwrap()];
+    for id in ["order", "buyer-order", "cancel"] {
+        let (raw, sig, owner) = input(id);
+        state = state
+            .submit(
+                if id == "cancel" { "CANCEL" } else { "ORDER" },
+                &raw,
+                &sig,
+                &owner,
+                &obs,
+                NOW,
+            )
+            .unwrap()
+            .0;
+        projections.push(state.state_json("OPEN").unwrap());
+    }
+    let v = projections.last().unwrap();
+    let sell = &v["orders"][0];
+    assert_eq!(sell["view"]["revision"], "3");
+    assert_eq!(sell["view"]["filled_qty_lots"], "1000");
+    assert_eq!(sell["view"]["cancelled_qty_lots"], "1000");
+    assert_eq!(sell["view"]["remaining_qty_lots"], "0");
+    assert_eq!(sell["view"]["corrected_qty_lots"], "0");
+    let (raw, sig, _) = input("order");
+    assert_eq!(sell["order_wire"], STANDARD.encode(raw));
+    assert_eq!(sell["signature"], STANDARD.encode(sig));
+    let f = &v["fills"][0];
+    assert_eq!(f["state"], "PENDING");
+    assert_eq!(f["revision"], "1");
+    assert_eq!(f["fee_policy_version"], "1");
+    assert_eq!(f["buy_D"], "10000000");
+    assert_eq!(f["buyer_P"], "1000000");
+    assert_eq!(f["export_state"], "HELD_S2");
+    assert_eq!(f["submission_enabled"], false);
+    assert_eq!(f["maker_order_hash"], v["orders"][0]["view"]["order_hash"]);
+    assert_eq!(f["taker_order_hash"], v["orders"][1]["view"]["order_hash"]);
+    assert_eq!(
+        state.state_hash("OPEN").unwrap(),
+        sha256(&codec::frame("NUS/S2/STATE/V1", &canonical(v).unwrap()))
+    );
+    let seller = input("order").2;
+    let (corrected, _) = state
+        .advance(next_snapshot(&state, Some(&seller), 1))
+        .unwrap();
+    let c = corrected.state_json("OPEN").unwrap();
+    assert_eq!(c["orders"][0]["view"]["revision"], "4");
+    assert_eq!(c["orders"][0]["view"]["filled_qty_lots"], "1000");
+    assert_eq!(c["orders"][0]["view"]["corrected_qty_lots"], "1000");
+    assert_eq!(c["fills"][0]["revision"], "2");
+    assert_eq!(c["fills"][0]["state"], "CORRECTED");
+    assert_eq!(c["fills"][0]["snapshot_id"], f["snapshot_id"]);
+    assert_eq!(c["bindings"], v["bindings"]);
+    projections.push(c);
+    if let Ok(path) = std::env::var("S2_STATE_PROJECTIONS") {
+        std::fs::write(path, serde_json::to_vec_pretty(&projections).unwrap()).unwrap();
+    }
+}
+
+#[test]
+fn duplicate_and_identical_snapshot_preserve_state_hash_and_entity_revision() {
+    let (state, obs) = setup(100, 0);
+    let (raw, sig, owner) = input("order");
+    let state = state
+        .submit("ORDER", &raw, &sig, &owner, &obs, NOW)
+        .unwrap()
+        .0;
+    let duplicate = state
+        .submit("ORDER", &raw, &sig, &owner, &obs, NOW)
+        .unwrap()
+        .0;
+    assert_eq!(duplicate.state_hash("OPEN"), state.state_hash("OPEN"));
+    let same = state.advance(state.snapshot().clone()).unwrap().0;
+    assert_eq!(same.state_hash("OPEN"), state.state_hash("OPEN"));
+    assert_ne!(state.state_hash("OPEN"), state.state_hash("STALE"));
+    let (withdraw, _) = state.prepare_withdraw(&owner).unwrap();
+    let v = withdraw.state_json("OPEN").unwrap();
+    assert_eq!(v["orders"][0]["view"]["revision"], "2");
+    assert!(
+        v["accounts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|a| a["owner"] == owner && a["withdraw_frozen"] == true)
+    );
+    let (again, _) = withdraw.prepare_withdraw(&owner).unwrap();
+    assert_eq!(again.state_json("OPEN").unwrap()["orders"], v["orders"]);
+}
+
+#[test]
+fn replay_preserves_full_state_hash_including_rejection_binding() {
+    let run = || {
+        let (mut state, obs) = setup(100, 0);
+        for id in ["order", "buyer-order", "cancel"] {
+            let (raw, sig, owner) = input(id);
+            state = state
+                .submit(
+                    if id == "cancel" { "CANCEL" } else { "ORDER" },
+                    &raw,
+                    &sig,
+                    &owner,
+                    &obs,
+                    NOW,
+                )
+                .unwrap()
+                .0;
+        }
+        let (raw, sig, owner) = changed(
+            "order",
+            &[
+                ("order_id", json!("ee".repeat(32))),
+                ("max_qty_lots", json!("1000000")),
+            ],
+        );
+        let (state, out, _) = state
+            .submit("ORDER", &raw, &sig, &owner, &obs, NOW)
+            .unwrap();
+        assert_eq!(out.code, "INSUFFICIENT_AVAILABLE");
+        let v = state.state_json("OPEN").unwrap();
+        assert_eq!(v["orders"].as_array().unwrap().len(), 2);
+        assert_eq!(v["bindings"].as_array().unwrap().len(), 4);
+        state.state_hash("OPEN").unwrap()
+    };
+    assert_eq!(run(), run());
+}
