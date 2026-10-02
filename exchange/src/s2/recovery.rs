@@ -6,7 +6,7 @@ use super::{
     journal::{self, Commit, Error, Journal, Result, canonical, sha256},
     record::SignedRecord,
     sequencer::Candidate,
-    snapshot::Observation,
+    snapshot::{Binding, Observation},
 };
 use serde_json::Value;
 use std::{collections::BTreeMap, path::Path};
@@ -20,12 +20,57 @@ pub struct SignedRecovery {
     recovery_required: bool,
 }
 impl SignedRecovery {
+    /// Explicitly initialize a fresh namespace. A partial initialization is left
+    /// intact on failure and must never be automatically recreated.
+    pub fn create(path: &Path, initial: Candidate, mode: &str) -> Result<Self> {
+        if initial.sequence() != 0 {
+            return Err(Error::InvalidRecord("RECOVERY_BOOTSTRAP_SEQUENCE"));
+        }
+        initial.state_json(mode).map_err(Error::InvalidRecord)?;
+        let journal = Journal::create(path, initial.snapshot().value()["body"]["context"].clone())?;
+        journal.write_bootstrap(initial.snapshot().value())?;
+        Self::replay(journal, Vec::new(), initial, mode)
+    }
+    /// Manifest-owned binding and initial snapshot ID anchor recovery. Never
+    /// derive either expected value from the persisted snapshot itself.
+    pub fn open_persisted(
+        path: &Path,
+        binding: &Binding,
+        expected_snapshot_id: &str,
+        mode: &str,
+    ) -> Result<Self> {
+        let (journal, records) = Journal::open(path, binding.context().clone())?;
+        let initial = (|| {
+            let raw = journal.read_bootstrap()?;
+            let snapshot = binding.decode(&raw).map_err(Error::RecoveryRequired)?;
+            if snapshot.id() != expected_snapshot_id || canonical(snapshot.value())? != raw {
+                return Err(Error::RecoveryRequired("BOOTSTRAP_MISMATCH"));
+            }
+            Candidate::new(snapshot).map_err(Error::RecoveryRequired)
+        })();
+        match initial {
+            Ok(initial) => Self::replay(journal, records, initial, mode),
+            Err(error) => {
+                journal.preserve_evidence()?;
+                Err(error)
+            }
+        }
+    }
+
     pub fn open(path: &Path, initial: Candidate, mode: &str) -> Result<Self> {
         if initial.sequence() != 0 {
             return Err(Error::InvalidRecord("RECOVERY_BOOTSTRAP_SEQUENCE"));
         }
         let context = initial.snapshot().value()["body"]["context"].clone();
         let (journal, records) = Journal::open(path, context)?;
+        Self::replay(journal, records, initial, mode)
+    }
+    fn replay(
+        journal: Journal,
+        records: Vec<Value>,
+        initial: Candidate,
+        mode: &str,
+    ) -> Result<Self> {
         let replay = (|| {
             let mut state = initial;
             let mut previous = Commit::zero();

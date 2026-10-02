@@ -152,6 +152,9 @@ impl Binding {
             supplies,
         })
     }
+    pub fn context(&self) -> &Value {
+        &self.context
+    }
     /// Parses unique keys before hashing. Enforces exact object fields, primitive
     /// ranges, registered owner ordering, key/address binding and conservation.
     pub fn decode(&self, raw: &[u8]) -> Result<Snapshot> {

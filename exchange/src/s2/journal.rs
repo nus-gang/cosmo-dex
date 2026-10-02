@@ -236,6 +236,32 @@ impl Journal {
             }
         }
     }
+    /// Initial snapshot is immutable and written while holding the writer lock.
+    pub(crate) fn write_bootstrap(&self, value: &Value) -> Result<()> {
+        if self.commit != Commit::zero() {
+            return Err(Error::InvalidRecord("BOOTSTRAP_AFTER_COMMAND"));
+        }
+        let bytes = canonical(value)?;
+        if bytes.len() > 65536 {
+            return Err(Error::ResourceLimit);
+        }
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(self.dir.join("bootstrap.json"))?;
+        file.write_all(&bytes)?;
+        file.sync_all()?;
+        sync_dir(&self.dir)
+    }
+    pub(crate) fn read_bootstrap(&self) -> Result<Vec<u8>> {
+        let file = File::open(self.dir.join("bootstrap.json"))?;
+        let mut bytes = Vec::new();
+        file.take(65537).read_to_end(&mut bytes)?;
+        if bytes.len() > 65536 {
+            return Err(Error::RecoveryRequired("BOOTSTRAP_SIZE"));
+        }
+        Ok(bytes)
+    }
     pub fn commit(&self) -> &Commit {
         &self.commit
     }
@@ -309,6 +335,7 @@ impl Journal {
             "marker.tmp",
             "context.json",
             "snapshot.json",
+            "bootstrap.json",
         ] {
             let src = self.dir.join(name);
             if src.exists() {

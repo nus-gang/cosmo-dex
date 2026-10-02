@@ -1120,3 +1120,76 @@ fn failed_append_keeps_candidate_private_and_closes_signed_commit_boundary() {
     assert_eq!(std::fs::read(dir.join("journal.wal")).unwrap(), wal);
     std::fs::remove_dir_all(dir).unwrap();
 }
+
+#[test]
+fn persisted_bootstrap_recovers_and_rejects_missing_corrupt_or_wrong_anchor() {
+    use nus_exchange_contract::s2::{journal::MAX_PAYLOAD, recovery::SignedRecovery};
+    let root = std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(std::env::temp_dir);
+    let (initial, obs) = setup(100, 0);
+    let body = &initial.snapshot().value()["body"];
+    let binding = Binding::new(
+        body["context"].clone(),
+        body["market"].clone(),
+        [
+            STANDARD
+                .decode(body["accounts"][0]["owner"].as_str().unwrap())
+                .unwrap(),
+            STANDARD
+                .decode(body["accounts"][1]["owner"].as_str().unwrap())
+                .unwrap(),
+        ],
+        [2_000_000_000_000; 2],
+    )
+    .unwrap();
+    let anchor = initial.snapshot().id();
+    for fault in ["none", "missing", "corrupt", "anchor", "oversize"] {
+        let dir = root.join(format!("s2-bootstrap-{}-{fault}", std::process::id()));
+        let mut engine = SignedRecovery::create(&dir, initial.clone(), "OPEN").unwrap();
+        assert!(SignedRecovery::create(&dir, initial.clone(), "OPEN").is_err());
+        assert!(SignedRecovery::open_persisted(&dir, &binding, anchor, "OPEN").is_err());
+        let (raw, sig, owner) = input("order");
+        let receipt = engine
+            .submit("ORDER", &raw, &sig, &owner, &obs, NOW, MAX_PAYLOAD)
+            .unwrap();
+        let hash = engine.state().state_hash("OPEN").unwrap();
+        drop(engine);
+        match fault {
+            "missing" => std::fs::remove_file(dir.join("bootstrap.json")).unwrap(),
+            "corrupt" => std::fs::write(dir.join("bootstrap.json"), b"{}").unwrap(),
+            "oversize" => std::fs::write(dir.join("bootstrap.json"), vec![b' '; 65537]).unwrap(),
+            _ => (),
+        }
+        let wal = std::fs::read(dir.join("journal.wal")).unwrap();
+        let marker = std::fs::read(dir.join("commit.marker")).unwrap();
+        let wrong_anchor = "0".repeat(64);
+        let result = SignedRecovery::open_persisted(
+            &dir,
+            &binding,
+            if fault == "anchor" {
+                &wrong_anchor
+            } else {
+                anchor
+            },
+            "OPEN",
+        );
+        if fault == "none" {
+            let recovered = result.unwrap();
+            assert_eq!(recovered.state().state_hash("OPEN").unwrap(), hash);
+            assert_eq!(recovered.receipt(&owner, 1), Some(&receipt));
+            drop(recovered);
+        } else {
+            assert!(result.is_err());
+            assert!(std::fs::read_dir(&dir).unwrap().any(|e| {
+                e.unwrap()
+                    .file_name()
+                    .to_string_lossy()
+                    .starts_with("evidence-")
+            }));
+        }
+        assert_eq!(std::fs::read(dir.join("journal.wal")).unwrap(), wal);
+        assert_eq!(std::fs::read(dir.join("commit.marker")).unwrap(), marker);
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+}
