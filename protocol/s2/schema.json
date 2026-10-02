@@ -1,0 +1,1592 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nus:s2:1",
+  "title": "S2 service JSON schema",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/ChainSnapshot"
+    },
+    {
+      "$ref": "#/$defs/Network"
+    },
+    {
+      "$ref": "#/$defs/SignedCommand"
+    },
+    {
+      "$ref": "#/$defs/CommandReceipt"
+    },
+    {
+      "$ref": "#/$defs/LedgerView"
+    },
+    {
+      "$ref": "#/$defs/BookSnapshot"
+    },
+    {
+      "$ref": "#/$defs/Error"
+    },
+    {
+      "$ref": "#/$defs/ChallengeRequest"
+    },
+    {
+      "$ref": "#/$defs/ChallengeResponse"
+    },
+    {
+      "$ref": "#/$defs/SessionResponse"
+    },
+    {
+      "$ref": "#/$defs/Correction"
+    },
+    {
+      "$ref": "#/$defs/JournalRecord"
+    },
+    {
+      "$ref": "#/$defs/CommitMarker"
+    }
+  ],
+  "$defs": {
+    "U32": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$",
+      "maxLength": 10,
+      "description": "unsigned <2^32; semantic bound mandatory"
+    },
+    "U64": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$",
+      "maxLength": 20,
+      "description": "unsigned <2^64; semantic bound mandatory"
+    },
+    "Atoms": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$",
+      "maxLength": 39,
+      "description": "unsigned <2^128; semantic bound mandatory"
+    },
+    "Hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "Bytes": {
+      "type": "string",
+      "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$",
+      "description": "canonical RFC4648 padded base64; semantic decoded length enforced"
+    },
+    "Text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._:/-]+$"
+    },
+    "Bool": {
+      "type": "boolean"
+    },
+    "NullableU64": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/U64"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "Context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "chain_id",
+        "genesis_hash",
+        "contract_hash",
+        "config_hash",
+        "market_id",
+        "market_config_version"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "enum": [
+            "1"
+          ]
+        },
+        "chain_id": {
+          "$ref": "#/$defs/Text"
+        },
+        "genesis_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "contract_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "config_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "market_id": {
+          "$ref": "#/$defs/Text"
+        },
+        "market_config_version": {
+          "$ref": "#/$defs/U64"
+        }
+      }
+    },
+    "AssetBalance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "denom",
+        "bank_atoms",
+        "confirmed_atoms"
+      ],
+      "properties": {
+        "denom": {
+          "type": "string",
+          "enum": [
+            "DEVBASE",
+            "DEVQUOTE"
+          ]
+        },
+        "bank_atoms": {
+          "$ref": "#/$defs/Atoms"
+        },
+        "confirmed_atoms": {
+          "$ref": "#/$defs/Atoms"
+        }
+      }
+    },
+    "ChainAccount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner",
+        "public_key_type",
+        "public_key",
+        "account_number",
+        "sequence",
+        "owner_epoch",
+        "gas_atoms",
+        "balances"
+      ],
+      "properties": {
+        "owner": {
+          "$ref": "#/$defs/Bytes"
+        },
+        "public_key_type": {
+          "type": "string",
+          "enum": [
+            "ML_DSA_65"
+          ]
+        },
+        "public_key": {
+          "$ref": "#/$defs/Bytes"
+        },
+        "account_number": {
+          "$ref": "#/$defs/U64"
+        },
+        "sequence": {
+          "$ref": "#/$defs/U64"
+        },
+        "owner_epoch": {
+          "$ref": "#/$defs/U64"
+        },
+        "gas_atoms": {
+          "$ref": "#/$defs/Atoms"
+        },
+        "balances": {
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "$ref": "#/$defs/AssetBalance"
+          }
+        }
+      }
+    },
+    "AssetSupply": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "denom",
+        "module_atoms",
+        "bank_supply_atoms",
+        "genesis_supply_atoms"
+      ],
+      "properties": {
+        "denom": {
+          "type": "string",
+          "enum": [
+            "DEVBASE",
+            "DEVQUOTE"
+          ]
+        },
+        "module_atoms": {
+          "$ref": "#/$defs/Atoms"
+        },
+        "bank_supply_atoms": {
+          "$ref": "#/$defs/Atoms"
+        },
+        "genesis_supply_atoms": {
+          "$ref": "#/$defs/Atoms"
+        }
+      }
+    },
+    "Market": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "market_id",
+        "config_version",
+        "base_denom",
+        "quote_denom",
+        "base_atoms_per_lot",
+        "quote_atoms_per_lot_tick",
+        "min_qty_lots",
+        "max_qty_lots",
+        "min_price_ticks",
+        "max_price_ticks",
+        "max_order_quote_atoms",
+        "fee_policy_version",
+        "fee_bps"
+      ],
+      "properties": {
+        "market_id": {
+          "$ref": "#/$defs/Text"
+        },
+        "config_version": {
+          "$ref": "#/$defs/U64"
+        },
+        "base_denom": {
+          "type": "string",
+          "enum": [
+            "DEVBASE"
+          ]
+        },
+        "quote_denom": {
+          "type": "string",
+          "enum": [
+            "DEVQUOTE"
+          ]
+        },
+        "base_atoms_per_lot": {
+          "$ref": "#/$defs/Atoms"
+        },
+        "quote_atoms_per_lot_tick": {
+          "$ref": "#/$defs/Atoms"
+        },
+        "min_qty_lots": {
+          "$ref": "#/$defs/U64"
+        },
+        "max_qty_lots": {
+          "$ref": "#/$defs/U64"
+        },
+        "min_price_ticks": {
+          "$ref": "#/$defs/U64"
+        },
+        "max_price_ticks": {
+          "$ref": "#/$defs/U64"
+        },
+        "max_order_quote_atoms": {
+          "$ref": "#/$defs/Atoms"
+        },
+        "fee_policy_version": {
+          "$ref": "#/$defs/U64"
+        },
+        "fee_bps": {
+          "$ref": "#/$defs/U32"
+        }
+      }
+    },
+    "ChainSnapshotBody": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "context",
+        "observed_height",
+        "block_hash",
+        "block_time_unix_ms",
+        "market",
+        "accounts",
+        "supplies"
+      ],
+      "properties": {
+        "context": {
+          "$ref": "#/$defs/Context"
+        },
+        "observed_height": {
+          "$ref": "#/$defs/U64"
+        },
+        "block_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "block_time_unix_ms": {
+          "$ref": "#/$defs/U64"
+        },
+        "market": {
+          "$ref": "#/$defs/Market"
+        },
+        "accounts": {
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "$ref": "#/$defs/ChainAccount"
+          }
+        },
+        "supplies": {
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "$ref": "#/$defs/AssetSupply"
+          }
+        }
+      }
+    },
+    "ChainSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshot_id",
+        "body"
+      ],
+      "properties": {
+        "snapshot_id": {
+          "$ref": "#/$defs/Hash"
+        },
+        "body": {
+          "$ref": "#/$defs/ChainSnapshotBody"
+        }
+      }
+    },
+    "Observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshot_id",
+        "observed_height",
+        "cursor_height",
+        "received_at_unix_ms",
+        "block_age_ms",
+        "query_latency_ms",
+        "last_success_age_ms",
+        "catching_up",
+        "fresh"
+      ],
+      "properties": {
+        "snapshot_id": {
+          "$ref": "#/$defs/Hash"
+        },
+        "observed_height": {
+          "$ref": "#/$defs/U64"
+        },
+        "cursor_height": {
+          "$ref": "#/$defs/U64"
+        },
+        "received_at_unix_ms": {
+          "$ref": "#/$defs/U64"
+        },
+        "block_age_ms": {
+          "$ref": "#/$defs/U64"
+        },
+        "query_latency_ms": {
+          "$ref": "#/$defs/U64"
+        },
+        "last_success_age_ms": {
+          "$ref": "#/$defs/U64"
+        },
+        "catching_up": {
+          "$ref": "#/$defs/Bool"
+        },
+        "fresh": {
+          "$ref": "#/$defs/Bool"
+        }
+      }
+    },
+    "Status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "context",
+        "stream_seq",
+        "revision",
+        "mode",
+        "reason",
+        "observation",
+        "durability",
+        "replicated",
+        "settlement_submission_enabled"
+      ],
+      "properties": {
+        "context": {
+          "$ref": "#/$defs/Context"
+        },
+        "stream_seq": {
+          "$ref": "#/$defs/U64"
+        },
+        "revision": {
+          "$ref": "#/$defs/U64"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "OPEN",
+            "CATCHING_UP",
+            "STALE",
+            "CORRECTING",
+            "WITHDRAW_FROZEN",
+            "RECOVERY_REQUIRED"
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/Text"
+        },
+        "observation": {
+          "$ref": "#/$defs/Observation"
+        },
+        "durability": {
+          "type": "string",
+          "enum": [
+            "LOCAL_FSYNC"
+          ]
+        },
+        "replicated": {
+          "$ref": "#/$defs/Bool"
+        },
+        "settlement_submission_enabled": {
+          "$ref": "#/$defs/Bool"
+        }
+      }
+    },
+    "Network": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "context",
+        "profile",
+        "gas_denom",
+        "assets",
+        "origins",
+        "status"
+      ],
+      "properties": {
+        "context": {
+          "$ref": "#/$defs/Context"
+        },
+        "profile": {
+          "type": "string",
+          "enum": [
+            "s2-local-v1"
+          ]
+        },
+        "gas_denom": {
+          "type": "string",
+          "enum": [
+            "DEVGAS"
+          ]
+        },
+        "assets": {
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "$ref": "#/$defs/AssetInfo"
+          }
+        },
+        "origins": {
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "$ref": "#/$defs/Text"
+          }
+        },
+        "status": {
+          "$ref": "#/$defs/Status"
+        }
+      }
+    },
+    "AssetInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "denom",
+        "decimals",
+        "atoms_per_unit"
+      ],
+      "properties": {
+        "denom": {
+          "type": "string",
+          "enum": [
+            "DEVBASE",
+            "DEVQUOTE"
+          ]
+        },
+        "decimals": {
+          "$ref": "#/$defs/U32"
+        },
+        "atoms_per_unit": {
+          "$ref": "#/$defs/Atoms"
+        }
+      }
+    },
+    "SignedCommand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "context",
+        "wire_base64",
+        "signature_base64"
+      ],
+      "properties": {
+        "context": {
+          "$ref": "#/$defs/Context"
+        },
+        "wire_base64": {
+          "$ref": "#/$defs/Bytes"
+        },
+        "signature_base64": {
+          "$ref": "#/$defs/Bytes"
+        }
+      }
+    },
+    "CommandReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "context",
+        "kind",
+        "request_id",
+        "request_hash",
+        "owner",
+        "owner_epoch",
+        "command_seq",
+        "state",
+        "code",
+        "durability",
+        "replicated",
+        "observed_height",
+        "snapshot_id",
+        "result_hash",
+        "journal_commit_hash"
+      ],
+      "properties": {
+        "context": {
+          "$ref": "#/$defs/Context"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "ORDER",
+            "CANCEL",
+            "WITHDRAW_PREPARE",
+            "WITHDRAW_ABORT"
+          ]
+        },
+        "request_id": {
+          "$ref": "#/$defs/Hash"
+        },
+        "request_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "owner": {
+          "$ref": "#/$defs/Bytes"
+        },
+        "owner_epoch": {
+          "$ref": "#/$defs/U64"
+        },
+        "command_seq": {
+          "$ref": "#/$defs/U64"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "LOCAL_ACCEPTED",
+            "REJECTED"
+          ]
+        },
+        "code": {
+          "$ref": "#/$defs/Text"
+        },
+        "durability": {
+          "type": "string",
+          "enum": [
+            "LOCAL_FSYNC"
+          ]
+        },
+        "replicated": {
+          "$ref": "#/$defs/Bool"
+        },
+        "observed_height": {
+          "$ref": "#/$defs/U64"
+        },
+        "snapshot_id": {
+          "$ref": "#/$defs/Hash"
+        },
+        "result_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "journal_commit_hash": {
+          "$ref": "#/$defs/Hash"
+        }
+      }
+    },
+    "LedgerRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "denom",
+        "C",
+        "R",
+        "D",
+        "P",
+        "A"
+      ],
+      "properties": {
+        "denom": {
+          "type": "string",
+          "enum": [
+            "DEVBASE",
+            "DEVQUOTE"
+          ]
+        },
+        "C": {
+          "$ref": "#/$defs/Atoms"
+        },
+        "R": {
+          "$ref": "#/$defs/Atoms"
+        },
+        "D": {
+          "$ref": "#/$defs/Atoms"
+        },
+        "P": {
+          "$ref": "#/$defs/Atoms"
+        },
+        "A": {
+          "$ref": "#/$defs/Atoms"
+        }
+      }
+    },
+    "OrderView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "order_id",
+        "order_hash",
+        "owner_epoch",
+        "admission_seq",
+        "side",
+        "order_type",
+        "limit_price_ticks",
+        "max_qty_lots",
+        "remaining_qty_lots",
+        "filled_qty_lots",
+        "corrected_qty_lots",
+        "cancelled_qty_lots",
+        "state",
+        "revision"
+      ],
+      "properties": {
+        "order_id": {
+          "$ref": "#/$defs/Hash"
+        },
+        "order_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "owner_epoch": {
+          "$ref": "#/$defs/U64"
+        },
+        "admission_seq": {
+          "$ref": "#/$defs/U64"
+        },
+        "side": {
+          "type": "string",
+          "enum": [
+            "BUY",
+            "SELL"
+          ]
+        },
+        "order_type": {
+          "type": "string",
+          "enum": [
+            "LIMIT_GTC",
+            "LIMIT_IOC"
+          ]
+        },
+        "limit_price_ticks": {
+          "$ref": "#/$defs/U64"
+        },
+        "max_qty_lots": {
+          "$ref": "#/$defs/U64"
+        },
+        "remaining_qty_lots": {
+          "$ref": "#/$defs/U64"
+        },
+        "filled_qty_lots": {
+          "$ref": "#/$defs/U64"
+        },
+        "corrected_qty_lots": {
+          "$ref": "#/$defs/U64"
+        },
+        "cancelled_qty_lots": {
+          "$ref": "#/$defs/U64"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "OPEN",
+            "PARTIALLY_FILLED",
+            "FILLED_PENDING",
+            "CANCELLED_OFFCHAIN",
+            "EXPIRED",
+            "STP_CANCELLED",
+            "POLICY_REJECTED_REMAINDER",
+            "CORRECTED"
+          ]
+        },
+        "revision": {
+          "$ref": "#/$defs/U64"
+        }
+      }
+    },
+    "FillView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fill_id",
+        "own_order_id",
+        "command_seq",
+        "match_index",
+        "quantity_lots",
+        "execution_price_ticks",
+        "fee_policy_version",
+        "fee_base_atoms",
+        "fee_quote_atoms",
+        "state",
+        "reason",
+        "revision"
+      ],
+      "properties": {
+        "fill_id": {
+          "$ref": "#/$defs/Hash"
+        },
+        "own_order_id": {
+          "$ref": "#/$defs/Hash"
+        },
+        "command_seq": {
+          "$ref": "#/$defs/U64"
+        },
+        "match_index": {
+          "$ref": "#/$defs/U32"
+        },
+        "quantity_lots": {
+          "$ref": "#/$defs/U64"
+        },
+        "execution_price_ticks": {
+          "$ref": "#/$defs/U64"
+        },
+        "fee_policy_version": {
+          "$ref": "#/$defs/U64"
+        },
+        "fee_base_atoms": {
+          "$ref": "#/$defs/Atoms"
+        },
+        "fee_quote_atoms": {
+          "$ref": "#/$defs/Atoms"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "CORRECTED"
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/Text"
+        },
+        "revision": {
+          "$ref": "#/$defs/U64"
+        }
+      }
+    },
+    "LedgerView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "context",
+        "owner",
+        "owner_epoch",
+        "stream_seq",
+        "revision",
+        "snapshot_id",
+        "observed_height",
+        "ledger",
+        "orders",
+        "fills",
+        "next_cursor",
+        "status"
+      ],
+      "properties": {
+        "context": {
+          "$ref": "#/$defs/Context"
+        },
+        "owner": {
+          "$ref": "#/$defs/Bytes"
+        },
+        "owner_epoch": {
+          "$ref": "#/$defs/U64"
+        },
+        "stream_seq": {
+          "$ref": "#/$defs/U64"
+        },
+        "revision": {
+          "$ref": "#/$defs/U64"
+        },
+        "snapshot_id": {
+          "$ref": "#/$defs/Hash"
+        },
+        "observed_height": {
+          "$ref": "#/$defs/U64"
+        },
+        "ledger": {
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "$ref": "#/$defs/LedgerRow"
+          }
+        },
+        "orders": {
+          "type": "array",
+          "maxItems": 200,
+          "items": {
+            "$ref": "#/$defs/OrderView"
+          }
+        },
+        "fills": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "$ref": "#/$defs/FillView"
+          }
+        },
+        "next_cursor": {
+          "$ref": "#/$defs/Text"
+        },
+        "status": {
+          "$ref": "#/$defs/Status"
+        }
+      }
+    },
+    "BookLevel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "price_ticks",
+        "qty_lots",
+        "order_count"
+      ],
+      "properties": {
+        "price_ticks": {
+          "$ref": "#/$defs/U64"
+        },
+        "qty_lots": {
+          "$ref": "#/$defs/U64"
+        },
+        "order_count": {
+          "$ref": "#/$defs/U32"
+        }
+      }
+    },
+    "BookSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "context",
+        "stream_seq",
+        "revision",
+        "snapshot_id",
+        "observed_height",
+        "bids",
+        "asks",
+        "content_hash"
+      ],
+      "properties": {
+        "context": {
+          "$ref": "#/$defs/Context"
+        },
+        "stream_seq": {
+          "$ref": "#/$defs/U64"
+        },
+        "revision": {
+          "$ref": "#/$defs/U64"
+        },
+        "snapshot_id": {
+          "$ref": "#/$defs/Hash"
+        },
+        "observed_height": {
+          "$ref": "#/$defs/U64"
+        },
+        "bids": {
+          "type": "array",
+          "maxItems": 200,
+          "items": {
+            "$ref": "#/$defs/BookLevel"
+          }
+        },
+        "asks": {
+          "type": "array",
+          "maxItems": 200,
+          "items": {
+            "$ref": "#/$defs/BookLevel"
+          }
+        },
+        "content_hash": {
+          "$ref": "#/$defs/Hash"
+        }
+      }
+    },
+    "Error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "retryable",
+        "state",
+        "observed_height",
+        "stream_seq"
+      ],
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/Text"
+        },
+        "retryable": {
+          "$ref": "#/$defs/Bool"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "REJECTED",
+            "SUBMISSION_UNKNOWN",
+            "NOT_FOUND_AT_SEQ"
+          ]
+        },
+        "observed_height": {
+          "$ref": "#/$defs/NullableU64"
+        },
+        "stream_seq": {
+          "$ref": "#/$defs/NullableU64"
+        }
+      }
+    },
+    "ChallengeRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner",
+        "origin",
+        "audience"
+      ],
+      "properties": {
+        "owner": {
+          "$ref": "#/$defs/Bytes"
+        },
+        "origin": {
+          "$ref": "#/$defs/Text"
+        },
+        "audience": {
+          "type": "string",
+          "enum": [
+            "exchange-api"
+          ]
+        }
+      }
+    },
+    "ChallengeResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "wire_base64"
+      ],
+      "properties": {
+        "wire_base64": {
+          "$ref": "#/$defs/Bytes"
+        }
+      }
+    },
+    "SessionResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "token",
+        "owner",
+        "origin",
+        "audience",
+        "genesis_hash",
+        "expiry_time"
+      ],
+      "properties": {
+        "token": {
+          "$ref": "#/$defs/Bytes"
+        },
+        "owner": {
+          "$ref": "#/$defs/Bytes"
+        },
+        "origin": {
+          "$ref": "#/$defs/Text"
+        },
+        "audience": {
+          "type": "string",
+          "enum": [
+            "exchange-api"
+          ]
+        },
+        "genesis_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "expiry_time": {
+          "$ref": "#/$defs/U64"
+        }
+      }
+    },
+    "Correction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshot_id",
+        "changed_owners",
+        "affected_owners",
+        "cancelled_order_hashes",
+        "corrected_fill_ids",
+        "reason",
+        "before_state_hash",
+        "after_state_hash"
+      ],
+      "properties": {
+        "snapshot_id": {
+          "$ref": "#/$defs/Hash"
+        },
+        "changed_owners": {
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "$ref": "#/$defs/Bytes"
+          }
+        },
+        "affected_owners": {
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "$ref": "#/$defs/Bytes"
+          }
+        },
+        "cancelled_order_hashes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Hash"
+          }
+        },
+        "corrected_fill_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Hash"
+          }
+        },
+        "reason": {
+          "type": "string",
+          "enum": [
+            "OWNER_EPOCH_CHANGED"
+          ]
+        },
+        "before_state_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "after_state_hash": {
+          "$ref": "#/$defs/Hash"
+        }
+      }
+    },
+    "JournalRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "context",
+        "command_seq",
+        "previous_commit_hash",
+        "command_kind",
+        "recorded_at_unix_ms",
+        "request_wire",
+        "signature",
+        "signature_hash",
+        "snapshot",
+        "observation",
+        "before_state_hash",
+        "after_state_hash",
+        "result_json",
+        "state_json",
+        "result_hash",
+        "external_event_ids"
+      ],
+      "properties": {
+        "context": {
+          "$ref": "#/$defs/Context"
+        },
+        "command_seq": {
+          "$ref": "#/$defs/U64"
+        },
+        "previous_commit_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "command_kind": {
+          "type": "string",
+          "enum": [
+            "ORDER",
+            "CANCEL",
+            "SNAPSHOT",
+            "EXPIRY",
+            "WITHDRAW_PREPARE",
+            "WITHDRAW_ABORT",
+            "CORRECTION"
+          ]
+        },
+        "recorded_at_unix_ms": {
+          "$ref": "#/$defs/U64"
+        },
+        "request_wire": {
+          "$ref": "#/$defs/Bytes"
+        },
+        "signature": {
+          "$ref": "#/$defs/Bytes"
+        },
+        "signature_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "snapshot": {
+          "$ref": "#/$defs/ChainSnapshot"
+        },
+        "observation": {
+          "$ref": "#/$defs/Observation"
+        },
+        "before_state_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "after_state_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "result_json": {
+          "$ref": "#/$defs/Bytes"
+        },
+        "state_json": {
+          "$ref": "#/$defs/Bytes"
+        },
+        "result_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "external_event_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Hash"
+          }
+        }
+      }
+    },
+    "CommitMarker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "genesis_hash",
+        "contract_hash",
+        "last_command_seq",
+        "record_hash",
+        "end_offset"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "enum": [
+            "1"
+          ]
+        },
+        "genesis_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "contract_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "last_command_seq": {
+          "$ref": "#/$defs/U64"
+        },
+        "record_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "end_offset": {
+          "$ref": "#/$defs/U64"
+        }
+      }
+    },
+    "LocalAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "request_id"
+      ],
+      "properties": {
+        "request_id": {
+          "$ref": "#/$defs/Hash"
+        }
+      }
+    },
+    "Binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner",
+        "owner_epoch",
+        "kind",
+        "id",
+        "request_hash",
+        "first_command_seq"
+      ],
+      "properties": {
+        "owner": {
+          "$ref": "#/$defs/Bytes"
+        },
+        "owner_epoch": {
+          "$ref": "#/$defs/U64"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "ORDER",
+            "CANCEL",
+            "WITHDRAW_PREPARE",
+            "WITHDRAW_ABORT"
+          ]
+        },
+        "id": {
+          "$ref": "#/$defs/Hash"
+        },
+        "request_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "first_command_seq": {
+          "$ref": "#/$defs/U64"
+        }
+      }
+    },
+    "StoredOrder": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner",
+        "view",
+        "order_wire",
+        "signature"
+      ],
+      "properties": {
+        "owner": {
+          "$ref": "#/$defs/Bytes"
+        },
+        "view": {
+          "$ref": "#/$defs/OrderView"
+        },
+        "order_wire": {
+          "$ref": "#/$defs/Bytes"
+        },
+        "signature": {
+          "$ref": "#/$defs/Bytes"
+        }
+      }
+    },
+    "EngineAccount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner",
+        "owner_epoch",
+        "ledger",
+        "withdraw_frozen"
+      ],
+      "properties": {
+        "owner": {
+          "$ref": "#/$defs/Bytes"
+        },
+        "owner_epoch": {
+          "$ref": "#/$defs/U64"
+        },
+        "ledger": {
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "$ref": "#/$defs/LedgerRow"
+          }
+        },
+        "withdraw_frozen": {
+          "$ref": "#/$defs/Bool"
+        }
+      }
+    },
+    "OutboxFill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fill_id",
+        "maker_order_hash",
+        "taker_order_hash",
+        "buyer_order_hash",
+        "seller_order_hash",
+        "command_seq",
+        "match_index",
+        "quantity_lots",
+        "execution_price_ticks",
+        "fee_policy_version",
+        "fee_base_atoms",
+        "fee_quote_atoms",
+        "buy_D",
+        "sell_D",
+        "buyer_P",
+        "seller_P",
+        "snapshot_id",
+        "state",
+        "revision",
+        "reason",
+        "export_state",
+        "submission_enabled"
+      ],
+      "properties": {
+        "fill_id": {
+          "$ref": "#/$defs/Hash"
+        },
+        "maker_order_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "taker_order_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "buyer_order_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "seller_order_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "command_seq": {
+          "$ref": "#/$defs/U64"
+        },
+        "match_index": {
+          "$ref": "#/$defs/U32"
+        },
+        "quantity_lots": {
+          "$ref": "#/$defs/U64"
+        },
+        "execution_price_ticks": {
+          "$ref": "#/$defs/U64"
+        },
+        "fee_policy_version": {
+          "$ref": "#/$defs/U64"
+        },
+        "fee_base_atoms": {
+          "$ref": "#/$defs/Atoms"
+        },
+        "fee_quote_atoms": {
+          "$ref": "#/$defs/Atoms"
+        },
+        "buy_D": {
+          "$ref": "#/$defs/Atoms"
+        },
+        "sell_D": {
+          "$ref": "#/$defs/Atoms"
+        },
+        "buyer_P": {
+          "$ref": "#/$defs/Atoms"
+        },
+        "seller_P": {
+          "$ref": "#/$defs/Atoms"
+        },
+        "snapshot_id": {
+          "$ref": "#/$defs/Hash"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "CORRECTED"
+          ]
+        },
+        "revision": {
+          "$ref": "#/$defs/U64"
+        },
+        "reason": {
+          "$ref": "#/$defs/Text"
+        },
+        "export_state": {
+          "type": "string",
+          "enum": [
+            "HELD_S2"
+          ]
+        },
+        "submission_enabled": {
+          "$ref": "#/$defs/Bool"
+        }
+      }
+    },
+    "ResultIndex": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command_seq",
+        "request_hash",
+        "result_hash"
+      ],
+      "properties": {
+        "command_seq": {
+          "$ref": "#/$defs/U64"
+        },
+        "request_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "result_hash": {
+          "$ref": "#/$defs/Hash"
+        }
+      }
+    },
+    "EngineState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "context",
+        "last_command_seq",
+        "chain_snapshot",
+        "mode",
+        "accounts",
+        "orders",
+        "fills",
+        "bindings"
+      ],
+      "properties": {
+        "context": {
+          "$ref": "#/$defs/Context"
+        },
+        "last_command_seq": {
+          "$ref": "#/$defs/U64"
+        },
+        "chain_snapshot": {
+          "$ref": "#/$defs/ChainSnapshot"
+        },
+        "mode": {
+          "$ref": "#/$defs/Text"
+        },
+        "accounts": {
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "$ref": "#/$defs/EngineAccount"
+          }
+        },
+        "orders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/StoredOrder"
+          }
+        },
+        "fills": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OutboxFill"
+          }
+        },
+        "bindings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Binding"
+          }
+        }
+      }
+    },
+    "LedgerChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner",
+        "before",
+        "after"
+      ],
+      "properties": {
+        "owner": {
+          "$ref": "#/$defs/Bytes"
+        },
+        "before": {
+          "$ref": "#/$defs/LedgerRow"
+        },
+        "after": {
+          "$ref": "#/$defs/LedgerRow"
+        }
+      }
+    },
+    "CommandResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command_seq",
+        "kind",
+        "request_hash",
+        "code",
+        "state",
+        "observed_height",
+        "snapshot_id",
+        "affected_order_hashes",
+        "created_fill_ids",
+        "corrected_fill_ids",
+        "ledger_changes",
+        "after_state_hash"
+      ],
+      "properties": {
+        "command_seq": {
+          "$ref": "#/$defs/U64"
+        },
+        "kind": {
+          "$ref": "#/$defs/Text"
+        },
+        "request_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "code": {
+          "$ref": "#/$defs/Text"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "LOCAL_ACCEPTED",
+            "REJECTED"
+          ]
+        },
+        "observed_height": {
+          "$ref": "#/$defs/U64"
+        },
+        "snapshot_id": {
+          "$ref": "#/$defs/Hash"
+        },
+        "affected_order_hashes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Hash"
+          }
+        },
+        "created_fill_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Hash"
+          }
+        },
+        "corrected_fill_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Hash"
+          }
+        },
+        "ledger_changes": {
+          "type": "array",
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/LedgerChange"
+          }
+        },
+        "after_state_hash": {
+          "$ref": "#/$defs/Hash"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "scope": "synthetic committed-state expectation; no deposit TX evidence; contract/config placeholders forbidden at runtime",
+  "snapshot": {
+    "snapshot_id": "9ff795d16f77b68bf1092f9487cd5de3e08c6ecde21fb9fab718a2024a27fc3a",
+    "body": {
+      "context": {
+        "schema_version": "1",
+        "chain_id": "nus-s2-dev-1",
+        "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+        "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+        "config_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+        "market_id": "DEVBASE/DEVQUOTE",
+        "market_config_version": "1"
+      },
+      "observed_height": "100",
+      "block_hash": "4444444444444444444444444444444444444444444444444444444444444444",
+      "block_time_unix_ms": "1790956680000",
+      "market": {
+        "market_id": "DEVBASE/DEVQUOTE",
+        "config_version": "1",
+        "base_denom": "DEVBASE",
+        "quote_denom": "DEVQUOTE",
+        "base_atoms_per_lot": "1000",
+        "quote_atoms_per_lot_tick": "1",
+        "min_qty_lots": "1",
+        "max_qty_lots": "1000000",
+        "min_price_ticks": "1",
+        "max_price_ticks": "1000000",
+        "max_order_quote_atoms": "1000000000000",
+        "fee_policy_version": "1",
+        "fee_bps": "0"
+      },
+      "accounts": [
+        {
+          "owner": "QIBxvK9P4FGwto+OWyqdu8Fdq9k=",
+          "public_key_type": "ML_DSA_65",
+          "public_key": "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",
+          "account_number": "1",
+          "sequence": "1",
+          "owner_epoch": "0",
+          "gas_atoms": "999999000",
+          "balances": [
+            {
+              "denom": "DEVBASE",
+              "bank_atoms": "1000000000000",
+              "confirmed_atoms": "0"
+            },
+            {
+              "denom": "DEVQUOTE",
+              "bank_atoms": "999900000000",
+              "confirmed_atoms": "100000000"
+            }
+          ]
+        },
+        {
+          "owner": "1maAbhHO4Zp8mJ90RfkN1BnPTS0=",
+          "public_key_type": "ML_DSA_65",
+          "public_key": "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",
+          "account_number": "0",
+          "sequence": "1",
+          "owner_epoch": "0",
+          "gas_atoms": "999999000",
+          "balances": [
+            {
+              "denom": "DEVBASE",
+              "bank_atoms": "999990000000",
+              "confirmed_atoms": "10000000"
+            },
+            {
+              "denom": "DEVQUOTE",
+              "bank_atoms": "1000000000000",
+              "confirmed_atoms": "0"
+            }
+          ]
+        }
+      ],
+      "supplies": [
+        {
+          "denom": "DEVBASE",
+          "module_atoms": "10000000",
+          "bank_supply_atoms": "2000000000000",
+          "genesis_supply_atoms": "2000000000000"
+        },
+        {
+          "denom": "DEVQUOTE",
+          "module_atoms": "100000000",
+          "bank_supply_atoms": "2000000000000",
+          "genesis_supply_atoms": "2000000000000"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "fields": [
+    [
+      1,
+      "utf8",
+      "nus-s2-dev-1"
+    ],
+    [
+      2,
+      "utf8",
+      "DEVBASE/DEVQUOTE"
+    ],
+    [
+      3,
+      "u64",
+      "1"
+    ],
+    [
+      4,
+      "u64",
+      "102"
+    ],
+    [
+      5,
+      "u32",
+      "0"
+    ]
+  ],
+  "canonical_hex": "0a0c6e75732d73322d6465762d311210444556424153452f44455651554f5445180120662800",
+  "fill_id": "480f2fd245fcd03204e343bebb6e652832b743ae8bb72c744b7c9c38847e610f",
+  "maker_order_hash": "cccd34f5e048936e4505273a79352cf5aaf2362d4069533bdb730b95ba31ad27",
+  "taker_order_hash": "1d0fabd9509dde6feb65a6387da888ce386b94f42b554df531c3ca2c63eb7ccc",
+  "quantity_lots": "1000",
+  "execution_price_ticks": "10000"
+}
