@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-10-02T16:35:52.657553+00:00",
+  "os": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+  "parent_code_sha": "c0f451ef1ac2931c22e37ac2bfc54dabad8e16a3",
+  "contract_head": "3571c3a",
+  "runtime_genesis": "NOT_RUN: synthetic unit tests only",
+  "sha256": {
+    "protocol/s2/manifest.json": "37768c134b57e9b6d7ed490aad17cfd753535c740a0f6a2304009291f45acdea",
+    "protocol/s2/profile.json": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+    "exchange/Cargo.lock": "ab4f76dd87448219ade436d508822b423b036a5131cdc732150a59e2e764e894",
+    "exchange/src/s2/matching.rs": "1ec32ebd10f1ecbe720ef8b4b758537d27d12055be51bec8bbf70616bbaef996",
+    "exchange/tests/s2_matching.rs": "5f181b2830a7bcae97187be6eaa198a5ba2759797ecb89c84ed687a93e327567"
+  }
+}

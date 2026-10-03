@@ -1,0 +1,32 @@
+{
+  "issue": "NUS-38",
+  "scope": "journal foundation only; service incomplete",
+  "recorded_at": "2026-10-02T16:08:02.075409+00:00",
+  "code_sha": "3de804af4f596ed1a3f8360cfd719a26a8e5a711",
+  "code_tree": "2f17aeb6e921a5b6f1fe6c2ecc0bff33ea94b480",
+  "contract_head": "3571c3a331a169a8eef231aad14f7816908dd2c5",
+  "base_main_verified": "24029b811e5ec798bbe57f769de3d3f254c90ab7",
+  "contract_sha256": "2e103517c344f21c2b97fbe7e977f0e614c32c704b0f54978c5bb1fb3ae6ab0f",
+  "config_sha256": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+  "runtime_genesis_hash": null,
+  "fixture_genesis_only": true,
+  "rust": "1.92.0",
+  "cargo": "1.92.0",
+  "os": "Darwin arm64",
+  "journal_tests": 11,
+  "existing_rust_tests": 18,
+  "failures": 0,
+  "replicated": false,
+  "full_s2_acceptance": "NOT_RUN",
+  "performance": "NOT_MEASURED",
+  "files_sha256": {
+    "exchange/src/s2/journal.rs": "ae6c793ee46bfa756fc47184838e8a0c365b3a8104e611cfe5312b1fc45d888b",
+    "exchange/src/s2/mod.rs": "3a933427d0d0007028bb5320699c0daa362efafa0303e54641b363cd9739cf4f",
+    "exchange/src/lib.rs": "cdfc84f86e21d8182d1f03ebad84851bc7c1c5842f7b710716bda68137b6b0d9",
+    "exchange/tests/s2_journal.rs": "917d0350333c6b0f921a2d52d01c03052180105ff69d3e9c005e3905fa916578",
+    "exchange/Cargo.lock": "ab4f76dd87448219ade436d508822b423b036a5131cdc732150a59e2e764e894",
+    "protocol/s2/profile.json": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+    "protocol/s2/vectors/wal.json": "ca1a418cfb2c045521d8dd43307a5816a60f03e2eae7231ad4a8b4b41f5b1564",
+    "protocol/s2/vectors/signed.json": "eaf69351bc3d088132171425c35f7d1f6c5d02b43225bf5648fd8bc6508ad99d"
+  }
+}

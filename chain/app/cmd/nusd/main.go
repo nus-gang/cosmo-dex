@@ -4,6 +4,7 @@ package main
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"flag"
@@ -23,6 +24,7 @@ import (
 	"github.com/cometbft/cometbft/p2p"
 	"github.com/cometbft/cometbft/privval"
 	"github.com/cometbft/cometbft/proxy"
+	rpcclient "github.com/cometbft/cometbft/rpc/client"
 	rpchttp "github.com/cometbft/cometbft/rpc/client/http"
 	cmttypes "github.com/cometbft/cometbft/types"
 	dbm "github.com/cosmos/cosmos-db"
@@ -70,6 +72,9 @@ func main() {
 	}
 	cmd := os.Args[1]
 	f := flag.NewFlagSet(cmd, flag.ExitOnError)
+	network := f.String("network", "s1", "s1 or s2; separate genesis and home")
+	denom := f.String("denom", ex.Quote, "DEVBASE or DEVQUOTE in S2")
+	height := f.Int64("height", 0, "committed snapshot height; 0 latest")
 	home := f.String("home", ".nus-s1", "node directory")
 	rpc := f.String("rpc", "tcp://127.0.0.1:26657", "local RPC endpoint")
 	p2paddr := f.String("p2p", "tcp://127.0.0.1:26656", "P2P listen address")
@@ -85,6 +90,21 @@ func main() {
 	operatorsFile := f.String("operator-accounts", "", "required init JSON file: four operator addresses and DEVGAS gas_atoms")
 	hashFlag := f.String("genesis-hash", "", "required pinned genesis hash for start")
 	must(f.Parse(os.Args[2:]))
+	chainID := ex.ChainID
+	if *network == "s2" {
+		chainID = ex.S2ChainID
+		explicitHome := false
+		f.Visit(func(fl *flag.Flag) {
+			if fl.Name == "home" {
+				explicitHome = true
+			}
+		})
+		if !explicitHome {
+			*home = ".runtime/s2/node"
+		}
+	} else if *network != "s1" {
+		must(fmt.Errorf("unknown network"))
+	}
 	c, txcfg := app.Encoding()
 	if cmd == "version" {
 		emit(map[string]string{"app": app.Version, "sdk": "v0.55.0", "comet": "v0.40.0", "execution_sha": buildCommit})
@@ -127,7 +147,7 @@ func main() {
 		must(e)
 		state, e = json.Marshal(genesis)
 		must(e)
-		g := &cmttypes.GenesisDoc{GenesisTime: time.Now().UTC(), ChainID: ex.ChainID, InitialHeight: 1, ConsensusParams: cmttypes.DefaultConsensusParams(), Validators: []cmttypes.GenesisValidator{{Address: pub.Address(), PubKey: pub, Power: 10, Name: "local-validator"}}, AppState: state}
+		g := &cmttypes.GenesisDoc{GenesisTime: time.Now().UTC(), ChainID: chainID, InitialHeight: 1, ConsensusParams: cmttypes.DefaultConsensusParams(), Validators: []cmttypes.GenesisValidator{{Address: pub.Address(), PubKey: pub, Power: 10, Name: "local-validator"}}, AppState: state}
 		must(g.SaveAs(cfg.GenesisFile()))
 		cmtcfg.WriteConfigFile(filepath.Join(*home, "config/config.toml"), cfg)
 		raw, e := os.ReadFile(cfg.GenesisFile())
@@ -165,10 +185,15 @@ func main() {
 		if *hashFlag != hex.EncodeToString(h[:]) {
 			must(fmt.Errorf("missing or mismatched --genesis-hash"))
 		}
+		doc, e := cmttypes.GenesisDocFromJSON(raw)
+		must(e)
+		if doc.ChainID != chainID {
+			must(fmt.Errorf("network differs from genesis; use separate S2 home"))
+		}
 		db, e := dbm.NewDB("application", dbm.GoLevelDBBackend, filepath.Join(*home, "data"))
 		must(e)
 		defer db.Close()
-		a, e := app.New(db, h[:], log.NewLogger(os.Stderr))
+		a, e := app.NewForChain(db, h[:], log.NewLogger(os.Stderr), chainID)
 		must(e)
 		pv := privval.LoadFilePV(cfg.PrivValidatorKeyFile(), cfg.PrivValidatorStateFile())
 		nk, e := p2p.LoadNodeKey(cfg.NodeKeyFile())
@@ -190,8 +215,11 @@ func main() {
 	query := func(path string, req interface{ Marshal() ([]byte, error) }) []byte {
 		b, e := req.Marshal()
 		must(e)
-		r, e := cli.ABCIQuery(ctx, path, b)
+		r, e := cli.ABCIQueryWithOptions(ctx, path, b, rpcclient.ABCIQueryOptions{Height: *height})
 		must(e)
+		if *height > 0 && r.Response.Height != *height {
+			must(fmt.Errorf("SNAPSHOT_HEIGHT_MISMATCH"))
+		}
 		if r.Response.Code != 0 {
 			must(fmt.Errorf("query code %d: %s", r.Response.Code, r.Response.Log))
 		}
@@ -230,7 +258,42 @@ func main() {
 				Epoch    string `json:"epoch"`
 			} `json:"accounts"`
 		}
-		must(json.Unmarshal(query("/nus.exchange.v1.Query/Snapshot", &ext.QuerySnapshotRequest{}), &snap))
+		snapshotRaw := query("/nus.exchange.v1.Query/Snapshot", &ext.QuerySnapshotRequest{})
+		if *network == "s2" {
+			var v struct {
+				Body struct {
+					Context struct {
+						ChainID string `json:"chain_id"`
+						Hash    string `json:"genesis_hash"`
+					} `json:"context"`
+					Height   string `json:"observed_height"`
+					Accounts []struct {
+						Owner    string `json:"owner"`
+						Number   string `json:"account_number"`
+						Sequence string `json:"sequence"`
+						Epoch    string `json:"owner_epoch"`
+					} `json:"accounts"`
+				} `json:"body"`
+			}
+			must(json.Unmarshal(snapshotRaw, &v))
+			if v.Body.Context.ChainID != chainID {
+				must(fmt.Errorf("WRONG_CONTEXT"))
+			}
+			snap.Height = v.Body.Height
+			snap.Hash = v.Body.Context.Hash
+			for _, ac := range v.Body.Accounts {
+				addr, e := base64.StdEncoding.DecodeString(ac.Owner)
+				must(e)
+				snap.Accounts = append(snap.Accounts, struct {
+					Owner    string `json:"owner"`
+					Number   string `json:"account_number"`
+					Sequence string `json:"sequence"`
+					Epoch    string `json:"epoch"`
+				}{sdk.AccAddress(addr).String(), ac.Number, ac.Sequence, ac.Epoch})
+			}
+		} else {
+			must(json.Unmarshal(snapshotRaw, &snap))
+		}
 		var number, seq uint64
 		found := false
 		for _, ac := range snap.Accounts {
@@ -258,9 +321,9 @@ func main() {
 		b := txcfg.NewTxBuilder()
 		var m sdk.Msg
 		if *op == "deposit" {
-			m = &ext.MsgDeposit{Owner: owner, Denom: ex.Quote, AmountAtoms: *amount, RequestId: rawID, ExpectedEpoch: *epoch, ExpiryHeight: *expiry, GenesisHash: gh}
+			m = &ext.MsgDeposit{Owner: owner, Denom: *denom, AmountAtoms: *amount, RequestId: rawID, ExpectedEpoch: *epoch, ExpiryHeight: *expiry, GenesisHash: gh}
 		} else if *op == "withdraw" {
-			m = &ext.MsgWithdraw{Owner: owner, Denom: ex.Quote, AmountAtoms: *amount, RequestId: rawID, ExpectedEpoch: *epoch, ExpiryHeight: *expiry, GenesisHash: gh}
+			m = &ext.MsgWithdraw{Owner: owner, Denom: *denom, AmountAtoms: *amount, RequestId: rawID, ExpectedEpoch: *epoch, ExpiryHeight: *expiry, GenesisHash: gh}
 		} else {
 			must(fmt.Errorf("invalid operation"))
 		}
@@ -268,7 +331,7 @@ func main() {
 		b.SetGasLimit(500000)
 		b.SetFeeAmount(sdk.NewCoins(sdk.NewCoin(ex.Gas, sdkmath.NewInt(1000))))
 		must(b.SetSignatures(signing.SignatureV2{PubKey: k.PubKey(), Data: &signing.SingleSignatureData{SignMode: signing.SignMode_SIGN_MODE_DIRECT}, Sequence: seq}))
-		sig, e := clienttx.SignWithPrivKey(ctx, signing.SignMode_SIGN_MODE_DIRECT, authsigning.SignerData{Address: owner, ChainID: ex.ChainID, AccountNumber: number, Sequence: seq, PubKey: k.PubKey()}, b, &k, txcfg, seq)
+		sig, e := clienttx.SignWithPrivKey(ctx, signing.SignMode_SIGN_MODE_DIRECT, authsigning.SignerData{Address: owner, ChainID: chainID, AccountNumber: number, Sequence: seq, PubKey: k.PubKey()}, b, &k, txcfg, seq)
 		must(e)
 		must(b.SetSignatures(sig))
 		raw, e = txcfg.TxEncoder()(b.GetTx())

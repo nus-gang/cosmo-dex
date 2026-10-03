@@ -1,0 +1,32 @@
+{
+  "time_utc": "2026-10-03T12:23:52.526987+00:00",
+  "environment": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+  "python": "3.14.0",
+  "base_head": "dbad6d6e0cd524613dbe27043ef973b5b2fe813d",
+  "tests": {
+    "target": "20 PASS / 0 skip",
+    "live": {
+      "chain_binary_hash": "8a57a899f1b3e24d884e5f264367d0f67267255dc4aa414370dde87513cce1d1",
+      "engine_binary_hash": "2e542c7d5f767dca75f55d135ca723b76d00c51831c0836a32bf3055ebcd4095",
+      "genesis_hash": "8ade53033376af09fed08fc80d3c7a39e43d212b80ec36fbc26197ba991f546f",
+      "result": "PASS",
+      "scope": "single-validator real RPC, two deposits, signed DIRECT HTTP withdrawal while engine unavailable, block/result verification, epoch, engine restart",
+      "signed_http_orders": "PASS: challenge nonce, private isolation, partial fill, signed remainder cancel, empty-book limited IOC, duplicate and receipt lookup, UNSETTLED_HOLD, real DIRECT epoch bilateral correction, restart reauthentication and identical receipts, D/P=0 prepare OK and actual HTTP withdrawal"
+    }
+  },
+  "limitations": [
+    "single validator, four-validator/browser/main QA NOT_RUN",
+    "empty-book IOC only",
+    "response discard retry, no network fault injection",
+    "S1 owner/request receipt pending",
+    "new head CI pending"
+  ],
+  "hashes": {
+    "protocol/s2/CONTRACT.md": "328a5f050786971bba5e1589a9dd7b0f30704ae82bf079ba6ec19025128d586a",
+    "protocol/s2/profile.json": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+    "exchange/Cargo.lock": "ab4f76dd87448219ade436d508822b423b036a5131cdc732150a59e2e764e894",
+    "chain/go.sum": "be7914402a4ac34946df904f134fc88a62163b83f0f61b59f5c265f6b4513d1b",
+    "chain/app/go.sum": "f7086c989ec3605cdf2c37b4193756a64f2abf093265b5fa1bc599f9a3f83ff6",
+    "web/package-lock.json": "95c1b012fce8ac96e96ee9547438b4c36d15c071e5d79faf1ab4d651261cb0fa"
+  }
+}

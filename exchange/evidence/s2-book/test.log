@@ -1,0 +1,25 @@
+   Compiling nus-exchange-contract v0.1.0 (/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/worktrees/NUS-38/exchange)
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-10-02 20:59:50.961 xcodebuild[30313:30773995]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 20:59:51.137 xcodebuild[30313:30773989] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-10-02 20:59:51.633 xcodebuild[30338:30774152]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 20:59:51.816 xcodebuild[30338:30774151] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-10-02 20:59:50.961 xcodebuild[30314:30773996]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 20:59:51.137 xcodebuild[30314:30773988] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-10-02 20:59:51.633 xcodebuild[30339:30774153]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 20:59:51.815 xcodebuild[30339:30774150] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: `nus-exchange-contract` (bin "decision") generated 1 warning
+warning: `nus-exchange-contract` (bin "vectors") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.66s
+     Running tests/s2_sequencer.rs (exchange/target/debug/deps/s2_sequencer-50014608d696e4d5)
+
+running 1 test
+test public_book_committed_aggregation_hash_and_restart ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 35 filtered out; finished in 0.51s
+

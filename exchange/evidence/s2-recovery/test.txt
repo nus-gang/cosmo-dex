@@ -1,0 +1,53 @@
+   Compiling nus-exchange-contract v0.1.0 (/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/worktrees/NUS-38/exchange)
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-10-02 19:17:11.034 xcodebuild[88426:29491599]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 19:17:11.221 xcodebuild[88426:29491596] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-10-02 19:17:11.741 xcodebuild[88451:29491817]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 19:17:11.920 xcodebuild[88451:29491813] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-10-02 19:17:11.034 xcodebuild[88403:29491597]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 19:17:11.221 xcodebuild[88403:29491571] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-10-02 19:17:11.740 xcodebuild[88450:29491818]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 19:17:11.921 xcodebuild[88450:29491814] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-10-02 19:17:11.251 xcodebuild[88449:29491741]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 19:17:11.409 xcodebuild[88449:29491732] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-10-02 19:17:11.888 xcodebuild[88453:29491829]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 19:17:12.053 xcodebuild[88453:29491828] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: `nus-exchange-contract` (bin "vectors") generated 1 warning
+warning: `nus-exchange-contract` (bin "decision") generated 1 warning
+warning: `nus-exchange-contract` (test "s2_sequencer") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.57s
+     Running tests/s2_sequencer.rs (worktrees/NUS-38/exchange/target/debug/deps/s2_sequencer-50014608d696e4d5)
+
+running 21 tests
+test empty_pending_withdraw_is_ready_and_unknown_owner_is_rejected ... ok
+test disconnected_counterparty_order_retains_fifo_and_reserve ... ok
+test invalid_signature_and_foreign_session_cannot_read_duplicate_receipt ... ok
+test continuous_snapshot_expires_orders_without_epoch_correction ... ok
+test duplicate_and_identical_snapshot_preserve_state_hash_and_entity_revision ... ok
+test epoch_correction_preserves_lifetime_fills_and_original_receipt ... ok
+test deterministic_rejection_is_bound_and_candidate_does_not_change_source ... ok
+test ioc_partial_callback_fill_releases_only_remainder_and_keeps_worst_buy_debit ... ok
+test epoch_expiry_margin_and_staleness_are_enforced_for_new_effects ... ok
+test real_signed_partial_fill_cancel_and_duplicate_have_one_effect ... ok
+test pending_receipts_cannot_fund_new_orders ... ok
+test schema_state_retains_signed_evidence_quantities_and_held_outbox ... ok
+test correction_includes_counterparty_followup_and_fill_execution_order ... ok
+test randomized_signature_retry_preserves_original_evidence_and_body_binding ... ok
+test replay_of_recorded_signed_inputs_preserves_sequence_fill_id_and_ledger ... ok
+test withdraw_cancels_only_open_reserve_and_retains_pending_hold ... ok
+test signed_cancel_target_nonce_and_terminal_noop_are_bound ... ok
+test replay_preserves_full_state_hash_including_rejection_binding ... ok
+test sequential_signed_requests_cannot_overreserve_confirmed_funds ... ok
+test automatic_signed_recovery_preserves_semantic_corruption_and_rejects_wrong_bootstrap ... ok
+test signed_records_fsync_reopen_and_deterministically_replay_full_results ... ok
+
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.38s
+

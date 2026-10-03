@@ -1,0 +1,13 @@
+   Compiling nus-exchange-contract v0.1.0 (/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/worktrees/NUS-38/exchange)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.70s
+     Running tests/s2_ledger.rs (worktrees/NUS-38/exchange/target/debug/deps/s2_ledger-13519bce1b54a11a)
+
+running 5 tests
+test shared_available_prevents_overreservation_and_self_trade ... ok
+test all_failed_fills_leave_both_parties_unchanged ... ok
+test partial_price_improvement_cancel_and_pending_not_spendable ... ok
+test fees_are_per_fill_ceil_and_exactly_reversed ... ok
+test exhaustive_small_fills_conserve_net_plus_fee_and_hold_limit ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+

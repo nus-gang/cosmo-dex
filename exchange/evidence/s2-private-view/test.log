@@ -1,0 +1,32 @@
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-10-02 21:22:37.098 xcodebuild[67861:31072143]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 21:22:37.279 xcodebuild[67861:31072135] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-10-02 21:22:37.776 xcodebuild[67887:31072317]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 21:22:37.947 xcodebuild[67887:31072312] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-10-02 21:22:37.098 xcodebuild[67862:31072142]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 21:22:37.279 xcodebuild[67862:31072137] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-10-02 21:22:37.776 xcodebuild[67886:31072316]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 21:22:37.947 xcodebuild[67886:31072311] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-10-02 21:22:37.402 xcodebuild[67885:31072278]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 21:22:37.560 xcodebuild[67885:31072277] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-10-02 21:22:38.036 xcodebuild[67889:31072344]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 21:22:38.176 xcodebuild[67889:31072338] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: `nus-exchange-contract` (bin "decision") generated 1 warning
+warning: `nus-exchange-contract` (bin "vectors") generated 1 warning
+warning: `nus-exchange-contract` (test "s2_sequencer") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running tests/s2_sequencer.rs (exchange/target/debug/deps/s2_sequencer-50014608d696e4d5)
+
+running 1 test
+test private_pages_bind_owner_sequence_and_exclude_counterparty_evidence ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 37 filtered out; finished in 0.06s
+

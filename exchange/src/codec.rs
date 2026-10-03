@@ -79,6 +79,12 @@ impl<'de> Deserialize<'de> for Unique {
         d.deserialize_any(V)
     }
 }
+/// Parse JSON without silently accepting duplicate object keys at any depth.
+pub fn unique_json(raw: &[u8]) -> Result<Value> {
+    let Unique(value) = serde_json::from_slice(raw).map_err(|_| "NON_CANONICAL_JSON")?;
+    Ok(value)
+}
+
 #[derive(Deserialize)]
 struct Field {
     tag: u64,

@@ -1,0 +1,26 @@
+{
+  "base_head": "9b38bdae33e964ea70a8fd3d8edb00b887d48933",
+  "remote_main": "24029b811e5ec798bbe57f769de3d3f254c90ab7",
+  "chain_head": "7ce952475b4985096344d713467208722b5e7693",
+  "environment": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+  "python": "3.14.0",
+  "hashes": {
+    "protocol/s2/CONTRACT.md": "328a5f050786971bba5e1589a9dd7b0f30704ae82bf079ba6ec19025128d586a",
+    "protocol/s2/profile.json": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+    "web/package-lock.json": "95c1b012fce8ac96e96ee9547438b4c36d15c071e5d79faf1ab4d651261cb0fa",
+    "chain/app/go.sum": "f7086c989ec3605cdf2c37b4193756a64f2abf093265b5fa1bc599f9a3f83ff6"
+  },
+  "checks": {
+    "S2": "26 PASS; no skips with S2_ENGINE_BINARY",
+    "S1": "8 PASS",
+    "S0_settlement": "16 PASS",
+    "manifest_boundary": "5 PASS",
+    "browser": "8 real committed transactions PASS; fresh genesis, browser-generated keys; engine absent; actual RPC outage 503"
+  },
+  "limits": [
+    "single validator, synthetic assets; Wallet product/four-validator/main QA belong to downstream tasks",
+    "initial browser executable discovery failed; route-fulfilled page produced fetch failure; final test serves real loopback page and passed",
+    "REST base does not include S2 chain; CI uses separate approved chain dependency checkout; local binary execution_sha verified",
+    "CTO/Security review and CI result still pending at report preparation"
+  ]
+}

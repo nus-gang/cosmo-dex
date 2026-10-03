@@ -1,0 +1,5 @@
+PASS SEC-S2A-01: 8 models; 1000/1001 fills, 200/201 affected orders; 0/25bps; atomic replay expectations; API page limits retained
+PASS 5360 S2 specification checks; all manifest files verified
+contract_sha256=2e103517c344f21c2b97fbe7e977f0e614c32c704b0f54978c5bb1fb3ae6ab0f
+NOT_RUN: product Go/Rust/TS cross-verification, real deposits, API/engine/WAL crash, browser, S2-AT01..09
+PASS: 5 records / 15 JournalRecord, CommandResult, EngineState schema checks

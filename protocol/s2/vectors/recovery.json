@@ -1,0 +1,61 @@
+{
+  "scope": "required product fault injections; specification only",
+  "cases": [
+    {
+      "id": "before-append",
+      "expected": "NO_SUCCESS_REPLAY_PREVIOUS"
+    },
+    {
+      "id": "partial-header",
+      "expected": "PRESERVE_EVIDENCE_STOP"
+    },
+    {
+      "id": "partial-payload",
+      "expected": "PRESERVE_EVIDENCE_STOP"
+    },
+    {
+      "id": "after-wal-fsync-before-marker",
+      "expected": "UNKNOWN_TAIL_PRESERVE_AND_RECONCILE"
+    },
+    {
+      "id": "after-marker-before-response",
+      "expected": "REPLAY_ONCE_RETRY_ORIGINAL_RECEIPT"
+    },
+    {
+      "id": "after-response",
+      "expected": "REPLAY_ACKED_COMMAND"
+    },
+    {
+      "id": "header-bitflip",
+      "expected": "RECOVERY_REQUIRED_BYTES_UNCHANGED"
+    },
+    {
+      "id": "completed-payload-bitflip",
+      "expected": "RECOVERY_REQUIRED_BYTES_UNCHANGED"
+    },
+    {
+      "id": "missing-marker-committed-frame",
+      "expected": "RECOVERY_REQUIRED_BYTES_UNCHANGED"
+    },
+    {
+      "id": "stale-snapshot-valid-wal",
+      "expected": "PRESERVE_SNAPSHOT_FULL_WAL_REPLAY"
+    },
+    {
+      "id": "both-files-truncated",
+      "expected": "EXTERNAL_ACK_LEDGER_DETECTS_LOCAL_LIMIT"
+    },
+    {
+      "id": "second-writer",
+      "expected": "WRITER_ALREADY_RUNNING"
+    },
+    {
+      "id": "replay-outbox",
+      "expected": "ZERO_EXTERNAL_SENDS"
+    },
+    {
+      "id": "correction-mid-commit",
+      "expected": "REPLAY_SAME_COMPONENT_ONCE"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src http://127.0.0.1:8788; base-uri 'none'; form-action 'none'"><title>NUS S2 시험 지갑</title>
+<style>body{font:16px system-ui;background:#101522;color:#eef2ff;max-width:1100px;margin:32px auto;padding:20px}button,input,select{font:inherit;padding:10px;margin:6px}button:disabled{opacity:.4}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#1e293b;padding:16px}label{display:block}.notice{border:1px solid #f9c568;padding:14px}td,th{padding:8px;text-align:right;border-bottom:1px solid #455}table{width:100%}details pre{max-height:180px;overflow:auto}</style>
+<h1>S2 시험 지갑 · DEVBASE/DEVQUOTE</h1><p class="notice">로컬 개발망·시험 자산 전용. 키는 이 탭 메모리에만 보관합니다. 새로고침·탭 종료 후 복구할 수 없습니다. 체결은 잠정이며 온체인 정산은 제공하지 않습니다.</p>
+<button id="create">두 시험 계정 생성</button><details><summary>새 genesis 등록용 공개키</summary><pre id="public"></pre></details>
+<label>실제 genesis SHA256 <input id="genesis" size="64" autocomplete="off"></label><button id="bind">genesis 고정</button>
+<label>계정 <select id="account"><option value="0">사용자 1</option><option value="1">사용자 2</option></select></label><button id="login">서명 로그인 / 재연결</button><p id="status" role="status">연결 전</p><p id="freshness"></p>
+<h2>자산별 원장</h2><p>atoms (1 자산 = 1,000,000 atoms). A=C−R−D. <strong>잠정 체결 자산은 아직 쓸 수 없음</strong></p>
+<table><thead><tr><th>자산</th><th>확정 C</th><th>예약 R</th><th>미정산 D</th><th>잠정 수취 P</th><th>가용 A</th></tr></thead><tbody id="ledger"></tbody></table>
+<h2>확정 예치·출금</h2><button id="chain-account">확정 체인 계정 조회</button><pre id="chain-balances"></pre>
+<label>자산 <select id="asset"><option>DEVBASE</option><option>DEVQUOTE</option></select></label><label>금액 (자산 단위, 소수점 최대 6자리) <input id="amount" value="10" inputmode="decimal"></label>
+<p>수수료 0.001 DEVGAS · gas limit 500000 · 만료=확정 높이+100. 일반 출금은 미체결 취소 후 D/P가 남으면 중단합니다.</p>
+<button id="deposit">예치 서명·제출</button><button id="withdraw">일반 출금 준비·서명·제출</button><button id="abort-withdraw">출금 준비 해제</button>
+<details><summary>직접 출금 · 엔진 승인 불필요</summary><p class="notice">확정 예치 C에서 직접 출금합니다. owner epoch가 바뀌며 기존 주문·상대방 잠정 체결이 정정될 수 있습니다. 잠정 P를 출금하는 기능이 아닙니다.</p><button id="direct-withdraw">직접 출금 서명·제출</button></details>
+<h3>체인 TX 결과</h3><p>SUBMISSION_UNKNOWN은 실패 확정이 아닙니다. TX 결과를 조회하세요.</p><div id="txs"></div>
+<h2>지정가 주문</h2><label>방향 <select id="side"><option>SELL</option><option>BUY</option></select></label><label>유형 <select id="tif"><option>GTC</option><option>IOC</option></select></label><label>수량 DEVBASE <input id="qty" value="2" inputmode="decimal"></label><label>한도가 DEVQUOTE/BASE <input id="price" value="10" inputmode="decimal"></label><p>lot=0.001 BASE · tick=0.001 QUOTE/BASE · 수수료 0bps · 만료=관측 높이+100. IOC 잔량은 즉시 취소됩니다.</p><button id="order" disabled>위 조건으로 서명·제출</button>
+<h2>공개 호가</h2><pre id="book"></pre><h2>내 주문 · 오프체인 취소</h2><div id="orders"></div><h2>잠정 체결 / 정정</h2><pre id="fills"></pre><p>직접 출금의 epoch 변화는 상대방과 후속 의존 체결까지 정정할 수 있습니다. 정정은 온체인 정산 완료가 아닙니다.</p><h2>명령 영수증</h2><p>LOCAL_ACCEPTED = 로컬 fsync 접수 · 복제 없음. UNKNOWN은 실패 확정이 아닙니다.</p><div id="receipts"></div><script src="/wallet.js"></script></html>

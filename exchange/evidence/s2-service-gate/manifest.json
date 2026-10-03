@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-02T19:49:25.066043+00:00",
+  "environment": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+  "parent_commit": "9079b2f81e305176629ffad0c9afb58de1996fb8",
+  "tests": "35 pass (3 new), 2.10s",
+  "clippy": "PASS all targets",
+  "commands": [
+    "RUSTUP_HOME=/Users/gangdongju/.rustup CARGO_HOME=/Users/gangdongju/.cargo cargo test --offline --locked --manifest-path exchange/Cargo.toml --test s2_sequencer",
+    "RUSTUP_HOME=/Users/gangdongju/.rustup CARGO_HOME=/Users/gangdongju/.cargo cargo clippy --offline --locked --manifest-path exchange/Cargo.toml --all-targets -- -D warnings"
+  ],
+  "genesis": "synthetic signed contract fixture; no chain RPC",
+  "performance": "throughput/CPU/RSS NOT_MEASURED",
+  "remote_ci": "NOT_CHECKED",
+  "files": {
+    "protocol/s2/CONTRACT.md": "328a5f050786971bba5e1589a9dd7b0f30704ae82bf079ba6ec19025128d586a",
+    "protocol/s2/manifest.json": "37768c134b57e9b6d7ed490aad17cfd753535c740a0f6a2304009291f45acdea",
+    "protocol/v1/dev-config.json": "7b12f8dffd4dfd07242331b975f0c440f5948074280c3a120c3232b3e674d13e",
+    "exchange/Cargo.lock": "ab4f76dd87448219ade436d508822b423b036a5131cdc732150a59e2e764e894",
+    "exchange/src/s2/service.rs": "4a7d5bf09cfc895408a2840d1a0f998dcbec45cb7dd60df40c77d30db17660e6"
+  }
+}

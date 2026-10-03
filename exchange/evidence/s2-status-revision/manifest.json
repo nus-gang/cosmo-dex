@@ -1,0 +1,11 @@
+{
+  "base_sha": "27c265d010f4e7d119f7f8d5ef96385a7f5044bd",
+  "environment": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+  "sha256": {
+    "protocol/s2/CONTRACT.md": "328a5f050786971bba5e1589a9dd7b0f30704ae82bf079ba6ec19025128d586a",
+    "exchange/Cargo.lock": "ab4f76dd87448219ade436d508822b423b036a5131cdc732150a59e2e764e894",
+    "exchange/src/s2/journal.rs": "8703f219cabb5a46ab74f17ca768be4a9b87a26d79e958d24acbf3930fe9f41b",
+    "exchange/tests/s2_journal.rs": "db13c48d8d424fab5eb5242f5bd75dac28503872469a4471f63125bf448fd0dc"
+  },
+  "genesis": "synthetic journal context only; no chain run"
+}

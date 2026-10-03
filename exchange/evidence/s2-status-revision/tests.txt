@@ -1,0 +1,63 @@
+   Compiling nus-exchange-contract v0.1.0 (/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/worktrees/NUS-38/exchange)
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-10-02 21:44:40.903 xcodebuild[90169:31345750]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 21:44:41.061 xcodebuild[90169:31345747] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-10-02 21:44:41.530 xcodebuild[90173:31345783]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 21:44:41.713 xcodebuild[90173:31345778] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-10-02 21:44:40.839 xcodebuild[90145:31345713]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 21:44:41.024 xcodebuild[90145:31345663] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-10-02 21:44:41.530 xcodebuild[90172:31345779]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 21:44:41.713 xcodebuild[90172:31345774] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-10-02 21:44:40.839 xcodebuild[90144:31345715]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 21:44:41.024 xcodebuild[90144:31345662] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-10-02 21:44:41.530 xcodebuild[90171:31345780]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 21:44:41.713 xcodebuild[90171:31345775] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: `nus-exchange-contract` (test "s2_journal") generated 1 warning
+warning: `nus-exchange-contract` (bin "vectors") generated 1 warning
+warning: `nus-exchange-contract` (bin "decision") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.89s
+     Running tests/s2_journal.rs (exchange/target/debug/deps/s2_journal-4404f9253f82a9ad)
+
+running 13 tests
+test child_process ... ok
+test framing_matches_approved_fixture ... ok
+
+running 1 test
+test child_process ... ok
+
+test result: oktest malformed_records_context_change_and_existing_namespace_are_rejected ... . 1 passed; 0 failed; 0 ignored; 0 measured; 12 filtered outok
+
+running 1 test
+; finished in 0.02s
+
+test marker_write_failure_poisoning_preserves_unknown_tail ... ok
+test single_writer_is_enforced_across_processes ... ok
+test committed_record_and_outbox_recover_atomically ... ok
+test resource_limit_has_no_sequence_or_wal_effect ... ok
+
+running 1 test
+test authenticated_s2_order_bytes_survive_process_restart ... ok
+test correction_consumes_and_replenishes_reserve ... ok
+
+running 1 test
+test status_revision_reservations_survive_restart_and_fail_closed ... ok
+
+running 1 test
+test status_revision_missing_corrupt_or_exhausted_never_resets ... ok
+
+running 1 test
+
+running 1 test
+test crash_points_never_silently_lose_a_committed_record ... ok
+test completed_frame_loss_header_payload_marker_corruption_stop_recovery ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.37s
+

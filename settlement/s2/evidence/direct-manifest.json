@@ -1,0 +1,37 @@
+{
+  "time_utc": "2026-10-03T12:03:11.542676+00:00",
+  "environment": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+  "python": "3.14.0",
+  "base_head": "67dbc0a710536843ea5bd301772c67f07226c3c9",
+  "hashes": {
+    "protocol/s2/CONTRACT.md": "328a5f050786971bba5e1589a9dd7b0f30704ae82bf079ba6ec19025128d586a",
+    "protocol/s2/profile.json": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+    "exchange/Cargo.lock": "ab4f76dd87448219ade436d508822b423b036a5131cdc732150a59e2e764e894",
+    "chain/app/go.sum": "f7086c989ec3605cdf2c37b4193756a64f2abf093265b5fa1bc599f9a3f83ff6",
+    "ops/ci/manifest.json": "3f26db98574f29f5710191859f760925bb6877b50acce94e8ea5187071985ff6"
+  },
+  "tests": {
+    "s2": "20 PASS / 0 skip",
+    "manifest_boundary": "5 PASS",
+    "manifest_check": "PASS",
+    "live_direct": {
+      "chain_binary_hash": "8a57a899f1b3e24d884e5f264367d0f67267255dc4aa414370dde87513cce1d1",
+      "engine_binary_hash": "2e542c7d5f767dca75f55d135ca723b76d00c51831c0836a32bf3055ebcd4095",
+      "genesis_hash": "55edbeff47711328bf731a56030a9e5e1e7c4f894e52ed31d7e88f73956454a8",
+      "result": "PASS",
+      "scope": "single-validator real RPC, two deposits, signed DIRECT HTTP withdrawal while engine unavailable, block/result verification, epoch, engine restart; signed HTTP orders and bilateral fill correction NOT_RUN"
+    }
+  },
+  "commands": [
+    "S2_ENGINE_BINARY=$PWD/exchange/target/debug/exchange-s2 python3 -m unittest discover -s settlement/s2 -v",
+    "python3 ops/ci/build_manifest.py --check",
+    "python3 -m unittest discover -s tests -p test_manifest_boundary.py -v",
+    "python3 settlement/s2/check_live.py --chain ../NUS-37/chain/app/bin/nusd --engine exchange/target/debug/exchange-s2 --operators ../NUS-37/chain/app/config/operator-accounts.json --output $PAPERCLIP_RUN_SCRATCH_DIR/live-direct-fixed --port 29957"
+  ],
+  "limitations": [
+    "Initial live run failed due to helper name shadowing http module; fixed then re-run in fresh genesis",
+    "signed HTTP orders and bilateral fill correction NOT_RUN",
+    "four validator/browser/main QA NOT_RUN",
+    "CI head verification pending push"
+  ]
+}

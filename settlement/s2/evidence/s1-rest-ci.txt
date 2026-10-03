@@ -1,0 +1,24 @@
+S1 REST four-validator integration	S0 boundary and REST failure cases	﻿2026-10-03T11:36:07.6104527Z ##[group]Run python3 ops/ci/build_manifest.py --check
+S1 REST four-validator integration	S0 boundary and REST failure cases	2026-10-03T11:36:07.6105181Z ^[[36;1mpython3 ops/ci/build_manifest.py --check^[[0m
+S1 REST four-validator integration	S0 boundary and REST failure cases	2026-10-03T11:36:07.6105674Z ^[[36;1mpython3 -m unittest discover -s tests -p test_manifest_boundary.py -v^[[0m
+S1 REST four-validator integration	S0 boundary and REST failure cases	2026-10-03T11:36:07.6106182Z ^[[36;1mpython3 -m unittest discover -s settlement/s1 -v^[[0m
+S1 REST four-validator integration	S0 boundary and REST failure cases	2026-10-03T11:36:07.9555276Z shell: /usr/bin/bash -e {0}
+S1 REST four-validator integration	S0 boundary and REST failure cases	2026-10-03T11:36:07.9555756Z ##[endgroup]
+S1 REST four-validator integration	S0 boundary and REST failure cases	2026-10-03T11:36:08.6186380Z Traceback (most recent call last):
+S1 REST four-validator integration	S0 boundary and REST failure cases	2026-10-03T11:36:08.6187434Z   File "/home/runner/work/cosmo-dex/cosmo-dex/ops/ci/build_manifest.py", line 67, in <module>
+S1 REST four-validator integration	S0 boundary and REST failure cases	2026-10-03T11:36:08.6188654Z     assert read('ops/ci/manifest.json')==c, 'manifest oracle/source mapping drift'
+S1 REST four-validator integration	S0 boundary and REST failure cases	2026-10-03T11:36:08.6204488Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+S1 REST four-validator integration	S0 boundary and REST failure cases	2026-10-03T11:36:08.6214493Z AssertionError: manifest oracle/source mapping drift
+S1 REST four-validator integration	S0 boundary and REST failure cases	2026-10-03T11:36:08.6352637Z ##[error]Process completed with exit code 1.
+S1 REST four-validator integration	Run actions/upload-artifact@v4	﻿2026-10-03T11:36:08.6448802Z ##[group]Run actions/upload-artifact@v4
+S1 REST four-validator integration	Run actions/upload-artifact@v4	2026-10-03T11:36:08.6449116Z with:
+S1 REST four-validator integration	Run actions/upload-artifact@v4	2026-10-03T11:36:08.6449317Z   name: s1-rest-evidence
+S1 REST four-validator integration	Run actions/upload-artifact@v4	2026-10-03T11:36:08.6449572Z   path: .evidence/rest-ci/result.json
+S1 REST four-validator integration	Run actions/upload-artifact@v4	2026-10-03T11:36:08.6449860Z   include-hidden-files: true
+S1 REST four-validator integration	Run actions/upload-artifact@v4	2026-10-03T11:36:08.6450110Z   if-no-files-found: error
+S1 REST four-validator integration	Run actions/upload-artifact@v4	2026-10-03T11:36:08.6450347Z   compression-level: 6
+S1 REST four-validator integration	Run actions/upload-artifact@v4	2026-10-03T11:36:08.6450565Z   overwrite: false
+S1 REST four-validator integration	Run actions/upload-artifact@v4	2026-10-03T11:36:08.6450774Z ##[endgroup]
+S1 REST four-validator integration	Run actions/upload-artifact@v4	2026-10-03T11:36:08.8061650Z (node:2376) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+S1 REST four-validator integration	Run actions/upload-artifact@v4	2026-10-03T11:36:08.8062605Z (Use `node --trace-deprecation ...` to show where the warning was created)
+S1 REST four-validator integration	Run actions/upload-artifact@v4	2026-10-03T11:36:08.8090617Z ##[error]No files were found with the provided path: .evidence/rest-ci/result.json. No artifacts will be uploaded.

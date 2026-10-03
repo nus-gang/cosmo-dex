@@ -1,0 +1,9 @@
+{
+  "actual_correction_payload": "12023334",
+  "admissible": true,
+  "conservative_bound": "12898263",
+  "fills": "1001",
+  "orders": "1002",
+  "payload_limit": "16777216",
+  "scope": "candidate encoding and preflight; not a disk throughput run"
+}
