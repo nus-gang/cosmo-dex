@@ -72,7 +72,18 @@ try{
  const before=await text('fills');await stop(server);await until(async()=>await page.locator('#order').isDisabled());report.steps.push('API outage closes order admission');
  server=child('python3',args);await until(async()=>{const r=await fetch(api+'/s2/status');return (await r.json()).mode==='OPEN';});
  await login(0);assert.equal(await text('fills'),before);report.steps.push('restart preserves corrected fill IDs');
- await tx('withdraw','DEVBASE','1');await page.click('#abort-withdraw');await until(async()=>(await text('status')).includes('동결 해제'));
+ await tx('withdraw','DEVBASE','1');
+ await until(async()=>{
+   const response=page.waitForResponse(r=>r.url()===api+'/s2/me/withdraw-abort'&&r.request().method()==='POST');
+   await page.click('#abort-withdraw');
+   const receipt=await (await response).json();
+   // The chain epoch observer can lag a committed DIRECT receipt. Retry only
+   // a definitive STALE rejection, never a lost/unknown abort response.
+   if(receipt.state==='REJECTED'&&receipt.code==='STALE')return false;
+   assert.equal(receipt.state,'LOCAL_ACCEPTED');assert.equal(receipt.code,'OK');
+   return true;
+ });
+ report.steps.push('withdraw abort confirmed by LOCAL_ACCEPTED receipt');
  // Delayed old-account public response must never populate the switched account.
  let release;const gate=new Promise(r=>{release=r;});await page.route('**/s2/accounts/*',async route=>{const r=await route.fetch();await gate;await route.fulfill({response:r});});
  await page.click('#chain-account');await page.selectOption('#account','1');release();await sleep(400);assert.equal(await text('chain-balances'),'계정 전환 · 다시 조회하세요');await page.unroute('**/s2/accounts/*');
