@@ -17,3 +17,20 @@
 | [M0 설계](../ops/OPERATIONS-M0.md), 원본 PDF | 설계 목표 | 현재 운영 기능으로 재서술하지 않고 원본 접근 경로 제공 |
 
 새 문서는 구성·API 탐색, 검증 출처, 변경 기록, 문서 영향 기여 지침이다. 상세 규약·운영 명령·기존 보안 및 실패 기록의 사본을 새로 만들지 않는다. 중복된 실행 순서는 새 사용자의 재현에 필요한 최소 범위로 quickstart에 모으며 상세 시험은 원본으로 연결한다.
+
+## S2-G 영향 조사
+
+[Docs 업무](http://localhost:3100/NUS/issues/NUS-42)의 기준은 F 승인 후보 `84ea152`/tree `eb436444d338cab5482bda29ad4333a981538b22`, 착수 원격 main `ec8961c`다. 기존 DOC-1 인벤토리와 S1 재현은 보존한다.
+
+| 페이지/권위 입력 | 변화와 처리 |
+|---|---|
+| README, docs 목차 | S1만 있던 시작점에 S2 실험 후보 경로 추가, main 전달과 구분 |
+| s2-quickstart (신규) | 설치 pin, 임시 웹 공개키 생성→새 home→통합 기동, 두 자산 예치·GTC/IOC·원장 수치·출금 제한·재시작 |
+| quickstart, architecture | 기존 S1 적용 범위 명시, S2 데이터 흐름과 로컬 내구성 경계 연결 |
+| api, contributing | S2 계약/schema/profile·공개/개인 조회·DIRECT 구분, 빌드 버전·CEO 통합 경로 |
+| verification, CHANGELOG | F 승인·상속 시험·실패 이력·공유 preview 미검증·후속 main 인수 |
+| ops/s2/runtime.py, README | init/serve/health, 포트·build pin·종료·로그 상한과 문서 명령 대조; 구현 변경 없음 |
+| web/s2/index.html, browser.ts, browser.test.mjs | 실제 버튼·입력 단위·UNKNOWN·수동 순서·자동 시연 경계 대조 |
+| protocol/s2, exchange/S2.md, settlement/s2 | 규범을 복제하지 않고 연결; 수치·상태·서명·cursor·보류 출금 설명의 원본 |
+
+모듈 README의 단일 검증인/NOT_RUN·심사 후보 문구는 해당 구성요소 작성 당시 기록이다. 새 4검증인 F 증거는 verification에서 따로 연결한다. 원본 PDF·S0/S1 증거·역사적 판정은 변경하지 않는다.

@@ -1,5 +1,7 @@
 # 현재 구성과 데이터 흐름
 
+이 페이지의 기존 설명은 **S1 고정 기준**이다. S2 후보의 두 자산·주문·복구는 [S2 시작 안내](s2-quickstart.md), 적용 SHA와 인수 상태는 [검증 기록](verification.md#s2-통합-후보)을 따른다.
+
 [문서 목차](README.md) · [사용자 시작 안내](quickstart.md)
 
 기준: `32781aa97d62ec747e7a25c10fdb8b58030d79f2`. S1은 한 호스트의 테스트 자산 개발망이다.
@@ -30,3 +32,9 @@ flowchart LR
 사용자 TX 서명은 ML-DSA-65이고 합의/P2P 키는 Ed25519다. 체인 전체의 PQ 보장을 뜻하지 않는다. RPC는 신뢰하는 loopback 경계이며 light client 검증이 아니다. 운영 4주소는 서명 키 없는 합성 배분 주소다. 지속 처리량·분산 RPO/RTO·최소 자원은 미측정이다.
 
 원본 아키텍처·개발 설계 PDF와 실제 검증 범위는 [검증 기록](verification.md)을 따른다. `exchange/`와 `settlement/v1/`의 S0 구현/모의 계약은 위 S1 입출금 경로의 주문·매칭·체결 정산 엔진으로 연결되지 않았다.
+
+## S2 후보의 연결
+
+[후보와 검증 범위](verification.md#s2-통합-후보)를 기준으로 `web/s2`의 ML-DSA OrderV1/CancelV1 → `settlement/s2` REST/RPC → `exchange-s2` 단일 시퀀서·journal/outbox가 연결된다. Chain은 확정 C, Exchange는 예약 R·미정산 D·잠정 P를 관리하며 가용액 A=C−R−D이고 P는 제외한다. 실제 체인 연속 snapshot/cursor를 따라잡은 후 주문 접수를 연다.
+
+같은 commit 경계에 기록한 fill/outbox는 `HELD_S2`이며 정산 제출은 비활성화다. 직접 출금의 epoch 변화는 양측 잠정 의존성을 정정한다. 이는 체인 정산이나 분산 복제가 아니다. 권위는 [S2 계약](../protocol/s2/CONTRACT.md), [Engine](../exchange/S2.md), [REST](../settlement/s2/README.md)다.
