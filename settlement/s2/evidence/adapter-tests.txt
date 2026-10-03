@@ -1,0 +1,16 @@
+test_cursor_reobserves_and_consumes_each_empty_height (test_adapter.AdapterTests.test_cursor_reobserves_and_consumes_each_empty_height) ... ok
+test_disconnect_preserves_cursor_and_retries_missing_height (test_adapter.AdapterTests.test_disconnect_preserves_cursor_and_retries_missing_height) ... ok
+test_duplicate_json_and_protobuf_trailing_bytes_rejected (test_adapter.AdapterTests.test_duplicate_json_and_protobuf_trailing_bytes_rejected) ... ok
+test_failed_evidence_write_closes_admission (test_adapter.AdapterTests.test_failed_evidence_write_closes_admission) ... ok
+test_header_hash_time_height_chain_mismatch_never_observed (test_adapter.AdapterTests.test_header_hash_time_height_chain_mismatch_never_observed) ... ok
+test_http_cors_body_limit_control_isolation_cache_and_duplicate_headers (test_adapter.AdapterTests.test_http_cors_body_limit_control_isolation_cache_and_duplicate_headers) ... ok
+test_pipe_preserves_raw_request_and_serializes_threads (test_adapter.AdapterTests.test_pipe_preserves_raw_request_and_serializes_threads) ... ok
+test_pipe_timeout_eof_malformed_are_permanent_unknown (test_adapter.AdapterTests.test_pipe_timeout_eof_malformed_are_permanent_unknown) ... ok
+test_real_engine_rpc_cursor_restart_and_freshness (test_adapter.AdapterTests.test_real_engine_rpc_cursor_restart_and_freshness) ... ok
+test_regression_is_latched_until_explicit_restart (test_adapter.AdapterTests.test_regression_is_latched_until_explicit_restart) ... ok
+test_rpc_url_has_no_dns_proxy_redirect_target (test_adapter.AdapterTests.test_rpc_url_has_no_dns_proxy_redirect_target) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.563s
+
+OK

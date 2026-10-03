@@ -1,0 +1,38 @@
+{
+  "recorded_at": "2026-10-03T11:34:59.214755+00:00",
+  "scope": "NUS-39 adapter checkpoint; synthetic RPC with actual Rust process; full S2 acceptance NOT_RUN",
+  "base_sha": "d0cf18f1294941b19e72102568eb220a7a5854f1",
+  "base_tree": "7333c0972c81665a99fcb444b0c1dc3fdde0e0c0",
+  "chain_reference_sha": "7ce952475b4985096344d713467208722b5e7693",
+  "remote_main_observed": "24029b811e5ec798bbe57f769de3d3f254c90ab7",
+  "contract_hash": "2e103517c344f21c2b97fbe7e977f0e614c32c704b0f54978c5bb1fb3ae6ab0f",
+  "config_hash": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+  "rust_version": "1.92.0",
+  "python_version": "3.14.0",
+  "platform": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+  "command": "S2_ENGINE_BINARY=\"$PWD/exchange/target/debug/exchange-s2\" python3 -m unittest discover -s settlement/s2 -v",
+  "test_result": "11 PASS, 0 skip",
+  "genesis_hash": null,
+  "genesis_note": "synthetic contract snapshot only; runtime genesis not yet created",
+  "durability": "LOCAL_FSYNC",
+  "replicated": false,
+  "hashes": {
+    "exchange/Cargo.lock": "ab4f76dd87448219ade436d508822b423b036a5131cdc732150a59e2e764e894",
+    "exchange/target/debug/exchange-s2": "2e542c7d5f767dca75f55d135ca723b76d00c51831c0836a32bf3055ebcd4095",
+    "settlement/s2/chain.py": "5cf3383af22904f069f9bf4924742276723938463ce84fae1f587154164493a2",
+    "settlement/s2/transport.py": "957332645782e9daf82e3936d1011f740fcf83ba9ee653bd3611d468ee7dcb1a",
+    "settlement/s2/server.py": "5cc181512a7b8c05a85130bf62fcb45decbf8e289d28eda4ecf971043b101ca7",
+    "settlement/s2/test_adapter.py": "a0e1f521fb76e716919220c5d544a4de24540a9865797ff170341a666b4b3a4b",
+    "settlement/s2/evidence/adapter-tests.txt": "ddf3eb3b1c60d37cd47ef815ee40946972a92ab9640dd751d95a819650e6dc0a"
+  },
+  "not_run": [
+    "real chain REST deposit/order/withdraw/correction integration",
+    "signed HTTP auth and order integration",
+    "DIRECT TX/receipt S2 bridge",
+    "browser account switch/out-of-order integration",
+    "fixed-head CI",
+    "CTO/Security review",
+    "main integration/QA"
+  ],
+  "cost": "existing local machine; no paid resources"
+}
