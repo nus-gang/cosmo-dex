@@ -1,6 +1,6 @@
-# S2-D REST/RPC 연결 — 진행 중
+# S2-D REST/RPC 연결 — 전문 심사 후보
 
-[NUS-39](/NUS/issues/NUS-39)의 구성요소 체크포인트다. 전체 API 인수·전문 심사 완료가 아니다.
+[NUS-39](/NUS/issues/NUS-39)의 전문 심사 후보다. 전체 S2 인수·전문 심사 완료가 아니다.
 승인된 Exchange 프로세스의 서명·세션·예약·journal을 그대로 사용한다. Python 표준
 라이브러리만 추가하며 공통 protocol, Rust 구현, S1 파일을 변경하지 않는다.
 
@@ -77,11 +77,23 @@ python3 settlement/s2/server.py \
 create로 대체하지 않는다. 기동 직후 CATCHING_UP, 신뢰 RPC 재관측 완료 후 OPEN이다.
 새 S2 home과 journal을 사용하고 S1 경로를 재사용하지 않는다. HTTP의 `/s2/*`와 `/s1/txs`, `/s1/txs/{TX_HASH}`, `/s1/accounts/{bech32_owner}/requests/{request_id}`가 연결돼 있다.
 
-## 남은 인수 작업
+## 인계·검증 경계
 
-- 실제 체인 단절·높이 역행 통합 검증과 4검증인 후보 인계 (양측 정정·정상 출금/보류 검증 완료).
-- 재인증·계정 전환·지연 역순 응답·응답 유실 재시도 통합 시험과 Wallet/QA용 고정 실행 인계.
-- 고정 head CI, CTO→Security 심사. main 통합은 CEO, 새 main checkout QA는 별도 담당.
+- Settlement 구성요소: 21개 REST/RPC 회귀와 단일 검증인 실제 서명 HTTP 시나리오를 검증했다.
+- 실제 단절/복구·응답 유실·부분 체결 IOC·양측 epoch 정정·재시작·재인증을 포함한다.
+- 높이 역행과 지연 응답 분리는 합성 RPC/pipe 시험이다. 브라우저 계정 전환·역순 응답 UI는 Wallet/QA가 검증한다.
+- SRE/QA는 아래 실행 인터페이스를 4검증인 통합 후보로 연결한다. 4검증인·브라우저·main QA는 아직 NOT_RUN이다.
+- 고정 head CI 뒤 CTO→Security 심사를 받는다. main 통합은 CEO, 새 main checkout QA는 별도 담당이다.
+
+### Wallet/QA 조회 규칙
+
+공개 호가와 개인 `/s2/me`·주문·명령 receipt의 인증 경계를 유지한다.
+정확한 endpoint/body/error는 [S2 공통 계약](../../protocol/s2/CONTRACT.md)을 기준으로 한다.
+개인 요청은 해당 계정의 Origin/bearer로 보내고 계정 전환 시 이전 응답을 버린다.
+동일 snapshot의 revision/sequence를 사용하고 과거 응답으로 화면을 되돌리지 않는다.
+UNKNOWN은 실패 확정이 아니다. 동일 서명 원문/ID의 receipt를 조회한 뒤 재시도한다.
+재시작 시 세션은 재인증하고 cursor catch-up 완료 전 신규 주문을 보내지 않는다.
+S1 receipt의 NOT_FOUND_AT_HEIGHT도 해당 높이에서의 부재일 뿐 제출 실패 확정이 아니다.
 
 P는 잠정 수취액이고 확정 C/가용액과 합치지 않는다. 체인 정산 제출은 비활성화다.
 분산 내구성·처리량 목표·WS 전체 PASS를 주장하지 않는다.
@@ -127,9 +139,8 @@ python3 settlement/s2/check_live.py \
 fill ID와 양측 C/R/D/P/A, 원본 요청·receipt, RPC snapshot·block 응답을 보존한다.
 동일 요청 재시도는 원래 receipt, 다른 계정 조회는 404, nonce 재사용/옛 세션은 401이다.
 
-이는 단일 검증인 실제 체인 시험이다. 첫 응답을 버리고 재시도했으며 네트워크 중간
-응답 유실 장애 주입은 아니다. IOC는 빈 주문장 무체결 경계이고 가격 한도 내 체결
-시험을 대신하지 않는다. 4검증인·브라우저·전체 S2 인수·main QA PASS가 아니다.
+이 초기 체크포인트는 단일 검증인 실제 체인 시험이었다. 이후 아래 추가 검증에서
+HTTP 응답 전송 전 연결 유실과 가격 한도 내 IOC 부분 체결을 검증했다. 4검증인·브라우저·전체 S2 인수·main QA PASS가 아니다.
 
 
 ## Receipt·응답 유실·부분 체결 IOC 추가 검증
@@ -151,3 +162,11 @@ committed height를 대조한다. 응답 height가 다르거나 RPC가 끊기면
 검증인 실제 중단/재기동 시 마지막 높이 보존·접수 닫힘·receipt UNKNOWN·회복도 시험한다.
 
 4검증인 통합·브라우저·실제 main 인수는 별도 담당 인수 대상이며 아직 PASS로 표시하지 않는다.
+
+## Journal CI 수정 통합
+
+[NUS-47](/NUS/issues/NUS-47) CTO 승인 head
+`56eef077be1074c7f2728887a25ccecfaf58b4c1`을 통합했다.
+fork된 자식의 inherited fd가 잠금을 연장하던 결함을 성공한 소유자의 명시적 unlock으로 수정한다.
+실패 contender는 unlock하지 않으며 WAL close 뒤 unlock한다. 단일 writer·ACK·outbox 경계는 유지한다.
+공통 protocol/config와 Cargo 의존성 pin/lock은 바꾸지 않았다.
