@@ -188,3 +188,34 @@ init → 네 genesis hash 일치 확인 → 새 home으로 관리 runtime 설정
 `tx --user`, `receipt --user`와 현재 `integration.py`는 fixture 전용이다.
 사용자 공개키 개발망에 fixture 통합 시험을 실행하지 않는다.
 공개키 초기화 검증과 실제 사용자 지갑 TX/4검증인 합의 검증은 별도 증거로 기록한다.
+
+## 검증인 로그 보관 제한
+
+`serve`는 각 검증인의 stdout와 stderr를 같은 pipe에서 수집하며 오류 줄도
+필터링 없이 기록한다. 기본값은 파일당 **100MiB (104857600 bytes)**,
+노드당 **활성 `nodeN.log` + 이전 `.1`~`.4` 총 5개**다. `.1`이 가장 최근이다.
+4개 노드의 이 일반 로그 합계는 **2,000MiB** 이하이며 다음 쓰기 전에
+회전한다. 개행 없는 큰 출력도 64KiB 이하 청크로 수집하고 경계에서 분할한다.
+분할된 오류 메시지는 이전 파일과 활성 파일을 순서대로 연결해 읽는다.
+오래된 오류도 5개 파일 보관 범위를 벗어나면 삭제되므로 영구 감사 저장소는 아니다.
+DB·consensus WAL·키·genesis·validator signing state와 별도 보존한 사고 증거는
+이 제한의 대상이 아니며 수정하거나 삭제하지 않는다.
+
+크기 초과 기존 로그는 자동으로 자르지 않고 기동을 거부한다. 운영자가 증거를
+보존하고 해당 로그만 정리한 뒤 재기동해야 한다. 권한/공간/rename/쓰기 실패는
+supervisor 오류로 전파하며 모든 검증인을 종료하고 0이 아닌 코드로 종료한다.
+실패 진단은 Paperclip이 수집하는 supervisor stderr에 남는다. 디스크가 꽉 찼다면
+마지막 출력의 파일 저장은 보장하지 않는다. 실패를 무시한 계속 실행이나 자동 재시도는
+하지 않는다. 정상 종료는 자식 프로세스 종료 후 pipe를 비우며, 매 쓰기는 사용자 공간
+버퍼 없이 기록한다. 전원 장애까지 보장하는 fsync 감사 로그는 아니다.
+
+Paperclip에서는 기존 관리 stop → 변경 적용 → 관리 start 순서를 사용한다.
+동일 home과 pinned binary/genesis/config를 유지하고, `/status` 높이 증가와
+`nusd snapshot`의 observed_height를 제외한 원장을 비교한다. manifest 재생성,
+`init`, DB/WAL/key 삭제로 재기동 문제를 우회하지 않는다. `log` 명령은 최근
+64KiB 내 최대 100줄만 읽는다. S2 관리망도 이 supervisor의 같은 기본값을 재사용한다.
+
+검증: `python3 ops/s1/log-test.py`는 실제 100MiB 경계 회전, 5개 보관 및 재오픈,
+stdout/stderr·개행 없는 출력, 부분 쓰기, 공간 부족, rename 실패, 기존 증거 보존,
+쓰기 실패 시 실제 자식 프로세스 전체 종료를 시험한다. 항상 실행하는
+`S1 four-validator integration` CI job에 포함된다.
