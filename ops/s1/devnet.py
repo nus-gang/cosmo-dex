@@ -142,17 +142,49 @@ def serve(home):
     processes, logs = {}, {}
     ending = False
 
-    def stop(i):
-        proc = processes.pop(i, None)
-        if proc and proc.poll() is None:
-            proc.terminate()
+    def stop_many(indices):
+        # Signal every validator before waiting: the four-node grace period is
+        # 15 seconds total, below the enclosing runtime's 25-second deadline.
+        selected = {i: processes[i] for i in indices if i in processes}
+        errors = []
+        for i, proc in selected.items():
+            if proc.poll() is None:
+                try:
+                    proc.terminate()
+                except ProcessLookupError:
+                    pass
+                except OSError as error:
+                    errors.append(f'node{i}: SIGTERM failed: {error}')
+        deadline = time.monotonic() + 15
+        while any(p.poll() is None for p in selected.values()) and time.monotonic() < deadline:
+            time.sleep(.05)
+        for i, proc in selected.items():
+            if proc.poll() is None:
+                errors.append(f'node{i}: SIGTERM deadline exceeded; forced SIGKILL')
+                try:
+                    proc.kill()
+                except ProcessLookupError:
+                    pass
+                except OSError as error:
+                    errors.append(f'node{i}: SIGKILL failed: {error}')
+        deadline = time.monotonic() + 5
+        for i, proc in selected.items():
             try:
-                proc.wait(timeout=15)
+                proc.wait(timeout=max(.01, deadline - time.monotonic()))
+                processes.pop(i, None)
             except subprocess.TimeoutExpired:
-                proc.kill()
-                proc.wait(timeout=5)
-        if i in logs:
-            logs.pop(i).finish()
+                errors.append(f'node{i}: still running after SIGKILL (pid={proc.pid})')
+        for i in indices:
+            if i in logs:
+                try:
+                    logs.pop(i).finish()
+                except Exception as error:
+                    errors.append(f'node{i}: {error}')
+        if errors:
+            raise RuntimeError('; '.join(errors))
+
+    def stop(i):
+        stop_many([i])
 
     def start(i):
         if i in processes and processes[i].poll() is None:
@@ -211,10 +243,10 @@ def serve(home):
                             raise ValueError('node must be 0..3 or all')
                         if action not in ('stop', 'start', 'restart', 'status'):
                             raise ValueError('invalid action')
-                        for i in indices:
-                            if action in ('stop', 'restart'):
-                                stop(i)
-                            if action in ('start', 'restart'):
+                        if action in ('stop', 'restart'):
+                            stop_many(indices)
+                        if action in ('start', 'restart'):
+                            for i in indices:
                                 start(i)
                         result = {'running': sorted(processes), 'pids': {i: p.pid for i,p in processes.items()}}
                     except Exception as e:
@@ -224,11 +256,10 @@ def serve(home):
                         raise RuntimeError(result['error'])
     finally:
         errors = []
-        for i in range(4):
-            try:
-                stop(i)
-            except Exception as error:
-                errors.append(f'node{i}: {error}')
+        try:
+            stop_many(list(range(4)))
+        except Exception as error:
+            errors.append(str(error))
         path.unlink(missing_ok=True)
         lock.close()
         if errors:

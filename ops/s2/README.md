@@ -11,6 +11,7 @@ Go 1.26.5, Rust 1.92.0, Node `.node-version`, 기존 lock을 사용한다.
 (cd chain/app && sh scripts/build.sh)
 cargo +1.92.0 build --locked --manifest-path exchange/Cargo.toml --bin exchange-s2
 (cd web && npm ci --ignore-scripts && npx playwright-core install chromium && node s2/build.mjs)
+python3 ops/s2/shutdown-test.py --output .evidence/s2/shutdown
 python3 ops/s1/log-test.py
 python3 ops/s1/init-test.py
 python3 ops/s1/integration.py --base-port 31556 --home "$PAPERCLIP_RUN_SCRATCH_DIR/s1" --output .evidence/s1
@@ -47,13 +48,20 @@ python3 ops/s1/devnet.py log --home .runtime/s2/chain --node 0
 RPC 30557/30567/30577/30587, API 8788, 웹 5173은 loopback이다. 기존 S1의 28657
 계열과 분리한다. 포트가 사용 중이면 기존 서비스를 죽이지 말고 자기 관리 서비스를
 먼저 확인한다. S2 전체 관리 stop→status stopped 확인이 사용 종료 절차다.
-종료는 API/엔진·웹·검증인을 회수한다. 다시 관리 start하면 같은 DB/journal을 열고
+종료는 API/엔진·웹·검증인을 회수한다. runtime은 각 서비스에 별도 프로세스
+그룹을 부여하며, 하위 서비스는 세션/그룹을 이탈해 daemonize하면 안 된다.
+검증인 네 개에 동시에 TERM을 보내고 총 15초 뒤 무응답 프로세스를 KILL한다.
+runtime은 전체 25초 grace 뒤 자신이 생성한 그룹에 KILL을 보내 후손도 정리한다.
+강제 종료·비정상 자식 종료·확인/정리 실패는 0이 아닌 종료 코드로 보고하며,
+실패를 정상 `clean_stop`으로 기록하지 않는다. PID/포트/lock 해제와 제어 소켓
+정리를 확인한 뒤 재기동한다. `shutdown-test.py`는 정상/지연/무응답·supervisor
+조기 종료·정리 권한 오류를 유한 모형 프로세스로 검사한다. 실제 체인 시험과 구분한다. 다시 관리 start하면 같은 DB/journal을 열고
 확정 cursor를 따라잡은 후 OPEN이 된다. runtime·node별 lock은 중복 supervisor를 거절한다.
 손상 journal 또는 hash 불일치를 빈 원장 생성으로 우회하지 않는다.
 
 검증인 일반 로그는 노드당 100MiB×5(활성+이전 4), 네 노드 합계 2,000MiB다.
-관리 wrapper의 chain-supervisor/API/web 로그도 각각 같은 상한을 가지므로 전체 일반
-로그 상한은 3,500MiB다. 로그 쓰기 실패 시 전체 자식을 종료하고 오류를 노출한다.
+관리 wrapper의 chain-supervisor/bootstrap/API/web 로그도 각각 같은 상한을 가지므로 전체 일반
+로그 상한은 4,000MiB다. 로그 쓰기 실패 시 전체 자식을 종료하고 오류를 노출한다.
 DB·consensus WAL·engine journal/outbox·키·genesis·증거는 로그 정리 대상이 아니다.
 
 manifest에는 후보 SHA/tree·contract/config/lock·binary·genesis hash 및 환경·원시

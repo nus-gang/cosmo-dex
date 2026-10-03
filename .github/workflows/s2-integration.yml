@@ -16,6 +16,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: '.node-version'
+      - name: Owned process shutdown failures
+        run: python3 ops/s2/shutdown-test.py --output .evidence/s2/shutdown
       - name: Build same checkout components
         run: |
           rustup toolchain install 1.92.0 --profile minimal
@@ -50,5 +52,6 @@ jobs:
             .evidence/s2/process/
             .evidence/s2/s1/
             .evidence/s2/runtime/
+            .evidence/s2/shutdown/
           include-hidden-files: true
           if-no-files-found: error
