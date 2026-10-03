@@ -79,9 +79,9 @@ create로 대체하지 않는다. 기동 직후 CATCHING_UP, 신뢰 RPC 재관�
 
 ## 남은 인수 작업
 
-- S2 owner/request ID receipt 조회 연결, 인증된 자기 조회와 공개 데이터 분리.
-- 실제 Chain RPC+HTTP+ML-DSA 주문/취소/부분 체결/IOC 시연.
-- 실제 출금 epoch 변화의 양측 정정·재시작, D/P=0 정상 출금과 UNSETTLED_HOLD 인수.
+- S1 owner/request ID receipt 조회 연결 (S2 authenticated command receipt는 검증 완료).
+- 실제 Chain RPC+HTTP+ML-DSA 가격 한도 내 IOC 체결·응답 유실 장애 주입 확장.
+- 실제 체인 단절·높이 역행 통합 검증과 4검증인 후보 인계 (양측 정정·정상 출금/보류 검증 완료).
 - 재인증·계정 전환·지연 역순 응답·응답 유실 재시도 통합 시험과 Wallet/QA용 고정 실행 인계.
 - 고정 head CI, CTO→Security 심사. main 통합은 CEO, 새 main checkout QA는 별도 담당.
 
@@ -108,3 +108,27 @@ TX hash별 공개 체인 결과 조회만 무인증으로 허용한다. owner/re
 CI source manifest는 `python3 ops/ci/build_manifest.py`로 생성한다. settlement/s2도
 기존 S0 manifest의 소스 추적 대상이므로 해당 파일 변경 뒤 재생성하고 `--check`를 실행한다.
 검사 제외 경로나 oracle 기대값을 바꾸지 않는다.
+
+## 실제 서명 HTTP·양측 정정 체크포인트
+
+`test_signer.go`는 nusd의 공개 개발용 seed 2개만 사용한다. 기존 `chain/go.mod`의
+codec/ML-DSA를 재사용하며 HTTP 서버에서 이 도구를 호출하지 않는다. 임의 키 입력은 없다.
+
+```sh
+(cd chain && go build -o "$PAPERCLIP_RUN_SCRATCH_DIR/s2-test-signer" ../settlement/s2/test_signer.go)
+python3 settlement/s2/check_live.py \
+  --chain ../NUS-37/chain/app/bin/nusd --engine exchange/target/debug/exchange-s2 \
+  --operators ../NUS-37/chain/app/config/operator-accounts.json \
+  --signer "$PAPERCLIP_RUN_SCRATCH_DIR/s2-test-signer" \
+  --output "$PAPERCLIP_RUN_SCRATCH_DIR/live-orders" --port 29957
+```
+
+새 genesis에서 실제 두 자산 예치→HTTP WalletChallenge/ML-DSA 주문→부분 체결→
+서명 잔량 취소→빈 주문장 제한 IOC→UNSETTLED_HOLD→DIRECT 출금 epoch 양측 정정→
+엔진 재시작·재인증→D/P=0 준비 OK 및 실제 HTTP 출금을 확인했다. PENDING/CORRECTED
+fill ID와 양측 C/R/D/P/A, 원본 요청·receipt, RPC snapshot·block 응답을 보존한다.
+동일 요청 재시도는 원래 receipt, 다른 계정 조회는 404, nonce 재사용/옛 세션은 401이다.
+
+이는 단일 검증인 실제 체인 시험이다. 첫 응답을 버리고 재시도했으며 네트워크 중간
+응답 유실 장애 주입은 아니다. IOC는 빈 주문장 무체결 경계이고 가격 한도 내 체결
+시험을 대신하지 않는다. 4검증인·브라우저·전체 S2 인수·main QA PASS가 아니다.
