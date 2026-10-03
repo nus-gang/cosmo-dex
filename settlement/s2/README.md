@@ -48,7 +48,7 @@ S2_ENGINE_BINARY="$PWD/exchange/target/debug/exchange-s2" \
   python3 -m unittest discover -s settlement/s2 -v
 ```
 
-11개 시험: RPC 연속 높이/재시도/역행/블록 불일치/증거 저장 실패, canonical JSON/protobuf,
+14개 시험(기존 11개와 genesis 결합 3개): RPC 연속 높이/재시도/역행/블록 불일치/증거 저장 실패, canonical JSON/protobuf,
 RPC URL, pipe 원문·동시성·UNKNOWN, 실제 HTTP CORS/헤더/상한, 실제 Rust 재시작·revision·
 신선도. 시험 파일은 PAPERCLIP_RUN_SCRATCH_DIR가 있으면 그 안에 만들며 종료 때 정리한다.
 S2_ENGINE_BINARY 미지정 시 실제 Rust 시험 하나가 skip이므로 전체 통과로 보고하지 않는다.
@@ -57,16 +57,20 @@ RPC 입력은 합성 fixture다. 실제 체인 예치 기반 S2-AT01/05/07 증�
 ## 실험 실행 인터페이스
 
 실제 새 S2 genesis의 정확한 bytes와 해당 height 1 snapshot을 별도로 보존하고
-Exchange [S2.md](../../exchange/S2.md)의 manifest를 만든다. 아직 자동 초기화 도구는 없다.
+Exchange [S2.md](../../exchange/S2.md)의 manifest를 만든다. `bootstrap.py`는 실제 genesis bytes와 승인 profile로 manifest를 고정하고, RPC height 1/header 및 등록키를 검증한다. 출력 디렉터리가 이미 있으면 거절하며 실패한 증거를 보존한다.
 manifest의 genesis·owner·supply를 브라우저 입력에서 만들지 않는다. create 모드는
 bootstrap height=1 및 실제 RPC 동일성을 요구한다.
 
 ```sh
+python3 settlement/s2/bootstrap.py \
+  --genesis .runtime/s2/node/config/genesis.json \
+  --output .runtime/s2/bootstrap --rpc http://127.0.0.1:26657
+
 python3 settlement/s2/server.py \
   --engine exchange/target/debug/exchange-s2 \
-  --manifest .runtime/s2/manifest.json --genesis .runtime/s2/genesis.json \
+  --manifest .runtime/s2/bootstrap/manifest.json --genesis .runtime/s2/bootstrap/genesis.json \
   --journal .runtime/s2/engine-journal --evidence .runtime/s2/rpc-evidence \
-  --bootstrap .runtime/s2/bootstrap.json --rpc http://127.0.0.1:26657 --port 8788
+  --bootstrap .runtime/s2/bootstrap/bootstrap.json --rpc http://127.0.0.1:26657 --port 8788
 ```
 
 재시작에는 동일 파일·경로로 `--bootstrap`만 생략한다. 손상/부분 생성 journal을 삭제하거나
@@ -83,3 +87,7 @@ create로 대체하지 않는다. 기동 직후 CATCHING_UP, 신뢰 RPC 재관�
 
 P는 잠정 수취액이고 확정 C/가용액과 합치지 않는다. 체인 정산 제출은 비활성화다.
 분산 내구성·처리량 목표·WS 전체 PASS를 주장하지 않는다.
+
+## 실제 RPC 체크포인트 (2026-10-03)
+
+`check_live.py --chain <승인 nusd> --engine <exchange-s2> --operators <operator-accounts.json> --output <새 디렉터리>`는 새 S2 genesis/단일 검증인에서 실제 DEVBASE·DEVQUOTE 예치, 직접 DEVBASE 출금, epoch 변화 관측, 엔진 재시작을 검증한다. `evidence/live-bootstrap/result.json`과 원시 snapshot/RPC를 보존했다. 실제 서명 HTTP 주문·양측 fill 정정·4검증인 통합은 아직 NOT_RUN이다. 테스트 키만 사용하며 종료 시 체인과 엔진을 종료한다.

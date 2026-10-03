@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Loopback REST adapter. No signing, matching, or settlement occurs in Python."""
 import argparse
-import hashlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import ipaddress
 from pathlib import Path
@@ -9,6 +8,7 @@ import re
 import signal
 import threading
 
+from bootstrap import genesis_manifest
 from chain import Collector, RPC
 from transport import Engine, Unavailable, decode, encode, unknown
 
@@ -151,8 +151,8 @@ def main():
     args = parser.parse_args()
     manifest = decode(Path(args.manifest).read_bytes())
     genesis = Path(args.genesis).read_bytes()
-    if (hashlib.sha256(genesis).hexdigest() != manifest['context']['genesis_hash']
-            or decode(genesis)['chain_id'] != 'nus-s2-dev-1'):
+    expected, _ = genesis_manifest(genesis)
+    if any(manifest.get(key) != value for key, value in expected.items()):
         parser.error('S2 genesis binding mismatch')
     rpc = RPC(args.rpc)
     argv = [args.engine, 'create' if args.bootstrap else 'open', args.manifest, args.journal]
