@@ -81,6 +81,7 @@ runtime.devnet.health=health
 real_socket=runtime.socket.socket
 class Reservation:
  def __init__(self):self.sock=real_socket()
+ def setsockopt(self,*args):self.sock.setsockopt(*args)
  def bind(self,address):self.sock.bind(('127.0.0.1',0))
  def close(self):self.sock.close()
 runtime.socket.socket=Reservation

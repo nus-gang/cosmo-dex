@@ -182,6 +182,7 @@ def main():
             for port in [30556 + i*10 + offset for i in range(4) for offset in (0, 1)] + [8788, 5173]:
                 sock = socket.socket()
                 reservations.append(sock)
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 sock.bind(('127.0.0.1', port))
         finally:
             for sock in reservations:

@@ -24,6 +24,7 @@ PORTS = [30556+i*10+offset for i in range(4) for offset in (0,1)]+[8788,5173]
 def released():
     for port in PORTS:
         with socket.socket() as sock:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             sock.bind(('127.0.0.1', port))
     for name in ['runtime.lock', 'chain/.supervisor.lock', 'journal/writer.lock']:
         with (a.home/name).open('a') as lock:
@@ -51,6 +52,7 @@ report = {'result': 'FAIL'}; proc = None
 try:
     for port in PORTS:
         with socket.socket() as sock:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             sock.bind(('127.0.0.1', port))
     subprocess.run(command('init'), cwd=ROOT, check=True, capture_output=True)
     before_pins = (a.home/'runtime.json').read_bytes()
