@@ -20,7 +20,7 @@
 
 ## S2-G 영향 조사
 
-[Docs 업무](/NUS/issues/NUS-42)의 기준은 F 승인 후보 `84ea152`/tree `eb436444d338cab5482bda29ad4333a981538b22`, 착수 원격 main `ec8961c`다. 기존 DOC-1 인벤토리와 S1 재현은 보존한다.
+[Docs 업무](http://localhost:3100/NUS/issues/NUS-42)의 기준은 F 승인 후보 `84ea152`/tree `eb436444d338cab5482bda29ad4333a981538b22`, 착수 원격 main `ec8961c`다. 기존 DOC-1 인벤토리와 S1 재현은 보존한다.
 
 | 페이지/권위 입력 | 변화와 처리 |
 |---|---|

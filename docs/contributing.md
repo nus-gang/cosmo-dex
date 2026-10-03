@@ -43,4 +43,4 @@ S0 독립 보안은 [재현 안내](../security/README.md), 실제 개발망·RE
 
 ## S2 문서·통합 검토
 
-S2는 Go 1.26.5·Rust 1.92.0·Node 24.21.0과 기존 lock으로 같은 checkout을 빌드한다. [S2 CI](../.github/workflows/s2-integration.yml)와 [운영 검증 명령](../ops/s2/README.md)을 따른다. Docs의 CTO→QA 검토 뒤 main 통합 실행은 [CEO의 NUS-44](/NUS/issues/NUS-44), 새 main checkout 독립 QA는 [NUS-45](/NUS/issues/NUS-45)가 맡는다. 문서 PR만으로 main 전달 완료를 선언하지 않는다.
+S2는 Go 1.26.5·Rust 1.92.0·Node 24.21.0과 기존 lock으로 같은 checkout을 빌드한다. [S2 CI](../.github/workflows/s2-integration.yml)와 [운영 검증 명령](../ops/s2/README.md)을 따른다. Docs의 CTO→QA 검토 뒤 main 통합 실행은 [CEO의 NUS-44](http://localhost:3100/NUS/issues/NUS-44), 새 main checkout 독립 QA는 [NUS-45](http://localhost:3100/NUS/issues/NUS-45)가 맡는다. 문서 PR만으로 main 전달 완료를 선언하지 않는다.

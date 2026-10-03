@@ -8,10 +8,12 @@
 
 ### Fixed
 
+- [PR #35](https://github.com/nus-gang/cosmo-dex/pull/35)의 승인·증거·인계 링크에 Paperclip origin을 명시해 GitHub에서도 로컬 보드로 연결되게 수정했다. 다른 설치의 주소 적용은 [검증 안내](verification.md)를 따른다.
+
 - README·목차·공통 안내의 S1 범위를 명시하고 S2 후보의 기능·API·운영 및 [검증 경계](verification.md#s2-통합-후보)를 연결했다.
 - 공개키 JSON이 백업이 아님을 유지하고 로컬 접수/잠정 체결과 체인 확정·main 전달 상태를 구분했다.
 
-[문서 검토·PR](/NUS/issues/NUS-42), [기능 후보 PR #34](https://github.com/nus-gang/cosmo-dex/pull/34). 기존 실패/제외 증거를 보존하며 제품 코드·규약·QA 판정은 변경하지 않는다.
+[문서 검토·PR](http://localhost:3100/NUS/issues/NUS-42), [기능 후보 PR #34](https://github.com/nus-gang/cosmo-dex/pull/34). 기존 실패/제외 증거를 보존하며 제품 코드·규약·QA 판정은 변경하지 않는다.
 
 ## DOC-1 문서 후보 — 제품 기준 32781aa9
 
