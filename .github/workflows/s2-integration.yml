@@ -1,0 +1,54 @@
+name: S2 integration
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  integration:
+    name: S2 four-validator integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.5'
+          cache-dependency-path: chain/app/go.sum
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.node-version'
+      - name: Build same checkout components
+        run: |
+          rustup toolchain install 1.92.0 --profile minimal
+          cargo +1.92.0 build --locked --manifest-path exchange/Cargo.toml --bin exchange-s2
+          (cd chain/app && sh scripts/build.sh)
+          (cd web && npm ci --ignore-scripts && npx playwright-core install --with-deps chromium && node s2/build.mjs)
+      - name: S0 S1 regression and S2 local failures
+        run: |
+          mkdir -p .evidence/s2/process .evidence/s2/scratch
+          python3 ops/ci/build_manifest.py --check
+          python3 ops/s1/log-test.py 2>&1 | tee .evidence/s2/log-retention.log
+          python3 ops/s1/init-test.py 2>&1 | tee .evidence/s2/init.log
+          python3 ops/s1/integration.py --base-port 31556 --home .runtime/s1-regression --output .evidence/s2/s1
+          S2_PROCESS_EVIDENCE="$PWD/.evidence/s2/process" cargo +1.92.0 test --locked --manifest-path exchange/Cargo.toml --all-features --test s2_process 2>&1 | tee .evidence/s2/process.log
+          (cd web && npm test && node --experimental-strip-types --test s1/direct.test.ts s2/*.test.ts) 2>&1 | tee .evidence/s2/wallet-regression.log
+      - name: Four-validator actual signed browser flow
+        run: |
+          S2_FOUR_VALIDATORS=1 S2_TEST_CHAIN="$PWD/chain/app/bin/nusd" S2_ENGINE_BINARY="$PWD/exchange/target/debug/exchange-s2" S2_TEST_SCRATCH="$PWD/.evidence/s2/scratch" node web/s2/browser.test.mjs .evidence/s2/browser
+      - name: Runtime stop restart and duplicate supervisor
+        run: python3 ops/s2/runtime-test.py --home .runtime/s2-lifecycle --output .evidence/s2/runtime
+      - name: Pin evidence manifest
+        if: always()
+        run: python3 ops/s2/manifest.py --output .evidence/s2
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: s2-integration-${{ github.sha }}
+          path: |
+            .evidence/s2/manifest.json
+            .evidence/s2/*.log
+            .evidence/s2/browser/
+            .evidence/s2/process/
+            .evidence/s2/s1/
+            .evidence/s2/runtime/
+          include-hidden-files: true
+          if-no-files-found: error

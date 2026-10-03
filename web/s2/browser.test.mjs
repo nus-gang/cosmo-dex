@@ -14,11 +14,12 @@ const home=resolve(scratch,'wallet-node-'+Date.now());
 const chain=resolve(process.env.S2_TEST_CHAIN??resolve(root,'../NUS-37/chain/app/bin/nusd'));
 const engine=resolve(process.env.S2_ENGINE_BINARY??resolve(root,'../NUS-39/exchange/target/debug/exchange-s2'));
 const rpc='http://127.0.0.1:30557',api='http://127.0.0.1:8788';
+const four=process.env.S2_FOUR_VALIDATORS==='1';
 const children=[],report={result:'FAIL',steps:[],observations:[],requests:[]};let browser,page,server;
 const save=(name,v)=>writeFileSync(resolve(out,name),JSON.stringify(v,null,2)+'\n');
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function until(f){let error;for(let i=0;i<100;i++){try{const x=await f();if(x)return x;}catch(e){error=e;}await sleep(200);}throw error??Error('deadline: '+await page.locator('#status').textContent());}
-function child(cmd,args,cwd=root){const p=spawn(cmd,args,{cwd,stdio:['ignore','ignore','pipe']});let diagnostic='';p.stderr.on('data',b=>{diagnostic=(diagnostic+b).slice(-3000);});p.diagnostic=()=>diagnostic;children.push(p);return p;}
+function child(cmd,args,cwd=root){const p=spawn(cmd,args,{cwd,env:Object.fromEntries(Object.entries(process.env).filter(([k])=>['PATH','HOME','TMPDIR','LANG'].includes(k))),stdio:['ignore','ignore','pipe']});let diagnostic='';p.stderr.on('data',b=>{diagnostic=(diagnostic+b).slice(-3000);});p.diagnostic=()=>diagnostic;children.push(p);return p;}
 async function stop(p){if(p.exitCode!==null||p.signalCode!==null)return;p.kill('SIGTERM');await Promise.race([new Promise(r=>p.once('exit',r)),sleep(5000)]);if(p.exitCode===null&&p.signalCode===null){p.kill('SIGKILL');await new Promise(r=>p.once('exit',r));}}
 async function text(id){return page.locator('#'+id).textContent();}
 async function login(user){await page.selectOption('#account',String(user));await page.click('#login');await until(async()=>await text('status')==='계정 인증·조회 완료');await until(async()=>!(await page.locator('#order').isDisabled()));}
@@ -43,10 +44,27 @@ try{
  page.on('response',async r=>{const path=new URL(r.url()).pathname;if(r.url().startsWith(api)&&['/s2/me','/s2/book','/s2/orders','/s2/cancels','/s2/me/withdraw-prepare'].includes(path)){try{report.observations.push({path,status:r.status(),body:await r.json()});}catch{}}});
  await until(async()=>{try{await page.goto('http://127.0.0.1:5173');return true;}catch{return false;}});
  await page.click('#create');const keys=JSON.parse(await text('public'));save('public-keys.json',keys);
- const initial=JSON.parse(execFileSync(chain,['init','--network','s2','--home',home,'--rpc','tcp://127.0.0.1:30557','--p2p','tcp://127.0.0.1:30556','--operator-accounts',resolve(root,'chain/app/config/operator-accounts.json'),'--user-public-keys',resolve(out,'public-keys.json')]));save('init.json',initial);
- const genesis=resolve(home,'config/genesis.json');writeFileSync(resolve(out,'genesis.json'),readFileSync(genesis));
- const node=child(chain,['start','--network','s2','--home',home,'--genesis-hash',initial.genesis_hash]);
+ let initial,genesis,node;
+ if(four){
+   const manifest=JSON.parse(execFileSync('python3',['ops/s1/devnet.py','init','--network','s2','--home',home,'--binary',chain,'--base-port','30556','--user-public-keys',resolve(out,'public-keys.json')],{cwd:root}));
+   save('devnet-manifest.json',manifest);initial={genesis_hash:manifest.genesis_sha256};
+   genesis=resolve(home,'node0/config/genesis.json');
+   node=child('python3',['ops/s1/devnet.py','serve','--home',home]);
+ }else{
+   initial=JSON.parse(execFileSync(chain,['init','--network','s2','--home',home,'--rpc','tcp://127.0.0.1:30557','--p2p','tcp://127.0.0.1:30556','--operator-accounts',resolve(root,'chain/app/config/operator-accounts.json'),'--user-public-keys',resolve(out,'public-keys.json')]));
+   genesis=resolve(home,'config/genesis.json');
+   node=child(chain,['start','--network','s2','--home',home,'--genesis-hash',initial.genesis_hash]);
+ }
+ save('init.json',initial);writeFileSync(resolve(out,'genesis.json'),readFileSync(genesis));
  await until(async()=>{const r=await fetch(rpc+'/status');return BigInt((await r.json()).result.sync_info.latest_block_height)>0n;});
+ if(four){
+   const health=JSON.parse(execFileSync('python3',['ops/s1/devnet.py','health','--home',home],{cwd:root}));
+   assert.equal(health.length,4);assert(health.every(n=>!n.error&&BigInt(n.height)>0n&&!n.catching_up));save('four-validator-health.json',health);
+   const h=health.reduce((n,x)=>BigInt(x.height)<n?BigInt(x.height):n,BigInt(health[0].height));
+   const blocks=await Promise.all([0,1,2,3].map(async i=>(await (await fetch(`http://127.0.0.1:${30557+i*10}/block?height=${h}`)).json()).result));
+   assert.equal(new Set(blocks.map(b=>b.block_id.hash)).size,1);save('four-validator-blocks.json',blocks);
+   report.steps.push('four validators same committed block');
+ }
  execFileSync('python3',['settlement/s2/bootstrap.py','--genesis',genesis,'--output',resolve(out,'bootstrap'),'--rpc',rpc],{cwd:root});
  const args=['settlement/s2/server.py','--engine',engine,'--manifest',resolve(out,'bootstrap/manifest.json'),'--genesis',resolve(out,'bootstrap/genesis.json'),'--journal',resolve(out,'journal'),'--evidence',resolve(out,'rpc-evidence'),'--rpc',rpc,'--port','8788'];
  server=child('python3',[...args,'--bootstrap',resolve(out,'bootstrap/bootstrap.json')]);
@@ -109,6 +127,6 @@ try{
  assert.equal(await page.locator('#orders p').count(),0);assert.equal(await text('fills'),'');report.steps.push('account switch discards pending account response and private view');
  await stop(node);await page.click('#chain-account');await until(async()=>(await text('status')).includes('DIRECT_UNAVAILABLE'));report.steps.push('real RPC outage blocks DIRECT');
  assert.equal(await page.evaluate(()=>localStorage.length+sessionStorage.length),0);report.steps.push('no persistent browser key/session storage');
- report.result='PASS';report.genesis_hash=initial.genesis_hash;report.browser=browser.version();report.binary_hashes=Object.fromEntries([['chain',chain],['engine',engine]].map(([k,p])=>[k,createHash('sha256').update(readFileSync(p)).digest('hex')]));report.scope='single validator fresh S2 genesis; production browser UI + actual Rust/Python API; synthetic assets; not four-validator/main QA';
+ report.result='PASS';report.genesis_hash=initial.genesis_hash;report.browser=browser.version();report.binary_hashes=Object.fromEntries([['chain',chain],['engine',engine]].map(([k,p])=>[k,createHash('sha256').update(readFileSync(p)).digest('hex')]));report.scope=(four?'four validators':'single validator')+' fresh S2 genesis; production browser UI + actual Rust/Python API; synthetic assets; not main QA';
 }catch(e){report.error=String(e);report.stack=e.stack;report.status=page?await text('status').catch(()=>null):null;report.diagnostics=children.map(p=>p.diagnostic());process.exitCode=1;}
 finally{await browser?.close();for(const p of children.reverse())await stop(p);save('result.json',report);console.log(JSON.stringify({result:report.result,steps:report.steps,error:report.error,status:report.status}));}

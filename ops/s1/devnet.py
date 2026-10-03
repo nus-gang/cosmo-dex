@@ -57,7 +57,7 @@ def init(a):
     for i in range(4):
         home = root / f'node{i}'
         port = a.base_port + i * 10
-        cli(binary, 'init', '--home', home, '--operator-accounts', a.operators.resolve(),
+        cli(binary, 'init', '--network', getattr(a, 'network', 's1'), '--home', home, '--operator-accounts', a.operators.resolve(),
             '--rpc', f'tcp://127.0.0.1:{port+1}', '--p2p', f'tcp://127.0.0.1:{port}', *user_args)
         g = json.loads((home / 'config/genesis.json').read_text())
         genesis = genesis or g
@@ -91,6 +91,7 @@ def init(a):
         for private in ('priv_validator_key.json', 'node_key.json'):
             (home / 'config' / private).chmod(0o600)
     manifest = {'schema': 1, 'scope': 'single-host real four-validator synthetic devnet',
+                'network': getattr(a, 'network', 's1'),
                 'binary': str(binary), 'binary_sha256': digest(binary),
                 'version': cli(binary, 'version'), 'genesis_sha256': gh,
                 'go_mod_sha256': digest(ROOT/'chain/app/go.mod'),
@@ -163,7 +164,7 @@ def serve(home):
         # Validator processes receive no Paperclip/GitHub credentials.
         env = {k: v for k, v in os.environ.items() if k in ('PATH', 'HOME', 'TMPDIR', 'LANG')}
         try:
-            processes[i] = subprocess.Popen([m['binary'], 'start', '--home', n['home'],
+            processes[i] = subprocess.Popen([m['binary'], 'start', '--network', m.get('network', 's1'), '--home', n['home'],
                                 '--genesis-hash', m['genesis_sha256']], env=env,
                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             logs[i] = LogPump(processes[i].stdout, sink)
@@ -255,6 +256,7 @@ def main():
     p.add_argument('--home', type=Path, default=ROOT/'.runtime/s1')
     p.add_argument('--binary', type=Path, default=ROOT/'chain/app/bin/nusd')
     p.add_argument('--operators', type=Path, default=ROOT/'chain/app/config/operator-accounts.json')
+    p.add_argument('--network', choices=['s1', 's2'], default='s1')
     p.add_argument('--base-port', type=int, default=28656)
     p.add_argument('--user-public-keys', type=Path, help='JSON array of two public keys; init only')
     p.add_argument('--node', default='all')
