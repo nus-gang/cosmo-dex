@@ -2,6 +2,8 @@ import { base64 } from '@scure/base';
 import { decode, bytesToHex, uint, type Message } from '../src/codec.ts';
 import { ml_dsa65, owner, address, sign, validateDevOrder } from '../src/wallet.ts';
 import { integer } from '../s1/direct.ts';
+import { envelope, join, bytes, hex, type Input } from './direct-codec.ts';
+import { sha256 } from '@noble/hashes/sha256';
 export { base64 };
 export const CONTRACT = '2e103517c344f21c2b97fbe7e977f0e614c32c704b0f54978c5bb1fb3ae6ab0f';
 export const CONFIG = '70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f';
@@ -37,6 +39,13 @@ export class TradingKey {
     try { const key = ml_dsa65.keygen(seed); this.#secret = key.secretKey; this.publicKey = key.publicKey; }
     finally { seed.fill(0); }
     this.owner = base64.encode(owner(this.publicKey)); this.address = address(this.publicKey);
+  }
+  direct(input: Input) {
+    if (this.#closed) throw Error('SESSION_CLOSED');
+    const e = envelope(input, this.publicKey);
+    const raw = join(bytes(1, e.body), bytes(2, e.auth), bytes(3, ml_dsa65.sign(this.#secret, e.signDoc)));
+    if (raw.length > 16384) throw Error('TX_SIZE');
+    return { tx_bytes: base64.encode(raw), tx_hash: hex(sha256(raw)).toUpperCase() };
   }
   destroy() { this.#secret.fill(0); this.#closed = true; }
   #sign(name: 'OrderV1' | 'CancelV1' | 'WalletChallengeV1', message: Message): Signed {

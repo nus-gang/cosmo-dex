@@ -1,4 +1,5 @@
 import { TradingClient } from './client.ts';
+import { atoms } from './direct-codec.ts';
 import { TradingKey, base64 } from './session.ts';
 const $ = (id: string) => document.getElementById(id)!;
 const value = (id: string) => ($(id) as HTMLInputElement).value;
@@ -10,7 +11,9 @@ function render() {
   const c=client, v=c?.views.view;
   ($('order') as HTMLButtonElement).disabled = !c?.authenticated || !c.views.open(Date.now());
   $('ledger').replaceChildren(); $('orders').replaceChildren(); $('receipts').replaceChildren();
+  $('txs').replaceChildren();
   if (!c) return;
+  for(const e of c.direct.history.filter(e=>e.input.owner===c.key.address)){const p=document.createElement('p');p.textContent=`${e.input.operation} ${e.input.denom} ${e.input.amount_atoms} atoms · ${e.state} · ${e.tx_hash} · 높이 ${e.height??'미확인'}`;if(e.state==='SUBMISSION_UNKNOWN')p.append(button('TX 결과 조회',()=>c.direct.resolve(e)));$('txs').append(p);}
   $('freshness').textContent = `${c.views.open(Date.now()) ? '접수 가능' : '접수 닫힘 · 마지막 관측값'} · ${c.views.reason} · 높이 ${v?.observed_height ?? '미확인'} · seq ${v?.stream_seq ?? '미확인'} · 지연 ${v?.status.observation.query_latency_ms ?? '?'}ms`;
   for (const row of v?.ledger ?? []) { const tr=document.createElement('tr'); for (const k of ['denom','C','R','D','P','A'] as const) { const td=document.createElement('td'); td.textContent=row[k]; tr.append(td); } $('ledger').append(tr); }
   const book=c.views.book;
@@ -21,7 +24,12 @@ function render() {
 }
 $('create').onclick=action(()=>{if(keys.length) throw Error('기존 탭 키를 유지하세요'); keys=[new TradingKey(),new TradingKey()]; $('public').textContent=JSON.stringify(keys.map(k=>base64.encode(k.publicKey))); status('공개키로 새 S2 genesis를 준비한 후 hash를 고정하세요.');});
 $('bind').onclick=action(()=>{if(client||keys.length!==2)throw Error('두 계정 생성 후 한 번만 고정할 수 있습니다'); client=new TradingClient(value('genesis').trim(),location.origin,(path,init)=>fetch(new URL(String(path),'http://127.0.0.1:8788'),init),keys); client.select(Number(value('account'))); status('genesis 고정 완료');});
-$('account').onchange=action(()=>{client?.select(Number(value('account'))); status('계정 전환 · 이전 세션 폐기 · 다시 로그인하세요');});
+$('account').onchange=action(()=>{client?.select(Number(value('account'))); $('chain-balances').textContent='계정 전환 · 다시 조회하세요'; status('계정 전환 · 이전 세션 폐기 · 다시 로그인하세요');});
+$('deposit').onclick=action(async()=>{if(!client)throw Error('연결 전');await client.transfer('DEPOSIT',value('asset') as 'DEVBASE'|'DEVQUOTE',atoms(value('amount')));});
+$('withdraw').onclick=action(async()=>{if(!client)throw Error('연결 전');await client.transfer('WITHDRAW',value('asset') as 'DEVBASE'|'DEVQUOTE',atoms(value('amount')));});
+$('direct-withdraw').onclick=action(async()=>{if(!client)throw Error('연결 전');await client.transfer('WITHDRAW',value('asset') as 'DEVBASE'|'DEVQUOTE',atoms(value('amount')),true);});
+$('abort-withdraw').onclick=action(async()=>{if(!client)throw Error('연결 전');await client.withdrawAction(false);status('출금 준비 동결 해제');});
+$('chain-account').onclick=action(async()=>{if(!client)throw Error('연결 전');const c=client,g=c.views.generation;$('chain-balances').textContent='확정 상태 조회 중';const a=await c.direct.account(c.key);if(g!==c.views.generation)return;$('chain-balances').textContent=`${a.owner} · 확정 높이 ${a.observed_height} · sequence ${a.sequence} · epoch ${a.owner_epoch}\n${a.balances.map(b=>`${b.denom}: 지갑 ${b.bank_atoms} / 예치 C ${b.confirmed_atoms} atoms`).join('\n')}\nDEVGAS ${a.gas_atoms} atoms · 수수료 1000 atoms / gas limit 500000`;});
 $('login').onclick=action(async()=>{if(!client)throw Error('먼저 genesis를 고정하세요');await client.login();await client.refresh();status('계정 인증·조회 완료');});
 $('order').onclick=action(async()=>{if(!client)throw Error('연결 전');await client.order(value('side') as 'BUY'|'SELL',value('tif') as 'GTC'|'IOC',value('qty'),value('price'));});
 setInterval(()=>{render();if(busy||!client?.authenticated)return;busy=true;void client.refresh().catch(e=>status(e instanceof Error?e.message:'연결 단절')).finally(()=>{busy=false;render();});},1000);

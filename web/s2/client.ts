@@ -2,10 +2,12 @@ import { base64, TradingKey, context, assertContext, requestId, type Command } f
 import { Views, canonical, type View, type Book } from './state.ts';
 import { sha256 } from '@noble/hashes/sha256';
 import { frame, bytesToHex } from '../src/codec.ts';
+import { DirectClient } from './direct.ts';
 import { integer } from '../s1/direct.ts';
 export interface Submission { kind: 'ORDER' | 'CANCEL'; owner: string; id: string; epoch: string; body: Command; state: string; receipt?: Record<string, unknown> }
 export class TradingClient {
   readonly keys: TradingKey[];
+  readonly direct: DirectClient;
   readonly submissions: Submission[] = [];
   readonly views: Views;
   #token = '';
@@ -17,6 +19,7 @@ export class TradingClient {
   readonly transport: typeof fetch;
   constructor(genesis: string, origin: string, transport: typeof fetch = fetch.bind(globalThis), keys = [new TradingKey(), new TradingKey()]) {
     this.origin = origin; this.transport = transport; this.keys = keys;
+    this.direct = new DirectClient(context(genesis), transport);
     this.views = new Views(context(genesis)); this.views.select(this.keys[0].owner);
   }
   get selected() { return this.#selected; }
@@ -84,6 +87,23 @@ export class TradingClient {
     if (this.#closed || !this.authenticated || (newOrder && !this.views.open(Date.now())) || !this.views.view) throw Error('ADMISSION_CLOSED');
     if (this.submissions.some(s => s.owner === this.key.owner && s.state === 'SUBMISSION_UNKNOWN')) throw Error('UNKNOWN_RECEIPT_REQUIRED');
     return this.views.view;
+  }
+  async withdrawAction(prepare: boolean) {
+    if (!this.authenticated) throw Error('REAUTH_REQUIRED');
+    const g=this.views.generation, id=requestId();
+    const r=await this.#request(prepare ? '/s2/me/withdraw-prepare' : '/s2/me/withdraw-abort', {request_id:id}, this.#token);
+    if(!this.#current(g))throw Error('ACCOUNT_CHANGED');
+    const v=r.value;
+    assertContext(v.context,this.views.ctx);
+    if(v.owner!==this.key.owner || v.request_id!==id || v.kind!==(prepare?'WITHDRAW_PREPARE':'WITHDRAW_ABORT') || !['LOCAL_ACCEPTED','REJECTED'].includes(v.state) || v.durability!=='LOCAL_FSYNC' || v.replicated!==false)throw Error('WITHDRAW_UNKNOWN');
+    if(v.code!=='OK')throw Error(v.code==='UNSETTLED_HOLD'?'정산 미구현/미정산 보류':String(v.code));
+    if(!r.ok || v.state!=='LOCAL_ACCEPTED')throw Error('WITHDRAW_UNKNOWN');
+  }
+  async transfer(operation: 'DEPOSIT'|'WITHDRAW', denom: 'DEVBASE'|'DEVQUOTE', amount: string, direct = false) {
+    const g=this.views.generation, key=this.key;
+    if(operation==='WITHDRAW'&&!direct)await this.withdrawAction(true);
+    if(!this.#current(g))throw Error('ACCOUNT_CHANGED');
+    return this.direct.submit(key,operation,denom,amount,()=>this.#current(g));
   }
   async order(side: 'BUY' | 'SELL', tif: 'GTC' | 'IOC', quantity: string, price: string) {
     const view = this.#ready(), id = requestId();
