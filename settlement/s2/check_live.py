@@ -106,6 +106,14 @@ def run(chain, engine_binary, operators, output, port, signer=None):
             else:
                 raise RuntimeError('DIRECT commit timeout: ' + str(tx))
             (output / 'withdraw.json').write_bytes(encode(tx))
+            chain_receipt = cli('receipt', '--rpc', rpc, '--user', '0', '--request-id', f'{3:064x}')
+            receipt_path = '/s1/accounts/' + chain_receipt['owner'] + '/requests/' + f'{3:064x}'
+            status, receipt = http_request('GET', receipt_path)
+            assert receipt == chain_receipt, receipt
+            assert status == 200 and receipt['original_tx_hash'] == submitted['tx_hash'], receipt
+            (output / 'withdraw-receipt.json').write_bytes(encode(receipt))
+            status, missing = http_request('GET', receipt_path[:-64] + f'{999:064x}')
+            assert status == 404 and missing['state'] == 'NOT_FOUND_AT_HEIGHT', missing
             live = observe()
             after = cli('snapshot', '--rpc', rpc)
             (output / 'withdrawn-snapshot.json').write_bytes(encode(after))
@@ -117,6 +125,7 @@ def run(chain, engine_binary, operators, output, port, signer=None):
             engine = Engine([engine_binary, 'open', str(bundle / 'manifest.json'), str(output / 'journal')])
             collector = Collector(client, engine, manifest, output / 'observations')
             restarted = observe()
+            assert http_request('GET', receipt_path) == (200, receipt)
             if orders:
                 orders.restart(engine)
                 status, ready = orders.request('POST', '/s2/me/withdraw-prepare',
@@ -139,16 +148,42 @@ def run(chain, engine_binary, operators, output, port, signer=None):
                 (output / 'normal-withdraw.json').write_bytes(encode(normal_result))
                 observe()
                 orders.corrected('normal-withdrawal')
+            # Real RPC outage: stop the validator, retain cursor and close admission.
+            pre_outage = engine.request('GET', '/s2/status')[1]
+            node.terminate()
+            node.wait(timeout=15)
+            assert collector.tick() is False
+            frozen = engine.request('GET', '/s2/status')[1]
+            assert frozen['mode'] != 'OPEN', frozen
+            assert frozen['observation']['observed_height'] == pre_outage['observation']['observed_height']
+            (output / 'rpc-outage.json').write_bytes(encode(frozen))
+            assert http_request('GET', receipt_path)[0] == 503
+            node = subprocess.Popen([chain, 'start', '--network', 's2', '--home', str(home),
+                                     '--genesis-hash', initial['genesis_hash']], stdout=log, stderr=log)
+            for _ in range(100):
+                try:
+                    client.call('status', {})
+                    break
+                except Exception:
+                    time.sleep(.2)
+            resumed = observe()
+            assert int(resumed['observation']['observed_height']) >= int(frozen['observation']['observed_height'])
+            assert http_request('GET', receipt_path) == (200, receipt)
+            if orders:
+                orders.corrected('rpc-recovered')
+            (output / 'rpc-recovered.json').write_bytes(encode(resumed))
             assert int(restarted['observation']['observed_height']) >= int(live['observation']['observed_height'])
             (output / 'status-before-restart.json').write_bytes(encode(live))
             (output / 'status-after-restart.json').write_bytes(encode(restarted))
             report = {'result': 'PASS', 'scope': 'single-validator real RPC, two deposits, signed DIRECT HTTP withdrawal while engine unavailable, block/result verification, epoch, engine restart; signed HTTP orders and bilateral fill correction NOT_RUN',
+                      'rpc_outage': 'PASS: actual validator stop/restart, retained height, closed admission, receipt UNKNOWN, recovery',
+                      's1_receipt': 'PASS: real HTTP owner/request receipt, original TX hash, missing-at-height, engine restart',
                       'genesis_hash': manifest['context']['genesis_hash'],
                       'chain_binary_hash': hashlib.sha256(Path(chain).read_bytes()).hexdigest(),
                       'engine_binary_hash': hashlib.sha256(Path(engine_binary).read_bytes()).hexdigest()}
             if orders:
                 report['scope'] = report['scope'].split(';')[0]
-                report['signed_http_orders'] = 'PASS: challenge nonce, private isolation, partial fill, signed remainder cancel, empty-book limited IOC, duplicate and receipt lookup, UNSETTLED_HOLD, real DIRECT epoch bilateral correction, restart reauthentication and identical receipts, D/P=0 prepare OK and actual HTTP withdrawal'
+                report['signed_http_orders'] = 'PASS: challenge nonce, private isolation, partial fill, signed remainder cancel, empty-book and partially filled price-limited IOC, injected HTTP response loss, duplicate and receipt lookup, UNSETTLED_HOLD, real DIRECT epoch bilateral correction, restart reauthentication and identical receipts, D/P=0 prepare OK and actual HTTP withdrawal'
             (output / 'result.json').write_bytes(encode(report))
             print(json.dumps(report))
         finally:

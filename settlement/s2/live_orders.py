@@ -2,7 +2,7 @@
 import http.client
 import subprocess
 import threading
-from server import Server
+from server import Server, Handler
 from transport import decode, encode
 
 ORIGIN = 'http://127.0.0.1:5173'
@@ -10,6 +10,15 @@ ORIGIN = 'http://127.0.0.1:5173'
 class Orders:
     def __init__(self, engine, manifest, signer, output, observe):
         self.server = Server(('127.0.0.1', 0), engine)
+        # Test-only HTTP fault: execute durable command, close before response bytes.
+        class LossHandler(Handler):
+            def respond(handler, status, body):
+                if getattr(handler.server, 'drop_next_response', False):
+                    handler.server.drop_next_response = False
+                    handler.close_connection = True
+                    return
+                super().respond(status, body)
+        self.server.RequestHandlerClass = LossHandler
         self.thread = threading.Thread(target=self.server.serve_forever, kwargs={'poll_interval': .05})
         self.context, self.signer, self.output, self.observe = manifest['context'], signer, output, observe
         self.identities = [self.sign(i, 'identity') for i in range(2)]
@@ -76,9 +85,24 @@ class Orders:
                 fee_asset_policy_id='RECEIVE_ASSET_V1', expiry_height=str(height+100), order_type='1')
             signed = self.sign(user, 'OrderV1', fields=fields)
             body = dict(context=self.context, **{k: signed[k] for k in ('wire_base64', 'signature_base64')})
-            status, receipt = self.request('POST', '/s2/orders', body, self.tokens[user])
-            assert status == 201 and receipt['state'] == 'LOCAL_ACCEPTED', receipt
-            # Treat the first response as lost, retry exact bytes and require the same receipt.
+            path = '/s2/me/commands/ORDER/' + fields['order_id'] + '?epoch=0'
+            if user == 1:
+                self.server.drop_next_response = True
+                try:
+                    self.request('POST', '/s2/orders', body, self.tokens[user])
+                except http.client.RemoteDisconnected:
+                    pass
+                else:
+                    raise AssertionError('injected response loss did not occur')
+                status, receipt = self.request('GET', path, token=self.tokens[user])
+                assert status == 200 and receipt['state'] == 'LOCAL_ACCEPTED', receipt
+                (self.output / 'response-loss.json').write_bytes(encode(dict(
+                    fault='server closed HTTP before status/headers/body after engine response',
+                    recovered_receipt=receipt)))
+            else:
+                status, receipt = self.request('POST', '/s2/orders', body, self.tokens[user])
+                assert status == 201 and receipt['state'] == 'LOCAL_ACCEPTED', receipt
+            # Exact retry must recover the same receipt without another reservation/fill.
             assert self.request('POST', '/s2/orders', body, self.tokens[user]) == (200, receipt)
             path = '/s2/me/commands/ORDER/' + fields['order_id'] + '?epoch=0'
             assert self.request('GET', path, token=self.tokens[user]) == (200, receipt)
@@ -119,6 +143,26 @@ class Orders:
         view = self.view(1, 'ioc')
         assert all(r['R'] == '0' for r in view['ledger']) and len(view['fills']) == 1, view
         (self.output / 'ioc.json').write_bytes(encode(dict(request=body, receipt=result)))
+        # A new maker at 10000, IOC limit 10001: fill 500, cancel remaining 500.
+        for user, fields in ((0, dict(self.fields[0], order_id=f'{160:064x}', max_qty_lots='500')),
+                             (1, dict(self.fields[1], order_id=f'{161:064x}', order_type='2',
+                                      limit_price_ticks='10001', max_qty_lots='1000'))):
+            fields['expiry_height'] = str(int(self.observe()['observation']['observed_height']) + 100)
+            signed = self.sign(user, 'OrderV1', fields=fields)
+            body = dict(context=self.context, **{k: signed[k] for k in ('wire_base64', 'signature_base64')})
+            status, result = self.request('POST', '/s2/orders', body, self.tokens[user])
+            assert status == 201 and result['state'] == 'LOCAL_ACCEPTED', result
+            assert self.request('POST', '/s2/orders', body, self.tokens[user]) == (200, result)
+            (self.output / f'limited-ioc-{user}.json').write_bytes(encode(dict(request=body, receipt=result)))
+        views = [self.view(user, 'limited-ioc') for user in range(2)]
+        self.fill_ids = {fill['fill_id'] for fill in views[0]['fills']}
+        assert len(self.fill_ids) == 2
+        assert self.fill_ids == {fill['fill_id'] for fill in views[1]['fills']}
+        for view in views:
+            assert all(row['R'] == '0' for row in view['ledger']), view
+            assert all(fill['state'] == 'PENDING' for fill in view['fills']), view
+        quote = next(row for row in views[1]['ledger'] if row['denom'] == 'DEVQUOTE')
+        assert quote['D'] == '15000500', quote  # 10 QUOTE + 0.5 * limit 10.001
         status, held = self.request('POST', '/s2/me/withdraw-prepare', {'request_id': f'{200:064x}'}, self.tokens[0])
         assert held['code'] == 'UNSETTLED_HOLD', held
         (self.output / 'withdraw-hold.json').write_bytes(encode(held))
@@ -127,8 +171,8 @@ class Orders:
     def corrected(self, name):
         for user in range(2):
             view = self.view(user, name)
-            assert len(view['fills']) == 1 and view['fills'][0]['fill_id'] == self.fill_id
-            assert view['fills'][0]['state'] == 'CORRECTED', view
+            assert {fill['fill_id'] for fill in view['fills']} == self.fill_ids
+            assert all(fill['state'] == 'CORRECTED' for fill in view['fills']), view
             assert all(r['D'] == '0' and r['P'] == '0' and r['R'] == '0' for r in view['ledger']), view
             body, receipt, path = self.receipts[user]
             assert self.request('GET', path, token=self.tokens[user]) == (200, receipt)

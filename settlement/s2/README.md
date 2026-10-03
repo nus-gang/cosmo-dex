@@ -48,7 +48,7 @@ S2_ENGINE_BINARY="$PWD/exchange/target/debug/exchange-s2" \
   python3 -m unittest discover -s settlement/s2 -v
 ```
 
-20개 시험(기존 14개와 DIRECT 경계 6개): RPC 연속 높이/재시도/역행/블록 불일치/증거 저장 실패, canonical JSON/protobuf,
+21개 시험(기존 14개와 DIRECT/receipt 경계 7개): RPC 연속 높이/재시도/역행/블록 불일치/증거 저장 실패, canonical JSON/protobuf,
 RPC URL, pipe 원문·동시성·UNKNOWN, 실제 HTTP CORS/헤더/상한, 실제 Rust 재시작·revision·
 신선도. 시험 파일은 PAPERCLIP_RUN_SCRATCH_DIR가 있으면 그 안에 만들며 종료 때 정리한다.
 S2_ENGINE_BINARY 미지정 시 실제 Rust 시험 하나가 skip이므로 전체 통과로 보고하지 않는다.
@@ -75,12 +75,10 @@ python3 settlement/s2/server.py \
 
 재시작에는 동일 파일·경로로 `--bootstrap`만 생략한다. 손상/부분 생성 journal을 삭제하거나
 create로 대체하지 않는다. 기동 직후 CATCHING_UP, 신뢰 RPC 재관측 완료 후 OPEN이다.
-새 S2 home과 journal을 사용하고 S1 경로를 재사용하지 않는다. HTTP의 `/s2/*`와 `/s1/txs`, `/s1/txs/{TX_HASH}`가 연결돼 있다.
+새 S2 home과 journal을 사용하고 S1 경로를 재사용하지 않는다. HTTP의 `/s2/*`와 `/s1/txs`, `/s1/txs/{TX_HASH}`, `/s1/accounts/{bech32_owner}/requests/{request_id}`가 연결돼 있다.
 
 ## 남은 인수 작업
 
-- S1 owner/request ID receipt 조회 연결 (S2 authenticated command receipt는 검증 완료).
-- 실제 Chain RPC+HTTP+ML-DSA 가격 한도 내 IOC 체결·응답 유실 장애 주입 확장.
 - 실제 체인 단절·높이 역행 통합 검증과 4검증인 후보 인계 (양측 정정·정상 출금/보류 검증 완료).
 - 재인증·계정 전환·지연 역순 응답·응답 유실 재시도 통합 시험과 Wallet/QA용 고정 실행 인계.
 - 고정 head CI, CTO→Security 심사. main 통합은 CEO, 새 main checkout QA는 별도 담당.
@@ -90,7 +88,7 @@ P는 잠정 수취액이고 확정 C/가용액과 합치지 않는다. 체인 �
 
 ## 실제 RPC 체크포인트 (2026-10-03)
 
-`check_live.py --chain <승인 nusd> --engine <exchange-s2> --operators <operator-accounts.json> --output <새 디렉터리>`는 새 S2 genesis/단일 검증인에서 실제 DEVBASE·DEVQUOTE 예치, 직접 DEVBASE 출금, epoch 변화 관측, 엔진 재시작을 검증한다. `evidence/live-bootstrap/result.json`과 원시 snapshot/RPC를 보존했다. 실제 서명 HTTP 주문·양측 fill 정정·4검증인 통합은 아직 NOT_RUN이다. 테스트 키만 사용하며 종료 시 체인과 엔진을 종료한다.
+`check_live.py --chain <승인 nusd> --engine <exchange-s2> --operators <operator-accounts.json> --output <새 디렉터리>`는 새 S2 genesis/단일 검증인에서 실제 DEVBASE·DEVQUOTE 예치, 직접 DEVBASE 출금, epoch 변화 관측, 엔진 재시작을 검증한다. `evidence/live-bootstrap/result.json`과 원시 snapshot/RPC를 보존했다. 실제 서명 HTTP 주문·양측 정정은 후속 체크포인트에서 검증했고 4검증인 통합은 NOT_RUN이다. 테스트 키만 사용하며 종료 시 체인과 엔진을 종료한다.
 
 ## DIRECT HTTP 체크포인트
 
@@ -103,7 +101,7 @@ CheckTx 성공도 202 `SUBMISSION_UNKNOWN`이며, `/s1/txs/{TX_HASH}`는 조회 
 
 DIRECT HTTP JSON은 base64 팽창을 위해 22000B, 실제 TxRaw는 기존 16384B 상한이다.
 S2 주문 JSON 상한 16384B는 유지한다. POST에는 기존 Origin/Host 검사를 적용하며
-TX hash별 공개 체인 결과 조회만 무인증으로 허용한다. owner/request receipt는 아직 미연결이다.
+TX hash별 공개 체인 결과 조회만 무인증으로 허용한다. owner/request receipt는 아래의 체인 공개 조회 경로를 사용한다.
 
 CI source manifest는 `python3 ops/ci/build_manifest.py`로 생성한다. settlement/s2도
 기존 S0 manifest의 소스 추적 대상이므로 해당 파일 변경 뒤 재생성하고 `--check`를 실행한다.
@@ -132,3 +130,24 @@ fill ID와 양측 C/R/D/P/A, 원본 요청·receipt, RPC snapshot·block 응답�
 이는 단일 검증인 실제 체인 시험이다. 첫 응답을 버리고 재시도했으며 네트워크 중간
 응답 유실 장애 주입은 아니다. IOC는 빈 주문장 무체결 경계이고 가격 한도 내 체결
 시험을 대신하지 않는다. 4검증인·브라우저·전체 S2 인수·main QA PASS가 아니다.
+
+
+## Receipt·응답 유실·부분 체결 IOC 추가 검증
+
+S1 `/s1/accounts/{bech32_owner}/requests/{64 lowercase hex request_id}`는 공개 체인
+receipt다. S2 snapshot의 base64 20-byte owner를 `nus` bech32로 변환해 등록 계정
+allowlist를 확인한다. S2 `/s2/me/commands/{kind}/{request_id}?epoch={epoch}`는 별도로
+WalletChallenge 세션이 필요한 개인 주문 receipt다. 두 owner 표현을 혼용하지 않는다.
+체인 receipt는 검증한 snapshot 높이를 ABCI 조회에 고정하고 chain/genesis/owner/request ID/
+committed height를 대조한다. 응답 height가 다르거나 RPC가 끊기면 503 UNKNOWN이다.
+404 NOT_FOUND_AT_HEIGHT는 그 관측 높이에서 없다는 뜻이며 제출 실패 확정이 아니다.
+
+실제 개발망 시험은 HTTP handler가 엔진 응답을 받은 뒤 status/header/body를 전송하기 전에
+연결을 닫는다. 클라이언트 RemoteDisconnected 이후 개인 receipt 조회 및 동일 원문 재시도로
+효과 1회를 검증한다. 이 장애 주입은 시험 전용 handler이며 제품 서버에는 활성화 경로가 없다.
+별도 maker 500 lots, IOC 1000 lots/limit 10001 ticks는 10000 ticks에서 500 lots를 체결하고
+잔량을 취소한다. 매수 D는 기존 10000000 + 신규 5000500 = 15000500 atoms를 유지한다.
+두 fill ID는 실제 직접 출금 epoch 변화 후 양측 CORRECTED, 엔진 재시작 후에도 동일하다.
+검증인 실제 중단/재기동 시 마지막 높이 보존·접수 닫힘·receipt UNKNOWN·회복도 시험한다.
+
+4검증인 통합·브라우저·실제 main 인수는 별도 담당 인수 대상이며 아직 PASS로 표시하지 않는다.

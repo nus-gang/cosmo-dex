@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from direct import Direct
+from direct import Direct, chain_owner
 from transport import Unavailable, encode
 
 
@@ -71,3 +71,41 @@ class DirectTests(unittest.TestCase):
     def test_other_genesis_cannot_reuse_evidence(self):
         with self.assertRaises(Unavailable):
             Direct(self, {'context': {'chain_id': 'other'}}, Path(self.temp.name))
+
+    def test_receipt_binding_not_found_and_rpc_failure(self):
+        encoded_owner = 'WqVsIIzDjWIW8PDv6e4bRsyh+44='
+        owner, rid = chain_owner(encoded_owner), '1' * 64
+        self.assertEqual(owner, 'nus1t2jkcgyvcwxky9hs7rh7nmsmgmx2r7uwsvvqu7')
+        self.gateway.manifest.update(owners=[encoded_owner])
+        self.gateway.manifest['context']['genesis_hash'] = 'a' * 64
+        receipt = dict(chain_id='nus-s2-dev-1', genesis_hash='a' * 64,
+                       owner=owner, request_id=rid, committed_height='2',
+                       state='COMMITTED', original_tx_hash=self.digest)
+        response = {'height': '3', 'code': 0}
+        path = '/s1/accounts/' + owner + '/requests/' + rid
+        def query(method, params):
+            self.assertEqual(method, 'abci_query')
+            self.assertEqual(params['height'], '3')
+            self.assertEqual(bytes.fromhex(params['data']),
+                             bytes((10, len(owner))) + owner.encode() + bytes((18, 64)) + rid.encode())
+            return {'response': response}, encode(response)
+        with patch.object(self.gateway.rpc, 'call', side_effect=query), patch('direct.json_response', return_value=receipt):
+            unknown_path = '/s1/accounts/' + chain_owner('AAAAAAAAAAAAAAAAAAAAAAAAAAA=') + '/requests/' + rid
+            self.assertEqual(self.gateway.request('GET', unknown_path)[0], 404)
+            response['value'] = 'AA=='
+            self.assertEqual(self.gateway.request('GET', path), (200, receipt))
+            for key, bad in [('owner', 'other'), ('genesis_hash', 'b' * 64),
+                             ('chain_id', 'other'), ('request_id', '2' * 64),
+                             ('committed_height', '4'), ('state', 'PENDING')]:
+                old = receipt[key]
+                receipt[key] = bad
+                self.assertEqual(self.gateway.request('GET', path)[0], 503)
+                receipt[key] = old
+            response['height'] = '4'
+            self.assertEqual(self.gateway.request('GET', path)[0], 503)
+            response.update(height='3', code=1, log='NOT_FOUND_AT_HEIGHT 3')
+            self.assertEqual(self.gateway.request('GET', path)[1]['state'], 'NOT_FOUND_AT_HEIGHT')
+            response['log'] = 'NOT_FOUND_AT_HEIGHT 2'
+            self.assertEqual(self.gateway.request('GET', path)[0], 503)
+        with patch.object(self.gateway, 'snapshot', side_effect=Unavailable('offline')):
+            self.assertEqual(self.gateway.request('GET', path)[0], 503)

@@ -5,14 +5,39 @@ from pathlib import Path
 import re
 import time
 
-from chain import Collector, durable_file, integer
+from chain import Collector, durable_file, integer, json_response
 from transport import Unavailable, decode, encode, unknown
+
+RECEIPT_PATH = re.compile(r'/s1/accounts/([a-z0-9]{1,90})/requests/([0-9a-f]{64})')
 
 TX_PATH = re.compile(r'/s1/txs/([0-9A-F]{64})')
 
 
 def route(path):
-    return path == '/s1/txs' or TX_PATH.fullmatch(path) is not None
+    return (path == '/s1/txs' or TX_PATH.fullmatch(path) is not None
+            or RECEIPT_PATH.fullmatch(path) is not None)
+
+
+def chain_owner(owner):
+    """Canonical nus bech32 form of the pinned 20-byte S2 owner."""
+    raw = base64.b64decode(owner, validate=True)
+    if len(raw) != 20 or base64.b64encode(raw).decode() != owner:
+        raise Unavailable('OWNER_ENCODING')
+    alphabet = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l'
+    value = int.from_bytes(raw, 'big')
+    data = [(value >> shift) & 31 for shift in range(155, -1, -5)]
+    hrp = 'nus'
+    checksum = 1
+    generators = (0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3)
+    for item in [ord(c) >> 5 for c in hrp] + [0] + [ord(c) & 31 for c in hrp] + data + [0]*6:
+        top = checksum >> 25
+        checksum = ((checksum & 0x1ffffff) << 5) ^ item
+        for bit, generator in enumerate(generators):
+            if (top >> bit) & 1:
+                checksum ^= generator
+    checksum ^= 1
+    return hrp + '1' + ''.join(alphabet[v] for v in data +
+                              [(checksum >> shift) & 31 for shift in range(25, -1, -5)])
 
 
 class Direct:
@@ -37,7 +62,45 @@ class Direct:
                 'freshness_ms': str(max(0, time.time_ns() // 1_000_000 - integer(body['block_time_unix_ms']))),
                 'indexer_mode': 'DIRECT_COMMITTED_QUERY'}
 
+    def receipt(self, owner, request_id):
+        """Public chain receipt, separate from private S2 command/session data."""
+        try:
+            meta = self.snapshot()
+            height = meta['observed_height']
+            if owner not in {chain_owner(value) for value in self.manifest['owners']}:
+                return 404, dict(unknown('UNKNOWN_ACCOUNT'), retryable=False,
+                                 observed_height=height)
+            # Both bounded ASCII fields fit one-byte protobuf lengths.
+            data = bytes((10, len(owner))) + owner.encode() + bytes((18, 64)) + request_id.encode()
+            query, raw = self.rpc.call('abci_query', {
+                'path': '/nus.exchange.v1.Query/Receipt', 'data': data.hex(),
+                'height': height, 'prove': False})
+            response = query['response']
+            if response['height'] != height:
+                raise Unavailable('RECEIPT_HEIGHT_MISMATCH')
+            if response.get('code', 0) != 0:
+                if re.search(r'NOT_FOUND_AT_HEIGHT ' + height + r'\b', response.get('log', '')):
+                    return 404, dict(meta, state='NOT_FOUND_AT_HEIGHT',
+                                     code='NOT_FOUND_AT_HEIGHT', retryable=True)
+                raise Unavailable('RECEIPT_QUERY_FAILED')
+            receipt = json_response(base64.b64decode(response['value'], validate=True))
+            context = self.manifest['context']
+            if (receipt['chain_id'] != context['chain_id']
+                    or receipt['genesis_hash'] != context['genesis_hash']
+                    or receipt['owner'] != owner or receipt['request_id'] != request_id
+                    or not 0 < integer(receipt['committed_height']) <= integer(height)
+                    or receipt['state'] != 'COMMITTED'
+                    or not re.fullmatch(r'[0-9A-F]{64}', receipt['original_tx_hash'])):
+                raise Unavailable('RECEIPT_BINDING')
+            durable_file(self.evidence / ('receipt-' + hashlib.sha256(raw).hexdigest() + '.json'), raw)
+            return 200, receipt
+        except (Unavailable, OSError, ValueError, TypeError, KeyError):
+            return 503, unknown()
+
     def request(self, method, path, raw=b''):
+        receipt = RECEIPT_PATH.fullmatch(path)
+        if receipt and method == 'GET':
+            return self.receipt(*receipt.groups())
         if method == 'POST' and path == '/s1/txs':
             try:
                 body = decode(raw)
