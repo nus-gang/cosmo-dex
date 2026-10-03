@@ -14,6 +14,7 @@ import subprocess
 import sys
 import time
 import urllib.request
+from bounded_log import BoundedLog, LogPump
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -150,7 +151,7 @@ def serve(home):
                 proc.kill()
                 proc.wait(timeout=5)
         if i in logs:
-            logs.pop(i).close()
+            logs.pop(i).finish()
 
     def start(i):
         if i in processes and processes[i].poll() is None:
@@ -158,12 +159,17 @@ def serve(home):
         stop(i)
         load(home)
         n = m['nodes'][i]
-        logs[i] = open(home/f'node{i}.log', 'a')
+        sink = BoundedLog(home/f'node{i}.log')
         # Validator processes receive no Paperclip/GitHub credentials.
         env = {k: v for k, v in os.environ.items() if k in ('PATH', 'HOME', 'TMPDIR', 'LANG')}
-        processes[i] = subprocess.Popen([m['binary'], 'start', '--home', n['home'],
-                            '--genesis-hash', m['genesis_sha256']], env=env,
-                            stdout=logs[i], stderr=logs[i])
+        try:
+            processes[i] = subprocess.Popen([m['binary'], 'start', '--home', n['home'],
+                                '--genesis-hash', m['genesis_sha256']], env=env,
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            logs[i] = LogPump(processes[i].stdout, sink)
+        except Exception:
+            sink.close()
+            raise
 
     def shutdown(*_):
         nonlocal ending
@@ -183,6 +189,9 @@ def serve(home):
                 start(i)
             print('four-validator supervisor started', flush=True)
             while not ending:
+                for i, pump in logs.items():
+                    if pump.error:
+                        raise RuntimeError(f'node{i} log write/rotation failed: {pump.error}')
                 failed = [i for i, p in processes.items() if p.poll() is not None]
                 if failed:
                     raise RuntimeError(f'validator exited unexpectedly: {failed}; inspect node logs')
@@ -192,6 +201,7 @@ def serve(home):
                     continue
                 with conn:
                     conn.settimeout(5)
+                    action = None
                     try:
                         req = json.loads(conn.makefile('rb').readline(4096))
                         action, node = req['action'], req.get('node', 'all')
@@ -209,11 +219,19 @@ def serve(home):
                     except Exception as e:
                         result = {'error': str(e)}
                     conn.sendall(json.dumps(result).encode()+b'\n')
+                    if 'error' in result and action in ('start', 'restart', 'stop'):
+                        raise RuntimeError(result['error'])
     finally:
+        errors = []
         for i in range(4):
-            stop(i)
+            try:
+                stop(i)
+            except Exception as error:
+                errors.append(f'node{i}: {error}')
         path.unlink(missing_ok=True)
         lock.close()
+        if errors:
+            raise RuntimeError('; '.join(errors))
 
 
 def health(home):
@@ -253,7 +271,10 @@ def main():
     elif a.command == 'log':
         if a.node not in ('0', '1', '2', '3'):
             raise ValueError('log requires --node 0..3')
-        print('\n'.join((a.home/f'node{a.node}.log').read_text().splitlines()[-100:]))
+        with (a.home/f'node{a.node}.log').open('rb') as log:
+            log.seek(0, os.SEEK_END)
+            log.seek(max(0, log.tell() - 65536))
+            print('\n'.join(log.read().decode(errors='replace').splitlines()[-100:]))
         return
     else:
         result = control(a.home, a.command, a.node)
