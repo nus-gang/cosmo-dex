@@ -403,7 +403,6 @@ dependencies = [
  "bech32",
  "fips204",
  "hex",
- "libc",
  "num-bigint",
  "num-traits",
  "orderbook-rs",

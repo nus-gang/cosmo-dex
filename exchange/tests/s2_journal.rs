@@ -101,10 +101,17 @@ fn committed_record_and_outbox_recover_atomically() {
 #[test]
 fn dropped_writer_reopens_while_unrelated_child_is_before_exec() {
     use std::{
+        ffi::{c_int, c_void},
         io::{Read, Write},
         os::unix::{io::AsRawFd, net::UnixStream, process::CommandExt},
         time::Duration,
     };
+    // POSIX read/write signatures, confined to this Unix test. No dependency or
+    // protocol-pinned Cargo.lock change is needed for the two pre-exec syscalls.
+    unsafe extern "C" {
+        fn read(fd: c_int, buf: *mut c_void, count: usize) -> isize;
+        fn write(fd: c_int, buf: *const c_void, count: usize) -> isize;
+    }
 
     let d = Dir::new();
     let mut j = Journal::create(&d.0, context()).unwrap();
@@ -130,8 +137,8 @@ fn dropped_writer_reopens_while_unrelated_child_is_before_exec() {
         unsafe {
             command.pre_exec(move || {
                 let mut byte = 1u8;
-                if libc::write(child_ready.as_raw_fd(), (&byte as *const u8).cast(), 1) != 1
-                    || libc::read(child_release.as_raw_fd(), (&mut byte as *mut u8).cast(), 1) != 1
+                if write(child_ready.as_raw_fd(), (&byte as *const u8).cast(), 1) != 1
+                    || read(child_release.as_raw_fd(), (&mut byte as *mut u8).cast(), 1) != 1
                 {
                     return Err(std::io::Error::last_os_error());
                 }

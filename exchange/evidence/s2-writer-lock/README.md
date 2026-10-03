@@ -39,8 +39,8 @@ fork/dup의 디스크립터는 같은 open file description의 잠금을 공유�
 
 pre-exec hook은 준비된 socket에 raw read/write만 수행한다. 메모리 할당,
 Journal 접근, assertion, Rust mutex를 사용하지 않는다. socket timeout은
-10초이며 자식을 release/reap한 뒤 성공 조건을 검사한다. `libc`는 이미 lockfile에
-있는 `0.2.189`를 Unix dev dependency로만 연결했다.
+10초이며 자식을 release/reap한 뒤 성공 조건을 검사한다. 두 POSIX syscall의
+FFI 선언은 Unix 시험 함수 안에만 있으며 의존성과 `Cargo.lock`을 바꾸지 않는다.
 
 수정 전 재현 commit: `8efdb0866e2742f03e6bcf45f1d6db59da9115f8`.
 [기존 Linux CI 재현 실행](https://github.com/nus-gang/cosmo-dex/actions/runs/37124288677).
@@ -57,6 +57,13 @@ guard를 만들지 않으므로 기존 소유자의 잠금을 해제하지 않�
 보존한다. writer.lock 삭제, 잠금 우회, 무조건 재시도, 시험 skip/직렬화는 없다.
 WAL framing, marker/fsync 순서, ACK 시점, outbox, 정정 예약 및 재생 로직은 유지한다.
 Settlement 파일과 공통 protocol, workflow는 수정하지 않았다.
+`ops/ci/manifest.json`에는 변경된 Exchange 소스 두 파일의 SHA256만 갱신한다.
+이는 S0 source mapping gate를 유지하기 위한 것으로 oracle/expected case는 바꾸지 않는다.
+
+중간 head `c85067061ad8164e6a2715d7090fccc2884633ff`에서 S2 Exchange CI는
+통과했지만, 시험용 dev dependency를 추가하면서 lockfile hash 및 S0 source
+manifest 불일치가 생긴 것을 전체 PR checks에서 발견했다. 의존성 추가를 제거하고
+Exchange 소스 해시만 갱신하여 수정했다. 해당 실패 로그도 NUS-47 artifact에 남긴다.
 
 ## 재현 명령
 
