@@ -22,7 +22,18 @@ function child(cmd,args,cwd=root){const p=spawn(cmd,args,{cwd,stdio:['ignore','i
 async function stop(p){if(p.exitCode!==null||p.signalCode!==null)return;p.kill('SIGTERM');await Promise.race([new Promise(r=>p.once('exit',r)),sleep(5000)]);if(p.exitCode===null&&p.signalCode===null){p.kill('SIGKILL');await new Promise(r=>p.once('exit',r));}}
 async function text(id){return page.locator('#'+id).textContent();}
 async function login(user){await page.selectOption('#account',String(user));await page.click('#login');await until(async()=>await text('status')==='계정 인증·조회 완료');await until(async()=>!(await page.locator('#order').isDisabled()));}
-async function tx(operation,denom,amount){await page.selectOption('#asset',denom);await page.fill('#amount',amount);const n=await page.locator('#txs p').count();await page.click('#'+operation);await until(async()=>await page.locator('#txs p').count()>n);const row=page.locator('#txs p').last();await until(async()=>{const button=row.locator('button');if(await button.count())await button.click();return (await row.textContent()).includes('COMMITTED');});report.steps.push(await row.textContent());}
+async function tx(operation,denom,amount){await page.selectOption('#asset',denom);await page.fill('#amount',amount);const n=await page.locator('#txs p').count();await page.click('#'+operation);await until(async()=>{
+  if(await page.locator('#txs p').count()>n)return true;
+  // A fail-closed account query may cross a block boundary. Retry the user
+  // action only before any signed TX exists; UNKNOWN must never be re-signed.
+  if(await text('status')==='DIRECT_UNAVAILABLE') {
+    await Promise.all([
+      page.waitForResponse(r=>r.url().startsWith(api+'/s2/accounts/')),
+      page.click('#'+operation),
+    ]);
+  }
+  return false;
+});const row=page.locator('#txs p').last();await until(async()=>{const button=row.locator('button');if(await button.count())await button.click();return (await row.textContent()).includes('COMMITTED');});report.steps.push(await row.textContent());}
 async function ledger(expected){await until(async()=>{const rows=await page.locator('#ledger tr').allTextContents();return rows.length===2;});const rows=await page.locator('#ledger tr').evaluateAll(rs=>rs.map(r=>Array.from(r.children,c=>c.textContent)));assert.deepEqual(rows,expected);report.steps.push('ledger '+JSON.stringify(rows));}
 async function order(side,tif,qty,price){await page.selectOption('#side',side);await page.selectOption('#tif',tif);await page.fill('#qty',qty);await page.fill('#price',price);const n=await page.locator('#receipts p').count();await page.click('#order');await until(async()=>await page.locator('#receipts p').count()>n);await until(async()=>(await page.locator('#receipts p').last().textContent()).includes('LOCAL_ACCEPTED'));}
 try{
@@ -50,7 +61,13 @@ try{
  await ledger([['DEVBASE','10000000','0','0','1500000','10000000'],['DEVQUOTE','100000000','0','15000500','0','84999500']]);
  await page.selectOption('#asset','DEVQUOTE');await page.fill('#amount','1');await page.click('#withdraw');await until(async()=>(await text('status')).includes('미정산 보류'));report.steps.push('normal withdraw: UNSETTLED_HOLD');
  await page.screenshot({path:resolve(out,'ioc-hold.png'),fullPage:true});
- await page.locator('summary').filter({hasText:'직접 출금'}).click();await tx('direct-withdraw','DEVQUOTE','1');await until(async()=>(await text('fills')).includes('정정'));await page.screenshot({path:resolve(out,'corrected.png'),fullPage:true});
+ await page.locator('summary').filter({hasText:'직접 출금'}).click();
+ // Exercise a transient pre-signing snapshot rejection, then use the actual API.
+ const postsBefore=report.requests.filter(r=>r.path==='/s1/txs'&&r.method==='POST').length;
+ await page.route('**/s2/accounts/*',route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({signing_ready:false})}),{times:1});
+ await tx('direct-withdraw','DEVQUOTE','1');
+ assert.equal(report.requests.filter(r=>r.path==='/s1/txs'&&r.method==='POST').length,postsBefore+1);
+ report.steps.push('pre-signing unavailable retry emits exactly one signed TX');await until(async()=>(await text('fills')).includes('정정'));await page.screenshot({path:resolve(out,'corrected.png'),fullPage:true});
  await login(0);await until(async()=>(await text('fills')).includes('정정'));
  const before=await text('fills');await stop(server);await until(async()=>await page.locator('#order').isDisabled());report.steps.push('API outage closes order admission');
  server=child('python3',args);await until(async()=>{const r=await fetch(api+'/s2/status');return (await r.json()).mode==='OPEN';});
