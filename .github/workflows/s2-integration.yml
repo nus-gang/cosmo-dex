@@ -7,6 +7,9 @@ jobs:
     name: S2 four-validator integration
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -16,6 +19,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: '.node-version'
+      - name: CI pipeline failure propagation
+        run: python3 ops/s2/ci-failure-test.py --output .evidence/s2/ci-failure.json
       - name: Owned process shutdown failures
         run: python3 ops/s2/shutdown-test.py --output .evidence/s2/shutdown
       - name: Build same checkout components
@@ -47,6 +52,7 @@ jobs:
           name: s2-integration-${{ github.sha }}
           path: |
             .evidence/s2/manifest.json
+            .evidence/s2/ci-failure.json
             .evidence/s2/*.log
             .evidence/s2/browser/
             .evidence/s2/process/
