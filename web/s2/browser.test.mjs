@@ -20,7 +20,7 @@ const save=(name,v)=>writeFileSync(resolve(out,name),JSON.stringify(v,null,2)+'\
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function until(f){let error;for(let i=0;i<100;i++){try{const x=await f();if(x)return x;}catch(e){error=e;}await sleep(200);}throw error??Error('deadline: '+await page.locator('#status').textContent());}
 function child(cmd,args,cwd=root){const p=spawn(cmd,args,{cwd,env:Object.fromEntries(Object.entries(process.env).filter(([k])=>['PATH','HOME','TMPDIR','LANG'].includes(k))),stdio:['ignore','ignore','pipe']});let diagnostic='';p.stderr.on('data',b=>{diagnostic=(diagnostic+b).slice(-3000);});p.diagnostic=()=>diagnostic;children.push(p);return p;}
-async function stop(p){if(p.exitCode!==null||p.signalCode!==null)return;p.kill('SIGTERM');await Promise.race([new Promise(r=>p.once('exit',r)),sleep(5000)]);if(p.exitCode===null&&p.signalCode===null){p.kill('SIGKILL');await new Promise(r=>p.once('exit',r));}}
+async function stop(p){if(p.exitCode!==null||p.signalCode!==null)return;p.kill('SIGTERM');await Promise.race([new Promise(r=>p.once('exit',r)),sleep(30000)]);if(p.exitCode===null&&p.signalCode===null){p.kill('SIGKILL');await new Promise(r=>p.once('exit',r));}}
 async function text(id){return page.locator('#'+id).textContent();}
 async function login(user){await page.selectOption('#account',String(user));await page.click('#login');await until(async()=>await text('status')==='계정 인증·조회 완료');await until(async()=>!(await page.locator('#order').isDisabled()));}
 async function tx(operation,denom,amount){await page.selectOption('#asset',denom);await page.fill('#amount',amount);const n=await page.locator('#txs p').count();await page.click('#'+operation);await until(async()=>{
@@ -58,8 +58,12 @@ try{
  save('init.json',initial);writeFileSync(resolve(out,'genesis.json'),readFileSync(genesis));
  await until(async()=>{const r=await fetch(rpc+'/status');return BigInt((await r.json()).result.sync_info.latest_block_height)>0n;});
  if(four){
-   const health=JSON.parse(execFileSync('python3',['ops/s1/devnet.py','health','--home',home],{cwd:root}));
-   assert.equal(health.length,4);assert(health.every(n=>!n.error&&BigInt(n.height)>0n&&!n.catching_up));save('four-validator-health.json',health);
+   let health;
+   await until(async()=>{
+     health=JSON.parse(execFileSync('python3',['ops/s1/devnet.py','health','--home',home],{cwd:root}));
+     return health.length===4&&health.every(n=>!n.error&&BigInt(n.height)>0n&&!n.catching_up);
+   });
+   save('four-validator-health.json',health);
    const h=health.reduce((n,x)=>BigInt(x.height)<n?BigInt(x.height):n,BigInt(health[0].height));
    const blocks=await Promise.all([0,1,2,3].map(async i=>(await (await fetch(`http://127.0.0.1:${30557+i*10}/block?height=${h}`)).json()).result));
    assert.equal(new Set(blocks.map(b=>b.block_id.hash)).size,1);save('four-validator-blocks.json',blocks);

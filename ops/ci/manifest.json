@@ -6980,7 +6980,7 @@
     "web/package-lock.json": "95c1b012fce8ac96e96ee9547438b4c36d15c071e5d79faf1ab4d651261cb0fa",
     "web/package.json": "4a2461a1187a6bb73a5400167aa622d87dff7d91821b09f0b8f827d8bafa38ff",
     "web/s2/README.md": "9724eb2019b2dcdc3e4ad52ad84e618670efd671f6fb1d74d25cdc91eb31d38f",
-    "web/s2/browser.test.mjs": "9fefbbe3a2337a1e4845323aadaf2ac0b237cfbaf8ca485cc42169985e87db84",
+    "web/s2/browser.test.mjs": "915ad263e3672da596fe19383ed1cf3b775c2c0a8096eb7f7b51658311af4d2e",
     "web/s2/browser.ts": "70c8e07db05113fd273e9593f2f3463436d2a6dc3084cb9f5004b4cac1d23f58",
     "web/s2/build.mjs": "7f6a2306ab80ef1c98b45ecfbcc85440b2b2b69cac50836b5a91505550de6675",
     "web/s2/client.ts": "c1a91a0aa0970f81e460c9ed3cb1405d7aaa71458e96426e5ebea9ca0646862e",
