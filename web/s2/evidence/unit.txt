@@ -1,0 +1,23 @@
+✔ DIRECT rejects mixed context, key, height, stale and noncanonical amounts (16.01975ms)
+✔ DIRECT lost response locks new IDs; receipt 404/foreign hash stays unknown; committed permits new TX (50.033917ms)
+✔ account switch before fetch completes signs and transmits nothing (3.159875ms)
+✔ same owner concurrent DIRECT is locked before await and height cannot regress (3.599292ms)
+✔ lot/tick uses exact integer decimals and rejects rounding, exponent, overflow (0.723833ms)
+✔ Order and Cancel encode actual canonical ML-DSA frames and zeroized session rejects further signing (54.256792ms)
+✔ challenge rejects cross owner/genesis/origin/audience and exact expiry before signing (13.98925ms)
+✔ account generation drops old replies before they touch private state (0.340125ms)
+✔ reverse sequence does not roll back balances and identical seq conflicting values are rejected (0.24375ms)
+✔ health revision changes at unchanged economic seq, stale and reconnect close/open admission (0.230667ms)
+✔ asset conservation excludes P and rejects crossed contexts or snapshot heights (0.164667ms)
+✔ public book verifies framed canonical hash and monotonic sequence (0.443666ms)
+✔ all approved S2 signed vectors verify with the existing browser codec (15.003125ms)
+✔ lost response keeps same signed bytes, blocks new ID, rejects foreign receipt and account-switch completion (43.808541ms)
+✔ late login reply after account switch cannot install another account session (5.313125ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 237.972666
