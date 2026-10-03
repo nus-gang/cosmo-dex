@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "--manifest-path",
+    "exchange/Cargo.toml",
+    "--test",
+    "s2_capacity"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 53.23,
+  "child_user_seconds": 52.254883,
+  "child_system_seconds": 1.191885,
+  "max_rss_bytes_macos": 290111488,
+  "scope": "cargo plus test processes; no engine throughput measurement"
+}

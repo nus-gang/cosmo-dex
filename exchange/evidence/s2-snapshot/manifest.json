@@ -1,0 +1,32 @@
+{
+  "observed_at": "2026-10-02T16:53:41.277930+00:00",
+  "base_code_sha": "15daac26d03a0337ba7a4743554bf0c973dc2d4c",
+  "contract_sha256": "2e103517c344f21c2b97fbe7e977f0e614c32c704b0f54978c5bb1fb3ae6ab0f",
+  "config_sha256": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+  "synthetic_genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+  "runtime_genesis_hash": null,
+  "platform": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "files_sha256": {
+    "exchange/src/s2/snapshot.rs": "f1c4456fc430ee5c79026a62c60a2dfd0684acf820b92e7b1151afccf278d033",
+    "exchange/src/s2/mod.rs": "ed8f78a431dbe8da5b054f3513545e3c19d8573e8e8aa0f3c8c2d313b43f94a2",
+    "exchange/src/codec.rs": "c06df7a940065179afb8cc463742162c01f8d4258a3c8ecab5c0cdf3cba1d466",
+    "exchange/tests/s2_snapshot.rs": "1353e0eff3f0ccedfca7d82c6720bd1916953551753eb40712d44d26fbc4296d",
+    "exchange/Cargo.lock": "ab4f76dd87448219ade436d508822b423b036a5131cdc732150a59e2e764e894",
+    "protocol/s2/vectors/snapshot.json": "8ce2c738d8b11444f855e112624b31bfd1a9e6dca1ed0fa92dd7cb72614f3b09",
+    "protocol/s2/profile.json": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f"
+  },
+  "tests": {
+    "s2_snapshot": {
+      "passed": 9,
+      "seconds": 0.02
+    },
+    "rc4": {
+      "passed": 1,
+      "seconds": 1.98
+    },
+    "clippy": "PASS"
+  },
+  "throughput_cpu_rss": "NOT_MEASURED",
+  "paid_cost": 0
+}

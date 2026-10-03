@@ -1,0 +1,24 @@
+   Compiling nus-exchange-contract v0.1.0 (/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/worktrees/NUS-38/exchange)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.05s
+     Running tests/rc4.rs (exchange/target/debug/deps/rc4-892e0b45f105df9b)
+
+running 1 test
+test rc4_full_outputs_through_actual_signature_and_cli ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.98s
+
+     Running tests/s2_snapshot.rs (exchange/target/debug/deps/s2_snapshot-28237f3035135bef)
+
+running 9 tests
+test canonical_contract_fixture_and_key_owner_binding ... ok
+test freshness_thresholds_use_recorded_times_and_bound_cursor ... ok
+test rejects_mixed_context_and_hash_tampering ... ok
+test withdrawal_requires_epoch_advance_and_returns_correction_seed ... ok
+test account_identity_sequence_and_block_time_cannot_regress ... ok
+test registered_accounts_and_asset_order_are_exact ... ok
+test cursor_is_contiguous_and_conflicts_never_replace_committed_snapshot ... ok
+test conservation_and_checked_sum_fail_closed ... ok
+test strict_structure_ranges_base64_and_duplicate_json_keys ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+

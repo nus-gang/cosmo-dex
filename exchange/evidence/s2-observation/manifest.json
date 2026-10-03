@@ -1,0 +1,9 @@
+{
+  "base_commit": "07c6c69cb5d0dd7d6794ad4f5cde0a101ebb4bc2",
+  "time_utc": "2026-10-02T20:12:02.001947+00:00",
+  "hashes": {
+    "protocol/s2/CONTRACT.md": "328a5f050786971bba5e1589a9dd7b0f30704ae82bf079ba6ec19025128d586a",
+    "exchange/Cargo.lock": "ab4f76dd87448219ade436d508822b423b036a5131cdc732150a59e2e764e894"
+  },
+  "genesis": "synthetic setup fixture; no live chain acceptance"
+}

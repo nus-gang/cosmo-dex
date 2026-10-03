@@ -1,0 +1,23 @@
+{
+  "time": "2026-10-02T17:11:03.720707+00:00",
+  "platform": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "source_parent": "8b41880b7accfcabfd652cdbda7eac5593a25366",
+  "hashes": {
+    "exchange/src/s2/sequencer.rs": "2aa7532f67245e25818ed0669fe96a8969b2a7a7219f47a81851229190ae506e",
+    "exchange/tests/s2_sequencer.rs": "f41ebe0c32eca28b98678396f1825241a288feea99d066658edaf0a58f7c4138",
+    "exchange/Cargo.lock": "ab4f76dd87448219ade436d508822b423b036a5131cdc732150a59e2e764e894",
+    "protocol/s2/manifest.json": "37768c134b57e9b6d7ed490aad17cfd753535c740a0f6a2304009291f45acdea",
+    "protocol/s2/profile.json": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+    "protocol/s2/vectors/snapshot.json": "8ce2c738d8b11444f855e112624b31bfd1a9e6dca1ed0fa92dd7cb72614f3b09",
+    "protocol/s2/vectors/signed.json": "eaf69351bc3d088132171425c35f7d1f6c5d02b43225bf5648fd8bc6508ad99d"
+  },
+  "rustc": "rustc 1.92.0 (ded5c06cf 2025-12-08)",
+  "tests": {
+    "passed": 10,
+    "seconds": 0.19
+  },
+  "clippy": "PASS",
+  "runtime_genesis": "NOT_RUN; synthetic fixture only",
+  "performance": "NOT_MEASURED"
+}

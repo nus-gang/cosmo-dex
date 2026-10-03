@@ -1,0 +1,25 @@
+{
+  "time": "2026-10-02T17:58:06.223131+00:00",
+  "platform": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+  "source_parent": "f994604de124aa32622abc3a3256b8b4f42f69ae",
+  "hashes": {
+    "exchange/src/s2/record.rs": "f6ab803f033e1021941c5c876f6053299ed97d2c1103dca7f62b537c6c12fcd0",
+    "exchange/tests/s2_sequencer.rs": "437aa408d3b245f33a78d9da575340376e7222ce7bb911328be0d71039ca7cc6",
+    "exchange/Cargo.lock": "ab4f76dd87448219ade436d508822b423b036a5131cdc732150a59e2e764e894",
+    "protocol/s2/manifest.json": "37768c134b57e9b6d7ed490aad17cfd753535c740a0f6a2304009291f45acdea",
+    "protocol/s2/profile.json": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+    "protocol/s2/schema.json": "ac496ae5eb3bc06116c660db6bc9a3717203bbc4eb845c3a640dc56b5d114d0f",
+    "protocol/s2/vectors/snapshot.json": "8ce2c738d8b11444f855e112624b31bfd1a9e6dca1ed0fa92dd7cb72614f3b09"
+  },
+  "tests": {
+    "passed": 20,
+    "new": 1,
+    "seconds": 0.51
+  },
+  "schema": "16 projections PASS: JournalRecord/CommandResult/CommandReceipt/EngineState",
+  "clippy": "all-targets PASS",
+  "runtime_genesis": "NOT_RUN; synthetic fixture only",
+  "performance": "NOT_MEASURED",
+  "rustc": "1.92.0",
+  "remote_push": "WAITING_FOR_GITHUB_CONNECTION"
+}

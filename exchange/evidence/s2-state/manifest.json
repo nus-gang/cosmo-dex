@@ -1,0 +1,26 @@
+{
+  "time": "2026-10-02T17:42:22.794439+00:00",
+  "platform": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+  "source_parent": "0bac9456245bd02817b73dea613d06f42907bd22",
+  "hashes": {
+    "exchange/src/s2/sequencer.rs": "678073894e72698f613218eb9fbdb37a46439d91c904ccd22efbc266089cb08e",
+    "exchange/tests/s2_sequencer.rs": "fb178ec07547c9a83fbb7109c74ba917cc38febe9bda99830d8b3544a24d220b",
+    "exchange/tools/check_s2_projection.py": "668c533ec1432f34758bc992f7ef039b8fc53d77489594f9f0fcdadd22d82800",
+    "exchange/Cargo.lock": "ab4f76dd87448219ade436d508822b423b036a5131cdc732150a59e2e764e894",
+    "protocol/s2/manifest.json": "37768c134b57e9b6d7ed490aad17cfd753535c740a0f6a2304009291f45acdea",
+    "protocol/s2/profile.json": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+    "protocol/s2/schema.json": "ac496ae5eb3bc06116c660db6bc9a3717203bbc4eb845c3a640dc56b5d114d0f",
+    "protocol/s2/vectors/snapshot.json": "8ce2c738d8b11444f855e112624b31bfd1a9e6dca1ed0fa92dd7cb72614f3b09",
+    "protocol/s2/vectors/signed.json": "eaf69351bc3d088132171425c35f7d1f6c5d02b43225bf5648fd8bc6508ad99d"
+  },
+  "tests": {
+    "passed": 19,
+    "new": 3,
+    "seconds": 0.22
+  },
+  "schema": "5 EngineState projections; pinned fixture oracle PASS; general jsonschema package unavailable",
+  "clippy": "all-targets PASS",
+  "runtime_genesis": "NOT_RUN; synthetic fixture only",
+  "performance": "NOT_MEASURED",
+  "rustc": "rustc 1.92.0 (ded5c06cf 2025-12-08)"
+}

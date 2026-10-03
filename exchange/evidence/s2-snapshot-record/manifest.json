@@ -1,0 +1,28 @@
+{
+  "time": "2026-10-02T18:59:33.022598+00:00",
+  "platform": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+  "source_parent": "c525907bb49ea3f3a58c64f984907e083edfcf5f",
+  "hashes": {
+    "exchange/src/s2/record.rs": "50f9e851223795aa51ab239df2d79e97ed5255a425dfe60b579b7b50fbe897e3",
+    "exchange/src/s2/recovery.rs": "64ff55156b6e45335630c271161ba0e255b958879747e875b981965edf71f837",
+    "exchange/src/s2/snapshot.rs": "4a2e704c8959080cd0ca16a6d067d06cffc515b5cc0a952ccfb201afb05cc6cd",
+    "exchange/tests/s2_sequencer.rs": "65155a4e59260c9f9af0f74e4db32b8b4d26a41f5f850dc8916a05ee0475bbdc",
+    "exchange/tools/check_s2_projection.py": "4f6a8c3ccd19933c2378c50721e418d7258effa397c2eba781c73ea2c3cf2d7e",
+    "exchange/Cargo.lock": "ab4f76dd87448219ade436d508822b423b036a5131cdc732150a59e2e764e894",
+    "protocol/s2/manifest.json": "37768c134b57e9b6d7ed490aad17cfd753535c740a0f6a2304009291f45acdea",
+    "protocol/s2/profile.json": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+    "protocol/s2/vectors/genesis-fixture.json": "64b8dd6140f0d7b5320ba3686b0c8cede9ea1daf012616bac604ec0bc983a58b"
+  },
+  "contract_sha256": "2e103517c344f21c2b97fbe7e977f0e614c32c704b0f54978c5bb1fb3ae6ab0f",
+  "tests": {
+    "passed": 26,
+    "new": 2,
+    "seconds": 1.66
+  },
+  "schema_projections": 3,
+  "clippy": "all-targets PASS",
+  "rustc": "1.92.0",
+  "runtime_genesis": "NOT_RUN; synthetic fixture only",
+  "performance": "NOT_MEASURED; no throughput CPU RSS claim",
+  "cost": "no paid resources"
+}

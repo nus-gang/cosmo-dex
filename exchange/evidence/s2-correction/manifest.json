@@ -1,0 +1,25 @@
+{
+  "time": "2026-10-02T17:25:09.069086+00:00",
+  "platform": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "source_parent": "bf2f6faeab83b240e841c2872cd14f911243cffa",
+  "hashes": {
+    "exchange/src/s2/sequencer.rs": "4c4d0080bc8c815d128b55d598bbecd95d3b6448033f44e02ef29769dbb144b4",
+    "exchange/tests/s2_sequencer.rs": "e5974a2983802503d3cfa6f4b2d5d15b465d5efc52fff2410dbcdc4965a67f35",
+    "exchange/Cargo.lock": "ab4f76dd87448219ade436d508822b423b036a5131cdc732150a59e2e764e894",
+    "protocol/s2/manifest.json": "37768c134b57e9b6d7ed490aad17cfd753535c740a0f6a2304009291f45acdea",
+    "protocol/s2/profile.json": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+    "protocol/s2/vectors/snapshot.json": "8ce2c738d8b11444f855e112624b31bfd1a9e6dca1ed0fa92dd7cb72614f3b09",
+    "protocol/s2/vectors/signed.json": "eaf69351bc3d088132171425c35f7d1f6c5d02b43225bf5648fd8bc6508ad99d",
+    "exchange/src/s2/ledger.rs": "4b43e24d1a0201a3951da5e43ebedcb9fd3bb77184ad40a9223a20e1999d50df"
+  },
+  "rustc": "rustc 1.92.0 (ded5c06cf 2025-12-08)",
+  "tests": {
+    "passed": 16,
+    "new": 6,
+    "seconds": 0.18
+  },
+  "clippy": "PASS",
+  "runtime_genesis": "NOT_RUN; synthetic fixture only",
+  "performance": "NOT_MEASURED"
+}

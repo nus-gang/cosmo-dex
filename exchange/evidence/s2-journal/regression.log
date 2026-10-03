@@ -1,0 +1,103 @@
+   Compiling nus-exchange-contract v0.1.0 (/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/worktrees/NUS-38/exchange)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.77s
+     Running unittests src/lib.rs (exchange/target/debug/deps/nus_exchange_contract-c48582a6eedf9241)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/decision.rs (exchange/target/debug/deps/decision-1b370670f1cabad5)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/vectors.rs (exchange/target/debug/deps/vectors-bef514c259cc39ca)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/common_vectors.rs (exchange/target/debug/deps/common_vectors-c76c2705d0dfba82)
+
+running 10 tests
+test sequenced_ioc_contract ... ok
+test common_policy ... ok
+test s0_exchange_vectors ... ok
+test integer_vectors ... ok
+test parser_adversarial_boundaries ... ok
+test message_vectors ... ok
+test strict_wire_and_amount_vectors ... ok
+test order_validation_precedence_and_binding ... ok
+test real_signature_vectors ... ok
+test cli_runner_receipt ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.38s
+
+     Running tests/rc3.rs (exchange/target/debug/deps/rc3-a6ea020e0364b37c)
+
+running 5 tests
+test common_rc3_policy_examples ... ok
+test actual_registration_and_signature_at_top_level ... ok
+test json_lines_port_uses_real_registration ... ok
+test newly_signed_cap_and_small_fill ... ok
+test signed_enum_market_and_epoch_at_admission_boundary ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.60s
+
+     Running tests/rc4.rs (exchange/target/debug/deps/rc4-332eece3dc38b2d4)
+
+running 1 test
+test rc4_full_outputs_through_actual_signature_and_cli ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.79s
+
+     Running tests/s2_journal.rs (exchange/target/debug/deps/s2_journal-57f090520b2323ab)
+
+running 11 tests
+test child_process ... ok
+test framing_matches_approved_fixture ... ok
+
+running 1 test
+
+running 1 test
+test child_process ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.02s
+
+
+running 1 test
+test single_writer_is_enforced_across_processes ... ok
+test committed_record_and_outbox_recover_atomically ... ok
+test marker_write_failure_poisoning_preserves_unknown_tail ... ok
+test resource_limit_has_no_sequence_or_wal_effect ... ok
+test authenticated_s2_order_bytes_survive_process_restart ... ok
+test malformed_records_context_change_and_existing_namespace_are_rejected ... ok
+
+running 1 test
+test correction_consumes_and_replenishes_reserve ... ok
+
+running 1 test
+
+running 1 test
+
+running 1 test
+test crash_points_never_silently_lose_a_committed_record ... ok
+test completed_frame_loss_header_payload_marker_corruption_stop_recovery ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.60s
+
+     Running tests/upstream_ioc.rs (exchange/target/debug/deps/upstream_ioc-6b5949e8bd1ff9ef)
+
+running 2 tests
+test real_cancel_and_zero_fill_ioc ... ok
+test real_ioc_error_retains_callback_debits ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests nus_exchange_contract
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

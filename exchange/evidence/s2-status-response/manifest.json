@@ -1,0 +1,13 @@
+{
+  "time": "2026-10-02T20:57:11.100162+00:00",
+  "base_sha": "9d4029eb59e8697df0575de7a109efab06e6535a",
+  "environment": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+  "hashes": {
+    "exchange/src/s2/recovery.rs": "8b4c050025cebd07f2331e194ccb5d6b931a648d34dbd271e5d457131ec5dcd3",
+    "exchange/src/s2/service.rs": "3eb6a970ab0fbd0d3617dd57964f3b0845ec709ab2f69c6cee128aeace9598df",
+    "exchange/tests/s2_sequencer.rs": "49ce21f6be303d05b9e9b2e40b71f55a4ca63f734b92a95d2cb46b2ba097ee88",
+    "exchange/Cargo.lock": "ab4f76dd87448219ade436d508822b423b036a5131cdc732150a59e2e764e894",
+    "protocol/s2/CONTRACT.md": "328a5f050786971bba5e1589a9dd7b0f30704ae82bf079ba6ec19025128d586a"
+  },
+  "scope": "component synthetic fixtures; no actual chain acceptance"
+}
