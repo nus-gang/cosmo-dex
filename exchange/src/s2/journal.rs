@@ -159,13 +159,36 @@ pub enum CrashPoint {
     DuringWalWrite,
 }
 
+struct WriterLock(File);
+impl WriterLock {
+    fn acquire(file: File) -> Result<Self> {
+        file.try_lock().map_err(|error| match error {
+            std::fs::TryLockError::WouldBlock => Error::WriterAlreadyRunning,
+            std::fs::TryLockError::Error(error) => Error::Io(error),
+        })?;
+        Ok(Self(file))
+    }
+}
+impl Drop for WriterLock {
+    fn drop(&mut self) {
+        // flock belongs to the open file description. An unrelated fork can
+        // retain it until exec even with CLOEXEC, so closing our File alone is
+        // insufficient. Only the owning guard unlocks; failed contenders never
+        // construct one. This also covers errors before Journal is constructed.
+        // On an unlock error, File still closes and a new writer must still pass
+        // the OS lock check. Never unlink writer.lock or bypass that check.
+        let _ = self.0.unlock();
+    }
+}
+
 pub struct Journal {
     dir: PathBuf,
-    _lock: File,
     wal: File,
     context: Value,
     commit: Commit,
     poisoned: bool,
+    // Fields drop in declaration order: close the WAL before releasing ownership.
+    _lock: WriterLock,
 }
 impl Journal {
     /// Explicit new namespace only. An existing or incomplete directory is never reused.
@@ -178,7 +201,7 @@ impl Journal {
             .write(true)
             .create_new(true)
             .open(path.join("writer.lock"))?;
-        lock.try_lock().map_err(|_| Error::WriterAlreadyRunning)?;
+        let lock = WriterLock::acquire(lock)?;
         let wal = OpenOptions::new()
             .read(true)
             .write(true)
@@ -219,7 +242,7 @@ impl Journal {
             .read(true)
             .write(true)
             .open(path.join("writer.lock"))?;
-        lock.try_lock().map_err(|_| Error::WriterAlreadyRunning)?;
+        let lock = WriterLock::acquire(lock)?;
         let wal = OpenOptions::new()
             .read(true)
             .write(true)

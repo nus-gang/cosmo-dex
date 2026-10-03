@@ -1,0 +1,16 @@
+rc4 oracle and E regression	Run make bootstrap vectors	﻿2026-10-03T11:36:10.7195365Z ##[group]Run make bootstrap vectors
+rc4 oracle and E regression	Run make bootstrap vectors	2026-10-03T11:36:10.7195712Z ^[[36;1mmake bootstrap vectors^[[0m
+rc4 oracle and E regression	Run make bootstrap vectors	2026-10-03T11:36:10.7259283Z shell: /usr/bin/bash -e {0}
+rc4 oracle and E regression	Run make bootstrap vectors	2026-10-03T11:36:10.7259557Z ##[endgroup]
+rc4 oracle and E regression	Run make bootstrap vectors	2026-10-03T11:36:10.7366161Z cd web && npm ci --ignore-scripts
+rc4 oracle and E regression	Run make bootstrap vectors	2026-10-03T11:36:12.1505308Z 
+rc4 oracle and E regression	Run make bootstrap vectors	2026-10-03T11:36:12.1506369Z added 9 packages, and audited 10 packages in 1s
+rc4 oracle and E regression	Run make bootstrap vectors	2026-10-03T11:36:12.1506839Z 
+rc4 oracle and E regression	Run make bootstrap vectors	2026-10-03T11:36:12.1507140Z 3 packages are looking for funding
+rc4 oracle and E regression	Run make bootstrap vectors	2026-10-03T11:36:12.1508592Z   run `npm fund` for details
+rc4 oracle and E regression	Run make bootstrap vectors	2026-10-03T11:36:12.1519555Z 
+rc4 oracle and E regression	Run make bootstrap vectors	2026-10-03T11:36:12.1519842Z found 0 vulnerabilities
+rc4 oracle and E regression	Run make bootstrap vectors	2026-10-03T11:36:12.1926613Z python3 ops/ci/vectors.py --repo . --config ops/ci/manifest.json --output .evidence/vectors.json
+rc4 oracle and E regression	Run make bootstrap vectors	2026-10-03T11:36:12.5722574Z {"status": "FAIL", "missing": [], "error": "manifest-check failed"}
+rc4 oracle and E regression	Run make bootstrap vectors	2026-10-03T11:36:12.5781082Z make: *** [Makefile:17: vectors] Error 1
+rc4 oracle and E regression	Run make bootstrap vectors	2026-10-03T11:36:12.5798441Z ##[error]Process completed with exit code 2.
