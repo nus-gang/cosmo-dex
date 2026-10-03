@@ -1,0 +1,228 @@
+   Compiling nus-exchange-contract v0.1.0 (/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/worktrees/NUS-38/exchange)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.70s
+     Running unittests src/lib.rs (exchange/target/debug/deps/nus_exchange_contract-2eca19250ae3a889)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/bin/decision.rs (exchange/target/debug/deps/decision-bb906e4c84114985)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/exchange-s2.rs (exchange/target/debug/deps/exchange_s2-34ef6f3a0789375f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/vectors.rs (exchange/target/debug/deps/vectors-7ee2ad13138dbcd6)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/common_vectors.rs (exchange/target/debug/deps/common_vectors-1d6a28b9c634aabf)
+
+running 10 tests
+test integer_vectors ... ok
+test parser_adversarial_boundaries ... ok
+test sequenced_ioc_contract ... ok
+test common_policy ... ok
+test s0_exchange_vectors ... ok
+test message_vectors ... ok
+test strict_wire_and_amount_vectors ... ok
+test order_validation_precedence_and_binding ... ok
+test real_signature_vectors ... ok
+test cli_runner_receipt ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.38s
+
+     Running tests/rc3.rs (exchange/target/debug/deps/rc3-763fe49659f06263)
+
+running 5 tests
+test common_rc3_policy_examples ... ok
+test actual_registration_and_signature_at_top_level ... ok
+test json_lines_port_uses_real_registration ... ok
+test newly_signed_cap_and_small_fill ... ok
+test signed_enum_market_and_epoch_at_admission_boundary ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.60s
+
+     Running tests/rc4.rs (exchange/target/debug/deps/rc4-2d9a42e5f2bf31f3)
+
+running 1 test
+test rc4_full_outputs_through_actual_signature_and_cli ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.86s
+
+     Running tests/s2_capacity.rs (exchange/target/debug/deps/s2_capacity-d84655116f8ed02c)
+
+running 1 test
+test encoded_bound_keeps_more_than_one_thousand_fills_and_all_signed_history ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 51.57s
+
+     Running tests/s2_journal.rs (exchange/target/debug/deps/s2_journal-39ee15432ba9367e)
+
+running 13 tests
+test child_process ... ok
+test framing_matches_approved_fixture ... ok
+
+running 1 test
+
+running 1 test
+test child_process ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.03s
+
+
+running 1 test
+test marker_write_failure_poisoning_preserves_unknown_tail ... ok
+test single_writer_is_enforced_across_processes ... ok
+test malformed_records_context_change_and_existing_namespace_are_rejected ... ok
+test resource_limit_has_no_sequence_or_wal_effect ... ok
+test committed_record_and_outbox_recover_atomically ... ok
+test authenticated_s2_order_bytes_survive_process_restart ... ok
+
+running 1 test
+test correction_consumes_and_replenishes_reserve ... ok
+test status_revision_reservations_survive_restart_and_fail_closed ... ok
+
+running 1 test
+test status_revision_missing_corrupt_or_exhausted_never_resets ... ok
+
+running 1 test
+
+running 1 test
+test crash_points_never_silently_lose_a_committed_record ... ok
+test completed_frame_loss_header_payload_marker_corruption_stop_recovery ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.66s
+
+     Running tests/s2_ledger.rs (exchange/target/debug/deps/s2_ledger-5504e91256318c0c)
+
+running 5 tests
+test shared_available_prevents_overreservation_and_self_trade ... ok
+test all_failed_fills_leave_both_parties_unchanged ... ok
+test fees_are_per_fill_ceil_and_exactly_reversed ... ok
+test partial_price_improvement_cancel_and_pending_not_spendable ... ok
+test exhaustive_small_fills_conserve_net_plus_fee_and_hold_limit ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/s2_matching.rs (exchange/target/debug/deps/s2_matching-21fee8eb5b397e90)
+
+running 7 tests
+test no_liquidity_gtc_ioc_and_invalid_inputs ... ok
+test fee_rejected_prefix_preserves_prior_fill ... ok
+test expiry_at_height_before_match_sorted_by_admission ... ok
+test sell_taker_highest_bid_first_and_price_limit ... ok
+test ioc_error_callback_applies_once_to_ledger ... ok
+test stp_stops_at_self_and_preserves_prior_fill ... ok
+test price_fifo_partial_and_deterministic_rebuild ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/s2_process.rs (exchange/target/debug/deps/s2_process-3706364cd740949c)
+
+running 6 tests
+test process_writer_lock_kill_restart_original_receipt_and_private_session ... ok
+test external_ack_ledger_detects_joint_local_file_rollback ... ok
+test committed_process_corruption_is_preserved_and_never_resets ... ok
+test correction_reserve_io_failure_returns_unknown_and_replays_commit ... ok
+test process_crashes_at_signed_commit_boundaries_keep_ack_prefix_or_stop ... ok
+test correction_process_crashes_never_publish_partial_unwind ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.93s
+
+     Running tests/s2_request.rs (exchange/target/debug/deps/s2_request-5473805dd1240638)
+
+running 2 tests
+test local_actions_and_origin_do_not_accept_owner_or_origin_aliases ... ok
+test signed_envelopes_preserve_bytes_and_reject_ambiguous_input ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/s2_runtime.rs (exchange/target/debug/deps/s2_runtime-071399bda6df72ef)
+
+running 3 tests
+test malformed_control_and_oversized_or_partial_frames_never_execute ... ok
+test auth_nonce_origin_domain_ttl_logout_and_restart_are_enforced ... ok
+test runtime_receipts_private_views_correction_and_recovery_obey_contract ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.00s
+
+     Running tests/s2_sequencer.rs (exchange/target/debug/deps/s2_sequencer-dbf2dbbdaac73c72)
+
+running 40 tests
+test continuous_snapshot_expires_orders_without_epoch_correction ... ok
+test empty_pending_withdraw_is_ready_and_unknown_owner_is_rejected ... ok
+test disconnected_counterparty_order_retains_fifo_and_reserve ... ok
+test epoch_correction_preserves_lifetime_fills_and_original_receipt ... ok
+test invalid_signature_and_foreign_session_cannot_read_duplicate_receipt ... ok
+test duplicate_and_identical_snapshot_preserve_state_hash_and_entity_revision ... ok
+test epoch_expiry_margin_and_staleness_are_enforced_for_new_effects ... ok
+test deterministic_rejection_is_bound_and_candidate_does_not_change_source ... ok
+test local_action_owner_and_kind_have_independent_id_namespaces ... ok
+test local_action_rejects_malformed_input_without_binding_or_effect ... ok
+test ioc_partial_callback_fill_releases_only_remainder_and_keeps_worst_buy_debit ... ok
+test local_action_abort_requires_new_snapshot_and_never_restores_orders ... ok
+test local_prepare_retry_preserves_sequence_evidence_and_original_epoch ... ok
+test correction_includes_counterparty_followup_and_fill_execution_order ... ok
+test pending_receipts_cannot_fund_new_orders ... ok
+test private_pages_bind_owner_sequence_and_exclude_counterparty_evidence ... ok
+test randomized_signature_retry_preserves_original_evidence_and_body_binding ... ok
+test real_signed_partial_fill_cancel_and_duplicate_have_one_effect ... ok
+test replay_of_recorded_signed_inputs_preserves_sequence_fill_id_and_ledger ... ok
+test schema_state_retains_signed_evidence_quantities_and_held_outbox ... ok
+test replay_preserves_full_state_hash_including_rejection_binding ... ok
+test sequential_signed_requests_cannot_overreserve_confirmed_funds ... ok
+test observation_projection_retains_success_and_never_invents_restart_freshness ... ok
+test failed_append_keeps_candidate_private_and_closes_signed_commit_boundary ... ok
+test signed_cancel_target_nonce_and_terminal_noop_are_bound ... ok
+test correction_marker_failure_keeps_old_ledger_and_requires_recovery ... ok
+test ledger_view_combines_committed_owner_state_with_live_global_and_local_gates ... ok
+test service_gate_rejects_mismatched_duplicate_observation ... ok
+test service_gate_gap_catchup_and_conflict_are_fail_closed ... ok
+test withdraw_cancels_only_open_reserve_and_retains_pending_hold ... ok
+test service_gate_reobserves_after_restart_and_keeps_original_receipts ... ok
+test public_book_committed_aggregation_hash_and_restart ... ok
+test automatic_signed_recovery_preserves_semantic_corruption_and_rejects_wrong_bootstrap ... ok
+test status_revisions_order_live_responses_restart_and_fail_closed ... ok
+test signed_commit_boundary_publishes_after_fsync_and_retries_original_receipt ... ok
+test withdrawal_failed_marker_never_publishes_or_returns_receipt ... ok
+test snapshot_correction_commits_replays_and_preserves_receipts ... ok
+test persisted_bootstrap_recovers_and_rejects_missing_corrupt_or_wrong_anchor ... ok
+test withdrawal_records_commit_replay_original_receipts_and_reject_tampering ... ok
+test signed_records_fsync_reopen_and_deterministically_replay_full_results ... ok
+
+test result: ok. 40 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.72s
+
+     Running tests/s2_snapshot.rs (exchange/target/debug/deps/s2_snapshot-24903147031b2c68)
+
+running 9 tests
+test freshness_thresholds_use_recorded_times_and_bound_cursor ... ok
+test canonical_contract_fixture_and_key_owner_binding ... ok
+test withdrawal_requires_epoch_advance_and_returns_correction_seed ... ok
+test registered_accounts_and_asset_order_are_exact ... ok
+test cursor_is_contiguous_and_conflicts_never_replace_committed_snapshot ... ok
+test rejects_mixed_context_and_hash_tampering ... ok
+test conservation_and_checked_sum_fail_closed ... ok
+test account_identity_sequence_and_block_time_cannot_regress ... ok
+test strict_structure_ranges_base64_and_duplicate_json_keys ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/upstream_ioc.rs (exchange/target/debug/deps/upstream_ioc-c5f0c47a4944ff0f)
+
+running 2 tests
+test real_cancel_and_zero_fill_ioc ... ok
+test real_ioc_error_retains_callback_debits ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+       70.08 real        72.10 user         6.93 sys
+time: sysctl kern.clockrate: Operation not permitted

@@ -84,19 +84,22 @@ impl Candidate {
             outbox: BTreeMap::new(),
         })
     }
-    fn corrected_quantity(&self, hash: &str) -> Result<u64> {
-        self.ledger
-            .fills()
-            .values()
-            .filter(|f| f.corrected && (f.buy_order == hash || f.sell_order == hash))
-            .try_fold(0u64, |n, f| {
-                n.checked_add(f.quantity).ok_or("INTEGER_OVERFLOW")
-            })
+    fn corrected_quantities(&self) -> Result<BTreeMap<String, u64>> {
+        let mut counts = BTreeMap::<String, u64>::new();
+        for fill in self.ledger.fills().values().filter(|f| f.corrected) {
+            for hash in [&fill.buy_order, &fill.sell_order] {
+                let count = counts.entry(hash.clone()).or_default();
+                *count = count.checked_add(fill.quantity).ok_or("INTEGER_OVERFLOW")?;
+            }
+        }
+        Ok(counts)
     }
     // Entity revision changes once per atomic command, even with multiple fills.
     fn revise_orders(&mut self, before: &Self) -> Result<()> {
+        let current = self.corrected_quantities()?;
+        let previous = before.corrected_quantities()?;
         for (hash, old) in &before.orders {
-            let corrected = self.corrected_quantity(hash)? != before.corrected_quantity(hash)?;
+            let corrected = current.get(hash) != previous.get(hash);
             let new = self.orders.get_mut(hash).ok_or("LEDGER_RECONCILIATION")?;
             if new.live.remaining != old.live.remaining
                 || new.filled != old.filled
@@ -127,6 +130,7 @@ impl Candidate {
             accounts.push(json!({"owner":a.owner, "owner_epoch":a.epoch.to_string(),
                 "ledger":rows, "withdraw_frozen":self.is_frozen(&a.owner)}));
         }
+        let corrected = self.corrected_quantities()?;
         let mut ordered: Vec<_> = self.orders.values().collect();
         ordered.sort_by_key(|o| o.live.admission_seq);
         let mut orders = Vec::new();
@@ -152,7 +156,7 @@ impl Candidate {
                 "order_type":if wire["order_type"] == "1" {"LIMIT_GTC"} else {"LIMIT_IOC"},
                 "limit_price_ticks":o.live.price.to_string(), "max_qty_lots":maximum.to_string(),
                 "remaining_qty_lots":o.live.remaining.to_string(), "filled_qty_lots":o.filled.to_string(),
-                "corrected_qty_lots":self.corrected_quantity(&o.live.hash)?.to_string(),
+                "corrected_qty_lots":corrected.get(&o.live.hash).copied().unwrap_or(0).to_string(),
                 "cancelled_qty_lots":cancelled.to_string(), "state":o.status, "revision":o.revision.to_string()
             }}));
         }

@@ -156,6 +156,7 @@ pub enum CrashPoint {
     AfterMarkerSync,
     AfterRename,
     AfterCommit,
+    DuringWalWrite,
 }
 
 pub struct Journal {
@@ -387,6 +388,8 @@ impl Journal {
             "context.json",
             "snapshot.json",
             "bootstrap.json",
+            "status.revision",
+            "status.revision.tmp",
         ] {
             let src = self.dir.join(name);
             if src.exists() {
@@ -401,6 +404,8 @@ impl Journal {
     // its caller-provided worst correction must fit MAX_PAYLOAD. Write real blocks,
     // not set_len (which could create a sparse file). Ordinary append cannot use it.
     fn reserve(&mut self) -> Result<()> {
+        #[cfg(feature = "fault-injection")]
+        inject_io("reserve")?;
         let path = self.dir.join("correction.reserve");
         let mut file = OpenOptions::new()
             .read(true)
@@ -452,6 +457,8 @@ impl Journal {
         correction: bool,
         crash: Option<CrashPoint>,
     ) -> Result<Commit> {
+        #[cfg(feature = "fault-injection")]
+        let crash = crash.or_else(|| injected_crash(record));
         if self.poisoned {
             return Err(Error::RecoveryRequired("POISONED_WRITER"));
         }
@@ -499,6 +506,13 @@ impl Journal {
             sync_dir(&self.dir)?;
         }
         self.wal.seek(SeekFrom::Start(self.commit.end_offset))?;
+        #[cfg(feature = "fault-injection")]
+        inject_io("append")?;
+        if crash == Some(CrashPoint::DuringWalWrite) {
+            self.wal.write_all(&encoded[..encoded.len() / 2])?;
+            self.wal.sync_all()?;
+            crash_at(crash, CrashPoint::DuringWalWrite);
+        }
         self.wal.write_all(&encoded)?;
         self.wal.sync_all()?;
         crash_at(crash, CrashPoint::AfterWalSync);
@@ -517,4 +531,31 @@ fn crash_at(configured: Option<CrashPoint>, here: CrashPoint) {
     if configured == Some(here) {
         std::process::exit(86);
     }
+}
+
+#[cfg(feature = "fault-injection")]
+fn injected_crash(record: &Value) -> Option<CrashPoint> {
+    if std::env::var("S2_FAULT_SEQ").ok().as_deref() != record["command_seq"].as_str() {
+        return None;
+    }
+    match std::env::var("S2_FAULT_POINT").ok()?.as_str() {
+        "before" => Some(CrashPoint::BeforeAppend),
+        "partial" => Some(CrashPoint::DuringWalWrite),
+        "wal" => Some(CrashPoint::AfterWalSync),
+        "marker" => Some(CrashPoint::AfterMarkerSync),
+        "rename" => Some(CrashPoint::AfterRename),
+        "commit" => Some(CrashPoint::AfterCommit),
+        _ => None,
+    }
+}
+#[cfg(feature = "fault-injection")]
+fn inject_io(point: &str) -> Result<()> {
+    // File trigger lets the harness arm ENOSPC only after initial reserve/ACKs.
+    // The test binary remains private to its parent, with no public fault API.
+    if std::env::var("S2_FAULT_IO").ok().as_deref() == Some(point)
+        && std::env::var_os("S2_FAULT_TRIGGER").is_some_and(|p| Path::new(&p).is_file())
+    {
+        return Err(Error::Io(std::io::Error::from_raw_os_error(28)));
+    }
+    Ok(())
 }

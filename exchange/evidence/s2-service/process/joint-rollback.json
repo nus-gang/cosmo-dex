@@ -1,0 +1,64 @@
+{
+  "external_ack": {
+    "body": {
+      "code": "OK",
+      "command_seq": "2",
+      "context": {
+        "chain_id": "nus-s2-dev-1",
+        "config_hash": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+        "contract_hash": "2e103517c344f21c2b97fbe7e977f0e614c32c704b0f54978c5bb1fb3ae6ab0f",
+        "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+        "market_config_version": "1",
+        "market_id": "DEVBASE/DEVQUOTE",
+        "schema_version": "1"
+      },
+      "durability": "LOCAL_FSYNC",
+      "journal_commit_hash": "f8cef72705db82300159cd7d93f5967c459a840a3a0200a24106da28f800c6e2",
+      "kind": "ORDER",
+      "observed_height": "100",
+      "owner": "QIBxvK9P4FGwto+OWyqdu8Fdq9k=",
+      "owner_epoch": "0",
+      "replicated": false,
+      "request_hash": "1d0fabd9509dde6feb65a6387da888ce386b94f42b554df531c3ca2c63eb7ccc",
+      "request_id": "f36ff19481908b1f898ec6bd2369d8244bb20368e5cc3d963b65110a94dbcc77",
+      "result_hash": "d3466b9e25ea4a9d7c310713d3e67de30865c8a8fcf52e10868635f24367945a",
+      "snapshot_id": "a3dec9f33f145fafc50c52b6e04c2e8161dd64c11d2318496cec301fac55b886",
+      "state": "LOCAL_ACCEPTED"
+    },
+    "http_status": "201"
+  },
+  "external_comparison": "ROLLBACK_DETECTED",
+  "local_only_detection": false,
+  "recovered_status": {
+    "body": {
+      "context": {
+        "chain_id": "nus-s2-dev-1",
+        "config_hash": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+        "contract_hash": "2e103517c344f21c2b97fbe7e977f0e614c32c704b0f54978c5bb1fb3ae6ab0f",
+        "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+        "market_config_version": "1",
+        "market_id": "DEVBASE/DEVQUOTE",
+        "schema_version": "1"
+      },
+      "durability": "LOCAL_FSYNC",
+      "mode": "CATCHING_UP",
+      "observation": {
+        "block_age_ms": "866",
+        "catching_up": true,
+        "cursor_height": "100",
+        "fresh": false,
+        "last_success_age_ms": "18446744073709551615",
+        "observed_height": "100",
+        "query_latency_ms": "0",
+        "received_at_unix_ms": "0",
+        "snapshot_id": "a3dec9f33f145fafc50c52b6e04c2e8161dd64c11d2318496cec301fac55b886"
+      },
+      "reason": "OBSERVATION_REQUIRED",
+      "replicated": false,
+      "revision": "1026",
+      "settlement_submission_enabled": false,
+      "stream_seq": "1"
+    },
+    "http_status": "200"
+  }
+}

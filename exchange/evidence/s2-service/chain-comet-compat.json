@@ -1,0 +1,39 @@
+{
+  "scope": "approved Chain saved Comet deposit snapshot decode/startup compatibility; no live RPC or new deposit acceptance",
+  "chain_head": "7ce952475b4985096344d713467208722b5e7693",
+  "source_sha256": "b3190295ff2e99fad717769d235145c4bf7c08980b3716c43cdbe01227636e52",
+  "snapshot_id": "366cb53daf125a0759ae3c0ef5dc1023620551cc56a60f5016607b7c60fb8e56",
+  "genesis_hash": "d048f7b7598547cbd9deb4fb11d6f7fa4572fbc5eb0d3fdc7ad7ba264e85f6a8",
+  "response": {
+    "body": {
+      "context": {
+        "chain_id": "nus-s2-dev-1",
+        "config_hash": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+        "contract_hash": "2e103517c344f21c2b97fbe7e977f0e614c32c704b0f54978c5bb1fb3ae6ab0f",
+        "genesis_hash": "d048f7b7598547cbd9deb4fb11d6f7fa4572fbc5eb0d3fdc7ad7ba264e85f6a8",
+        "market_config_version": "1",
+        "market_id": "DEVBASE/DEVQUOTE",
+        "schema_version": "1"
+      },
+      "durability": "LOCAL_FSYNC",
+      "mode": "CATCHING_UP",
+      "observation": {
+        "block_age_ms": "66959477",
+        "catching_up": true,
+        "cursor_height": "4",
+        "fresh": false,
+        "last_success_age_ms": "18446744073709551615",
+        "observed_height": "4",
+        "query_latency_ms": "0",
+        "received_at_unix_ms": "0",
+        "snapshot_id": "366cb53daf125a0759ae3c0ef5dc1023620551cc56a60f5016607b7c60fb8e56"
+      },
+      "reason": "OBSERVATION_REQUIRED",
+      "replicated": false,
+      "revision": "2",
+      "settlement_submission_enabled": false,
+      "stream_seq": "0"
+    },
+    "http_status": "200"
+  }
+}

@@ -1,5 +1,9 @@
 # S0-D Rust 계약 구현
 
+S2-C의 현재 검토 후보 실행·인증·예약·로컬 journal 안내는 [S2.md](S2.md)를 따른다.
+아래 S0/rc3/rc4 설명과 미연결 판정은 당시 구성요소의 역사 기록이다.
+
+
 `protocol/v1` rc3(`549ce15`)를 소비하는 독립 Cargo package. 합성 키·데이터만 사용한다. 이 제출은 서명·codec·산술·IOC 어댑터 계약이며 전체 거래소 runtime은 아니다.
 
 ## 재현
@@ -56,7 +60,7 @@ CTO/SRE가 Go/TS 출력과 합의 후 공통 manifest에 연결한다. 이번 PR
 - vector aggregate: `4851d9d674b2412ca8919d8347a71da13f9adf4426fe60b44e2a4a259f8bd948`
 - config: `7b12f8dffd4dfd07242331b975f0c440f5948074280c3a120c3232b3e674d13e`
 - 파일별 해시와 집합 계산 규칙: `protocol/v1/manifest.candidate.json`, `protocol/v1/README.md`.
-- [OrderBook-rs v0.13.1](https://github.com/joaquinbejar/OrderBook-rs/tree/v0.13.1): peeled commit `a36218b9d2140e1c04ed22328f30fb4977adb109`, crate `.cargo_vcs_info.json` 일치, MIT. 실제 사용은 dev-dependency `=0.13.1`, default-features=false. 라이선스 고지는 `evidence/licenses/`에 보존. 태그·crate 메타데이터를 `evidence/`에 기록했다.
+- [OrderBook-rs v0.13.1](https://github.com/joaquinbejar/OrderBook-rs/tree/v0.13.1): peeled commit `a36218b9d2140e1c04ed22328f30fb4977adb109`, crate `.cargo_vcs_info.json` 일치, MIT. S2 런타임 사용은 dependency `=0.13.1`, default-features=false. 라이선스 고지는 `evidence/licenses/`에 보존. 태그·crate 메타데이터를 `evidence/`에 기록했다.
 - [fips204 0.4.6](https://docs.rs/fips204/0.4.6/fips204/): MIT OR Apache-2.0, `ml-dsa-65`만 활성화. 런타임은 공개키 검증만 수행하며 개인키를 생성/저장하지 않는다.
 - 전이 버전 및 checksum은 `Cargo.lock`. M0 실험과 전이 버전이 달라질 수 있어 이 lock을 사용한다. upstream fee/journal/sequence는 공통 계약의 금액·durability·명령 ID 근거로 재사용하지 않는다.
 

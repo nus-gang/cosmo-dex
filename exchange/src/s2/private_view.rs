@@ -4,19 +4,22 @@ use super::{
     journal::{canonical, sha256},
     sequencer::Candidate,
 };
-use base64::{Engine, engine::general_purpose::STANDARD};
-use serde::{Deserialize, Serialize};
+use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use serde_json::{Value, json};
 
 type Result<T> = std::result::Result<T, &'static str>;
-#[derive(Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Cursor {
-    owner: String,
-    context_hash: String,
-    seq: u64,
-    orders: usize,
-    fills: usize,
+// 24 bytes of seq/offsets + 32 bytes binding digest, encoded as 75 URL-safe
+// characters. This obeys Text <=128 and avoids escaped query/base64 padding.
+fn cursor_bytes(seq: u64, orders: u64, fills: u64, owner: &str, context_hash: &str) -> Vec<u8> {
+    let mut bytes = Vec::with_capacity(56);
+    for n in [seq, orders, fills] {
+        bytes.extend(n.to_be_bytes());
+    }
+    let mut bound = bytes.clone();
+    bound.extend_from_slice(owner.as_bytes());
+    bound.extend_from_slice(context_hash.as_bytes());
+    bytes.extend(hex::decode(sha256(&bound)).expect("sha256 hex"));
+    bytes
 }
 
 /// A page excludes Status: the service must add live admission status when it
@@ -42,15 +45,27 @@ pub fn page(
     let (order_offset, fill_offset) = match cursor {
         None => (0, 0),
         Some(raw) => {
-            if raw.len() > 4096 {
+            if raw.len() != 75 {
                 return Err("SNAPSHOT_CONFLICT");
             }
-            let bytes = STANDARD.decode(raw).map_err(|_| "SNAPSHOT_CONFLICT")?;
-            let c: Cursor = serde_json::from_slice(&bytes).map_err(|_| "SNAPSHOT_CONFLICT")?;
-            if c.owner != owner || c.context_hash != context_hash || c.seq != state.sequence() {
+            let bytes = URL_SAFE_NO_PAD
+                .decode(raw)
+                .map_err(|_| "SNAPSHOT_CONFLICT")?;
+            if bytes.len() != 56 || URL_SAFE_NO_PAD.encode(&bytes) != raw {
                 return Err("SNAPSHOT_CONFLICT");
             }
-            (c.orders, c.fills)
+            let seq = u64::from_be_bytes(bytes[0..8].try_into().unwrap());
+            let orders = u64::from_be_bytes(bytes[8..16].try_into().unwrap());
+            let fills = u64::from_be_bytes(bytes[16..24].try_into().unwrap());
+            if seq != state.sequence()
+                || bytes != cursor_bytes(seq, orders, fills, owner, &context_hash)
+            {
+                return Err("SNAPSHOT_CONFLICT");
+            }
+            (
+                usize::try_from(orders).map_err(|_| "SNAPSHOT_CONFLICT")?,
+                usize::try_from(fills).map_err(|_| "SNAPSHOT_CONFLICT")?,
+            )
         }
     };
     // Reuse the validated internal projection but explicitly whitelist outgoing
@@ -96,16 +111,13 @@ pub fn page(
     let next = if order_end == orders.len() && fill_end == fills.len() {
         "END".to_owned()
     } else {
-        STANDARD.encode(
-            serde_json::to_vec(&Cursor {
-                owner: owner.into(),
-                context_hash,
-                seq: state.sequence(),
-                orders: order_end,
-                fills: fill_end,
-            })
-            .map_err(|_| "STATE_CANONICAL")?,
-        )
+        URL_SAFE_NO_PAD.encode(cursor_bytes(
+            state.sequence(),
+            order_end as u64,
+            fill_end as u64,
+            owner,
+            &context_hash,
+        ))
     };
     let ledger = internal["accounts"]
         .as_array()

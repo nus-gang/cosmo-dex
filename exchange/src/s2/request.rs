@@ -35,7 +35,7 @@ pub struct SignedCommand {
     pub wire: Vec<u8>,
     pub signature: Vec<u8>,
 }
-fn object(raw: &[u8], keys: &[&str]) -> Result<Value> {
+pub(crate) fn object(raw: &[u8], keys: &[&str]) -> Result<Value> {
     if raw.len() > MAX_REQUEST_BYTES {
         return Err("RESOURCE_LIMIT");
     }
@@ -46,7 +46,7 @@ fn object(raw: &[u8], keys: &[&str]) -> Result<Value> {
     }
     Ok(value)
 }
-fn bytes(value: &Value) -> Result<Vec<u8>> {
+pub(crate) fn bytes(value: &Value) -> Result<Vec<u8>> {
     let text = value.as_str().ok_or("NON_CANONICAL_WIRE")?;
     let decoded = STANDARD.decode(text).map_err(|_| "NON_CANONICAL_WIRE")?;
     if STANDARD.encode(&decoded) != text {

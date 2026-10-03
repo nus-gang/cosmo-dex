@@ -129,8 +129,9 @@ impl SignedRecovery {
     }
     /// The transport must authenticate `session_owner` and enforce the global
     /// admission gate before calling this serial (&mut self) commit boundary.
-    /// The capacity argument must be a proven conservative correction bound;
-    /// this component does not yet derive that bound.
+    /// Capacity is derived from the complete candidate here. The supplied value
+    /// is an optional additional conservative floor for existing harnesses; it
+    /// cannot lower the computed bound or bypass capacity admission.
     /// No candidate state or receipt escapes before the journal fsync completes.
     #[allow(clippy::too_many_arguments)]
     pub fn submit(
@@ -181,7 +182,27 @@ impl SignedRecovery {
             }
             _ => Err("UNSUPPORTED_VERSION"),
         };
-        let (candidate, outcome, duplicate) = transition.map_err(Error::InvalidRecord)?;
+        let (candidate, outcome, duplicate) = transition.map_err(|code| {
+            if code.starts_with("ADAPTER_")
+                || code.starts_with("LEDGER_")
+                || matches!(
+                    code,
+                    "INTEGER_OVERFLOW"
+                        | "CUMULATIVE_QTY_EXCEEDED"
+                        | "FILL_ALREADY_BOUND"
+                        | "FILL_NOT_FOUND"
+                        | "ORDER_ALREADY_BOUND"
+                        | "PRICE_LIMIT"
+                        | "SELF_TRADE"
+                        | "SIDE_MISMATCH"
+                )
+            {
+                self.recovery_required = true;
+                Error::RecoveryRequired(code)
+            } else {
+                Error::InvalidRecord(code)
+            }
+        })?;
         if duplicate {
             return self
                 .receipt(session_owner, outcome.seq)
@@ -203,6 +224,9 @@ impl SignedRecovery {
         )
         .map_err(Error::InvalidRecord)?;
         // Preflight has no disk effects. A capacity refusal must not bind the ID.
+        let maximum_correction_payload_bytes = maximum_correction_payload_bytes.max(
+            super::capacity::check(prepared.record(), &candidate, &self.mode)?,
+        );
         if maximum_correction_payload_bytes > journal::MAX_PAYLOAD {
             return Err(Error::ResourceLimit);
         }
@@ -210,9 +234,10 @@ impl SignedRecovery {
         // Once append begins any failure is UNKNOWN and requires reopening.
         // In particular a failed marker fsync must never become REJECTED.
         self.recovery_required = true;
-        let commit =
-            self.journal
-                .append(prepared.record(), maximum_correction_payload_bytes, false)?;
+        let commit = self
+            .journal
+            .append(prepared.record(), maximum_correction_payload_bytes, false)
+            .map_err(|_| Error::RecoveryRequired("JOURNAL_COMMIT_UNCERTAIN"))?;
         let receipt = prepared.receipt(&commit).map_err(Error::RecoveryRequired)?;
         if self.receipts.contains_key(&commit.command_seq) {
             return Err(Error::RecoveryRequired("DUPLICATE_RECEIPT"));
@@ -247,16 +272,21 @@ impl SignedRecovery {
         let Some(prepared) = prepared else {
             return Ok(None);
         };
+        let maximum_correction_payload_bytes = maximum_correction_payload_bytes.max(
+            super::capacity::check(prepared.record(), &candidate, &self.mode)?,
+        );
         if maximum_correction_payload_bytes > journal::MAX_PAYLOAD {
             return Err(Error::ResourceLimit);
         }
         journal::frame(&canonical(prepared.record())?)?;
         self.recovery_required = true;
-        self.journal.append(
-            prepared.record(),
-            maximum_correction_payload_bytes,
-            prepared.correction().is_some(),
-        )?;
+        self.journal
+            .append(
+                prepared.record(),
+                maximum_correction_payload_bytes,
+                prepared.correction().is_some(),
+            )
+            .map_err(|_| Error::RecoveryRequired("JOURNAL_COMMIT_UNCERTAIN"))?;
         self.state = candidate;
         self.recovery_required = false;
         Ok(Some(prepared.result().clone()))
@@ -267,12 +297,25 @@ impl SignedRecovery {
         if self.recovery_required {
             return Err(Error::RecoveryRequired("POISONED_SESSION"));
         }
-        if self.status_revisions.as_ref().is_none_or(|range| range.is_empty()) {
+        if self
+            .status_revisions
+            .as_ref()
+            .is_none_or(|range| range.is_empty())
+        {
             self.recovery_required = true;
-            self.status_revisions = Some(self.journal.reserve_status_revisions(1024)?);
+            self.status_revisions = Some(match self.journal.reserve_status_revisions(1024) {
+                Ok(range) => range,
+                Err(_) => {
+                    self.journal.preserve_evidence()?;
+                    return Err(Error::RecoveryRequired("STATUS_REVISION_FAILURE"));
+                }
+            });
             self.recovery_required = false;
         }
-        self.status_revisions.as_mut().and_then(Iterator::next).ok_or(Error::ResourceLimit)
+        self.status_revisions
+            .as_mut()
+            .and_then(Iterator::next)
+            .ok_or(Error::ResourceLimit)
     }
     pub fn recovery_required(&self) -> bool {
         self.recovery_required
@@ -287,5 +330,14 @@ impl SignedRecovery {
     /// The original receipt is immutable even if the current order was cancelled.
     pub fn receipt(&self, owner: &str, sequence: u64) -> Option<&Value> {
         self.receipts.get(&sequence).filter(|r| r["owner"] == owner)
+    }
+    pub fn lookup(&self, owner: &str, kind: &str, id: &str, epoch: Option<u64>) -> Option<&Value> {
+        let epoch = epoch.map(|e| e.to_string());
+        self.receipts.values().find(|r| {
+            r["owner"] == owner
+                && r["kind"] == kind
+                && r["request_id"] == id
+                && (kind != "ORDER" || epoch.as_deref().is_some_and(|e| r["owner_epoch"] == e))
+        })
     }
 }

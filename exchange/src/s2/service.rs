@@ -157,7 +157,6 @@ impl Service {
             status["mode"] = json!("WITHDRAW_FROZEN");
             status["reason"] = json!("WITHDRAW_FROZEN");
         }
-        page["revision"] = status["revision"].clone();
         page["status"] = status;
         Ok(page)
     }
@@ -178,7 +177,8 @@ impl Service {
         now: u64,
         maximum_correction_payload_bytes: usize,
     ) -> Result<Option<Value>> {
-        if matches!(self.failure, Some(("RECOVERY_REQUIRED", _))) {
+        if matches!(self.failure, Some(("RECOVERY_REQUIRED", reason)) if reason != "RESOURCE_LIMIT")
+        {
             return Err(Error::RecoveryRequired("OBSERVATION_CONFLICT"));
         }
         if observation.snapshot_id != snapshot.id()
@@ -242,7 +242,7 @@ impl Service {
             catching_up: true,
         };
         let observation = self.observation.as_ref().unwrap_or(&missing);
-        self.engine.submit_admitted(
+        let result = self.engine.submit_admitted(
             kind,
             raw,
             signature,
@@ -251,9 +251,16 @@ impl Service {
             now,
             maximum_correction_payload_bytes,
             error,
-        )
+        );
+        if matches!(result, Err(Error::ResourceLimit)) {
+            self.failure = Some(("RECOVERY_REQUIRED", "RESOURCE_LIMIT"));
+        }
+        result
     }
     pub fn receipt(&self, owner: &str, sequence: u64) -> Option<&Value> {
         self.engine.receipt(owner, sequence)
+    }
+    pub fn lookup(&self, owner: &str, kind: &str, id: &str, epoch: Option<u64>) -> Option<&Value> {
+        self.engine.lookup(owner, kind, id, epoch)
     }
 }

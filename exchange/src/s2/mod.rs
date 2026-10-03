@@ -17,4 +17,7 @@ pub mod service;
 
 pub mod private_view;
 
+pub mod auth;
+pub mod capacity;
 pub mod request;
+pub mod runtime;

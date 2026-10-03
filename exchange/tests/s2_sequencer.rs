@@ -1725,7 +1725,9 @@ fn service_gate_reobserves_after_restart_and_keeps_original_receipts() {
     use nus_exchange_contract::s2::{
         journal::MAX_PAYLOAD, recovery::SignedRecovery, service::Service,
     };
-    let root = std::path::PathBuf::from(std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR").unwrap());
+    let root = std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(std::env::temp_dir);
     let dir = root.join(format!(
         "service-gate-restart-{}",
         std::time::SystemTime::now()
@@ -1799,7 +1801,9 @@ fn service_gate_gap_catchup_and_conflict_are_fail_closed() {
     use nus_exchange_contract::s2::{
         journal::MAX_PAYLOAD, recovery::SignedRecovery, service::Service,
     };
-    let root = std::path::PathBuf::from(std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR").unwrap());
+    let root = std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(std::env::temp_dir);
     let dir = root.join(format!(
         "service-gate-catchup-{}",
         std::time::SystemTime::now()
@@ -1859,7 +1863,9 @@ fn service_gate_rejects_mismatched_duplicate_observation() {
     use nus_exchange_contract::s2::{
         journal::MAX_PAYLOAD, recovery::SignedRecovery, service::Service,
     };
-    let root = std::path::PathBuf::from(std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR").unwrap());
+    let root = std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(std::env::temp_dir);
     let dir = root.join(format!(
         "service-gate-observation-{}",
         std::time::SystemTime::now()
@@ -1885,7 +1891,9 @@ fn public_book_committed_aggregation_hash_and_restart() {
     use nus_exchange_contract::s2::{
         journal::MAX_PAYLOAD, recovery::SignedRecovery, service::Service,
     };
-    let dir = std::path::PathBuf::from(std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR").unwrap())
+    let dir = std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(std::env::temp_dir)
         .join(format!(
             "book-{}",
             std::time::SystemTime::now()
@@ -1959,7 +1967,9 @@ fn observation_projection_retains_success_and_never_invents_restart_freshness() 
     use nus_exchange_contract::s2::{
         journal::MAX_PAYLOAD, recovery::SignedRecovery, service::Service,
     };
-    let root = std::path::PathBuf::from(std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR").unwrap());
+    let root = std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(std::env::temp_dir);
     let dir = root.join(format!(
         "observation-{}",
         std::time::SystemTime::now()
@@ -2068,21 +2078,23 @@ fn private_pages_bind_owner_sequence_and_exclude_counterparty_evidence() {
         page(&next, &seller, Some(cursor), 1, 1),
         Err("SNAPSHOT_CONFLICT")
     );
-    let mut changed_cursor: Value =
-        serde_json::from_slice(&STANDARD.decode(cursor).unwrap()).unwrap();
-    for key in ["context_hash", "orders"] {
-        let old = changed_cursor[key].clone();
-        changed_cursor[key] = if key == "orders" {
-            json!(999)
-        } else {
-            json!("other-genesis")
-        };
-        let bad = STANDARD.encode(serde_json::to_vec(&changed_cursor).unwrap());
+    assert!(cursor.len() <= 128);
+    assert!(
+        cursor
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"-_".contains(&b))
+    );
+    let decoded = base64::engine::general_purpose::URL_SAFE_NO_PAD
+        .decode(cursor)
+        .unwrap();
+    for index in [0, 8, 16, 24, 55] {
+        let mut changed = decoded.clone();
+        changed[index] ^= 1;
+        let bad = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(changed);
         assert_eq!(
             page(&state, &seller, Some(&bad), 1, 1),
             Err("SNAPSHOT_CONFLICT")
         );
-        changed_cursor[key] = old;
     }
     if let Ok(path) = std::env::var("S2_PRIVATE_EXPORT") {
         std::fs::write(
@@ -2098,7 +2110,9 @@ fn ledger_view_combines_committed_owner_state_with_live_global_and_local_gates()
     use nus_exchange_contract::s2::{
         journal::MAX_PAYLOAD, recovery::SignedRecovery, service::Service,
     };
-    let dir = std::path::PathBuf::from(std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR").unwrap())
+    let dir = std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(std::env::temp_dir)
         .join(format!(
             "ledger-view-{}",
             std::time::SystemTime::now()
@@ -2120,10 +2134,14 @@ fn ledger_view_combines_committed_owner_state_with_live_global_and_local_gates()
         .unwrap();
     let open = service.ledger_view(&seller, None, NOW).unwrap();
     assert_eq!(open["status"]["mode"], "OPEN");
-    assert_eq!(open["ledger"], service.ledger_view(&seller, None, NOW).unwrap()["ledger"]);
+    assert_eq!(
+        open["ledger"],
+        service.ledger_view(&seller, None, NOW).unwrap()["ledger"]
+    );
     let stale = service.ledger_view(&seller, None, NOW + 5001).unwrap();
     assert_eq!(stale["status"]["mode"], "STALE");
-    assert_ne!(stale["revision"], open["revision"]);
+    assert_eq!(stale["revision"], open["revision"]);
+    assert_ne!(stale["status"]["revision"], open["status"]["revision"]);
     assert_eq!(stale["ledger"], open["ledger"]);
     exports.extend([open, stale]);
     let action = serde_json::to_vec(&json!({"request_id":"be".repeat(32)})).unwrap();
@@ -2159,7 +2177,7 @@ fn ledger_view_combines_committed_owner_state_with_live_global_and_local_gates()
     );
     for view in &exports {
         assert_eq!(view["stream_seq"], view["status"]["stream_seq"]);
-        assert_eq!(view["revision"], view["status"]["revision"]);
+        assert_eq!(view["revision"], view["stream_seq"]);
         assert_eq!(
             view["snapshot_id"],
             view["status"]["observation"]["snapshot_id"]
@@ -2181,14 +2199,26 @@ fn ledger_view_combines_committed_owner_state_with_live_global_and_local_gates()
 
 #[test]
 fn status_revisions_order_live_responses_restart_and_fail_closed() {
-    use nus_exchange_contract::s2::{journal::MAX_PAYLOAD, recovery::SignedRecovery, service::Service};
-    let dir = std::path::PathBuf::from(std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR").unwrap())
-        .join(format!("status-order-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    use nus_exchange_contract::s2::{
+        journal::MAX_PAYLOAD, recovery::SignedRecovery, service::Service,
+    };
+    let dir = std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(std::env::temp_dir)
+        .join(format!(
+            "status-order-{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
     let (initial, obs) = setup(100, 0);
     let mut service = Service::new(SignedRecovery::create(&dir, initial.clone(), "OPEN").unwrap());
     let rev = |v: &Value| v["revision"].as_str().unwrap().parse::<u64>().unwrap();
     let first = service.status(NOW).unwrap();
-    service.observe(initial.snapshot().clone(), obs, NOW, MAX_PAYLOAD).unwrap();
+    service
+        .observe(initial.snapshot().clone(), obs, NOW, MAX_PAYLOAD)
+        .unwrap();
     let open = service.status(NOW).unwrap();
     let stale = service.status(NOW + 5001).unwrap();
     service.rpc_failed();
@@ -2204,7 +2234,9 @@ fn status_revisions_order_live_responses_restart_and_fail_closed() {
     assert!(rev(&restarted) > rev(&failed));
     assert_eq!(restarted["mode"], "CATCHING_UP");
     // Exhaust the reserved block, then force the next durable reservation to fail.
-    for _ in 1..1024 { service.status(NOW).unwrap(); }
+    for _ in 1..1024 {
+        service.status(NOW).unwrap();
+    }
     std::fs::write(dir.join("status.revision.tmp"), b"uncertain").unwrap();
     assert!(service.status(NOW).is_err());
     assert_eq!(service.admission(NOW).0, "RECOVERY_REQUIRED");
@@ -2212,5 +2244,8 @@ fn status_revisions_order_live_responses_restart_and_fail_closed() {
     drop(service);
     let mut service = Service::new(SignedRecovery::open(&dir, initial, "OPEN").unwrap());
     assert!(service.status(NOW).is_err());
-    assert_eq!(std::fs::read(dir.join("status.revision.tmp")).unwrap(), b"uncertain");
+    assert_eq!(
+        std::fs::read(dir.join("status.revision.tmp")).unwrap(),
+        b"uncertain"
+    );
 }
