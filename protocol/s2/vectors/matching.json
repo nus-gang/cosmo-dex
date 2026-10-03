@@ -1,0 +1,110 @@
+{
+  "scope": "normalized expectations, not runtime execution; each scenario starts a separate fixture",
+  "cases": [
+    {
+      "id": "price-before-time",
+      "makers": [
+        {
+          "id": "s1",
+          "seq": "1",
+          "p": "11000",
+          "q": "1000"
+        },
+        {
+          "id": "s2",
+          "seq": "2",
+          "p": "10000",
+          "q": "1000"
+        }
+      ],
+      "buy_limit": "11000",
+      "buy_qty": "1000",
+      "expected_fill_makers": [
+        "s2"
+      ]
+    },
+    {
+      "id": "same-price-fifo",
+      "makers": [
+        {
+          "id": "s1",
+          "seq": "1",
+          "p": "10000",
+          "q": "1000"
+        },
+        {
+          "id": "s2",
+          "seq": "2",
+          "p": "10000",
+          "q": "1000"
+        }
+      ],
+      "buy_limit": "10000",
+      "buy_qty": "1500",
+      "expected_fill_makers": [
+        "s1",
+        "s2"
+      ]
+    },
+    {
+      "id": "ioc-price-bound",
+      "makers": [
+        {
+          "id": "s1",
+          "seq": "1",
+          "p": "10001",
+          "q": "1000"
+        }
+      ],
+      "buy_limit": "10000",
+      "buy_qty": "1000",
+      "expected_fill_makers": []
+    }
+  ],
+  "stp": {
+    "makers": [
+      {
+        "id": "other",
+        "owner": "B",
+        "price": "9000",
+        "qty": "1000"
+      },
+      {
+        "id": "self",
+        "owner": "A",
+        "price": "10000",
+        "qty": "1000"
+      },
+      {
+        "id": "later",
+        "owner": "C",
+        "price": "10000",
+        "qty": "1000"
+      }
+    ],
+    "taker_owner": "A",
+    "taker_qty": "3000",
+    "taker_limit": "10000",
+    "expected_fills": [
+      "other"
+    ],
+    "expected_cancelled_qty": "2000",
+    "expected_reason": "STP_CANCELLED"
+  },
+  "cancel_ordering": [
+    {
+      "first": "CANCEL",
+      "second": "MATCH",
+      "expected_fill_qty": "0",
+      "expected_R": "0",
+      "expected_D": "0"
+    },
+    {
+      "first": "MATCH",
+      "second": "CANCEL",
+      "expected_fill_qty": "1000",
+      "expected_R": "0",
+      "expected_D": "1000000"
+    }
+  ]
+}

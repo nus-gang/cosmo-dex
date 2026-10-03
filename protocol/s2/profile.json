@@ -1,0 +1,72 @@
+{
+  "schema_version": "1",
+  "profile": "s2-local-v1",
+  "test_only": true,
+  "chain_id": "nus-s2-dev-1",
+  "market_id": "DEVBASE/DEVQUOTE",
+  "exchange_module_id": "x/exchange",
+  "market_config_version": "1",
+  "operator_epoch": "1",
+  "assets": [
+    {
+      "denom": "DEVBASE",
+      "decimals": "6",
+      "initial_bank_atoms_per_user": "1000000000000"
+    },
+    {
+      "denom": "DEVQUOTE",
+      "decimals": "6",
+      "initial_bank_atoms_per_user": "1000000000000"
+    }
+  ],
+  "gas_denom": "DEVGAS",
+  "initial_gas_atoms_per_user": "1000000000",
+  "registered_users": "2",
+  "validator_count": "4",
+  "base_atoms_per_lot": "1000",
+  "quote_atoms_per_lot_tick": "1",
+  "min_qty_lots": "1",
+  "max_qty_lots": "1000000",
+  "min_price_ticks": "1",
+  "max_price_ticks": "1000000",
+  "max_order_quote_atoms": "1000000000000",
+  "max_open_orders_per_owner": "100",
+  "max_open_orders_total": "200",
+  "fee_asset_policy_id": "RECEIVE_ASSET_V1",
+  "active_fee_version": "1",
+  "fee_profiles": [
+    {
+      "version": "1",
+      "bps": "0",
+      "use": "default"
+    },
+    {
+      "version": "2",
+      "bps": "25",
+      "use": "separate-test-run"
+    }
+  ],
+  "min_expiry_delta_blocks": "2",
+  "max_expiry_delta_blocks": "1000",
+  "default_expiry_delta_blocks": "100",
+  "poll_interval_ms": "1000",
+  "rpc_timeout_ms": "2000",
+  "max_freshness_ms": "5000",
+  "max_future_block_time_ms": "1000",
+  "challenge_ttl_seconds": "120",
+  "session_ttl_seconds": "300",
+  "origins": [
+    "http://127.0.0.1:5173",
+    "http://localhost:5173"
+  ],
+  "max_request_bytes": "16384",
+  "max_journal_payload_bytes": "16777216",
+  "max_read_items": "200",
+  "stp": "CANCEL_TAKER_REMAINDER",
+  "durability": "LOCAL_FSYNC",
+  "replicated": false,
+  "settlement_submission_enabled": false,
+  "wal_gc_enabled": false,
+  "runtime_root": ".runtime/s2/",
+  "genesis_binding": "SHA256 exact runtime bytes; fixture hash forbidden"
+}

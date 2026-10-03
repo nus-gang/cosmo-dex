@@ -1,0 +1,256 @@
+{
+  "freshness": [
+    {
+      "id": "fresh",
+      "input": {
+        "cursor_height": "100",
+        "next_height": "101",
+        "same_snapshot": true,
+        "block_age_ms": "1000",
+        "last_success_age_ms": "1000",
+        "future_block_ms": "0",
+        "catching_up": false
+      },
+      "expected": "OPEN"
+    },
+    {
+      "id": "5000-inclusive",
+      "input": {
+        "cursor_height": "100",
+        "next_height": "101",
+        "same_snapshot": true,
+        "block_age_ms": "5000",
+        "last_success_age_ms": "5000",
+        "future_block_ms": "0",
+        "catching_up": false
+      },
+      "expected": "OPEN"
+    },
+    {
+      "id": "block-stale",
+      "input": {
+        "cursor_height": "100",
+        "next_height": "101",
+        "same_snapshot": true,
+        "block_age_ms": "5001",
+        "last_success_age_ms": "1000",
+        "future_block_ms": "0",
+        "catching_up": false
+      },
+      "expected": "STALE_SNAPSHOT"
+    },
+    {
+      "id": "query-stale",
+      "input": {
+        "cursor_height": "100",
+        "next_height": "101",
+        "same_snapshot": true,
+        "block_age_ms": "1000",
+        "last_success_age_ms": "5001",
+        "future_block_ms": "0",
+        "catching_up": false
+      },
+      "expected": "STALE_SNAPSHOT"
+    },
+    {
+      "id": "catching-up",
+      "input": {
+        "cursor_height": "100",
+        "next_height": "101",
+        "same_snapshot": true,
+        "block_age_ms": "1000",
+        "last_success_age_ms": "1000",
+        "future_block_ms": "0",
+        "catching_up": true
+      },
+      "expected": "CATCHING_UP"
+    },
+    {
+      "id": "gap",
+      "input": {
+        "cursor_height": "100",
+        "next_height": "102",
+        "same_snapshot": true,
+        "block_age_ms": "1000",
+        "last_success_age_ms": "1000",
+        "future_block_ms": "0",
+        "catching_up": false
+      },
+      "expected": "CATCHING_UP"
+    },
+    {
+      "id": "regression",
+      "input": {
+        "cursor_height": "100",
+        "next_height": "99",
+        "same_snapshot": true,
+        "block_age_ms": "1000",
+        "last_success_age_ms": "1000",
+        "future_block_ms": "0",
+        "catching_up": false
+      },
+      "expected": "HEIGHT_REGRESSION"
+    },
+    {
+      "id": "same-height-conflict",
+      "input": {
+        "cursor_height": "100",
+        "next_height": "100",
+        "same_snapshot": false,
+        "block_age_ms": "1000",
+        "last_success_age_ms": "1000",
+        "future_block_ms": "0",
+        "catching_up": false
+      },
+      "expected": "SNAPSHOT_CONFLICT"
+    },
+    {
+      "id": "duplicate",
+      "input": {
+        "cursor_height": "100",
+        "next_height": "100",
+        "same_snapshot": true,
+        "block_age_ms": "1000",
+        "last_success_age_ms": "1000",
+        "future_block_ms": "0",
+        "catching_up": false
+      },
+      "expected": "NO_EFFECT"
+    },
+    {
+      "id": "future",
+      "input": {
+        "cursor_height": "100",
+        "next_height": "101",
+        "same_snapshot": true,
+        "block_age_ms": "1000",
+        "last_success_age_ms": "1000",
+        "future_block_ms": "1001",
+        "catching_up": false
+      },
+      "expected": "STALE_SNAPSHOT"
+    }
+  ],
+  "expiry": [
+    {
+      "h": "100",
+      "expiry": "100",
+      "expected": "EXPIRED"
+    },
+    {
+      "h": "100",
+      "expiry": "101",
+      "expected": "EXPIRY_MARGIN"
+    },
+    {
+      "h": "100",
+      "expiry": "102",
+      "expected": "OK"
+    },
+    {
+      "h": "100",
+      "expiry": "1100",
+      "expected": "OK"
+    },
+    {
+      "h": "100",
+      "expiry": "1101",
+      "expected": "EXPIRY_MARGIN"
+    }
+  ],
+  "correction": [
+    {
+      "id": "both-parties",
+      "changed": [
+        "A"
+      ],
+      "fills": [
+        [
+          "f1",
+          "A",
+          "B"
+        ]
+      ],
+      "expected_owners": [
+        "A",
+        "B"
+      ],
+      "expected_fills": [
+        "f1"
+      ]
+    },
+    {
+      "id": "transitive-isolated",
+      "changed": [
+        "A"
+      ],
+      "fills": [
+        [
+          "f1",
+          "A",
+          "B"
+        ],
+        [
+          "f2",
+          "B",
+          "C"
+        ],
+        [
+          "f3",
+          "C",
+          "D"
+        ],
+        [
+          "f4",
+          "X",
+          "Y"
+        ]
+      ],
+      "expected_owners": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "expected_fills": [
+        "f1",
+        "f2",
+        "f3"
+      ]
+    },
+    {
+      "id": "duplicate-event",
+      "changed": [
+        "A"
+      ],
+      "fills": [],
+      "expected_owners": [
+        "A"
+      ],
+      "expected_fills": []
+    }
+  ],
+  "receipt": [
+    {
+      "id": "same-after-expiry",
+      "stored_hash": "a",
+      "request_hash": "a",
+      "expired": true,
+      "expected": "RETURN_ORIGINAL"
+    },
+    {
+      "id": "conflict",
+      "stored_hash": "a",
+      "request_hash": "b",
+      "expired": false,
+      "expected": "ID_CONFLICT"
+    },
+    {
+      "id": "new-expired",
+      "stored_hash": null,
+      "request_hash": "a",
+      "expired": true,
+      "expected": "EXPIRED"
+    }
+  ]
+}
