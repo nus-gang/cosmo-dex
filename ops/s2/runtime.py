@@ -207,6 +207,13 @@ def main():
                 time.sleep(.05)
             if boot.returncode != 0:
                 raise RuntimeError(f'bootstrap failed: {boot.returncode}')
+            if group_members({boot.pid}):
+                raise RuntimeError('bootstrap left owned descendants')
+            children[-1][1].finish()
+            children.pop()
+            completed.remove(boot)
+            # Do not retain an exited bootstrap's group ID for a long-lived
+            # runtime: the OS may later recycle it for an unrelated process.
         argv = [sys.executable, 'settlement/s2/server.py', '--engine', str(ROOT/'exchange/target/debug/exchange-s2'),
                 '--manifest', str(bootstrap/'manifest.json'), '--genesis', str(bootstrap/'genesis.json'),
                 '--journal', str(a.home/'journal'), '--evidence', str(a.home/'rpc-evidence'),
