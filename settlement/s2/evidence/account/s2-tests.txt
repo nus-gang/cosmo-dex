@@ -1,0 +1,31 @@
+test_bad_registered_keys_numbers_assets_and_context (test_account.AccountTests.test_bad_registered_keys_numbers_assets_and_context) ... ok
+test_complete_public_context_without_engine (test_account.AccountTests.test_complete_public_context_without_engine) ... ok
+test_height_mixing_context_and_rpc_loss_at_end (test_account.AccountTests.test_height_mixing_context_and_rpc_loss_at_end) ... ok
+test_stale_future_latency_and_disconnect (test_account.AccountTests.test_stale_future_latency_and_disconnect) ... ok
+test_unknown_owner_method_and_public_http_boundary (test_account.AccountTests.test_unknown_owner_method_and_public_http_boundary) ... ok
+test_cursor_reobserves_and_consumes_each_empty_height (test_adapter.AdapterTests.test_cursor_reobserves_and_consumes_each_empty_height) ... ok
+test_disconnect_preserves_cursor_and_retries_missing_height (test_adapter.AdapterTests.test_disconnect_preserves_cursor_and_retries_missing_height) ... ok
+test_duplicate_json_and_protobuf_trailing_bytes_rejected (test_adapter.AdapterTests.test_duplicate_json_and_protobuf_trailing_bytes_rejected) ... ok
+test_failed_evidence_write_closes_admission (test_adapter.AdapterTests.test_failed_evidence_write_closes_admission) ... ok
+test_header_hash_time_height_chain_mismatch_never_observed (test_adapter.AdapterTests.test_header_hash_time_height_chain_mismatch_never_observed) ... ok
+test_http_cors_body_limit_control_isolation_cache_and_duplicate_headers (test_adapter.AdapterTests.test_http_cors_body_limit_control_isolation_cache_and_duplicate_headers) ... ok
+test_pipe_preserves_raw_request_and_serializes_threads (test_adapter.AdapterTests.test_pipe_preserves_raw_request_and_serializes_threads) ... ok
+test_pipe_timeout_eof_malformed_are_permanent_unknown (test_adapter.AdapterTests.test_pipe_timeout_eof_malformed_are_permanent_unknown) ... ok
+test_real_engine_rpc_cursor_restart_and_freshness (test_adapter.AdapterTests.test_real_engine_rpc_cursor_restart_and_freshness) ... ok
+test_regression_is_latched_until_explicit_restart (test_adapter.AdapterTests.test_regression_is_latched_until_explicit_restart) ... ok
+test_rpc_url_has_no_dns_proxy_redirect_target (test_adapter.AdapterTests.test_rpc_url_has_no_dns_proxy_redirect_target) ... ok
+test_exact_bytes_and_exclusive_publish (test_bootstrap.BootstrapTests.test_exact_bytes_and_exclusive_publish) ... ok
+test_snapshot_cannot_select_genesis_keys_supply_or_context (test_bootstrap.BootstrapTests.test_snapshot_cannot_select_genesis_keys_supply_or_context) ... ok
+test_wrong_chain_height_duplicate_key (test_bootstrap.BootstrapTests.test_wrong_chain_height_duplicate_key) ... ok
+test_canonical_body_and_limits (test_direct.DirectTests.test_canonical_body_and_limits) ... ok
+test_commit_requires_block_and_result_agreement (test_direct.DirectTests.test_commit_requires_block_and_result_agreement) ... ok
+test_evidence_failure_prevents_broadcast (test_direct.DirectTests.test_evidence_failure_prevents_broadcast) ... ok
+test_other_genesis_cannot_reuse_evidence (test_direct.DirectTests.test_other_genesis_cannot_reuse_evidence) ... ok
+test_receipt_binding_not_found_and_rpc_failure (test_direct.DirectTests.test_receipt_binding_not_found_and_rpc_failure) ... ok
+test_submit_persists_exact_bytes_but_only_returns_unknown (test_direct.DirectTests.test_submit_persists_exact_bytes_but_only_returns_unknown) ... ok
+test_unobserved_inclusion_and_rpc_loss_remain_unknown (test_direct.DirectTests.test_unobserved_inclusion_and_rpc_loss_remain_unknown) ... ok
+
+----------------------------------------------------------------------
+Ran 26 tests in 0.561s
+
+OK
