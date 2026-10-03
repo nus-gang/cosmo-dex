@@ -9,7 +9,7 @@ const ctx = context('ab'.repeat(32));
 function view(owner = 'owner', seq = '2'): View {
   return { context: ctx, owner, owner_epoch: '0', stream_seq: seq, revision: seq, snapshot_id: 'cd'.repeat(32), observed_height: '12', ledger: ['DEVBASE','DEVQUOTE'].map(denom => ({denom,C:'100',R:'20',D:'30',P:'70',A:'50'})), orders: [], fills: [], next_cursor: 'END', status: { context: ctx, stream_seq: seq, revision: '10', mode: 'OPEN', reason: 'OK', observation: { snapshot_id: 'cd'.repeat(32), observed_height: '12', fresh: true, last_success_age_ms: '10', block_age_ms: '20', query_latency_ms: '1' }, durability: 'LOCAL_FSYNC', replicated: false, settlement_submission_enabled: false } };
 }
-function setup() { const s = new Views(ctx); s.select('owner'); return s; }
+function setup() { const s = new Views(ctx, () => 0); s.select('owner'); return s; }
 function book(seq = '2'): Book {
   const body = { context: ctx, stream_seq: seq, revision: seq, snapshot_id: 'cd'.repeat(32), observed_height: '12', bids: [], asks: [] };
   return {...body, content_hash: bytesToHex(sha256(frame('NUS/S2/BOOK/V1',new TextEncoder().encode(canonical(body)))))};
@@ -52,7 +52,7 @@ test('reverse sequence does not roll back balances and identical seq conflicting
   const conflict = view(); conflict.ledger[0].P='71'; assert.throws(() => s.accept(conflict,s.generation,102),/SNAPSHOT_CONFLICT/); assert.equal(s.view!.ledger[0].P,'70');
 });
 test('health revision changes at unchanged economic seq, stale and reconnect close/open admission', () => {
-  const s = setup(); s.accept(view(),s.generation,100); assert(s.open(5100)); assert(!s.open(5101));
+  const s = setup(); s.accept(view(),s.generation,100); assert(s.open(5080)); assert(!s.open(5081));
   const stale = view(); stale.status.revision='11'; stale.status.mode='STALE'; stale.status.reason='RPC_UNAVAILABLE'; stale.status.observation.fresh=false;
   assert(s.accept(stale,s.generation,200)); assert(!s.open(200)); assert.equal(s.accept(view(),s.generation,201),false);
   const fresh = view(); fresh.status.revision='12'; assert(s.accept(fresh,s.generation,300)); assert(s.open(300)); s.disconnect('DISCONNECTED',s.generation); assert(!s.open(301)); assert(s.view);
@@ -121,5 +121,53 @@ test('late login reply after account switch cannot install another account sessi
     const pending=c.login(); c.select(1);
     release(new Response(JSON.stringify({context:ctx,profile:'s2-local-v1'})));
     await pending; assert.equal(c.authenticated,false); assert.equal(c.selected,1); assert.equal(calls,1); assert.equal(c.views.view,undefined);
+  } finally {c.close();}
+});
+
+test('CTO-S2E-01: cumulative age, delivery budget, exact boundary and latched clock rollback', () => {
+  for (const field of ['last_success_age_ms','block_age_ms'] as const) {
+    const s=setup(), v=view(); v.status.observation[field]='4900';
+    s.accept(v,s.generation,10000);
+    assert(s.open(10100)); assert(!s.open(10101)); assert(!s.open(11000));
+    s.accept(v,s.generation,12000,11900); assert(s.open(12000)); assert(!s.open(12001));
+    s.accept(v,s.generation,14000,13900,101); assert(!s.open(14000));
+  }
+  const s=setup(); s.accept(view(),s.generation,10000); assert(s.open(10100));
+  assert(!s.open(10099)); assert(!s.open(10200)); assert.equal(s.reason,'CLOCK_REGRESSION');
+  assert(!s.accept(view(),s.generation,9000,10000));
+  assert(s.accept(view(),s.generation,11000)); assert(s.open(11000));
+  s.disconnect('DISCONNECTED',s.generation); assert(!s.open(11001));
+  assert(s.accept(view(),s.generation,12000)); assert(s.open(12000));
+  let monotonic=0; const m=new Views(ctx,()=>monotonic); m.select('owner'); m.accept(view(),m.generation,10000);
+  monotonic=5001; assert(!m.open(10000)); // stationary wall clock cannot prolong admission
+});
+
+test('expired observation during delayed polling signs and posts zero new Orders; fresh reconnect reopens', async t => {
+  const { TradingClient }=await import('./client.ts');
+  let now=100000, mono=0, age='4900', delay=0, signatures=0, posts=0;
+  t.mock.method(Date,'now',()=>now); t.mock.method(performance,'now',()=>mono);
+  const key=new TradingKey();
+  t.mock.method(key,'order',()=>{signatures++; throw Error('unexpected signature');});
+  const response=(v:unknown)=>new Response(JSON.stringify(v));
+  const c=new TradingClient(ctx.genesis_hash,'http://127.0.0.1:5173',async(input,init)=>{
+    const path=String(input), payload=init?.body?JSON.parse(String(init.body)):undefined;
+    if(path==='/s2/network')return response({context:ctx,profile:'s2-local-v1'});
+    if(path==='/s2/auth/challenges')return response({wire_base64:base64.encode(encode('WalletChallengeV1',{protocol_version:'1',chain_id:ctx.chain_id,genesis_hash:ctx.genesis_hash,server_origin:payload.origin,audience:'exchange-api',owner:key.owner,challenge_nonce:'45'.repeat(32),issued_at:'100',expiry_time:'220'}))});
+    if(path==='/s2/auth/sessions')return response({token:base64.encode(new Uint8Array(32)),owner:key.owner,origin:'http://127.0.0.1:5173',audience:'exchange-api',genesis_hash:ctx.genesis_hash,expiry_time:'400'});
+    if(path==='/s2/book')return response(book());
+    if(path==='/s2/me') { const v=view(key.owner);v.status.revision=String(now);v.status.observation.last_success_age_ms=age;now+=delay;mono+=delay;return response(v); }
+    if(path==='/s2/orders')posts++;
+    return response({});
+  },[key]);
+  try {
+    await c.login(); await c.refresh(); assert(c.views.open(now));
+    now+=1000;mono+=1000;
+    await assert.rejects(()=>c.order('BUY','GTC','1','10'),/ADMISSION_CLOSED/);
+    delay=101;await c.refresh();assert(!c.views.open(now));
+    await assert.rejects(()=>c.order('BUY','GTC','1','10'),/ADMISSION_CLOSED/);
+    assert.equal(signatures,0);assert.equal(posts,0);
+    age='0';delay=10;await c.refresh();assert(c.views.open(now));
+    now--;assert(!c.views.open(now));now+=2;assert(!c.views.open(now));
+    await c.refresh();assert(c.views.open(now));
   } finally {c.close();}
 });

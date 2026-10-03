@@ -18,13 +18,17 @@ export interface Book { context: Context; stream_seq: string; revision: string; 
 export class Views {
   #generation = 0;
   #received = 0;
+  #lastNow = 0;
+  #monotonicReceived = 0;
+  #deliveryMs = 0;
   #status?: Status;
   view?: View;
   book?: Book;
   owner = '';
   reason = 'NOT_CONNECTED';
   readonly ctx: Context;
-  constructor(ctx: Context) { this.ctx = ctx; }
+  readonly monotonic: () => number;
+  constructor(ctx: Context, monotonic = () => performance.now()) { this.ctx = ctx; this.monotonic = monotonic; }
   get generation() { return this.#generation; }
   select(owner: string) { this.#generation++; this.owner = owner; this.view = undefined; this.book = undefined; this.#status = undefined; this.#received = 0; this.reason = 'NOT_CONNECTED'; }
   disconnect(reason: string, generation: number) { if (generation === this.#generation) { this.reason = reason; this.#received = 0; } }
@@ -32,8 +36,9 @@ export class Views {
     assertContext(s.context, this.ctx); integer(s.stream_seq); integer(s.revision); integer(s.observation.observed_height);
     if (s.durability !== 'LOCAL_FSYNC' || s.replicated !== false || s.settlement_submission_enabled !== false) throw Error('STATUS_CONTEXT');
   }
-  accept(view: View, generation: number, now: number): boolean {
+  accept(view: View, generation: number, now: number, requestStarted = now, requestElapsed = 0): boolean {
     if (generation !== this.#generation) return false;
+    if (![now, requestStarted, requestElapsed].every(Number.isFinite) || now < requestStarted || requestElapsed < 0) { this.disconnect('CLOCK_REGRESSION', generation); return false; }
     assertContext(view.context, this.ctx);
     if (view.owner !== this.owner) throw Error('ACCOUNT_MISMATCH');
     const seq = integer(view.stream_seq), rev = integer(view.revision); integer(view.owner_epoch); integer(view.observed_height);
@@ -70,7 +75,7 @@ export class Views {
     }
     if (this.#status && integer(view.status.revision) < integer(this.#status.revision)) return false;
     if (this.#status && view.status.revision === this.#status.revision && canonical(view.status) !== canonical(this.#status)) throw Error('STATUS_CONFLICT');
-    this.view = view; this.#status = view.status; this.#received = now; this.reason = view.status.reason; return true;
+    this.view = view; this.#status = view.status; this.#received = now; this.#lastNow = now; this.#monotonicReceived = this.monotonic(); this.#deliveryMs = Math.max(now-requestStarted, requestElapsed); this.reason = view.status.reason; return true;
   }
   acceptBook(book: Book, generation: number): boolean {
     if (generation !== this.#generation) return false;
@@ -85,6 +90,15 @@ export class Views {
   }
   open(now: number): boolean {
     const s = this.#status;
-    return this.#received > 0 && now >= this.#received && now-this.#received <= 5000 && s?.mode === 'OPEN' && s.observation.fresh === true && integer(s.observation.last_success_age_ms) <= 5000n && integer(s.observation.block_age_ms) <= 5000n;
+    const elapsed = this.monotonic()-this.#monotonicReceived;
+    if (!Number.isFinite(now) || now < this.#lastNow || elapsed < 0) {
+      this.disconnect('CLOCK_REGRESSION', this.#generation); return false;
+    }
+    this.#lastNow = now;
+    if (!this.#received || s?.mode !== 'OPEN' || s.observation.fresh !== true) return false;
+    // Include the entire request/page delivery interval conservatively. A wall-clock
+    // adjustment must never extend the monotonic freshness budget.
+    const age = BigInt(Math.ceil(this.#deliveryMs + Math.max(now-this.#received, elapsed)));
+    return integer(s.observation.last_success_age_ms)+age <= 5000n && integer(s.observation.block_age_ms)+age <= 5000n;
   }
 }

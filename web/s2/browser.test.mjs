@@ -84,6 +84,25 @@ try{
    return true;
  });
  report.steps.push('withdraw abort confirmed by LOCAL_ACCEPTED receipt');
+ // CTO-S2E-01: age the actual API view and delay delivery; polling cannot renew its budget.
+ await login(0);
+ const orderPostsBefore=report.requests.filter(r=>r.path==='/s2/orders'&&r.method==='POST').length;
+ await page.route('**/s2/me',async route=>{
+   const response=await route.fetch(), body=await response.json();
+   body.status.observation.last_success_age_ms='4900';
+   body.status.observation.block_age_ms='4900';
+   await sleep(1100);await route.fulfill({response,json:body});
+ });
+ await until(async()=>await page.locator('#order').isDisabled());
+ await sleep(1500);assert(await page.locator('#order').isDisabled());
+ // Invoke the handler even though the native button is disabled: pre-signing guard must also close.
+ await page.locator('#order').evaluate(b=>b.onclick(new MouseEvent('click')));
+ assert.equal(await text('status'),'ADMISSION_CLOSED');
+ assert.equal(report.requests.filter(r=>r.path==='/s2/orders'&&r.method==='POST').length,orderPostsBefore);
+ await page.screenshot({path:resolve(out,'stale-admission.png'),fullPage:true});
+ report.steps.push('CTO-S2E-01: 4900ms + delayed polling disables button and emits zero Order POST');
+ await page.unrouteAll({behavior:'wait'});await login(0);
+ report.steps.push('fresh API reconnect restores order admission');
  // Delayed old-account public response must never populate the switched account.
  let release;const gate=new Promise(r=>{release=r;});await page.route('**/s2/accounts/*',async route=>{const r=await route.fetch();await gate;await route.fulfill({response:r});});
  await page.click('#chain-account');await page.selectOption('#account','1');release();await sleep(400);assert.equal(await text('chain-balances'),'계정 전환 · 다시 조회하세요');await page.unroute('**/s2/accounts/*');

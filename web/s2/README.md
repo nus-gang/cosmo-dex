@@ -41,8 +41,10 @@ node s2/serve.mjs
 
 키·토큰은 탭 메모리에만 유지한다. runtime 키 import/export·복구·서버 서명은 없다.
 C/R/D/P/A를 따로 표시하고 P를 A에 더하지 않는다. 체결은 잠정/정정이며 온체인 정산이 아니다.
-LOCAL_ACCEPTED는 LOCAL_FSYNC/replicated=false다. REST 1초 polling으로 5초 경과,
-단절·로그인 만료 시 주문 접수를 닫고 관측 높이·지연·사유를 표시한다.
+LOCAL_ACCEPTED는 LOCAL_FSYNC/replicated=false다. REST 1초 polling을 사용한다.
+서버 관측 age + 전체 조회/페이지 전달 시간 + 수신 후 경과가 5초를 넘으면 주문 접수를 닫는다.
+경과는 벽시계와 단조 시계 중 큰 값으로 계산한다. 시간 역행·단절 시에는 신선한 조회를
+다시 받아야 재개하며, 로그인 만료도 입력을 닫는다. 관측 높이·지연·사유를 표시한다.
 계정 전환 시 개인 화면과 세션을 폐기하고 지연 응답을 버린다. seq/revision이 역행하거나
 같은 snapshot 내 pagination이 충돌하면 과거/부분 내역으로 화면을 바꾸지 않는다.
 UNKNOWN 주문은 receipt 확인 후 같은 서명 원문/ID로만 재시도한다.

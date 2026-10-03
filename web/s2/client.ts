@@ -61,6 +61,7 @@ export class TradingClient {
       if (!this.#current(g)) return;
       if (!book.ok) throw Error('BOOK_UNAVAILABLE');
       this.views.acceptBook(book.value as Book, g);
+      const requestStarted = Date.now(), monotonicStarted = performance.now();
       let page = await this.#request('/s2/me', undefined, token);
       if (!this.#current(g)) return;
       if (page.status === 401) { this.#token = ''; throw Error('REAUTH_REQUIRED'); }
@@ -80,7 +81,7 @@ export class TradingClient {
         full.orders.push(...next.orders); full.fills.push(...next.fills); full.status = next.status;
       }
       full.next_cursor = 'END';
-      this.views.accept(full, g, Date.now());
+      this.views.accept(full, g, Date.now(), requestStarted, performance.now()-monotonicStarted);
     } catch (e) { this.views.disconnect(e instanceof Error ? e.message : 'UNAVAILABLE', g); if (this.#current(g)) throw e; }
   }
   #ready(newOrder = true) {
