@@ -10,11 +10,13 @@ from transport import Unavailable, decode, encode, unknown
 
 RECEIPT_PATH = re.compile(r'/s1/accounts/([a-z0-9]{1,90})/requests/([0-9a-f]{64})')
 
+ACCOUNT_PATH = re.compile(r'/s2/accounts/(nus1[a-z0-9]{1,86})')
+
 TX_PATH = re.compile(r'/s1/txs/([0-9A-F]{64})')
 
 
 def route(path):
-    return (path == '/s1/txs' or TX_PATH.fullmatch(path) is not None
+    return (ACCOUNT_PATH.fullmatch(path) is not None or path == '/s1/txs' or TX_PATH.fullmatch(path) is not None
             or RECEIPT_PATH.fullmatch(path) is not None)
 
 
@@ -48,7 +50,7 @@ class Direct:
         durable_file(self.evidence / 'context.json', encode(manifest['context']))
         self.collector = Collector(rpc, None, manifest, self.evidence / 'observations')
 
-    def snapshot(self):
+    def snapshot(self, include_body=False):
         start = time.monotonic_ns()
         status, _ = self.rpc.call('status', {})
         height = status['sync_info']['latest_block_height']
@@ -56,11 +58,72 @@ class Direct:
                 or status['sync_info']['catching_up'] is not False or integer(height) == 0):
             raise Unavailable('RPC_NOT_READY')
         body = self.collector.fetch(integer(height))['body']
-        return {'observed_height': height, 'cursor_height': height,
+        meta = {'observed_height': height, 'cursor_height': height,
                 'query_latency_ms': str((time.monotonic_ns() - start) // 1_000_000),
                 'block_time_unix_ms': body['block_time_unix_ms'],
                 'freshness_ms': str(max(0, time.time_ns() // 1_000_000 - integer(body['block_time_unix_ms']))),
                 'indexer_mode': 'DIRECT_COMMITTED_QUERY'}
+        return (meta, body) if include_body else meta
+
+    def account(self, owner):
+        """Public committed chain state only; never expose engine R/D/P or sessions."""
+        try:
+            if owner not in {chain_owner(value) for value in self.manifest['owners']}:
+                return 404, dict(unknown('UNKNOWN_ACCOUNT'), retryable=False)
+            started = time.monotonic_ns()
+            meta, body = self.snapshot(include_body=True)
+            # Read the pinned profile, not client-provided freshness settings.
+            profile_raw = (Path(__file__).resolve().parents[2] / 'protocol/s2/profile.json').read_bytes()
+            if hashlib.sha256(profile_raw).hexdigest() != self.manifest['context']['config_hash']:
+                raise Unavailable('PROFILE_HASH_MISMATCH')
+            profile = decode(profile_raw)
+            accounts = body['accounts']
+            denoms = ['DEVBASE', 'DEVQUOTE']
+            for account in accounts:
+                public = base64.b64decode(account['public_key'], validate=True)
+                if (len(public) != 1952 or base64.b64encode(public).decode() != account['public_key']
+                        or account['public_key_type'] != 'ML_DSA_65'
+                        or base64.b64encode(hashlib.sha256(public).digest()[:20]).decode() != account['owner']):
+                    raise Unavailable('REGISTERED_KEY_BINDING')
+                for key in ('account_number', 'sequence', 'owner_epoch', 'gas_atoms'):
+                    integer(account[key])
+                if [b['denom'] for b in account['balances']] != denoms:
+                    raise Unavailable('ASSET_BINDING')
+                for balance in account['balances']:
+                    integer(balance['bank_atoms'])
+                    integer(balance['confirmed_atoms'])
+            if len({a['account_number'] for a in accounts}) != len(accounts):
+                raise Unavailable('ACCOUNT_NUMBER_BINDING')
+            if [s['denom'] for s in body['supplies']] != denoms:
+                raise Unavailable('SUPPLY_BINDING')
+            for i, supply in enumerate(body['supplies']):
+                confirmed = sum(integer(a['balances'][i]['confirmed_atoms']) for a in accounts)
+                bank = sum(integer(a['balances'][i]['bank_atoms']) for a in accounts)
+                if (confirmed != integer(supply['module_atoms'])
+                        or bank + confirmed != integer(supply['bank_supply_atoms'])
+                        or bank + confirmed != integer(supply['genesis_supply_atoms'])):
+                    raise Unavailable('ASSET_CONSERVATION')
+            account = next(a for a in accounts if chain_owner(a['owner']) == owner)
+            # A second status sample closes RPC loss/catchup/height changes during query.
+            tip, _ = self.rpc.call('status', {})
+            age = time.time_ns() // 1_000_000 - integer(body['block_time_unix_ms'])
+            latency = (time.monotonic_ns() - started) // 1_000_000
+            if (tip['node_info']['network'] != self.manifest['context']['chain_id']
+                    or tip['sync_info']['catching_up'] is not False
+                    or tip['sync_info']['latest_block_height'] != meta['observed_height']
+                    or age > integer(profile['max_freshness_ms'])
+                    or age < -integer(profile['max_future_block_time_ms'])
+                    or latency > integer(profile['rpc_timeout_ms'])):
+                raise Unavailable('ACCOUNT_NOT_FRESH')
+            meta.update(freshness_ms=str(max(0, age)), query_latency_ms=str(latency))
+            return 200, dict(meta, context=body['context'], state='COMMITTED',
+                signing_ready=True, block_hash=body['block_hash'], owner=owner,
+                owner_base64=account['owner'], public_key_type='/cosmos.crypto.mldsa65.PubKey',
+                public_key_base64=account['public_key'], account_number=account['account_number'],
+                sequence=account['sequence'], owner_epoch=account['owner_epoch'],
+                balances=account['balances'], gas_denom=profile['gas_denom'], gas_atoms=account['gas_atoms'])
+        except (Unavailable, OSError, ValueError, TypeError, KeyError, StopIteration, IndexError):
+            return 503, dict(unknown(), signing_ready=False)
 
     def receipt(self, owner, request_id):
         """Public chain receipt, separate from private S2 command/session data."""
@@ -98,6 +161,9 @@ class Direct:
             return 503, unknown()
 
     def request(self, method, path, raw=b''):
+        account = ACCOUNT_PATH.fullmatch(path)
+        if account and method == 'GET':
+            return self.account(account[1])
         receipt = RECEIPT_PATH.fullmatch(path)
         if receipt and method == 'GET':
             return self.receipt(*receipt.groups())

@@ -1,0 +1,42 @@
+name: S2 DIRECT account
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  account:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: 7ce952475b4985096344d713467208722b5e7693
+          path: .deps/s2-chain
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.5'
+          cache-dependency-path: chain/app/go.sum
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.node-version'
+      - name: S0 manifest and S1/S2 REST regressions
+        run: |
+          python3 ops/ci/build_manifest.py --check
+          python3 -m unittest discover -s tests -p test_manifest_boundary.py -v
+          python3 -m unittest discover -s settlement/v1 -v
+          python3 -m unittest discover -s settlement/s1 -v
+          python3 -m unittest discover -s settlement/s2 -v
+      - name: Pinned chain and browser dependencies
+        run: |
+          (cd .deps/s2-chain/chain/app && sh scripts/build.sh)
+          (cd web && npm ci --ignore-scripts && npx playwright-core install --with-deps chromium)
+      - name: Browser DIRECT signing with new genesis
+        run: |
+          mkdir -p .evidence/account-scratch
+          S2_TEST_CHAIN="$PWD/.deps/s2-chain/chain/app/bin/nusd" S2_TEST_SCRATCH="$PWD/.evidence/account-scratch" node settlement/s2/check_account_browser.mjs .evidence/account
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: s2-direct-account-${{ github.sha }}
+          path: .evidence/account/
+          include-hidden-files: true
