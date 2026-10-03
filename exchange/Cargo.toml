@@ -23,3 +23,7 @@ num-traits = "0.2"
 bech32 = "0.9"
 
 orderbook-rs = { version = "=0.13.1", default-features = false }
+
+[target.'cfg(unix)'.dev-dependencies]
+# Only the deterministic fork/exec lock-lifetime regression uses raw syscalls.
+libc = "0.2"

@@ -96,6 +96,83 @@ fn committed_record_and_outbox_recover_atomically() {
     assert_eq!(records, vec![r]);
     assert_eq!(records[0]["outbox"][0]["submission_enabled"], false);
 }
+
+#[cfg(unix)]
+#[test]
+fn dropped_writer_reopens_while_unrelated_child_is_before_exec() {
+    use std::{
+        io::{Read, Write},
+        os::unix::{io::AsRawFd, net::UnixStream, process::CommandExt},
+        time::Duration,
+    };
+
+    let d = Dir::new();
+    let mut j = Journal::create(&d.0, context()).unwrap();
+    let r = record(&j);
+    let ack = j.append(&r, 4096, false).unwrap();
+    let (mut ready, child_ready) = UnixStream::pair().unwrap();
+    let (mut release, child_release) = UnixStream::pair().unwrap();
+    let timeout = Some(Duration::from_secs(10));
+    ready.set_read_timeout(timeout).unwrap();
+    release.set_write_timeout(timeout).unwrap();
+    child_release.set_read_timeout(timeout).unwrap();
+    child_ready.set_write_timeout(timeout).unwrap();
+
+    // A pre_exec hook forces fork, then holds the child before CLOEXEC closes
+    // inherited descriptors. No sleeps or probabilistic scheduling are needed.
+    let child = std::thread::spawn(move || {
+        let mut command = Command::new(std::env::current_exe().unwrap());
+        command
+            .args(["--exact", "child_process"])
+            .env_remove("S2_JOURNAL_CHILD_DIR");
+        // SAFETY: the hook only performs async-signal-safe syscalls on sockets
+        // created above. No Journal, allocator, assertion, or Rust lock is used.
+        unsafe {
+            command.pre_exec(move || {
+                let mut byte = 1u8;
+                if libc::write(child_ready.as_raw_fd(), (&byte as *const u8).cast(), 1) != 1
+                    || libc::read(child_release.as_raw_fd(), (&mut byte as *mut u8).cast(), 1) != 1
+                {
+                    return Err(std::io::Error::last_os_error());
+                }
+                Ok(())
+            });
+        }
+        command.status()
+    });
+    let ready_result = ready.read_exact(&mut [0]);
+    let original_excludes_writer = matches!(
+        Journal::open(&d.0, context()),
+        Err(Error::WriterAlreadyRunning)
+    );
+    drop(j);
+    let reopened = Journal::open(&d.0, context());
+    let replacement_excludes_writer = matches!(
+        Journal::open(&d.0, context()),
+        Err(Error::WriterAlreadyRunning)
+    );
+    // Release and reap even on the expected pre-fix error, before asserting.
+    let release_result = release.write_all(&[1]);
+    let child_status = child.join().unwrap().unwrap();
+    ready_result.unwrap();
+    release_result.unwrap();
+    assert!(child_status.success());
+    assert!(original_excludes_writer);
+    let (mut j, records) = reopened.unwrap();
+    assert_eq!(j.commit(), &ack);
+    assert_eq!(records, vec![r]);
+    assert!(replacement_excludes_writer);
+    // Closing the old child's descriptors must not release the new owner's lock.
+    assert!(matches!(
+        Journal::open(&d.0, context()),
+        Err(Error::WriterAlreadyRunning)
+    ));
+    assert!(run_child(&d, "lock").success());
+    j.append(&record(&j), 4096, false).unwrap();
+    drop(j);
+    assert_eq!(Journal::open(&d.0, context()).unwrap().1.len(), 2);
+}
+
 #[test]
 fn crash_points_never_silently_lose_a_committed_record() {
     for point in ["before", "wal", "marker", "rename", "commit"] {
