@@ -48,7 +48,7 @@ S2_ENGINE_BINARY="$PWD/exchange/target/debug/exchange-s2" \
   python3 -m unittest discover -s settlement/s2 -v
 ```
 
-14개 시험(기존 11개와 genesis 결합 3개): RPC 연속 높이/재시도/역행/블록 불일치/증거 저장 실패, canonical JSON/protobuf,
+20개 시험(기존 14개와 DIRECT 경계 6개): RPC 연속 높이/재시도/역행/블록 불일치/증거 저장 실패, canonical JSON/protobuf,
 RPC URL, pipe 원문·동시성·UNKNOWN, 실제 HTTP CORS/헤더/상한, 실제 Rust 재시작·revision·
 신선도. 시험 파일은 PAPERCLIP_RUN_SCRATCH_DIR가 있으면 그 안에 만들며 종료 때 정리한다.
 S2_ENGINE_BINARY 미지정 시 실제 Rust 시험 하나가 skip이므로 전체 통과로 보고하지 않는다.
@@ -75,12 +75,12 @@ python3 settlement/s2/server.py \
 
 재시작에는 동일 파일·경로로 `--bootstrap`만 생략한다. 손상/부분 생성 journal을 삭제하거나
 create로 대체하지 않는다. 기동 직후 CATCHING_UP, 신뢰 RPC 재관측 완료 후 OPEN이다.
-새 S2 home과 journal을 사용하고 S1 경로를 재사용하지 않는다. HTTP의 `/s2/*`만 연결돼 있다.
+새 S2 home과 journal을 사용하고 S1 경로를 재사용하지 않는다. HTTP의 `/s2/*`와 `/s1/txs`, `/s1/txs/{TX_HASH}`가 연결돼 있다.
 
 ## 남은 인수 작업
 
-- S2 두 자산의 기존 DIRECT TX/receipt 경로 연결, 인증된 자기 조회와 공개 데이터 분리.
-- 실제 S2 genesis 초기화·검증 도구, 실제 Chain RPC+HTTP+ML-DSA 주문/취소/부분 체결/IOC 시연.
+- S2 owner/request ID receipt 조회 연결, 인증된 자기 조회와 공개 데이터 분리.
+- 실제 Chain RPC+HTTP+ML-DSA 주문/취소/부분 체결/IOC 시연.
 - 실제 출금 epoch 변화의 양측 정정·재시작, D/P=0 정상 출금과 UNSETTLED_HOLD 인수.
 - 재인증·계정 전환·지연 역순 응답·응답 유실 재시도 통합 시험과 Wallet/QA용 고정 실행 인계.
 - 고정 head CI, CTO→Security 심사. main 통합은 CEO, 새 main checkout QA는 별도 담당.
@@ -91,3 +91,20 @@ P는 잠정 수취액이고 확정 C/가용액과 합치지 않는다. 체인 �
 ## 실제 RPC 체크포인트 (2026-10-03)
 
 `check_live.py --chain <승인 nusd> --engine <exchange-s2> --operators <operator-accounts.json> --output <새 디렉터리>`는 새 S2 genesis/단일 검증인에서 실제 DEVBASE·DEVQUOTE 예치, 직접 DEVBASE 출금, epoch 변화 관측, 엔진 재시작을 검증한다. `evidence/live-bootstrap/result.json`과 원시 snapshot/RPC를 보존했다. 실제 서명 HTTP 주문·양측 fill 정정·4검증인 통합은 아직 NOT_RUN이다. 테스트 키만 사용하며 종료 시 체인과 엔진을 종료한다.
+
+## DIRECT HTTP 체크포인트
+
+`direct.py`는 `/s1/txs`에 전달된 서명 TxRaw를 변경 없이 별도 genesis-bound evidence에
+fsync한 뒤 trusted S2 RPC로 제출한다. 개인 주문 인증이나 엔진 OPEN을 직접 출금의
+권한으로 사용하지 않는다. 서버 전체가 정지하면 기존 체인 RPC/CLI 직접 TX 경로를 사용한다.
+CheckTx 성공도 202 `SUBMISSION_UNKNOWN`이며, `/s1/txs/{TX_HASH}`는 조회 tip 이하의
+실제 block 포함과 block_results/index 결과 일치 후에만 `COMMITTED` 또는
+`REJECTED_FINAL`을 반환한다. 조회 실패는 UNKNOWN이다. 시작 시 자동 재전송하지 않는다.
+
+DIRECT HTTP JSON은 base64 팽창을 위해 22000B, 실제 TxRaw는 기존 16384B 상한이다.
+S2 주문 JSON 상한 16384B는 유지한다. POST에는 기존 Origin/Host 검사를 적용하며
+TX hash별 공개 체인 결과 조회만 무인증으로 허용한다. owner/request receipt는 아직 미연결이다.
+
+CI source manifest는 `python3 ops/ci/build_manifest.py`로 생성한다. settlement/s2도
+기존 S0 manifest의 소스 추적 대상이므로 해당 파일 변경 뒤 재생성하고 `--check`를 실행한다.
+검사 제외 경로나 oracle 기대값을 바꾸지 않는다.

@@ -1,0 +1,10 @@
+test_baseline_without_s1 (test_manifest_boundary.ManifestBoundary.test_baseline_without_s1) ... ok
+test_oracle_and_coverage_tampering_fail (test_manifest_boundary.ManifestBoundary.test_oracle_and_coverage_tampering_fail) ... ok
+test_s0_source_changes_and_deletions_fail (test_manifest_boundary.ManifestBoundary.test_s0_source_changes_and_deletions_fail) ... ok
+test_s1_add_change_remove (test_manifest_boundary.ManifestBoundary.test_s1_add_change_remove) ... ok
+test_unknown_nested_module_and_similar_prefix_fail (test_manifest_boundary.ManifestBoundary.test_unknown_nested_module_and_similar_prefix_fail) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 3.108s
+
+OK

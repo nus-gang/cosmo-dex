@@ -11,6 +11,7 @@ import threading
 from bootstrap import genesis_manifest
 from chain import Collector, RPC
 from transport import Engine, Unavailable, decode, encode, unknown
+from direct import Direct, route as direct_route
 
 ORIGINS = {'http://127.0.0.1:5173', 'http://localhost:5173'}
 PUBLIC = {'/s2/network', '/s2/status', '/s2/book'}
@@ -21,10 +22,11 @@ class Server(ThreadingHTTPServer):
     daemon_threads = True
     request_queue_size = 16
 
-    def __init__(self, address, engine):
+    def __init__(self, address, engine, direct=None):
         if not ipaddress.ip_address(address[0]).is_loopback:
             raise ValueError('loopback bind required')
         self.engine = engine
+        self.direct = direct
         self.slots = threading.BoundedSemaphore(16)
         super().__init__(address, Handler)
 
@@ -99,12 +101,13 @@ class Handler(BaseHTTPRequestHandler):
             port = self.server.server_port
             if host not in {f'127.0.0.1:{port}', f'localhost:{port}'}:
                 return self.reject(403, 'FORBIDDEN')
-            if (len(self.path) > 8192 or not self.path.startswith('/s2/')
+            is_direct = self.server.direct is not None and direct_route(self.path)
+            if (len(self.path) > 8192 or not (self.path.startswith('/s2/') or is_direct)
                     or not self.path.isascii() or '#' in self.path):
                 return self.reject(404, 'UNSUPPORTED_ROUTE')
             origin = self.headers.get('Origin')
             if (origin is not None and origin not in ORIGINS) or (
-                    origin is None and (self.command != 'GET' or self.path not in PUBLIC)):
+                    origin is None and (self.command != 'GET' or self.path not in PUBLIC and not is_direct)):
                 return self.reject(403, 'FORBIDDEN')
             if self.headers.get_all('Transfer-Encoding') or self.headers.get_all('Expect'):
                 return self.reject(400, 'NON_CANONICAL_WIRE')
@@ -112,7 +115,7 @@ class Handler(BaseHTTPRequestHandler):
             if not re.fullmatch(r'0|[1-9][0-9]{0,5}', length):
                 return self.reject(400, 'NON_CANONICAL_WIRE')
             size = int(length)
-            if size > MAX_BODY:
+            if size > (22000 if is_direct else MAX_BODY):
                 return self.reject(413, 'RESOURCE_LIMIT')
             if self.command in ('GET', 'OPTIONS') and size:
                 return self.reject(400, 'NON_CANONICAL_WIRE')
@@ -129,6 +132,9 @@ class Handler(BaseHTTPRequestHandler):
             raw = self.rfile.read(size)
             if len(raw) != size:
                 return self.reject(400, 'NON_CANONICAL_WIRE')
+            if is_direct:
+                status, body = self.server.direct.request(self.command, self.path, raw)
+                return self.respond(status, body)
             status, body = self.server.engine.request(
                 self.command, self.path, origin, self.headers.get('Authorization'), raw)
             self.respond(status, body)
@@ -186,7 +192,8 @@ def main():
                 stopped.wait(1)
         collector_thread = threading.Thread(target=observe, daemon=True)
         collector_thread.start()
-        server = Server(('127.0.0.1', args.port), engine)
+        direct = Direct(rpc, manifest, Path(args.evidence) / 'direct')
+        server = Server(('127.0.0.1', args.port), engine, direct)
         server.serve_forever(poll_interval=0.25)
     except KeyboardInterrupt:
         pass

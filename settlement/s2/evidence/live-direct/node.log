@@ -1,0 +1,696 @@
+1:01PM DBG loadVersion ver=0
+1:01PM DBG loadVersion commitID hash= key="KVStoreKey{0x621dcb0a1150, auth}" ver=0
+1:01PM INF Upgrading IAVL storage for faster queries + execution on live state. This may take a while commit=436F6D6D697449447B5B5D3A307D store_key="KVStoreKey{0x621dcb0a1150, auth}" version=1
+1:01PM DBG Finished loading IAVL tree
+1:01PM DBG loadVersion commitID hash= key="KVStoreKey{0x621dcb0a1160, bank}" ver=0
+1:01PM INF Upgrading IAVL storage for faster queries + execution on live state. This may take a while commit=436F6D6D697449447B5B5D3A307D store_key="KVStoreKey{0x621dcb0a1160, bank}" version=1
+1:01PM DBG Finished loading IAVL tree
+1:01PM DBG loadVersion commitID hash= key="KVStoreKey{0x621dcb0a1170, exchange}" ver=0
+1:01PM INF Upgrading IAVL storage for faster queries + execution on live state. This may take a while commit=436F6D6D697449447B5B5D3A307D store_key="KVStoreKey{0x621dcb0a1170, exchange}" version=1
+1:01PM DBG Finished loading IAVL tree
+1:01PM DBG loadVersion commitID hash= key="KVStoreKey{0x621dcb0a1180, consensus}" ver=0
+1:01PM INF Upgrading IAVL storage for faster queries + execution on live state. This may take a while commit=436F6D6D697449447B5B5D3A307D store_key="KVStoreKey{0x621dcb0a1180, consensus}" version=1
+1:01PM DBG Finished loading IAVL tree
+I[2026-10-03|13:01:53.974] service start                                module=proxy msg="Starting multiAppConn service" impl=multiAppConn
+I[2026-10-03|13:01:53.974] service start                                module=abci-client connection=query msg="Starting localClient service" impl=localClient
+I[2026-10-03|13:01:53.975] service start                                module=abci-client connection=snapshot msg="Starting localClient service" impl=localClient
+I[2026-10-03|13:01:53.975] service start                                module=abci-client connection=mempool msg="Starting localClient service" impl=localClient
+I[2026-10-03|13:01:53.975] service start                                module=abci-client connection=consensus msg="Starting localClient service" impl=localClient
+I[2026-10-03|13:01:53.975] service start                                module=events msg="Starting EventBus service" impl=EventBus
+I[2026-10-03|13:01:53.975] service start                                module=pubsub msg="Starting PubSub service" impl=PubSub
+I[2026-10-03|13:01:53.993] service start                                module=txindex msg="Starting IndexerService service" impl=IndexerService
+I[2026-10-03|13:01:53.993] ABCI Handshake App Info                      module=consensus height=0 hash=E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855 software-version=s1-dev-1 protocol-version=0
+I[2026-10-03|13:01:53.993] ABCI Replay Blocks                           module=consensus appHeight=0 storeHeight=0 stateHeight=0
+1:01PM INF InitChain chainID=nus-s2-dev-1 initialHeight=1 module=baseapp
+I[2026-10-03|13:01:53.997] Completed ABCI Handshake - CometBFT and App are synced module=consensus appHeight=0 appHash=E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855
+I[2026-10-03|13:01:53.997] Version info                                 tendermint_version=0.39.0 abci=2.0.0 block=11 p2p=8 commit_hash=
+I[2026-10-03|13:01:53.997] This node is a validator                     module=consensus addr=76578432D6E31BFA24E2673384500E3B81FB7F0D pubKey=PubKeyEd25519{83847EAB6E13726E68FFEF6807FD3819499B52020BA314B0FEF403213095CFD3}
+I[2026-10-03|13:01:54.021] P2P Node ID                                  module=p2p ID=d09a1c11990dae121e4a6ac6cde9cb9c48af3480 file=/private/var/folders/tk/qv1h75l56vscdzw5zlqjxpgm0000gn/T/paperclip-run-nus-39-6edbb0bc-40f-CpqNIT/live-direct-fixed/node/config/node_key.json
+I[2026-10-03|13:01:54.021] Adding persistent peers                      module=p2p addrs=[]
+I[2026-10-03|13:01:54.021] Adding unconditional peer ids                module=p2p ids=[]
+I[2026-10-03|13:01:54.021] Add our address to book                      module=p2p book=/private/var/folders/tk/qv1h75l56vscdzw5zlqjxpgm0000gn/T/paperclip-run-nus-39-6edbb0bc-40f-CpqNIT/live-direct-fixed/node/config/addrbook.json addr=d09a1c11990dae121e4a6ac6cde9cb9c48af3480@127.0.0.1:29956
+I[2026-10-03|13:01:54.021] service start                                msg="Starting Node service" impl=Node
+I[2026-10-03|13:01:54.021] service start                                module=p2p msg="Starting P2P Switch service" impl="P2P Switch"
+I[2026-10-03|13:01:54.021] service start                                module=mempool msg="Starting Mempool service" impl=Mempool
+I[2026-10-03|13:01:54.021] service start                                module=blocksync msg="Starting Blocksync service" impl=Blocksync
+I[2026-10-03|13:01:54.021] service start                                module=consensus msg="Starting Consensus service" impl=ConsensusReactor
+I[2026-10-03|13:01:54.021] serve                                        module=rpc-server msg="Starting RPC HTTP server on 127.0.0.1:29957"
+I[2026-10-03|13:01:54.021] service start                                module=consensus msg="Starting State service" impl=ConsensusState
+I[2026-10-03|13:01:54.022] service start                                module=consensus wal=/private/var/folders/tk/qv1h75l56vscdzw5zlqjxpgm0000gn/T/paperclip-run-nus-39-6edbb0bc-40f-CpqNIT/live-direct-fixed/node/data/cs.wal/wal msg="Starting baseWAL service" impl=baseWAL
+I[2026-10-03|13:01:54.025] service start                                module=consensus wal=/private/var/folders/tk/qv1h75l56vscdzw5zlqjxpgm0000gn/T/paperclip-run-nus-39-6edbb0bc-40f-CpqNIT/live-direct-fixed/node/data/cs.wal/wal msg="Starting Group service" impl=Group
+I[2026-10-03|13:01:54.026] service start                                module=consensus msg="Starting TimeoutTicker service" impl=TimeoutTicker
+I[2026-10-03|13:01:54.026] Searching for height                         module=consensus wal=/private/var/folders/tk/qv1h75l56vscdzw5zlqjxpgm0000gn/T/paperclip-run-nus-39-6edbb0bc-40f-CpqNIT/live-direct-fixed/node/data/cs.wal/wal height=1 min=0 max=0
+D[2026-10-03|13:01:54.026] Starting timeout routine                     module=consensus 
+I[2026-10-03|13:01:54.026] Searching for height                         module=consensus wal=/private/var/folders/tk/qv1h75l56vscdzw5zlqjxpgm0000gn/T/paperclip-run-nus-39-6edbb0bc-40f-CpqNIT/live-direct-fixed/node/data/cs.wal/wal height=0 min=0 max=0
+I[2026-10-03|13:01:54.026] Found                                        module=consensus wal=/private/var/folders/tk/qv1h75l56vscdzw5zlqjxpgm0000gn/T/paperclip-run-nus-39-6edbb0bc-40f-CpqNIT/live-direct-fixed/node/data/cs.wal/wal height=0 index=0
+I[2026-10-03|13:01:54.026] Catchup by replaying consensus messages      module=consensus height=1
+I[2026-10-03|13:01:54.026] Replay: Done                                 module=consensus 
+I[2026-10-03|13:01:54.026] service start                                module=evidence msg="Starting Evidence service" impl=Evidence
+I[2026-10-03|13:01:54.026] service start                                module=statesync msg="Starting StateSync service" impl=StateSync
+I[2026-10-03|13:01:54.026] service start                                module=pex msg="Starting PEX service" impl=PEX
+I[2026-10-03|13:01:54.026] service start                                module=p2p book=/private/var/folders/tk/qv1h75l56vscdzw5zlqjxpgm0000gn/T/paperclip-run-nus-39-6edbb0bc-40f-CpqNIT/live-direct-fixed/node/config/addrbook.json msg="Starting AddrBook service" impl=AddrBook
+D[2026-10-03|13:01:54.026] Received tick                                module=consensus old_ti="{Duration:0s Height:0 Round:0 Step:RoundStepUnknown}" new_ti="{Duration:989.987ms Height:1 Round:0 Step:RoundStepNewHeight}"
+D[2026-10-03|13:01:54.026] Scheduled timeout                            module=consensus dur=989.987ms height=1 round=0 step=RoundStepNewHeight
+I[2026-10-03|13:01:54.026] Saving AddrBook to file                      module=p2p book=/private/var/folders/tk/qv1h75l56vscdzw5zlqjxpgm0000gn/T/paperclip-run-nus-39-6edbb0bc-40f-CpqNIT/live-direct-fixed/node/config/addrbook.json size=0
+I[2026-10-03|13:01:54.026] Ensure peers                                 module=pex numOutPeers=0 numInPeers=0 numDialing=0 numToDial=10
+I[2026-10-03|13:01:54.026] No addresses to dial. Falling back to seeds  module=pex 
+D[2026-10-03|13:01:54.109] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50705
+D[2026-10-03|13:01:54.325] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50707
+D[2026-10-03|13:01:54.538] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50710
+D[2026-10-03|13:01:54.747] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50711
+D[2026-10-03|13:01:54.954] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50713
+I[2026-10-03|13:01:55.018] Timed out                                    module=consensus dur=989.987ms height=1 round=0 step=RoundStepNewHeight
+D[2026-10-03|13:01:55.026] received tock                                module=consensus timeout=989.987ms height=1 round=0 step=RoundStepNewHeight
+D[2026-10-03|13:01:55.026] entering new round                           module=consensus height=1 round=0 previous=1/0/RoundStepNewHeight proposer=76578432D6E31BFA24E2673384500E3B81FB7F0D
+D[2026-10-03|13:01:55.031] entering propose step                        module=consensus height=1 round=0 current=1/0/RoundStepNewRound
+D[2026-10-03|13:01:55.036] node is a validator                          module=consensus height=1 round=0
+D[2026-10-03|13:01:55.036] propose step; our turn to propose            module=consensus height=1 round=0 proposer=76578432D6E31BFA24E2673384500E3B81FB7F0D
+D[2026-10-03|13:01:55.036] Received tick                                module=consensus old_ti="{Duration:989.987ms Height:1 Round:0 Step:RoundStepNewHeight}" new_ti="{Duration:3s Height:1 Round:0 Step:RoundStepPropose}"
+D[2026-10-03|13:01:55.036] Scheduled timeout                            module=consensus dur=3s height=1 round=0 step=RoundStepPropose
+D[2026-10-03|13:01:55.079] signed proposal                              module=consensus height=1 round=0 proposal="Proposal{1/0 (66E2F77A45BA8F974B0F64EA9A573E54B8507EC8FA8DF9BC8D97F87EB689539A:1:0780F7436072, -1) BA8C818F1926 @ 2026-10-03T12:01:55.047257Z}"
+D[2026-10-03|13:01:55.079] Received message from cs.internalMsgQueue    module=consensus peer_id=
+D[2026-10-03|13:01:55.079] Broadcast                                    module=p2p channel=32
+D[2026-10-03|13:01:55.088] State.handleMsg                              module=consensus peer_id= msg="[Proposal Proposal{1/0 (66E2F77A45BA8F974B0F64EA9A573E54B8507EC8FA8DF9BC8D97F87EB689539A:1:0780F7436072, -1) BA8C818F1926 @ 2026-10-03T12:01:55.047257Z}]"
+I[2026-10-03|13:01:55.088] received proposal                            module=consensus proposal="Proposal{1/0 (66E2F77A45BA8F974B0F64EA9A573E54B8507EC8FA8DF9BC8D97F87EB689539A:1:0780F7436072, -1) BA8C818F1926 @ 2026-10-03T12:01:55.047257Z}" proposer=76578432D6E31BFA24E2673384500E3B81FB7F0D
+D[2026-10-03|13:01:55.094] Received message from cs.internalMsgQueue    module=consensus peer_id=
+D[2026-10-03|13:01:55.094] State.handleMsg                              module=consensus peer_id= msg="[BlockPart H:1 R:0 P:Part{#0\n  Bytes: 0ACC020A0208...\n  Proof: Proof{\n    Aunts: []\n  }\n}]"
+I[2026-10-03|13:01:55.094] received complete proposal block             module=consensus height=1 hash=66E2F77A45BA8F974B0F64EA9A573E54B8507EC8FA8DF9BC8D97F87EB689539A
+D[2026-10-03|13:01:55.094] entering prevote step                        module=consensus height=1 round=0 current=1/0/RoundStepPropose
+D[2026-10-03|13:01:55.094] prevote step: ProposalBlock is valid         module=consensus height=1 round=0
+D[2026-10-03|13:01:55.107] signed and pushed vote                       module=consensus height=1 round=0 vote="Vote{0:76578432D6E3 1/00/SIGNED_MSG_TYPE_PREVOTE(Prevote) 66E2F77A45BA A9D867E00856 000000000000 @ 2026-10-03T12:01:55.10222Z}"
+D[2026-10-03|13:01:55.107] Received message from cs.internalMsgQueue    module=consensus peer_id=
+D[2026-10-03|13:01:55.107] Broadcast                                    module=p2p channel=32
+D[2026-10-03|13:01:55.107] Received message from cs.statsMsgQueue       module=consensus peer=
+D[2026-10-03|13:01:55.112] State.handleMsg                              module=consensus peer_id= msg="[Vote Vote{0:76578432D6E3 1/00/SIGNED_MSG_TYPE_PREVOTE(Prevote) 66E2F77A45BA A9D867E00856 000000000000 @ 2026-10-03T12:01:55.10222Z}]"
+D[2026-10-03|13:01:55.112] Adding vote                                  module=consensus vote_height=1 vote_type=SIGNED_MSG_TYPE_PREVOTE val_index=0 cs_height=1 extLen=0 extSigLen=0 peer_id=
+D[2026-10-03|13:01:55.112] added vote to prevote                        module=consensus vote="Vote{0:76578432D6E3 1/00/SIGNED_MSG_TYPE_PREVOTE(Prevote) 66E2F77A45BA A9D867E00856 000000000000 @ 2026-10-03T12:01:55.10222Z}" prevotes="VoteSet{H:1 R:0 T:SIGNED_MSG_TYPE_PREVOTE +2/3:66E2F77A45BA8F974B0F64EA9A573E54B8507EC8FA8DF9BC8D97F87EB689539A:1:0780F7436072(1) BA{1:x} map[]}"
+D[2026-10-03|13:01:55.112] updating valid block because of POL          module=consensus valid_round=-1 pol_round=0
+D[2026-10-03|13:01:55.112] entering precommit step                      module=consensus height=1 round=0 current=1/0/RoundStepPrevote
+D[2026-10-03|13:01:55.112] Broadcast                                    module=p2p channel=32
+D[2026-10-03|13:01:55.112] precommit step; +2/3 prevoted proposal block; locking module=consensus height=1 round=0 hash=66E2F77A45BA8F974B0F64EA9A573E54B8507EC8FA8DF9BC8D97F87EB689539A
+D[2026-10-03|13:01:55.112] signed and pushed vote                       module=consensus height=1 round=0 vote="Vote{0:76578432D6E3 1/00/SIGNED_MSG_TYPE_PRECOMMIT(Precommit) 66E2F77A45BA 13DE5789EDA3 000000000000 @ 2026-10-03T12:01:55.1123Z}"
+D[2026-10-03|13:01:55.112] Received message from cs.internalMsgQueue    module=consensus peer_id=
+D[2026-10-03|13:01:55.112] Broadcast                                    module=p2p channel=32
+D[2026-10-03|13:01:55.112] Received message from cs.statsMsgQueue       module=consensus peer=
+D[2026-10-03|13:01:55.119] State.handleMsg                              module=consensus peer_id= msg="[Vote Vote{0:76578432D6E3 1/00/SIGNED_MSG_TYPE_PRECOMMIT(Precommit) 66E2F77A45BA 13DE5789EDA3 000000000000 @ 2026-10-03T12:01:55.1123Z}]"
+D[2026-10-03|13:01:55.119] Adding vote                                  module=consensus vote_height=1 vote_type=SIGNED_MSG_TYPE_PRECOMMIT val_index=0 cs_height=1 extLen=0 extSigLen=0 peer_id=
+D[2026-10-03|13:01:55.119] added vote to precommit                      module=consensus height=1 round=0 validator=76578432D6E31BFA24E2673384500E3B81FB7F0D vote_timestamp="2026-10-03 12:01:55.1123 +0000 UTC" data=Votes:10/10(1.000)
+D[2026-10-03|13:01:55.119] entering new round with invalid args         module=consensus height=1 round=0 current=1/0/RoundStepPrecommit
+D[2026-10-03|13:01:55.119] entering precommit step with invalid args    module=consensus height=1 round=0 current=1/0/RoundStepPrecommit
+D[2026-10-03|13:01:55.119] entering commit step                         module=consensus height=1 commit_round=0 current=1/0/RoundStepPrecommit
+D[2026-10-03|13:01:55.119] commit is for a locked block; set ProposalBlock=LockedBlock module=consensus height=1 commit_round=0 block_hash=66E2F77A45BA8F974B0F64EA9A573E54B8507EC8FA8DF9BC8D97F87EB689539A
+I[2026-10-03|13:01:55.119] finalizing commit of block                   module=consensus height=1 hash=66E2F77A45BA8F974B0F64EA9A573E54B8507EC8FA8DF9BC8D97F87EB689539A root=E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855 num_txs=0
+D[2026-10-03|13:01:55.119] Broadcast                                    module=p2p channel=32
+D[2026-10-03|13:01:55.119] committed block                              module=consensus height=1 block="Block{\n  Header{\n    Version:        {11 0}\n    ChainID:        nus-s2-dev-1\n    Height:         1\n    Time:           2026-10-03 12:01:53.883976 +0000 UTC\n    LastBlockID:    :0:000000000000\n    LastCommit:     E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855\n    Data:           E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855\n    Validators:     93D19FB18E8987F121D6D8B3B17E777E7D09FCB6266619868C9409872E903AC5\n    NextValidators: 93D19FB18E8987F121D6D8B3B17E777E7D09FCB6266619868C9409872E903AC5\n    App:            E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855\n    Consensus:      27521960C9E6E396E9B8E9C2AB1B23A87D0788CDF5886BF11E359AD5C4A2D27B\n    Results:        E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855\n    Evidence:       E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855\n    Proposer:       76578432D6E31BFA24E2673384500E3B81FB7F0D\n  }#66E2F77A45BA8F974B0F64EA9A573E54B8507EC8FA8DF9BC8D97F87EB689539A\n  Data{\n    \n  }#E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855\n  EvidenceData{\n    \n  }#E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855\n  Commit{\n    Height:     0\n    Round:      0\n    BlockID:    :0:000000000000\n    Signatures:\n      \n  }#E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855\n}#66E2F77A45BA8F974B0F64EA9A573E54B8507EC8FA8DF9BC8D97F87EB689539A"
+1:01PM DBG hash of all writes module=baseapp workingHash=B8527FBAF732FA30CDEC5AE44E7C4D6AE791FDCE50E4D2D272EE9DA581DE69F5
+I[2026-10-03|13:01:55.130] finalized block                              module=state height=1 num_txs_res=0 num_val_updates=0 block_app_hash=B8527FBAF732FA30CDEC5AE44E7C4D6AE791FDCE50E4D2D272EE9DA581DE69F5
+I[2026-10-03|13:01:55.130] executed block                               module=state height=1 app_hash=B8527FBAF732FA30CDEC5AE44E7C4D6AE791FDCE50E4D2D272EE9DA581DE69F5
+1:01PM DBG SAVE TREE version=1
+1:01PM DBG BATCH SAVE node="Node{\x00:\b@ (1, 5):- 1-0 ec56a02ac4bf3217c60c5584783e6718af6e16f39d5626a005b9fa95edee722a}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:\n@ (1, 6):- 1-0 e5b45f752863542c9f51ddbf476a14f4787cb7f8afa95da15fa955f6e38e689a}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:@ (1, 4):000000000000000100000005-000000000000000100000006 2-1 41bfd6bd04cfa00ee881caac3c4577f1c218954b319c9f62387b793f128d7178}#{left (1, 5)}{right (1, 6)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:\n@ (1, 8):- 1-0 9a98cff106af61f9709bab128ac9f8a2c4ee5688dbed8e97d04eb56362fef504}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:\n@ (1, 9):- 1-0 00483fc85dbb007eb0d08f82e56a7c563a6542bf53e028148a100b2a1431aa24}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:@ (1, 7):000000000000000100000008-000000000000000100000009 2-1 e5b17289e32ad6f27da21bfdb2ee85e2098695a4ac6538361250890c18ddcc1f}#{left (1, 8)}{right (1, 9)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:@ (1, 3):000000000000000100000004-000000000000000100000007 4-2 d07caf695729677d96e791d1b6772cd75b419f5f27099b27e99b6d9b6e77eba3}#{left (1, 4)}{right (1, 7)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:\n@ (1, 12):- 1-0 079ea0e4091115bb96036be66c3e817993e4a930d01eb8760e3c0f8422d07884}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:\n@ (1, 13):- 1-0 c365ceb10599b061a23d53c4bc5d22dcf653f0fde2d5c0087e54a8a957c6b8ed}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:@ (1, 11):00000000000000010000000c-00000000000000010000000d 2-1 e17e81031606b83315fe7cf8b036ea8cf09fd8f1c2b6d62b3b68e549c456c1b0}#{left (1, 12)}{right (1, 13)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:\n@ (1, 15):- 1-0 ccdb659912a228fd1a5989b729ae0a4f954e04566122307bb479cd74df5b2887}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:\n@ (1, 16):- 1-0 e787fc2c3d9bd0873ef8856e5d7b16fdf2b06de809c56eefdedd38c53a887ab3}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:@ (1, 14):00000000000000010000000f-000000000000000100000010 2-1 a4612fdcf60fde139ff75cb63616d041ea2a42a454f1b50089adabfc495108b7}#{left (1, 15)}{right (1, 16)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:@ (1, 10):00000000000000010000000b-00000000000000010000000e 4-2 2f68ee82ac67fd319a65a8f5240b72e31b568e0d84fb254274d0ab90594f6eba}#{left (1, 11)}{right (1, 14)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:@ (1, 2):000000000000000100000003-00000000000000010000000a 8-3 e75c155f32d4278bd08ebbee2201c49b46bdf985c2898e1081896346660d3382}#{left (1, 3)}{right (1, 10)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:\n@ (1, 20):- 1-0 32481916426ea4d9135fbfdf0e4db41eab95acddd52f1a92ea6b8e501f6fb095}#\n"
+1:01PM DBG BATCH SAVE node="Node{a:\\@ (1, 21):- 1-0 7160260a4c91c1466f7b00a110e8e904d5e9e8330cc6ceb523ab950f19e1fb22}#\n"
+1:01PM DBG BATCH SAVE node="Node{a:@ (1, 19):000000000000000100000014-000000000000000100000015 2-1 cbb4303b3a1aed8fa55f0658e90c973ccd0526540f565696a41f9f6eca36b87a}#{left (1, 20)}{right (1, 21)}\n"
+1:01PM DBG BATCH SAVE node="Node{a:Z@ (1, 23):- 1-0 1fd2774e323e20ae5fad73e2a1724e0cada1f8065cf7c2a2400d555dd1f9ab34}#\n"
+1:01PM DBG BATCH SAVE node="Node{a:\x11@ (1, 24):- 1-0 98155aa42964761d1d65f30a9f2a9e0c48c08c1f15cc4f80867f7a6d1b66a736}#\n"
+1:01PM DBG BATCH SAVE node="Node{a:@ (1, 22):000000000000000100000017-000000000000000100000018 2-1 700f04322e26088a8bc8e3bfa6e3e1cf0bd1ce808ab748083fa8b9ca2f6d2b46}#{left (1, 23)}{right (1, 24)}\n"
+1:01PM DBG BATCH SAVE node="Node{a:@ (1, 18):000000000000000100000013-000000000000000100000016 4-2 5d8aaa1fd3dbd63a12071e39158250b7815a68bb348381968d61d3adf80ec2d1}#{left (1, 19)}{right (1, 22)}\n"
+1:01PM DBG BATCH SAVE node="Node{a:Z@ (1, 27):- 1-0 c42723ca1c37483def88ce3272f7817f7aabd3cd252364d39b2c0d9a5bfd0c08}#\n"
+1:01PM DBG BATCH SAVE node="Node{a:º@ (1, 28):- 1-0 b586fe8b147f34d4b91e7b0e03e3957e10eb4157b5394fb37be22625c1717e9b}#\n"
+1:01PM DBG BATCH SAVE node="Node{a:@ (1, 26):00000000000000010000001b-00000000000000010000001c 2-1 a4ce6b7b93923affdc431f6a424c698170a01cd029046e94b42fb3d8525b368c}#{left (1, 27)}{right (1, 28)}\n"
+1:01PM DBG BATCH SAVE node="Node{a:Ò@ (1, 30):- 1-0 a87ec3fd88b58b7170feec075c7b359c09bbef40d097c18771274aa40783cae6}#\n"
+1:01PM DBG BATCH SAVE node="Node{a:ñ@ (1, 32):- 1-0 7debd8355e91ad1c6c1b56114850b6decc3a8500fde4cb48cb21ed7b11a98e1c}#\n"
+1:01PM DBG BATCH SAVE node="Node{a:«@ (1, 33):- 1-0 59d27a97899fab460745a29db60e9059080970d918c30cb5170d19f469e7d8b1}#\n"
+1:01PM DBG BATCH SAVE node="Node{a:@ (1, 31):000000000000000100000020-000000000000000100000021 2-1 fb53f439bd7baef4bf50cb9d9e638b20e7d931a92b73b442d642cdf3cab2bd8e}#{left (1, 32)}{right (1, 33)}\n"
+1:01PM DBG BATCH SAVE node="Node{a:@ (1, 29):00000000000000010000001e-00000000000000010000001f 3-2 d164db0e6cc5d84cbecd32c9e17f03001f854ff69e9c4c59491dcfa21077376e}#{left (1, 30)}{right (1, 31)}\n"
+1:01PM DBG BATCH SAVE node="Node{a:@ (1, 25):00000000000000010000001a-00000000000000010000001d 5-3 b35a2f6fdc7beddbbad006abf1e3d34e7699d46ea6da9ea0ee01ab47f11a8a00}#{left (1, 26)}{right (1, 29)}\n"
+1:01PM DBG BATCH SAVE node="Node{a:@ (1, 17):000000000000000100000012-000000000000000100000019 9-4 daa40520b1b8244270769ecbff765c8e8af5704fc8ac1b6df95aa6b494c41a25}#{left (1, 18)}{right (1, 25)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:@ (1, 1):000000000000000100000002-000000000000000100000011 17-5 80b9167c30c757bc268fcf123a2bc8a53daf0e0eea99dedb5d1adcf42a9f65f3}#{left (1, 2)}{right (1, 17)}\n"
+1:01PM DBG SAVE TREE version=1
+1:01PM DBG BATCH SAVE node="Node{\x00:2@ (1, 5):- 1-0 8ec061e901815a91e2c4bf980ef7b0fa8d5358152e1c40198f908497febc1b9e}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x00:6@ (1, 6):- 1-0 51caae0ad240d69be42262fabd20604589f9040ddee7fd38e83e1674982bc68e}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x00:@ (1, 4):000000000000000100000005-000000000000000100000006 2-1 8d117ddd403e3858ea1bdc23539bafa8412c8d3410a6b10f96a3a54f7689bd52}#{left (1, 5)}{right (1, 6)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x00:2@ (1, 8):- 1-0 57b1bbeb3d2e0886c19476b7223b50875186bf01412f0bc0c28abeec4cb16749}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:1@ (1, 9):- 1-0 d3b1fa704502c60ee297b740d69e8df547644a9cf6ed7912717d30a8bca4adac}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (1, 7):000000000000000100000008-000000000000000100000009 2-1 55fa364a3fe14b1438118a70f3f8aa5b1df28fe505a900c3427edd24669358e4}#{left (1, 8)}{right (1, 9)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x00:@ (1, 3):000000000000000100000004-000000000000000100000007 4-2 7db321c3f8368111677e28068eefa931b11e4c09362ef989e838b935f19c959a}#{left (1, 4)}{right (1, 7)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:1@ (1, 12):- 1-0 c6e6ea36704956ff5219c16fd86b7b1cbc7590bb61994862492ea2a12323d924}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:1@ (1, 13):- 1-0 34c2798cf89580386576e91dbc2d2ceeed8163ff50ae65eddfaf89d28079cd09}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (1, 11):00000000000000010000000c-00000000000000010000000d 2-1 b8ed69b2c93a54dc26f199eaac45686574088d52fa91a523709fc19717b8f8f1}#{left (1, 12)}{right (1, 13)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:1@ (1, 15):- 1-0 789b675776ddcdfabe5a9441f3f97f2a1f6cd87ec24bbe1f24129515258bcd1c}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:1@ (1, 16):- 1-0 915948fcc7ff1df3d78f2a1a2687db5647637b0b2d238b4c09a62c5803bfac91}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (1, 14):00000000000000010000000f-000000000000000100000010 2-1 93debdbbeebbd226b3b776bf65478be33774df2e529adfe6366254438bd8e11e}#{left (1, 15)}{right (1, 16)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (1, 10):00000000000000010000000b-00000000000000010000000e 4-2 df3587d5ee2c7e3f3b3a0bee223e06cacd47c8edb5c97e08fe2ea4e196f59700}#{left (1, 11)}{right (1, 14)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (1, 2):000000000000000100000003-00000000000000010000000a 8-3 1fbc802e0f9a86886ab96a643195a14524d1750331a624c17dd246609b38ad2d}#{left (1, 3)}{right (1, 10)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:1@ (1, 21):- 1-0 3554afbc5936fbc3e987e3d5d172d7be69f48a833b428d2b5dba8d69b05c4d06}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:1@ (1, 22):- 1-0 fa9a2a3e3cb522eda638fd316241fb26091223b6f2a28429da8e14029852f961}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (1, 20):000000000000000100000015-000000000000000100000016 2-1 526d70333d79f5a1007399b84939a2a95dbe167f3249b8c1889b1835c248226b}#{left (1, 21)}{right (1, 22)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:1@ (1, 24):- 1-0 bec23ac1cdb5c8e9f57ca7d364106fddf4cae65f64efceb11c63ef9dd3558bac}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:1@ (1, 25):- 1-0 dec057342cf2332112f70cfe41d551405e712d196f3fe0d81911adf6422842f0}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (1, 23):000000000000000100000018-000000000000000100000019 2-1 b1bb83f55db7516869a30d30626200ea80d91a71fe1754bf3fc097eb3e57710f}#{left (1, 24)}{right (1, 25)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (1, 19):000000000000000100000014-000000000000000100000017 4-2 73f462410b2da07a088f62d1284dc02ca74ea2f2d1379b134aa0428af8346868}#{left (1, 20)}{right (1, 23)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:1@ (1, 28):- 1-0 0d34eb22c187bfc4f487ebd9018ac3dfd861bfda66c00c27d1b6f14d55a9ccf2}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (1, 29):- 1-0 61ded4590b52a4308099bf135914f15113c645ff63aadccf3ae0fcc93ee45295}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (1, 27):00000000000000010000001c-00000000000000010000001d 2-1 f330bb7542ca74694264118b65899d37d09a5b0cb031bb419465d92a7f9d2637}#{left (1, 28)}{right (1, 29)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (1, 31):- 1-0 4b223d6dce99d3fb17a2f0b8b6159830b359198286de5b9a7ddb5f2d49064171}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (1, 32):- 1-0 eeea0e52e3d7af4fb1a16e9c3353e9711d1ac8d94beef4138db8747242cd1e1d}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (1, 30):00000000000000010000001f-000000000000000100000020 2-1 945bda72f524973c7aec65446dc7211afea364c6e18724a4086302996cbd28eb}#{left (1, 31)}{right (1, 32)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (1, 26):00000000000000010000001b-00000000000000010000001e 4-2 66fa64e0b6cc39eb6cbe853b422f2631cd09049cf06914f6d4c342f1a18fc512}#{left (1, 27)}{right (1, 30)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (1, 18):000000000000000100000013-00000000000000010000001a 8-3 3a51987bf6e7fd084a5269ab133c46fd82dd45f48df65c772fe9ce32f9a00e76}#{left (1, 19)}{right (1, 26)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (1, 36):- 1-0 ccb0960220c6774f02ef9687d6158130831ca65bd9fb35fbe8e9d948769a7d11}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (1, 37):- 1-0 b5c144a5f187ebd0f2373568fb2cae040a4458d3321a5e36b264cde03c037b58}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (1, 35):000000000000000100000024-000000000000000100000025 2-1 70076071a081cf83bb09f961536964589b19e0694ae1921d22ba58fba8dd1812}#{left (1, 36)}{right (1, 37)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (1, 39):- 1-0 00679ad0cddc513cec92f725303dc08cbd71f9f69d4f26045519ec3308b0ecf4}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (1, 40):- 1-0 3d61dc40791733c26e4a13f6fef8058b7ba17abd4306aee275bc712f2c2c1b00}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (1, 38):000000000000000100000027-000000000000000100000028 2-1 7a6d25d615f95ceef28f5425063945a617a6c173e417deea1a3c85de2b9e36dd}#{left (1, 39)}{right (1, 40)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (1, 34):000000000000000100000023-000000000000000100000026 4-2 7a41853d4a80b81f5d007be8a313f9f51b931f3405edfc57482e150598bfad72}#{left (1, 35)}{right (1, 38)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (1, 43):- 1-0 a61d992810889b5e02440cc2031df2edfb124df96dc54d12a99db9da2c0e9a9a}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (1, 44):- 1-0 eb4476d2a6f2eb9bbd2fd26dfd817cf3edf2165d2cd343843e827ae5ebe3a8b0}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (1, 42):00000000000000010000002b-00000000000000010000002c 2-1 f2280b304294740ab86a78404d2a3e56adb8bf86e3e89ae3aa0230a3b63e6396}#{left (1, 43)}{right (1, 44)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (1, 46):- 1-0 6b61439cd5b1e5b99fd37b239043b2520a20b6fca7d68e1c966c7cc09d749dcf}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x05:\x10@ (1, 47):- 1-0 b5d6c121d07f8eb85084a00f5966a308aa770a75e164c15bae057ae881c1add5}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x05:@ (1, 45):00000000000000010000002e-00000000000000010000002f 2-1 ca69874d77f1b21579349eb285d4a74fe18fa45a8924893920ed3d3e58deaaa0}#{left (1, 46)}{right (1, 47)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (1, 41):00000000000000010000002a-00000000000000010000002d 4-2 1e4a69b8b25fe4d83bf30420b42a6192e0b907ec4152432c98dbbf5c820264d0}#{left (1, 42)}{right (1, 45)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (1, 33):000000000000000100000022-000000000000000100000029 8-3 5590bcc307b2f9a2e5254e6195a2a71881454a9fa59f25f5141949164416775d}#{left (1, 34)}{right (1, 41)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (1, 17):000000000000000100000012-000000000000000100000021 16-4 5fb73a6d5b1e8aef5625c5c39b7b66f765f5ec2a2d539856ca7860cb83f52118}#{left (1, 18)}{right (1, 33)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (1, 1):000000000000000100000002-000000000000000100000011 24-5 0768f553b6a58546f9e72c3d04527f346995ea11cde0f4634a4bb82aba124425}#{left (1, 2)}{right (1, 17)}\n"
+1:01PM DBG SAVE TREE version=1
+1:01PM DBG BATCH SAVE node="Node{C:\n@ (1, 1):- 1-0 289367c5f848c304150804aa1304fe7931923d8f1085ff4ad7571076e8ccb958}#\n"
+1:01PM DBG SAVE TREE version=1
+1:01PM DBG BATCH SAVE node="Node{c:n@ (1, 5):- 1-0 53a62ede1679d1334dcb6b2fb2d2c0b2cc3e74899f363b62cc9baa319071d3e4}#\n"
+1:01PM DBG BATCH SAVE node="Node{g:U@ (1, 6):- 1-0 bab278bc07b9f7bc9e8e5e3f4675003779f43d4fc58fad54209e225a1795eff0}#\n"
+1:01PM DBG BATCH SAVE node="Node{g:@ (1, 4):000000000000000100000005-000000000000000100000006 2-1 7b1761798ef993c81b23dd808693afe86f901377e33edb3b07ccce00c29c5ce5}#{left (1, 5)}{right (1, 6)}\n"
+1:01PM DBG BATCH SAVE node="Node{g:6@ (1, 8):- 1-0 245121c8ea1c96a09b0dc0189f9881ca2b6068086754f45734ca03b73ab2e8aa}#\n"
+1:01PM DBG BATCH SAVE node="Node{g:2@ (1, 9):- 1-0 6da2ff61033ebe7989a684ab96d7a7e6ae433391ea2b288af310bd5d56f4b0e0}#\n"
+1:01PM DBG BATCH SAVE node="Node{g:@ (1, 7):000000000000000100000008-000000000000000100000009 2-1 13328c700d75ddf8a9631712b08002cb0ab0fc6f56b97b9d8ee33b9c4eda9dc7}#{left (1, 8)}{right (1, 9)}\n"
+1:01PM DBG BATCH SAVE node="Node{g:@ (1, 3):000000000000000100000004-000000000000000100000007 4-2 091fcb75aa73816c305ec4a77c559bbedd11453d4bc208ff79cd750dbfe84159}#{left (1, 4)}{right (1, 7)}\n"
+1:01PM DBG BATCH SAVE node="Node{g:2@ (1, 12):- 1-0 c0dc7e9c9b8413b20ecf5b20f730ba0b05204c899f7e3f2347506f9e6486f1e2}#\n"
+1:01PM DBG BATCH SAVE node="Node{o:1@ (1, 13):- 1-0 f47063524aff887072b5ed07655a8e903bcd007f791ec63a81ab1cf1e2fc10a6}#\n"
+1:01PM DBG BATCH SAVE node="Node{o:@ (1, 11):00000000000000010000000c-00000000000000010000000d 2-1 7fb17487629a7dce0798d1cd1e6ec13c4f71c6d03b6ea2e8ed58f61bcc9dea1f}#{left (1, 12)}{right (1, 13)}\n"
+1:01PM DBG BATCH SAVE node="Node{o:1@ (1, 15):- 1-0 549e7f6d52d42c68bf4012323b85dbe4934ff67c1f7f4fed07fc6fe9b78fb229}#\n"
+1:01PM DBG BATCH SAVE node="Node{o:1@ (1, 16):- 1-0 f0b5743c28f1ebd1ae3d59f2d54fed46fd86ff51e7eb81a15fe1f764414eaea9}#\n"
+1:01PM DBG BATCH SAVE node="Node{o:@ (1, 14):00000000000000010000000f-000000000000000100000010 2-1 79dfb7bfd25b8ffa94cc89ecf87fae23cb9c9b88cb98a2130c82f46c2e1ac02c}#{left (1, 15)}{right (1, 16)}\n"
+1:01PM DBG BATCH SAVE node="Node{o:@ (1, 10):00000000000000010000000b-00000000000000010000000e 4-2 5ec2f965aee5c220fb9976777f8accc38bdf36eb9752a24f48f3da586b4f761a}#{left (1, 11)}{right (1, 14)}\n"
+1:01PM DBG BATCH SAVE node="Node{g:@ (1, 2):000000000000000100000003-00000000000000010000000a 8-3 7c863692b468ac96b2218ceb1715f57913b4867c0540bffd0842129db682534b}#{left (1, 3)}{right (1, 10)}\n"
+1:01PM DBG BATCH SAVE node="Node{o:1@ (1, 20):- 1-0 c9f2ff7a4818c4fd26cc5e3dc18a21448b2a09e8cef455210d17ff7793ead325}#\n"
+1:01PM DBG BATCH SAVE node="Node{s:6@ (1, 21):- 1-0 5ee32a8025311faad5ee2e5067fd3b11b354eab0a70cb7839136792ca12d2844}#\n"
+1:01PM DBG BATCH SAVE node="Node{s:@ (1, 19):000000000000000100000014-000000000000000100000015 2-1 5da6470c0238bc274e0c22e12bc02d48f4e2e8941738a50699c604fcaa8d02e8}#{left (1, 20)}{right (1, 21)}\n"
+1:01PM DBG BATCH SAVE node="Node{s:1@ (1, 23):- 1-0 c4d90253f7af95aefb29e9a784ed6870867cf7eeccf869595474f3fbac93c5ac}#\n"
+1:01PM DBG BATCH SAVE node="Node{s:7@ (1, 24):- 1-0 e505ee8a47777a9817a3a1711ba2d989f33f8a04ca1bcfc15aa41d0879f5ac10}#\n"
+1:01PM DBG BATCH SAVE node="Node{s:@ (1, 22):000000000000000100000017-000000000000000100000018 2-1 366e849103cfa702aa79c0ce64848c1e4117e3e419c26eec08296bcb842dac2b}#{left (1, 23)}{right (1, 24)}\n"
+1:01PM DBG BATCH SAVE node="Node{s:@ (1, 18):000000000000000100000013-000000000000000100000016 4-2 c3aad1967c3767210049ee064f0eb79fc6cd662e488e821ff7ee698e2ca5f700}#{left (1, 19)}{right (1, 22)}\n"
+1:01PM DBG BATCH SAVE node="Node{s:2@ (1, 27):- 1-0 ce0ed667d7a571272fbf270248885041c1f1a1bb80acdd199c7e4026a96607a9}#\n"
+1:01PM DBG BATCH SAVE node="Node{s:1@ (1, 28):- 1-0 a6f2b85bef026455d05d945942c0e8a15b065f3e3657428cdb10177ad44c6ba2}#\n"
+1:01PM DBG BATCH SAVE node="Node{s:@ (1, 26):00000000000000010000001b-00000000000000010000001c 2-1 6d9fa60862fdbd3ac1b63204139d59f7de6eb43e1075f81a9cb4b6cd5485578b}#{left (1, 27)}{right (1, 28)}\n"
+1:01PM DBG BATCH SAVE node="Node{s:{@ (1, 30):- 1-0 604ff48ae854ac292a16553e5f8daef039381bd5bc4b1e018b5030708cd76f2c}#\n"
+1:01PM DBG BATCH SAVE node="Node{u:\x01@ (1, 32):- 1-0 9c5a3198c2a3e8ec40c6df7a19093a6616e4d31821731aa70761e37eb1248aed}#\n"
+1:01PM DBG BATCH SAVE node="Node{u:\x01@ (1, 33):- 1-0 bfb5aa8f8a234ea5e58d65f07bb18cde92c637dbbfaf75600046856e42afe2b6}#\n"
+1:01PM DBG BATCH SAVE node="Node{u:@ (1, 31):000000000000000100000020-000000000000000100000021 2-1 94a010b6de76214bcdfcea51b245970953925433de71644a50c69af8975dcca7}#{left (1, 32)}{right (1, 33)}\n"
+1:01PM DBG BATCH SAVE node="Node{u:@ (1, 29):00000000000000010000001e-00000000000000010000001f 3-2 1de8515629371e4b36487f93ce36e1dedd8e4ac272301309e99b2ef77dd9a49c}#{left (1, 30)}{right (1, 31)}\n"
+1:01PM DBG BATCH SAVE node="Node{s:@ (1, 25):00000000000000010000001a-00000000000000010000001d 5-3 3c6a3c5508d26aa026d294e490c8b5b092e759ed94dd256d2335a991a50369ec}#{left (1, 26)}{right (1, 29)}\n"
+1:01PM DBG BATCH SAVE node="Node{s:@ (1, 17):000000000000000100000012-000000000000000100000019 9-4 6d8f9bbbb27b37694381f3d197a95d492e5cadb63ef270ecc1e209fb0513de27}#{left (1, 18)}{right (1, 25)}\n"
+1:01PM DBG BATCH SAVE node="Node{o:@ (1, 1):000000000000000100000002-000000000000000100000011 17-5 8f5a0adb847bbda2c83023c0a947a5e51a102cef71e6328e052ca18387d9b2c5}#{left (1, 2)}{right (1, 17)}\n"
+1:01PM DBG prune start height=1
+1:01PM DBG pruning skipped, height is less than or equal to 0
+1:01PM DBG prune end height=1
+1:01PM DBG flushing metadata height=1
+1:01PM DBG flushing metadata finished height=1
+I[2026-10-03|13:01:55.140] committed state                              module=state height=1 block_app_hash=E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855
+D[2026-10-03|13:01:55.140] Updating evidence pool                       module=evidence last_block_height=1 last_block_time="2026-10-03 12:01:53.883976 +0000 UTC"
+D[2026-10-03|13:01:55.140] Update                                       module=mempool height=1 len(txs)=0
+D[2026-10-03|13:01:55.140] recheck txs                                  module=mempool height=1 num-txs=0
+D[2026-10-03|13:01:55.144] Received message from cs.statsMsgQueue       module=consensus peer=
+D[2026-10-03|13:01:55.144] Broadcast                                    module=p2p channel=32
+D[2026-10-03|13:01:55.144] Received tick                                module=consensus old_ti="{Duration:3s Height:1 Round:0 Step:RoundStepPropose}" new_ti="{Duration:975.552ms Height:2 Round:0 Step:RoundStepNewHeight}"
+D[2026-10-03|13:01:55.144] Scheduled timeout                            module=consensus dur=975.552ms height=2 round=0 step=RoundStepNewHeight
+I[2026-10-03|13:01:55.149] indexed block events                         module=txindex height=1
+D[2026-10-03|13:01:55.149] indexed transactions                         module=txindex height=1 num_txs=0
+D[2026-10-03|13:01:55.155] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50714
+D[2026-10-03|13:01:55.157] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50715
+D[2026-10-03|13:01:55.158] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50716
+D[2026-10-03|13:01:55.225] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50717
+D[2026-10-03|13:01:55.226] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50718
+D[2026-10-03|13:01:55.227] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50719
+D[2026-10-03|13:01:55.231] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50720
+D[2026-10-03|13:01:55.255] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50721
+D[2026-10-03|13:01:55.260] added good transaction                       module=mempool tx=41EE8AEA623FBA62CEB3F55AB810CEFEE8C7C63A7892E40E870E6BF5EE442053 res="&{CheckTx:gas_wanted:500000 gas_used:196538 }" height=1 total=1
+I[2026-10-03|13:01:56.122] Timed out                                    module=consensus dur=975.552ms height=2 round=0 step=RoundStepNewHeight
+D[2026-10-03|13:01:56.129] received tock                                module=consensus timeout=975.552ms height=2 round=0 step=RoundStepNewHeight
+D[2026-10-03|13:01:56.129] entering new round                           module=consensus height=2 round=0 previous=2/0/RoundStepNewHeight proposer=76578432D6E31BFA24E2673384500E3B81FB7F0D
+D[2026-10-03|13:01:56.129] entering propose step                        module=consensus height=2 round=0 current=2/0/RoundStepNewRound
+D[2026-10-03|13:01:56.129] node is a validator                          module=consensus height=2 round=0
+D[2026-10-03|13:01:56.129] propose step; our turn to propose            module=consensus height=2 round=0 proposer=76578432D6E31BFA24E2673384500E3B81FB7F0D
+D[2026-10-03|13:01:56.131] Received tick                                module=consensus old_ti="{Duration:975.552ms Height:2 Round:0 Step:RoundStepNewHeight}" new_ti="{Duration:3s Height:2 Round:0 Step:RoundStepPropose}"
+D[2026-10-03|13:01:56.134] Scheduled timeout                            module=consensus dur=3s height=2 round=0 step=RoundStepPropose
+D[2026-10-03|13:01:56.143] signed proposal                              module=consensus height=2 round=0 proposal="Proposal{2/0 (96FACED9DA48099F01961CC8E64781987647B7E56DCDA98983E707FE51789ECE:1:BCA2D5466655, -1) CE68C1CCDAA2 @ 2026-10-03T12:01:56.133869Z}"
+D[2026-10-03|13:01:56.143] Received message from cs.internalMsgQueue    module=consensus peer_id=
+D[2026-10-03|13:01:56.143] Broadcast                                    module=p2p channel=32
+D[2026-10-03|13:01:56.151] State.handleMsg                              module=consensus peer_id= msg="[Proposal Proposal{2/0 (96FACED9DA48099F01961CC8E64781987647B7E56DCDA98983E707FE51789ECE:1:BCA2D5466655, -1) CE68C1CCDAA2 @ 2026-10-03T12:01:56.133869Z}]"
+I[2026-10-03|13:01:56.151] received proposal                            module=consensus proposal="Proposal{2/0 (96FACED9DA48099F01961CC8E64781987647B7E56DCDA98983E707FE51789ECE:1:BCA2D5466655, -1) CE68C1CCDAA2 @ 2026-10-03T12:01:56.133869Z}" proposer=76578432D6E31BFA24E2673384500E3B81FB7F0D
+D[2026-10-03|13:01:56.151] Received message from cs.internalMsgQueue    module=consensus peer_id=
+D[2026-10-03|13:01:56.151] State.handleMsg                              module=consensus peer_id= msg="[BlockPart H:2 R:0 P:Part{#0\n  Bytes: 0A91030A0208...\n  Proof: Proof{\n    Aunts: []\n  }\n}]"
+I[2026-10-03|13:01:56.151] received complete proposal block             module=consensus height=2 hash=96FACED9DA48099F01961CC8E64781987647B7E56DCDA98983E707FE51789ECE
+D[2026-10-03|13:01:56.151] entering prevote step                        module=consensus height=2 round=0 current=2/0/RoundStepPropose
+D[2026-10-03|13:01:56.152] prevote step: ProposalBlock is valid         module=consensus height=2 round=0
+D[2026-10-03|13:01:56.157] signed and pushed vote                       module=consensus height=2 round=0 vote="Vote{0:76578432D6E3 2/00/SIGNED_MSG_TYPE_PREVOTE(Prevote) 96FACED9DA48 BADDAA01E315 000000000000 @ 2026-10-03T12:01:56.156707Z}"
+D[2026-10-03|13:01:56.157] Received message from cs.internalMsgQueue    module=consensus peer_id=
+D[2026-10-03|13:01:56.157] Broadcast                                    module=p2p channel=32
+D[2026-10-03|13:01:56.157] Received message from cs.statsMsgQueue       module=consensus peer=
+D[2026-10-03|13:01:56.160] State.handleMsg                              module=consensus peer_id= msg="[Vote Vote{0:76578432D6E3 2/00/SIGNED_MSG_TYPE_PREVOTE(Prevote) 96FACED9DA48 BADDAA01E315 000000000000 @ 2026-10-03T12:01:56.156707Z}]"
+D[2026-10-03|13:01:56.160] Adding vote                                  module=consensus vote_height=2 vote_type=SIGNED_MSG_TYPE_PREVOTE val_index=0 cs_height=2 extLen=0 extSigLen=0 peer_id=
+D[2026-10-03|13:01:56.160] added vote to prevote                        module=consensus vote="Vote{0:76578432D6E3 2/00/SIGNED_MSG_TYPE_PREVOTE(Prevote) 96FACED9DA48 BADDAA01E315 000000000000 @ 2026-10-03T12:01:56.156707Z}" prevotes="VoteSet{H:2 R:0 T:SIGNED_MSG_TYPE_PREVOTE +2/3:96FACED9DA48099F01961CC8E64781987647B7E56DCDA98983E707FE51789ECE:1:BCA2D5466655(1) BA{1:x} map[]}"
+D[2026-10-03|13:01:56.160] updating valid block because of POL          module=consensus valid_round=-1 pol_round=0
+D[2026-10-03|13:01:56.160] entering precommit step                      module=consensus height=2 round=0 current=2/0/RoundStepPrevote
+D[2026-10-03|13:01:56.160] Broadcast                                    module=p2p channel=32
+D[2026-10-03|13:01:56.160] precommit step; +2/3 prevoted proposal block; locking module=consensus height=2 round=0 hash=96FACED9DA48099F01961CC8E64781987647B7E56DCDA98983E707FE51789ECE
+D[2026-10-03|13:01:56.161] signed and pushed vote                       module=consensus height=2 round=0 vote="Vote{0:76578432D6E3 2/00/SIGNED_MSG_TYPE_PRECOMMIT(Precommit) 96FACED9DA48 4E42D77F6C5F 000000000000 @ 2026-10-03T12:01:56.160844Z}"
+D[2026-10-03|13:01:56.161] Received message from cs.internalMsgQueue    module=consensus peer_id=
+D[2026-10-03|13:01:56.161] Broadcast                                    module=p2p channel=32
+D[2026-10-03|13:01:56.161] Received message from cs.statsMsgQueue       module=consensus peer=
+D[2026-10-03|13:01:56.165] State.handleMsg                              module=consensus peer_id= msg="[Vote Vote{0:76578432D6E3 2/00/SIGNED_MSG_TYPE_PRECOMMIT(Precommit) 96FACED9DA48 4E42D77F6C5F 000000000000 @ 2026-10-03T12:01:56.160844Z}]"
+D[2026-10-03|13:01:56.165] Adding vote                                  module=consensus vote_height=2 vote_type=SIGNED_MSG_TYPE_PRECOMMIT val_index=0 cs_height=2 extLen=0 extSigLen=0 peer_id=
+D[2026-10-03|13:01:56.165] added vote to precommit                      module=consensus height=2 round=0 validator=76578432D6E31BFA24E2673384500E3B81FB7F0D vote_timestamp="2026-10-03 12:01:56.160844 +0000 UTC" data=Votes:10/10(1.000)
+D[2026-10-03|13:01:56.165] entering new round with invalid args         module=consensus height=2 round=0 current=2/0/RoundStepPrecommit
+D[2026-10-03|13:01:56.165] entering precommit step with invalid args    module=consensus height=2 round=0 current=2/0/RoundStepPrecommit
+D[2026-10-03|13:01:56.165] entering commit step                         module=consensus height=2 commit_round=0 current=2/0/RoundStepPrecommit
+D[2026-10-03|13:01:56.165] commit is for a locked block; set ProposalBlock=LockedBlock module=consensus height=2 commit_round=0 block_hash=96FACED9DA48099F01961CC8E64781987647B7E56DCDA98983E707FE51789ECE
+I[2026-10-03|13:01:56.165] finalizing commit of block                   module=consensus height=2 hash=96FACED9DA48099F01961CC8E64781987647B7E56DCDA98983E707FE51789ECE root=B8527FBAF732FA30CDEC5AE44E7C4D6AE791FDCE50E4D2D272EE9DA581DE69F5 num_txs=1
+D[2026-10-03|13:01:56.165] Broadcast                                    module=p2p channel=32
+D[2026-10-03|13:01:56.165] committed block                              module=consensus height=2 block="Block{\n  Header{\n    Version:        {11 0}\n    ChainID:        nus-s2-dev-1\n    Height:         2\n    Time:           2026-10-03 12:01:55.1123 +0000 UTC\n    LastBlockID:    66E2F77A45BA8F974B0F64EA9A573E54B8507EC8FA8DF9BC8D97F87EB689539A:1:0780F7436072\n    LastCommit:     7B73EBA4C5A75BCF58848EF1BC13C85922BB42BFE298A6F8E790F937EDFA3C54\n    Data:           EC65BDF591E16FEBB7141C0F8B76BE577E2256616260C3D950D9F54ED2029B17\n    Validators:     93D19FB18E8987F121D6D8B3B17E777E7D09FCB6266619868C9409872E903AC5\n    NextValidators: 93D19FB18E8987F121D6D8B3B17E777E7D09FCB6266619868C9409872E903AC5\n    App:            B8527FBAF732FA30CDEC5AE44E7C4D6AE791FDCE50E4D2D272EE9DA581DE69F5\n    Consensus:      27521960C9E6E396E9B8E9C2AB1B23A87D0788CDF5886BF11E359AD5C4A2D27B\n    Results:        E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855\n    Evidence:       E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855\n    Proposer:       76578432D6E31BFA24E2673384500E3B81FB7F0D\n  }#96FACED9DA48099F01961CC8E64781987647B7E56DCDA98983E707FE51789ECE\n  Data{\n    41EE8AEA623FBA62CEB3F55AB810CEFEE8C7C63A7892E40E870E6BF5EE442053 (5515 bytes)\n  }#EC65BDF591E16FEBB7141C0F8B76BE577E2256616260C3D950D9F54ED2029B17\n  EvidenceData{\n    \n  }#E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855\n  Commit{\n    Height:     1\n    Round:      0\n    BlockID:    66E2F77A45BA8F974B0F64EA9A573E54B8507EC8FA8DF9BC8D97F87EB689539A:1:0780F7436072\n    Signatures:\n      CommitSig{13DE5789EDA3 by 76578432D6E3 on 2 @ 2026-10-03T12:01:55.1123Z}\n  }#7B73EBA4C5A75BCF58848EF1BC13C85922BB42BFE298A6F8E790F937EDFA3C54\n}#96FACED9DA48099F01961CC8E64781987647B7E56DCDA98983E707FE51789ECE"
+1:01PM DBG hash of all writes module=baseapp workingHash=F3E129C0DAB667DD968493D2934785C308DB507F6D81F776B24825D37EB3E2B3
+I[2026-10-03|13:01:56.176] finalized block                              module=state height=2 num_txs_res=1 num_val_updates=0 block_app_hash=F3E129C0DAB667DD968493D2934785C308DB507F6D81F776B24825D37EB3E2B3
+I[2026-10-03|13:01:56.176] executed block                               module=state height=2 app_hash=F3E129C0DAB667DD968493D2934785C308DB507F6D81F776B24825D37EB3E2B3
+1:01PM DBG SAVE TREE version=2
+1:01PM DBG BATCH SAVE node="Node{\x01:\n@ (2, 5):- 1-0 20916db8439c256d24a9148048c43f4d9b4d59106fba60d6b653fd80bd987126}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:@ (2, 4):000000000000000200000005-00000000000000010000000d 2-1 42474ac85b377511566ffa1861ba0d017ea8d3ac22bce976a53e0734699463a2}#{left (2, 5)}{right (1, 13)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:@ (2, 3):000000000000000200000004-00000000000000010000000e 4-2 1d73021532994639249f53df0239cf4182c67df5cbc21d486956079bb000c0ec}#{left (2, 4)}{right (1, 14)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:@ (2, 2):000000000000000100000003-000000000000000200000003 8-3 6f9ffe26ce6b01cc4e51ee8a0815e51455a194168b6044367b697bdbba44ea1e}#{left (1, 3)}{right (2, 3)}\n"
+1:01PM DBG BATCH SAVE node="Node{a:\\@ (2, 9):- 1-0 df1d61f125135937038b76b441875b00734544ef138bb6996f47dc353bc7d594}#\n"
+1:01PM DBG BATCH SAVE node="Node{a:@ (2, 8):000000000000000100000014-000000000000000200000009 2-1 ca8928e79666eba91e16e1a8bb1ef951039ab24a39604347275653fb602282f2}#{left (1, 20)}{right (2, 9)}\n"
+1:01PM DBG BATCH SAVE node="Node{a:@ (2, 7):000000000000000200000008-000000000000000100000016 4-2 702d4abebe4b1cb49079af2d254f7dbb0b6d7afb1bd8878fcf1eff91aceac9d8}#{left (2, 8)}{right (1, 22)}\n"
+1:01PM DBG BATCH SAVE node="Node{a:@ (2, 6):000000000000000200000007-000000000000000100000019 9-4 9302070c1a4981e973f8bb9881b3d2d3c9449ff3405b104adf52120b17ed763e}#{left (2, 7)}{right (1, 25)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:@ (2, 1):000000000000000200000002-000000000000000200000006 17-5 43156379d72af862e20e4f58621be140632812548d48ea8ba14a809588b33604}#{left (2, 2)}{right (2, 6)}\n"
+1:01PM DBG SAVE TREE version=2
+1:01PM DBG BATCH SAVE node="Node{\x02:9@ (2, 5):- 1-0 18773eb0b650fc40960dcb8db0805875a3d9f1adc2664e3be78d2bf28ffb2c11}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:9@ (2, 6):- 1-0 607e47b7dba836ebfae67d441b034e34ca8b456c970baf0e6756b5302db57c99}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (2, 4):000000000000000200000005-000000000000000200000006 2-1 225cc76621595f115eb73ec6dd60938f8922bc4f52b8247b4d7133801ccb5a3b}#{left (2, 5)}{right (2, 6)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:1@ (2, 9):- 1-0 8fddfc91884c13883f9d42471c6b0a5fe01df0831f2c133e5d1cb1f7500e1c3a}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (2, 8):000000000000000100000018-000000000000000200000009 2-1 5775b7578d4a48a4b56457e771cf2e53fec4b57bbad512305cf8c2b37f0dcee6}#{left (1, 24)}{right (2, 9)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (2, 7):000000000000000200000008-000000000000000100000019 3-2 3be7dbad63d416a5c2671a1e1269b8ead3e20355ac34cda648d276b5b63678b5}#{left (2, 8)}{right (1, 25)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (2, 3):000000000000000200000004-000000000000000200000007 5-3 37da5d9be4c940cca29df615c9057295494a5f8998ee85928de552836dd38770}#{left (2, 4)}{right (2, 7)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (2, 2):000000000000000100000002-000000000000000200000003 13-4 0633daba7c12fe4edd3fe6f479ea5cd3cde064607c756268c2cc2e0eaaa9a51d}#{left (1, 2)}{right (2, 3)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:1@ (2, 14):- 1-0 5476e77d1c780d9adad9ec1b32d94859d408fc6514886778df89ee30dea13f60}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (2, 13):00000000000000010000001c-00000000000000020000000e 2-1 0a0caecc50c90daec062e18d07181c310346dc739d27ce82e7a4b6278a6ad565}#{left (1, 28)}{right (2, 14)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (2, 12):00000000000000020000000d-00000000000000010000001d 3-2 a852e65ff3c8207389ecbab8332a6cbbea5d74ec2f3f1518f9fb039262c90944}#{left (2, 13)}{right (1, 29)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (2, 17):- 1-0 69b62974d790c3f5b77524a626d07937a8cda1bfb40dcd2ec21da883954d9265}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (2, 18):- 1-0 6ca73c957756465740e70fc1ce303d04cbcb2df431d4daea069ca0d8eef2f97a}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (2, 16):000000000000000200000011-000000000000000200000012 2-1 84ea33979c97ecfc170783d2300dac043cac925d50f422adfff783217ae696e5}#{left (2, 17)}{right (2, 18)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (2, 15):000000000000000200000010-000000000000000100000020 3-2 7d0706cecf80e5d2f6d48388c6fdc0d81907e02ed6e855ff80ae9390e70ea9d5}#{left (2, 16)}{right (1, 32)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (2, 11):00000000000000020000000c-00000000000000020000000f 6-3 514ae8dcfbf130ed6390a579e4a95307571f3c0ee9f6dffa20c7f6d82ce46e6d}#{left (2, 12)}{right (2, 15)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (2, 22):- 1-0 5d38c72ef412d4286bcfd914a96d7b23d6830293ee9283d91e95d29ed1d69d04}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (2, 21):000000000000000200000016-000000000000000100000028 2-1 1941f7fcd4f38a52652b1d0c3da063fb4d7cc1e30bfb9f264081d39626a75edf}#{left (2, 22)}{right (1, 40)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (2, 20):000000000000000100000023-000000000000000200000015 4-2 485030016a5e03f5b38428d949d655fbb04d2d07593505d2498b2ac1ab85e175}#{left (1, 35)}{right (2, 21)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (2, 26):- 1-0 46581aa5c02d151e37a1e3308b0452f6fdbf8f775132d530eeffd9d45dea47b1}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (2, 25):00000000000000010000002b-00000000000000020000001a 2-1 dd82dfa304ab49774fa548b13b8487a2671bc7f95a0cf900167ed05b1fd693e7}#{left (1, 43)}{right (2, 26)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (2, 24):000000000000000200000019-00000000000000010000002c 3-2 0ca8efaca9fe969bba5c5a53d42e9715a5315d271890539dbddfbd33cf79a42b}#{left (2, 25)}{right (1, 44)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (2, 23):000000000000000200000018-00000000000000010000002d 5-3 e37af16e01837afaf2fa02a045843478c98923500b0ef1ee418c73d980ed5165}#{left (2, 24)}{right (1, 45)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (2, 19):000000000000000200000014-000000000000000200000017 9-4 f0611900d44b69cd6789874035be3bb7a684c3ebe5cb209b1748091ee4fbb881}#{left (2, 20)}{right (2, 23)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (2, 10):00000000000000020000000b-000000000000000200000013 15-5 de8879efe29c787d96912a63abf03e86237a51c7e43a2afb44023837ae5d3588}#{left (2, 11)}{right (2, 19)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (2, 1):000000000000000200000002-00000000000000020000000a 28-6 e6a942f08096dbeb08d2abdb26965dd0ce800e976e0368298a763a3965037e93}#{left (2, 2)}{right (2, 10)}\n"
+1:01PM DBG SAVE TREE version=2
+1:01PM DBG SAVE TREE version=2
+1:01PM DBG BATCH SAVE node="Node{a:1@ (2, 6):- 1-0 30ad79a1ad99aebe8caf787e928886d8750bdbfa8a5d468fa1c897a015e06099}#\n"
+1:01PM DBG BATCH SAVE node="Node{c:@ (2, 5):000000000000000200000006-000000000000000100000005 2-1 308f0b16e1db21fa950e28287b523a4febf90bfba3414b76093dfc48fa77d415}#{left (2, 6)}{right (1, 5)}\n"
+1:01PM DBG BATCH SAVE node="Node{e:0@ (2, 8):- 1-0 7316cc6ef07096b1de9d75d74e578b26ca6099e74ed8f4f9fbdf49b02a3ffb87}#\n"
+1:01PM DBG BATCH SAVE node="Node{g:@ (2, 7):000000000000000200000008-000000000000000100000006 2-1 20d36cd77b49b4c0e8d984e530d397455085eb1396d34710c609b37b07d89dee}#{left (2, 8)}{right (1, 6)}\n"
+1:01PM DBG BATCH SAVE node="Node{e:@ (2, 4):000000000000000200000005-000000000000000200000007 4-2 068edc66d1e724895db537ab915bed01f2b4e27ee6aef176e90d4fd22e3f8e1b}#{left (2, 5)}{right (2, 7)}\n"
+1:01PM DBG BATCH SAVE node="Node{g:@ (2, 3):000000000000000200000004-000000000000000100000007 6-3 904ed4a30c2c5c14be076c87e873a65886766614e20509909509c038b66b6c91}#{left (2, 4)}{right (1, 7)}\n"
+1:01PM DBG BATCH SAVE node="Node{g:@ (2, 2):000000000000000200000003-00000000000000010000000a 10-4 818c1e1c1486241137e8b53c87ca3948068d380971a9a28f4266ccaa1eb2e029}#{left (2, 3)}{right (1, 10)}\n"
+1:01PM DBG BATCH SAVE node="Node{r:{@ (2, 13):- 1-0 ee33caee15166f02e026f4939d407008a6761ac239140ecf08c988e4d29e8c14}#\n"
+1:01PM DBG BATCH SAVE node="Node{r:@ (2, 12):000000000000000100000014-00000000000000020000000d 2-1 2cdda67aecad988a1aff7944fe024bf19621463d6847b9aa7d46b56b6412a452}#{left (1, 20)}{right (2, 13)}\n"
+1:01PM DBG BATCH SAVE node="Node{s:9@ (2, 14):- 1-0 801c3fbc7bf88e75b4ce5ddd4d9b195614810ab4e569ff8d77c56c1f7f079b2b}#\n"
+1:01PM DBG BATCH SAVE node="Node{s:@ (2, 11):00000000000000020000000c-00000000000000020000000e 3-2 6af1ee92dce5db6880c497e25291a9a18f518692aa26c7ce3536bbda6c42ac82}#{left (2, 12)}{right (2, 14)}\n"
+1:01PM DBG BATCH SAVE node="Node{s:1@ (2, 16):- 1-0 d0cd4649a41b93e782203dcd8880b1fdea93a3ca6571ba6a863b104b450f09ec}#\n"
+1:01PM DBG BATCH SAVE node="Node{s:@ (2, 15):000000000000000200000010-000000000000000100000018 2-1 3a5a0926106860629e0ffa8370e442d2181a354a7fbe8a08022435343c8b8289}#{left (2, 16)}{right (1, 24)}\n"
+1:01PM DBG BATCH SAVE node="Node{s:@ (2, 10):00000000000000020000000b-00000000000000020000000f 5-3 ef67d5b206feec8666cdc5407b00a9c210f83ad1fc61fead1c1d8dd54cb4e937}#{left (2, 11)}{right (2, 15)}\n"
+1:01PM DBG BATCH SAVE node="Node{s:2@ (2, 19):- 1-0 30dde3551a97cf0ae8421bd32e7b99fc42a8ba80d7dd3d7d8678aad2f7aa1552}#\n"
+1:01PM DBG BATCH SAVE node="Node{s:@ (2, 18):00000000000000010000001b-000000000000000200000013 2-1 55c83f3e7fb016a5feb96bfb22855a1f74d4a290b10c0fd381744674459a9c14}#{left (1, 27)}{right (2, 19)}\n"
+1:01PM DBG BATCH SAVE node="Node{s:@ (2, 17):000000000000000200000012-00000000000000010000001d 5-3 e16e4a83d8698acd326f5f121a3ee42722ea1d215ebd39cd0cc9b408f47dea68}#{left (2, 18)}{right (1, 29)}\n"
+1:01PM DBG BATCH SAVE node="Node{s:@ (2, 9):00000000000000020000000a-000000000000000200000011 10-4 80e1a231387d1c79288de12ab1412af11fe2999089215bf759a9d6434bfff123}#{left (2, 10)}{right (2, 17)}\n"
+1:01PM DBG BATCH SAVE node="Node{o:@ (2, 1):000000000000000200000002-000000000000000200000009 20-5 2a1ea54bf521c567f18905b91eb9e355acdef7146ad1ce0e75b1ddf8a16f99d0}#{left (2, 2)}{right (2, 9)}\n"
+1:01PM DBG prune start height=2
+1:01PM DBG pruning skipped, height is less than or equal to 0
+1:01PM DBG prune end height=2
+1:01PM DBG flushing metadata height=2
+1:01PM DBG flushing metadata finished height=2
+I[2026-10-03|13:01:56.187] committed state                              module=state height=2 block_app_hash=B8527FBAF732FA30CDEC5AE44E7C4D6AE791FDCE50E4D2D272EE9DA581DE69F5
+D[2026-10-03|13:01:56.187] Updating evidence pool                       module=evidence last_block_height=2 last_block_time="2026-10-03 12:01:55.1123 +0000 UTC"
+D[2026-10-03|13:01:56.187] Update                                       module=mempool height=2 len(txs)=1
+D[2026-10-03|13:01:56.187] recheck txs                                  module=mempool height=2 num-txs=0
+D[2026-10-03|13:01:56.192] Received message from cs.statsMsgQueue       module=consensus peer=
+D[2026-10-03|13:01:56.192] Broadcast                                    module=p2p channel=32
+D[2026-10-03|13:01:56.192] Received tick                                module=consensus old_ti="{Duration:3s Height:2 Round:0 Step:RoundStepPropose}" new_ti="{Duration:973.073ms Height:3 Round:0 Step:RoundStepNewHeight}"
+D[2026-10-03|13:01:56.193] Scheduled timeout                            module=consensus dur=973.073ms height=3 round=0 step=RoundStepNewHeight
+D[2026-10-03|13:01:56.193] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=933 remoteAddr=127.0.0.1:50721
+I[2026-10-03|13:01:56.197] indexed block events                         module=txindex height=2
+D[2026-10-03|13:01:56.199] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50724
+D[2026-10-03|13:01:56.201] indexed transactions                         module=txindex height=2 num_txs=1
+D[2026-10-03|13:01:56.203] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50725
+D[2026-10-03|13:01:56.203] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50726
+D[2026-10-03|13:01:56.207] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50727
+D[2026-10-03|13:01:56.209] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50728
+D[2026-10-03|13:01:56.257] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50729
+D[2026-10-03|13:01:56.280] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50730
+D[2026-10-03|13:01:56.282] added good transaction                       module=mempool tx=CD99DBCAF79B79330D830990B2A8BAA2B5E54F82E15464E6CA4FAF72E87A99C4 res="&{CheckTx:gas_wanted:500000 gas_used:196672 }" height=2 total=1
+I[2026-10-03|13:01:57.168] Timed out                                    module=consensus dur=973.073ms height=3 round=0 step=RoundStepNewHeight
+D[2026-10-03|13:01:57.168] received tock                                module=consensus timeout=973.073ms height=3 round=0 step=RoundStepNewHeight
+D[2026-10-03|13:01:57.168] entering new round                           module=consensus height=3 round=0 previous=3/0/RoundStepNewHeight proposer=76578432D6E31BFA24E2673384500E3B81FB7F0D
+D[2026-10-03|13:01:57.168] entering propose step                        module=consensus height=3 round=0 current=3/0/RoundStepNewRound
+D[2026-10-03|13:01:57.168] node is a validator                          module=consensus height=3 round=0
+D[2026-10-03|13:01:57.168] propose step; our turn to propose            module=consensus height=3 round=0 proposer=76578432D6E31BFA24E2673384500E3B81FB7F0D
+D[2026-10-03|13:01:57.168] Received tick                                module=consensus old_ti="{Duration:973.073ms Height:3 Round:0 Step:RoundStepNewHeight}" new_ti="{Duration:3s Height:3 Round:0 Step:RoundStepPropose}"
+D[2026-10-03|13:01:57.168] Scheduled timeout                            module=consensus dur=3s height=3 round=0 step=RoundStepPropose
+D[2026-10-03|13:01:57.176] signed proposal                              module=consensus height=3 round=0 proposal="Proposal{3/0 (00186803E2BC4BF5E2CF91152F707659BA65031351D88E3AE17F41BCC9D415DF:1:856A1F1C30FA, -1) B1EED0D5E758 @ 2026-10-03T12:01:57.175666Z}"
+D[2026-10-03|13:01:57.176] Received message from cs.internalMsgQueue    module=consensus peer_id=
+D[2026-10-03|13:01:57.176] Broadcast                                    module=p2p channel=32
+D[2026-10-03|13:01:57.180] State.handleMsg                              module=consensus peer_id= msg="[Proposal Proposal{3/0 (00186803E2BC4BF5E2CF91152F707659BA65031351D88E3AE17F41BCC9D415DF:1:856A1F1C30FA, -1) B1EED0D5E758 @ 2026-10-03T12:01:57.175666Z}]"
+I[2026-10-03|13:01:57.180] received proposal                            module=consensus proposal="Proposal{3/0 (00186803E2BC4BF5E2CF91152F707659BA65031351D88E3AE17F41BCC9D415DF:1:856A1F1C30FA, -1) B1EED0D5E758 @ 2026-10-03T12:01:57.175666Z}" proposer=76578432D6E31BFA24E2673384500E3B81FB7F0D
+D[2026-10-03|13:01:57.180] Received message from cs.internalMsgQueue    module=consensus peer_id=
+D[2026-10-03|13:01:57.180] State.handleMsg                              module=consensus peer_id= msg="[BlockPart H:3 R:0 P:Part{#0\n  Bytes: 0A91030A0208...\n  Proof: Proof{\n    Aunts: []\n  }\n}]"
+I[2026-10-03|13:01:57.180] received complete proposal block             module=consensus height=3 hash=00186803E2BC4BF5E2CF91152F707659BA65031351D88E3AE17F41BCC9D415DF
+D[2026-10-03|13:01:57.180] entering prevote step                        module=consensus height=3 round=0 current=3/0/RoundStepPropose
+D[2026-10-03|13:01:57.180] prevote step: ProposalBlock is valid         module=consensus height=3 round=0
+D[2026-10-03|13:01:57.187] signed and pushed vote                       module=consensus height=3 round=0 vote="Vote{0:76578432D6E3 3/00/SIGNED_MSG_TYPE_PREVOTE(Prevote) 00186803E2BC F810512562C7 000000000000 @ 2026-10-03T12:01:57.185583Z}"
+D[2026-10-03|13:01:57.187] Received message from cs.internalMsgQueue    module=consensus peer_id=
+D[2026-10-03|13:01:57.187] Broadcast                                    module=p2p channel=32
+D[2026-10-03|13:01:57.187] Received message from cs.statsMsgQueue       module=consensus peer=
+D[2026-10-03|13:01:57.192] State.handleMsg                              module=consensus peer_id= msg="[Vote Vote{0:76578432D6E3 3/00/SIGNED_MSG_TYPE_PREVOTE(Prevote) 00186803E2BC F810512562C7 000000000000 @ 2026-10-03T12:01:57.185583Z}]"
+D[2026-10-03|13:01:57.193] Adding vote                                  module=consensus vote_height=3 vote_type=SIGNED_MSG_TYPE_PREVOTE val_index=0 cs_height=3 extLen=0 extSigLen=0 peer_id=
+D[2026-10-03|13:01:57.193] added vote to prevote                        module=consensus vote="Vote{0:76578432D6E3 3/00/SIGNED_MSG_TYPE_PREVOTE(Prevote) 00186803E2BC F810512562C7 000000000000 @ 2026-10-03T12:01:57.185583Z}" prevotes="VoteSet{H:3 R:0 T:SIGNED_MSG_TYPE_PREVOTE +2/3:00186803E2BC4BF5E2CF91152F707659BA65031351D88E3AE17F41BCC9D415DF:1:856A1F1C30FA(1) BA{1:x} map[]}"
+D[2026-10-03|13:01:57.194] updating valid block because of POL          module=consensus valid_round=-1 pol_round=0
+D[2026-10-03|13:01:57.194] Broadcast                                    module=p2p channel=32
+D[2026-10-03|13:01:57.194] entering precommit step                      module=consensus height=3 round=0 current=3/0/RoundStepPrevote
+D[2026-10-03|13:01:57.194] precommit step; +2/3 prevoted proposal block; locking module=consensus height=3 round=0 hash=00186803E2BC4BF5E2CF91152F707659BA65031351D88E3AE17F41BCC9D415DF
+D[2026-10-03|13:01:57.195] signed and pushed vote                       module=consensus height=3 round=0 vote="Vote{0:76578432D6E3 3/00/SIGNED_MSG_TYPE_PRECOMMIT(Precommit) 00186803E2BC 8F6A88C871A2 000000000000 @ 2026-10-03T12:01:57.194148Z}"
+D[2026-10-03|13:01:57.196] Broadcast                                    module=p2p channel=32
+D[2026-10-03|13:01:57.196] Received message from cs.internalMsgQueue    module=consensus peer_id=
+D[2026-10-03|13:01:57.196] Received message from cs.statsMsgQueue       module=consensus peer=
+D[2026-10-03|13:01:57.199] State.handleMsg                              module=consensus peer_id= msg="[Vote Vote{0:76578432D6E3 3/00/SIGNED_MSG_TYPE_PRECOMMIT(Precommit) 00186803E2BC 8F6A88C871A2 000000000000 @ 2026-10-03T12:01:57.194148Z}]"
+D[2026-10-03|13:01:57.200] Adding vote                                  module=consensus vote_height=3 vote_type=SIGNED_MSG_TYPE_PRECOMMIT val_index=0 cs_height=3 extLen=0 extSigLen=0 peer_id=
+D[2026-10-03|13:01:57.200] added vote to precommit                      module=consensus height=3 round=0 validator=76578432D6E31BFA24E2673384500E3B81FB7F0D vote_timestamp="2026-10-03 12:01:57.194148 +0000 UTC" data=Votes:10/10(1.000)
+D[2026-10-03|13:01:57.200] entering new round with invalid args         module=consensus height=3 round=0 current=3/0/RoundStepPrecommit
+D[2026-10-03|13:01:57.200] entering precommit step with invalid args    module=consensus height=3 round=0 current=3/0/RoundStepPrecommit
+D[2026-10-03|13:01:57.200] entering commit step                         module=consensus height=3 commit_round=0 current=3/0/RoundStepPrecommit
+D[2026-10-03|13:01:57.200] commit is for a locked block; set ProposalBlock=LockedBlock module=consensus height=3 commit_round=0 block_hash=00186803E2BC4BF5E2CF91152F707659BA65031351D88E3AE17F41BCC9D415DF
+I[2026-10-03|13:01:57.200] finalizing commit of block                   module=consensus height=3 hash=00186803E2BC4BF5E2CF91152F707659BA65031351D88E3AE17F41BCC9D415DF root=F3E129C0DAB667DD968493D2934785C308DB507F6D81F776B24825D37EB3E2B3 num_txs=1
+D[2026-10-03|13:01:57.200] committed block                              module=consensus height=3 block="Block{\n  Header{\n    Version:        {11 0}\n    ChainID:        nus-s2-dev-1\n    Height:         3\n    Time:           2026-10-03 12:01:56.160844 +0000 UTC\n    LastBlockID:    96FACED9DA48099F01961CC8E64781987647B7E56DCDA98983E707FE51789ECE:1:BCA2D5466655\n    LastCommit:     DACD30DE7B9CB50E014FC0CC5A9E2AABC3102F270516CCF857FB822C8E8F6358\n    Data:           E1856E0681641E445BC908B0028D8F3F6BFC13163EFDC01BF1FD2EAF83985052\n    Validators:     93D19FB18E8987F121D6D8B3B17E777E7D09FCB6266619868C9409872E903AC5\n    NextValidators: 93D19FB18E8987F121D6D8B3B17E777E7D09FCB6266619868C9409872E903AC5\n    App:            F3E129C0DAB667DD968493D2934785C308DB507F6D81F776B24825D37EB3E2B3\n    Consensus:      27521960C9E6E396E9B8E9C2AB1B23A87D0788CDF5886BF11E359AD5C4A2D27B\n    Results:        3CE124700C60521191D41E32B3E8225EDE6419F84F4424D165132C5674A5323F\n    Evidence:       E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855\n    Proposer:       76578432D6E31BFA24E2673384500E3B81FB7F0D\n  }#00186803E2BC4BF5E2CF91152F707659BA65031351D88E3AE17F41BCC9D415DF\n  Data{\n    CD99DBCAF79B79330D830990B2A8BAA2B5E54F82E15464E6CA4FAF72E87A99C4 (5517 bytes)\n  }#E1856E0681641E445BC908B0028D8F3F6BFC13163EFDC01BF1FD2EAF83985052\n  EvidenceData{\n    \n  }#E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855\n  Commit{\n    Height:     2\n    Round:      0\n    BlockID:    96FACED9DA48099F01961CC8E64781987647B7E56DCDA98983E707FE51789ECE:1:BCA2D5466655\n    Signatures:\n      CommitSig{4E42D77F6C5F by 76578432D6E3 on 2 @ 2026-10-03T12:01:56.160844Z}\n  }#DACD30DE7B9CB50E014FC0CC5A9E2AABC3102F270516CCF857FB822C8E8F6358\n}#00186803E2BC4BF5E2CF91152F707659BA65031351D88E3AE17F41BCC9D415DF"
+D[2026-10-03|13:01:57.202] Broadcast                                    module=p2p channel=32
+1:01PM DBG hash of all writes module=baseapp workingHash=5968004B294D4A3E93CBBA88386EB2453601D26939E31946757793F513303A06
+I[2026-10-03|13:01:57.213] finalized block                              module=state height=3 num_txs_res=1 num_val_updates=0 block_app_hash=5968004B294D4A3E93CBBA88386EB2453601D26939E31946757793F513303A06
+I[2026-10-03|13:01:57.214] executed block                               module=state height=3 app_hash=5968004B294D4A3E93CBBA88386EB2453601D26939E31946757793F513303A06
+1:01PM DBG SAVE TREE version=3
+1:01PM DBG BATCH SAVE node="Node{\x01:\n@ (3, 5):- 1-0 b5bac557a3d481ddb6f600c5e46ca2cfabf2aa2e5a9810847a80a9d50de08c82}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:@ (3, 4):000000000000000300000005-000000000000000100000009 2-1 7e299e85aa95ce14c9a414c629f38092025c3f8c386dd9b2065ce1f4936bc123}#{left (3, 5)}{right (1, 9)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:@ (3, 3):000000000000000100000004-000000000000000300000004 4-2 74f685f38df6e6242d7395f41a804970af88e439cb21f145f11ae9d626874b4b}#{left (1, 4)}{right (3, 4)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:@ (3, 2):000000000000000300000003-000000000000000200000003 8-3 22427dca561ddb56c58b59819e76609d577af8fc68332cffa7aa83e3ad8d103f}#{left (3, 3)}{right (2, 3)}\n"
+1:01PM DBG BATCH SAVE node="Node{a:Z@ (3, 9):- 1-0 4544f1cadaad02eb4e60d5a4eaba8f4d5170bbe648645d7d31ae696a11808df2}#\n"
+1:01PM DBG BATCH SAVE node="Node{a:@ (3, 8):000000000000000300000009-000000000000000100000018 2-1 6c76ba11c98789dc0e7c7e5406a17c0f217b72fbf356fcd23b735353c02a1de9}#{left (3, 9)}{right (1, 24)}\n"
+1:01PM DBG BATCH SAVE node="Node{a:@ (3, 7):000000000000000200000008-000000000000000300000008 4-2 bcbe5bd112e984cd789caa098cb40875c731b3b973818cdf8fcc9349c04229c8}#{left (2, 8)}{right (3, 8)}\n"
+1:01PM DBG BATCH SAVE node="Node{a:@ (3, 6):000000000000000300000007-000000000000000100000019 9-4 ea7260154b4e6b9f487aabc2844a6ec95aa725617e4682110838af0c8aa76c42}#{left (3, 7)}{right (1, 25)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:@ (3, 1):000000000000000300000002-000000000000000300000006 17-5 b1df0500f80e9956563951dca15b9411d875648c8f7feaccd85a6e381a2275b8}#{left (3, 2)}{right (3, 6)}\n"
+1:01PM DBG SAVE TREE version=3
+1:01PM DBG BATCH SAVE node="Node{\x02:9@ (3, 6):- 1-0 f0af088a2a5b13d616ac8578bdf8bbe488f84abd820fda7fafa04ec7e3cc2a1f}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (3, 5):00000000000000010000000c-000000000000000300000006 2-1 e850ecd969d2259b65a1e966f4b1a57ec638d413f90a7be89d7291a69e2f7314}#{left (1, 12)}{right (3, 6)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:9@ (3, 8):- 1-0 f5c275aa496f595b5e8ea506be339ebf97473844ed527635a462432ba082df19}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (3, 7):000000000000000300000008-000000000000000100000010 2-1 a66778a18ce7c9fd02e84a36007d8a957aabbc1a1db82279b1749fcf0af16534}#{left (3, 8)}{right (1, 16)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (3, 4):000000000000000300000005-000000000000000300000007 4-2 ebf62570e3ffabd347ead5b88bc7fa3a21b5b9eb5c5555ad9bdd5ae4e76ddf0e}#{left (3, 5)}{right (3, 7)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (3, 3):000000000000000100000003-000000000000000300000004 8-3 9f4a927f70e9432021047034c663ad6b68fa22f3b5fa4202db1541dbc339585f}#{left (1, 3)}{right (3, 4)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (3, 11):000000000000000100000018-000000000000000200000009 2-1 f1c59afdd89ff7c56bb9c97ef6e39ad2df9aeca35cda1936473ac6b5afd42acf}#{left (1, 24)}{right (2, 9)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:1@ (3, 13):- 1-0 249f0eb144e7531c3e0bdb6cbe440d2e4f7406193a9b86e16db6ff8f7a669638}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (3, 12):00000000000000030000000d-000000000000000100000019 2-1 9eed391d69d39ac6a1a9ded8f9e67f91eda3cf25723e2c8f091186d10c44a179}#{left (3, 13)}{right (1, 25)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (3, 10):00000000000000030000000b-00000000000000030000000c 4-2 1c847db337c41875265f23544c517b05193eabfb8d001ba82ff404eb848e34e7}#{left (3, 11)}{right (3, 12)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (3, 9):000000000000000200000004-00000000000000030000000a 6-3 8fd3e049a74eded77595edc9608ce120382df9ae9927ec01cdfcc5d942281865}#{left (2, 4)}{right (3, 10)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (3, 2):000000000000000300000003-000000000000000300000009 14-4 cd25157e9882871a1cca51a563caeefacd76c336937144c7f2b2d50b02658883}#{left (3, 3)}{right (3, 9)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:2@ (3, 18):- 1-0 97f6c4d6fadc64404535a92540b9facde353cc348a6668401fbef4da65d3574b}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (3, 17):00000000000000010000001c-000000000000000300000012 2-1 c4ea199eaa16ea340e8e7923240e050ca874070e7bc1fa1862e1c38453ae0ad0}#{left (1, 28)}{right (3, 18)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (3, 16):000000000000000300000011-00000000000000010000001d 3-2 3fb9434133d41d251cd2c549cd2d812666ef3fe8d02f139cbf6cee3006e44ad9}#{left (3, 17)}{right (1, 29)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (3, 15):000000000000000300000010-00000000000000020000000f 6-3 f328d3a2062a3058a10946374e8a37ab054fec0ff6ca01c6ed2c71a289dfe547}#{left (3, 16)}{right (2, 15)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (3, 22):- 1-0 0eee8059c9421ed7316c877f108f6a6d9e7e5d0678b26d88227576cefae40128}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (3, 21):000000000000000300000016-000000000000000100000025 2-1 d4ee445680070268a986fec4da7cc73ddd93edfb2a1f5f1bd15904030c6cca4e}#{left (3, 22)}{right (1, 37)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (3, 20):000000000000000300000015-000000000000000200000015 4-2 d1456a094c52a06bae1d896ca01ead6f1406113df40975f5a43801f1f90f1e94}#{left (3, 21)}{right (2, 21)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (3, 26):- 1-0 53a3ae17ec2e32609e44a3b94f58ce46d85089561f051ccc790f895b4b097f85}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (3, 25):00000000000000010000002b-00000000000000030000001a 2-1 7a28f7734846c247f535cc4da73057ccc3e8cf4fe01c4239885edf447f50c30e}#{left (1, 43)}{right (3, 26)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (3, 27):- 1-0 c065772a19204e2f4044eb899f8c280ad942772bd9e866aa0cfeff5da8f90abd}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (3, 24):000000000000000300000019-00000000000000030000001b 3-2 3ef23a756e36a04819ec13f81c286e206ae8e011398660059062c8df6cf2cc03}#{left (3, 25)}{right (3, 27)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (3, 30):- 1-0 1a5f9022b1b646f9682603b1ba6830d6d224ce844b5c86c54c87868ab5d29c46}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (3, 29):00000000000000010000002e-00000000000000030000001e 2-1 ca7f1eb0dae9f85c3a67dce602721b0930a34c2f4d0dfb769a3fb94eb4e82bda}#{left (1, 46)}{right (3, 30)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x05:@ (3, 28):00000000000000030000001d-00000000000000010000002f 3-2 3a5f5bef63206c2055ee7cb7ccd7f4e635667c2e674bf1bc10b49aafd96ce322}#{left (3, 29)}{right (1, 47)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (3, 23):000000000000000300000018-00000000000000030000001c 6-3 cc82150df380695724ef4c920b4b11e702d89f1d9ceed73e84f02413261b4fca}#{left (3, 24)}{right (3, 28)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (3, 19):000000000000000300000014-000000000000000300000017 10-4 3be33b6eb01f69261b93faa21dd054768ba0d35d037e8430394899ace6c6bd30}#{left (3, 20)}{right (3, 23)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (3, 14):00000000000000030000000f-000000000000000300000013 16-5 7bd69e36e5565480ffc72d2b1b12e3a3425b1363a7d854339c195b24529cd905}#{left (3, 15)}{right (3, 19)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (3, 1):000000000000000300000002-00000000000000030000000e 30-6 cba664ae2c61a2d3716a53c229c5f87fd41848e78ac9260f22f0ddb7ddf567e1}#{left (3, 2)}{right (3, 14)}\n"
+1:01PM DBG SAVE TREE version=3
+1:01PM DBG SAVE TREE version=3
+1:01PM DBG BATCH SAVE node="Node{a:1@ (3, 6):- 1-0 b2eb97ef121b281697165c5e419c9ce7189afa2260787416aade057d81ecc851}#\n"
+1:01PM DBG BATCH SAVE node="Node{a:@ (3, 5):000000000000000200000006-000000000000000300000006 2-1 8ed3437972045853acbe77e667e917227eda30ce96e56d0983ddfc77e7ef8064}#{left (2, 6)}{right (3, 6)}\n"
+1:01PM DBG BATCH SAVE node="Node{e:0@ (3, 8):- 1-0 b98d87c222b8adc829d95c3f4f1a85413067cd61d406c17b3ad80702db2489e2}#\n"
+1:01PM DBG BATCH SAVE node="Node{e:@ (3, 7):000000000000000100000005-000000000000000300000008 2-1 250c5cf9d11ac0053812c4ad9b9d0f895e6e9aba96b42eab6761449a4bb4aadc}#{left (1, 5)}{right (3, 8)}\n"
+1:01PM DBG BATCH SAVE node="Node{c:@ (3, 4):000000000000000300000005-000000000000000300000007 4-2 bbf3986c115aa1e040dd1cebced08604dd86ed129eee9a61fea6df824c9ccaac}#{left (3, 5)}{right (3, 7)}\n"
+1:01PM DBG BATCH SAVE node="Node{g:@ (3, 9):000000000000000200000007-000000000000000100000007 4-2 13c35a35fabf7b1fc58372d17de1037f261af2e2a68c5a44e6be2a60c17ab381}#{left (2, 7)}{right (1, 7)}\n"
+1:01PM DBG BATCH SAVE node="Node{e:@ (3, 3):000000000000000300000004-000000000000000300000009 8-3 746a2de23c2ee4c19dee2405a7a1d383d43730620cb0bdc0e08418c8fbae6e99}#{left (3, 4)}{right (3, 9)}\n"
+1:01PM DBG BATCH SAVE node="Node{g:@ (3, 2):000000000000000300000003-00000000000000010000000a 12-4 673459bfdb9291c5d340078ba8e45fd143af8976a0062c472e3adce6f4b6755b}#{left (3, 3)}{right (1, 10)}\n"
+1:01PM DBG BATCH SAVE node="Node{r:{@ (3, 14):- 1-0 63f508a65ac084677afd5447739a29c9f5b9a378435451e9ed8e0cd6ecb2a2d2}#\n"
+1:01PM DBG BATCH SAVE node="Node{r:@ (3, 13):000000000000000100000014-00000000000000030000000e 2-1 13f51677a81aa86c7bb198ed3cd886b716700b4ff0207751540ada4bc1aa3996}#{left (1, 20)}{right (3, 14)}\n"
+1:01PM DBG BATCH SAVE node="Node{s:0@ (3, 16):- 1-0 1f3b343ec85c10e28f5a6d39cccfb88e766d1563bc3d8e89ea736db3ddb2af87}#\n"
+1:01PM DBG BATCH SAVE node="Node{s:@ (3, 15):00000000000000020000000d-000000000000000300000010 2-1 bb078fdedcb8b6180e1bd213095c3e9045c1cdbf49436167ba2a3baa0c481b46}#{left (2, 13)}{right (3, 16)}\n"
+1:01PM DBG BATCH SAVE node="Node{r:@ (3, 12):00000000000000030000000d-00000000000000030000000f 4-2 91199404b9f032e61053abc5ab93a573c49ba2909bb12266039e7a702e4eb0df}#{left (3, 13)}{right (3, 15)}\n"
+1:01PM DBG BATCH SAVE node="Node{s:1@ (3, 18):- 1-0 d9b5305645f211b6317b201b6202dbb79330eea5d40c8c71c81c0c3714f486bb}#\n"
+1:01PM DBG BATCH SAVE node="Node{s:@ (3, 17):000000000000000300000012-000000000000000100000018 2-1 5eb088088e54332a06a716b64fb71a0ae07164389ab340931eebc34c0079ba40}#{left (3, 18)}{right (1, 24)}\n"
+1:01PM DBG BATCH SAVE node="Node{s:@ (3, 11):00000000000000030000000c-000000000000000300000011 6-3 927d8d1e96b89295d5a0424511c06437dbb8a881db59c6c1dedfb16a6037f7da}#{left (3, 12)}{right (3, 17)}\n"
+1:01PM DBG BATCH SAVE node="Node{s:3@ (3, 21):- 1-0 dd0a1a225e9592493fff037f0aa1a82c2e996a865cf60bba1106aa6eb9bbaca4}#\n"
+1:01PM DBG BATCH SAVE node="Node{s:@ (3, 20):00000000000000010000001b-000000000000000300000015 2-1 7dccd49eb38b9866bf3bd426569f7ea7dc4fae18fe62ba8e6670f608a834d653}#{left (1, 27)}{right (3, 21)}\n"
+1:01PM DBG BATCH SAVE node="Node{s:@ (3, 19):000000000000000300000014-00000000000000010000001d 5-3 fee54665e488ab63f4d7436b6dd1d218d29d09412cbfbf3f49894c72730ad7e0}#{left (3, 20)}{right (1, 29)}\n"
+1:01PM DBG BATCH SAVE node="Node{s:@ (3, 10):00000000000000030000000b-000000000000000300000013 11-4 b9b416e7dfe3a4e1434dcf9c77f9f2118ad7c9790b5bcd1d02c8c451186575e5}#{left (3, 11)}{right (3, 19)}\n"
+1:01PM DBG BATCH SAVE node="Node{o:@ (3, 1):000000000000000300000002-00000000000000030000000a 23-5 cfa864ff1da93a5429ebece00b3a9ef5b14981c457ff936cb5ed838f89791d7d}#{left (3, 2)}{right (3, 10)}\n"
+1:01PM DBG prune start height=3
+1:01PM DBG pruning skipped, height is less than or equal to 0
+1:01PM DBG prune end height=3
+1:01PM DBG flushing metadata height=3
+1:01PM DBG flushing metadata finished height=3
+I[2026-10-03|13:01:57.227] committed state                              module=state height=3 block_app_hash=F3E129C0DAB667DD968493D2934785C308DB507F6D81F776B24825D37EB3E2B3
+D[2026-10-03|13:01:57.228] Updating evidence pool                       module=evidence last_block_height=3 last_block_time="2026-10-03 12:01:56.160844 +0000 UTC"
+D[2026-10-03|13:01:57.228] Update                                       module=mempool height=3 len(txs)=1
+D[2026-10-03|13:01:57.233] recheck txs                                  module=mempool height=3 num-txs=0
+D[2026-10-03|13:01:57.234] Received message from cs.statsMsgQueue       module=consensus peer=
+D[2026-10-03|13:01:57.234] Broadcast                                    module=p2p channel=32
+D[2026-10-03|13:01:57.236] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=954 remoteAddr=127.0.0.1:50730
+D[2026-10-03|13:01:57.236] Received tick                                module=consensus old_ti="{Duration:3s Height:3 Round:0 Step:RoundStepPropose}" new_ti="{Duration:966.162ms Height:4 Round:0 Step:RoundStepNewHeight}"
+D[2026-10-03|13:01:57.238] Scheduled timeout                            module=consensus dur=966.162ms height=4 round=0 step=RoundStepNewHeight
+I[2026-10-03|13:01:57.237] indexed block events                         module=txindex height=3
+D[2026-10-03|13:01:57.246] indexed transactions                         module=txindex height=3 num_txs=1
+D[2026-10-03|13:01:57.253] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50733
+D[2026-10-03|13:01:57.256] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=1 remoteAddr=127.0.0.1:50734
+D[2026-10-03|13:01:57.257] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50735
+D[2026-10-03|13:01:57.266] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50736
+D[2026-10-03|13:01:57.267] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50737
+D[2026-10-03|13:01:57.309] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50738
+D[2026-10-03|13:01:57.349] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50739
+D[2026-10-03|13:01:57.377] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50741
+D[2026-10-03|13:01:57.390] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50743
+D[2026-10-03|13:01:57.391] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50744
+D[2026-10-03|13:01:57.391] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50745
+D[2026-10-03|13:01:57.393] added good transaction                       module=mempool tx=5AD5D476F7E80D2478C6B69285AE29588427206B55618EE17EF2364E24CC23D7 res="&{CheckTx:gas_wanted:500000 gas_used:196609 }" height=3 total=1
+D[2026-10-03|13:01:57.393] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50747
+D[2026-10-03|13:01:57.394] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50749
+D[2026-10-03|13:01:57.395] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50750
+D[2026-10-03|13:01:57.396] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50751
+D[2026-10-03|13:01:57.397] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50752
+D[2026-10-03|13:01:57.607] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50754
+D[2026-10-03|13:01:57.608] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50755
+D[2026-10-03|13:01:57.609] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50756
+D[2026-10-03|13:01:57.610] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50757
+D[2026-10-03|13:01:57.827] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50759
+D[2026-10-03|13:01:57.840] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=1 remoteAddr=127.0.0.1:50760
+D[2026-10-03|13:01:57.841] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50761
+D[2026-10-03|13:01:57.842] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50762
+D[2026-10-03|13:01:58.048] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50765
+D[2026-10-03|13:01:58.049] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50766
+D[2026-10-03|13:01:58.050] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50767
+D[2026-10-03|13:01:58.051] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50768
+I[2026-10-03|13:01:58.204] Timed out                                    module=consensus dur=966.162ms height=4 round=0 step=RoundStepNewHeight
+D[2026-10-03|13:01:58.204] received tock                                module=consensus timeout=966.162ms height=4 round=0 step=RoundStepNewHeight
+D[2026-10-03|13:01:58.204] entering new round                           module=consensus height=4 round=0 previous=4/0/RoundStepNewHeight proposer=76578432D6E31BFA24E2673384500E3B81FB7F0D
+D[2026-10-03|13:01:58.204] entering propose step                        module=consensus height=4 round=0 current=4/0/RoundStepNewRound
+D[2026-10-03|13:01:58.204] node is a validator                          module=consensus height=4 round=0
+D[2026-10-03|13:01:58.204] propose step; our turn to propose            module=consensus height=4 round=0 proposer=76578432D6E31BFA24E2673384500E3B81FB7F0D
+D[2026-10-03|13:01:58.204] Received tick                                module=consensus old_ti="{Duration:966.162ms Height:4 Round:0 Step:RoundStepNewHeight}" new_ti="{Duration:3s Height:4 Round:0 Step:RoundStepPropose}"
+D[2026-10-03|13:01:58.204] Scheduled timeout                            module=consensus dur=3s height=4 round=0 step=RoundStepPropose
+D[2026-10-03|13:01:58.209] signed proposal                              module=consensus height=4 round=0 proposal="Proposal{4/0 (EBC360403CEA89A82F34E327F6F712289602BDA024F93F553C8B1E68C13465EA:1:901C954FCAD6, -1) 73BFACCFC054 @ 2026-10-03T12:01:58.208676Z}"
+D[2026-10-03|13:01:58.209] Received message from cs.internalMsgQueue    module=consensus peer_id=
+D[2026-10-03|13:01:58.209] Broadcast                                    module=p2p channel=32
+D[2026-10-03|13:01:58.213] State.handleMsg                              module=consensus peer_id= msg="[Proposal Proposal{4/0 (EBC360403CEA89A82F34E327F6F712289602BDA024F93F553C8B1E68C13465EA:1:901C954FCAD6, -1) 73BFACCFC054 @ 2026-10-03T12:01:58.208676Z}]"
+I[2026-10-03|13:01:58.213] received proposal                            module=consensus proposal="Proposal{4/0 (EBC360403CEA89A82F34E327F6F712289602BDA024F93F553C8B1E68C13465EA:1:901C954FCAD6, -1) 73BFACCFC054 @ 2026-10-03T12:01:58.208676Z}" proposer=76578432D6E31BFA24E2673384500E3B81FB7F0D
+D[2026-10-03|13:01:58.213] Received message from cs.internalMsgQueue    module=consensus peer_id=
+D[2026-10-03|13:01:58.213] State.handleMsg                              module=consensus peer_id= msg="[BlockPart H:4 R:0 P:Part{#0\n  Bytes: 0A91030A0208...\n  Proof: Proof{\n    Aunts: []\n  }\n}]"
+I[2026-10-03|13:01:58.213] received complete proposal block             module=consensus height=4 hash=EBC360403CEA89A82F34E327F6F712289602BDA024F93F553C8B1E68C13465EA
+D[2026-10-03|13:01:58.213] entering prevote step                        module=consensus height=4 round=0 current=4/0/RoundStepPropose
+D[2026-10-03|13:01:58.213] prevote step: ProposalBlock is valid         module=consensus height=4 round=0
+D[2026-10-03|13:01:58.218] signed and pushed vote                       module=consensus height=4 round=0 vote="Vote{0:76578432D6E3 4/00/SIGNED_MSG_TYPE_PREVOTE(Prevote) EBC360403CEA 60FEDA41D961 000000000000 @ 2026-10-03T12:01:58.217687Z}"
+D[2026-10-03|13:01:58.218] Received message from cs.internalMsgQueue    module=consensus peer_id=
+D[2026-10-03|13:01:58.218] Broadcast                                    module=p2p channel=32
+D[2026-10-03|13:01:58.218] Received message from cs.statsMsgQueue       module=consensus peer=
+D[2026-10-03|13:01:58.222] State.handleMsg                              module=consensus peer_id= msg="[Vote Vote{0:76578432D6E3 4/00/SIGNED_MSG_TYPE_PREVOTE(Prevote) EBC360403CEA 60FEDA41D961 000000000000 @ 2026-10-03T12:01:58.217687Z}]"
+D[2026-10-03|13:01:58.222] Adding vote                                  module=consensus vote_height=4 vote_type=SIGNED_MSG_TYPE_PREVOTE val_index=0 cs_height=4 extLen=0 extSigLen=0 peer_id=
+D[2026-10-03|13:01:58.222] added vote to prevote                        module=consensus vote="Vote{0:76578432D6E3 4/00/SIGNED_MSG_TYPE_PREVOTE(Prevote) EBC360403CEA 60FEDA41D961 000000000000 @ 2026-10-03T12:01:58.217687Z}" prevotes="VoteSet{H:4 R:0 T:SIGNED_MSG_TYPE_PREVOTE +2/3:EBC360403CEA89A82F34E327F6F712289602BDA024F93F553C8B1E68C13465EA:1:901C954FCAD6(1) BA{1:x} map[]}"
+D[2026-10-03|13:01:58.222] updating valid block because of POL          module=consensus valid_round=-1 pol_round=0
+D[2026-10-03|13:01:58.222] entering precommit step                      module=consensus height=4 round=0 current=4/0/RoundStepPrevote
+D[2026-10-03|13:01:58.222] precommit step; +2/3 prevoted proposal block; locking module=consensus height=4 round=0 hash=EBC360403CEA89A82F34E327F6F712289602BDA024F93F553C8B1E68C13465EA
+D[2026-10-03|13:01:58.222] Broadcast                                    module=p2p channel=32
+D[2026-10-03|13:01:58.223] signed and pushed vote                       module=consensus height=4 round=0 vote="Vote{0:76578432D6E3 4/00/SIGNED_MSG_TYPE_PRECOMMIT(Precommit) EBC360403CEA 3E90378C9549 000000000000 @ 2026-10-03T12:01:58.222787Z}"
+D[2026-10-03|13:01:58.223] Received message from cs.internalMsgQueue    module=consensus peer_id=
+D[2026-10-03|13:01:58.223] Broadcast                                    module=p2p channel=32
+D[2026-10-03|13:01:58.223] Received message from cs.statsMsgQueue       module=consensus peer=
+D[2026-10-03|13:01:58.227] State.handleMsg                              module=consensus peer_id= msg="[Vote Vote{0:76578432D6E3 4/00/SIGNED_MSG_TYPE_PRECOMMIT(Precommit) EBC360403CEA 3E90378C9549 000000000000 @ 2026-10-03T12:01:58.222787Z}]"
+D[2026-10-03|13:01:58.228] Adding vote                                  module=consensus vote_height=4 vote_type=SIGNED_MSG_TYPE_PRECOMMIT val_index=0 cs_height=4 extLen=0 extSigLen=0 peer_id=
+D[2026-10-03|13:01:58.228] added vote to precommit                      module=consensus height=4 round=0 validator=76578432D6E31BFA24E2673384500E3B81FB7F0D vote_timestamp="2026-10-03 12:01:58.222787 +0000 UTC" data=Votes:10/10(1.000)
+D[2026-10-03|13:01:58.228] entering new round with invalid args         module=consensus height=4 round=0 current=4/0/RoundStepPrecommit
+D[2026-10-03|13:01:58.228] entering precommit step with invalid args    module=consensus height=4 round=0 current=4/0/RoundStepPrecommit
+D[2026-10-03|13:01:58.228] entering commit step                         module=consensus height=4 commit_round=0 current=4/0/RoundStepPrecommit
+D[2026-10-03|13:01:58.228] commit is for a locked block; set ProposalBlock=LockedBlock module=consensus height=4 commit_round=0 block_hash=EBC360403CEA89A82F34E327F6F712289602BDA024F93F553C8B1E68C13465EA
+I[2026-10-03|13:01:58.228] finalizing commit of block                   module=consensus height=4 hash=EBC360403CEA89A82F34E327F6F712289602BDA024F93F553C8B1E68C13465EA root=5968004B294D4A3E93CBBA88386EB2453601D26939E31946757793F513303A06 num_txs=1
+D[2026-10-03|13:01:58.228] Broadcast                                    module=p2p channel=32
+D[2026-10-03|13:01:58.228] committed block                              module=consensus height=4 block="Block{\n  Header{\n    Version:        {11 0}\n    ChainID:        nus-s2-dev-1\n    Height:         4\n    Time:           2026-10-03 12:01:57.194148 +0000 UTC\n    LastBlockID:    00186803E2BC4BF5E2CF91152F707659BA65031351D88E3AE17F41BCC9D415DF:1:856A1F1C30FA\n    LastCommit:     430890997ED579A24343EC9B802DFD36C58EF631D1E79C7888EB297E1275505C\n    Data:           D74D3CDE79EC4F64BC0895F55A4C1BCBE8D04E0ABB9BEB2FBFB62A59A3FA1EFF\n    Validators:     93D19FB18E8987F121D6D8B3B17E777E7D09FCB6266619868C9409872E903AC5\n    NextValidators: 93D19FB18E8987F121D6D8B3B17E777E7D09FCB6266619868C9409872E903AC5\n    App:            5968004B294D4A3E93CBBA88386EB2453601D26939E31946757793F513303A06\n    Consensus:      27521960C9E6E396E9B8E9C2AB1B23A87D0788CDF5886BF11E359AD5C4A2D27B\n    Results:        FC04B41DCBF487F2357E84482BDF140CF23A67432CE3AB10E024E23A5613DB90\n    Evidence:       E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855\n    Proposer:       76578432D6E31BFA24E2673384500E3B81FB7F0D\n  }#EBC360403CEA89A82F34E327F6F712289602BDA024F93F553C8B1E68C13465EA\n  Data{\n    5AD5D476F7E80D2478C6B69285AE29588427206B55618EE17EF2364E24CC23D7 (5517 bytes)\n  }#D74D3CDE79EC4F64BC0895F55A4C1BCBE8D04E0ABB9BEB2FBFB62A59A3FA1EFF\n  EvidenceData{\n    \n  }#E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855\n  Commit{\n    Height:     3\n    Round:      0\n    BlockID:    00186803E2BC4BF5E2CF91152F707659BA65031351D88E3AE17F41BCC9D415DF:1:856A1F1C30FA\n    Signatures:\n      CommitSig{8F6A88C871A2 by 76578432D6E3 on 2 @ 2026-10-03T12:01:57.194148Z}\n  }#430890997ED579A24343EC9B802DFD36C58EF631D1E79C7888EB297E1275505C\n}#EBC360403CEA89A82F34E327F6F712289602BDA024F93F553C8B1E68C13465EA"
+1:01PM DBG hash of all writes module=baseapp workingHash=6788D13444CC61704A02B4866B761204FB0C8C7D3A505016B16CA728DA65B86F
+I[2026-10-03|13:01:58.236] finalized block                              module=state height=4 num_txs_res=1 num_val_updates=0 block_app_hash=6788D13444CC61704A02B4866B761204FB0C8C7D3A505016B16CA728DA65B86F
+I[2026-10-03|13:01:58.236] executed block                               module=state height=4 app_hash=6788D13444CC61704A02B4866B761204FB0C8C7D3A505016B16CA728DA65B86F
+1:01PM DBG SAVE TREE version=4
+1:01PM DBG BATCH SAVE node="Node{\x01:\n@ (4, 5):- 1-0 4f02c75c142ffe078b8dc934ce06c14d4bc1a686d41288451afbffc71daafae9}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:@ (4, 4):000000000000000400000005-00000000000000010000000d 2-1 cf31049fbe4c39186d2c60e63df15d81cf74c9f06796f05d3c5664e42349e9cf}#{left (4, 5)}{right (1, 13)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:@ (4, 3):000000000000000400000004-00000000000000010000000e 4-2 f7c6cc0dc377704bc73da996eb32e4193b313332a736b45dc17e34bef48defdf}#{left (4, 4)}{right (1, 14)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:@ (4, 2):000000000000000300000003-000000000000000400000003 8-3 35b55985df6683838a6ec82bc1456daf680aef5e55832ccb75be9040fbf44fe7}#{left (3, 3)}{right (4, 3)}\n"
+1:01PM DBG BATCH SAVE node="Node{a:\\@ (4, 9):- 1-0 db74a873bad4423feeff9a7b2e06dc5d6ba77f7a891f354d150fdb3dfdf1f74f}#\n"
+1:01PM DBG BATCH SAVE node="Node{a:@ (4, 8):000000000000000100000014-000000000000000400000009 2-1 c4381c86f1a255ce77ae69827f0ba0c45f5ef9bf505d7fcc8580fc076caed6a2}#{left (1, 20)}{right (4, 9)}\n"
+1:01PM DBG BATCH SAVE node="Node{a:@ (4, 7):000000000000000400000008-000000000000000300000008 4-2 be98a6f50663cb9e50dacbe410803db6f44181ed67a25f0e8bbe3c87ee8058ac}#{left (4, 8)}{right (3, 8)}\n"
+1:01PM DBG BATCH SAVE node="Node{a:@ (4, 6):000000000000000400000007-000000000000000100000019 9-4 ed6d8d5d30b9f575f4737705c1956423653d486d090505bea035c24cc3d1bd18}#{left (4, 7)}{right (1, 25)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x01:@ (4, 1):000000000000000400000002-000000000000000400000006 17-5 82102dee4a8374f64453f075de3446c96eb9e2cec3eba348293025313764bada}#{left (4, 2)}{right (4, 6)}\n"
+1:01PM DBG SAVE TREE version=4
+1:01PM DBG BATCH SAVE node="Node{\x02:9@ (4, 5):- 1-0 182ef8cd68833ebcc3e9d67f27abce582740c0998c92ef18d87da45d4380974a}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:9@ (4, 6):- 1-0 16d1d66e52401d85ac0fb76f429686c773e55ac531ca9bfef102c3172d38abc9}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (4, 4):000000000000000400000005-000000000000000400000006 2-1 91fbfd146a000d546408fbabb3deb44e728ad975e05d6e88a8cf5a842a4ed251}#{left (4, 5)}{right (4, 6)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:9@ (4, 9):- 1-0 6602dfb4c7fe8e7c522e56bfa703cddbe984291ed0df18b1e9097bc2b56d18f9}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (4, 8):000000000000000100000018-000000000000000400000009 2-1 2ae01407264a364c72c687eed8af1dbd67429cb50c32ca47c340328f7c7eaa17}#{left (1, 24)}{right (4, 9)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (4, 7):000000000000000400000008-00000000000000030000000c 4-2 1de1e042632cf0d0f45c8ee578d5d681f9cc449914eb07af6815b7c33d17aaed}#{left (4, 8)}{right (3, 12)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (4, 3):000000000000000400000004-000000000000000400000007 6-3 c14a5222474707ed794d1dedb0973370a7b51ed32d5ffa6d8c22d0e77fd86614}#{left (4, 4)}{right (4, 7)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (4, 2):000000000000000300000003-000000000000000400000003 14-4 1a572310a81f0c01c7eba91208223a8948de61084429979579b4147cc75d1740}#{left (3, 3)}{right (4, 3)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:3@ (4, 14):- 1-0 95c43c2eac371e03eeac047436b6074480a3cd4382e3c143456bc292d063befc}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (4, 13):00000000000000010000001c-00000000000000040000000e 2-1 4e682bfc80307cb1646f2e456e3614d2c7a230aa337d5c2d77ced29c8a684fc2}#{left (1, 28)}{right (4, 14)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (4, 12):00000000000000040000000d-00000000000000010000001d 3-2 c8dba192206f6d3c17377256beaec4bdf8de853e163f85260adde084fe82dda4}#{left (4, 13)}{right (1, 29)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (4, 17):- 1-0 cdc3b9d546181b706398b7ab9bb7ce450a7dd0687227b59d867f83d114b5d8b6}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (4, 18):- 1-0 0741951c191e18ffb11f7b24d137c80bdc33756103b77db83d86a6499d4da44a}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (4, 16):000000000000000400000011-000000000000000400000012 2-1 299717a647e04810c56948e66fefda151c499dd0157ef7fb6afb43d27f781966}#{left (4, 17)}{right (4, 18)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (4, 15):000000000000000400000010-000000000000000100000020 3-2 df8ad2e7364bf71ead71828540f07d89182823f8421f90a63ae6dab22922b572}#{left (4, 16)}{right (1, 32)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (4, 11):00000000000000040000000c-00000000000000040000000f 6-3 8659a50dd7ffb41f2dc3ce2a78682c2bf9bb471e0252bad3a4cf8a7dbdd4ab9e}#{left (4, 12)}{right (4, 15)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (4, 22):- 1-0 ee91d8c3e31af9f98e093ea1ce2b7e2a69f79e65718bf8ed3b657c72a3e3ab2b}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (4, 21):000000000000000400000016-000000000000000100000028 2-1 60cec64c74fd9ad62f73836b5d3552d7ab2b40465ab7e7fd95671a9dd2e24f20}#{left (4, 22)}{right (1, 40)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (4, 20):000000000000000300000015-000000000000000400000015 4-2 fb86760190cdfae5122d63779b0e9d8f773b08c3fb74b15edd3ae9bf0f55049b}#{left (3, 21)}{right (4, 21)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (4, 26):- 1-0 0752e3b8334bef4833d8866e4504cfe23719d2066e85a1129f23b3726c247d05}#\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (4, 25):00000000000000010000002b-00000000000000040000001a 2-1 d6faa132d9e0dbc3b6d64e619c8a908790b7e0a82fd9102d0dd0cd3c9d993694}#{left (1, 43)}{right (4, 26)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (4, 24):000000000000000400000019-00000000000000030000001b 3-2 b2ac176701d260c91e8decbb84f9bd451332bc8ec128506f76ec5cb35fc3e608}#{left (4, 25)}{right (3, 27)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (4, 23):000000000000000400000018-00000000000000030000001c 6-3 3661f98b4b698f0db7695fd6cbf5a972f84545bdc9bc36b6f89e07bb53921b36}#{left (4, 24)}{right (3, 28)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (4, 19):000000000000000400000014-000000000000000400000017 10-4 8c7445de6518d62c9a52c1c8de5445f432f8af4fec3acd89942bd4e0f0d8033c}#{left (4, 20)}{right (4, 23)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x03:@ (4, 10):00000000000000040000000b-000000000000000400000013 16-5 c91628f4560085998a95980f7d42fe5677413e3dc27df74fc3473a09e2529dcf}#{left (4, 11)}{right (4, 19)}\n"
+1:01PM DBG BATCH SAVE node="Node{\x02:@ (4, 1):000000000000000400000002-00000000000000040000000a 30-6 519d355e81b354fcb2a0dc770d39ee2f18b72bc05860f3e2f25977935ededaa2}#{left (4, 2)}{right (4, 10)}\n"
+1:01PM DBG SAVE TREE version=4
+1:01PM DBG SAVE TREE version=4
+1:01PM DBG BATCH SAVE node="Node{a:9@ (4, 6):- 1-0 76383a6c88c82e9d0387aafef0d22353d689afecd8044002d78a8cf77edac80e}#\n"
+1:01PM DBG BATCH SAVE node="Node{a:@ (4, 5):000000000000000400000006-000000000000000300000006 2-1 d057b33ddedb82915d1d348cf3168d149e0a9856438f347a03ed20195546ac52}#{left (4, 6)}{right (3, 6)}\n"
+1:01PM DBG BATCH SAVE node="Node{c:@ (4, 4):000000000000000400000005-000000000000000300000007 4-2 1ce29dc5a1bffff5632a2ef8afa69a876cd4b73d3cf1373ecf73dcd1e94f34bb}#{left (4, 5)}{right (3, 7)}\n"
+1:01PM DBG BATCH SAVE node="Node{e:1@ (4, 9):- 1-0 3618e216115067b8ebc196f87f1881f914b8823567c6217e2d93dac55c3a0503}#\n"
+1:01PM DBG BATCH SAVE node="Node{g:@ (4, 8):000000000000000400000009-000000000000000100000006 2-1 6f7518bfd1be947d5c9a308e7baf92c5b4b50ad40a3a9a1272b6ad021d507a04}#{left (4, 9)}{right (1, 6)}\n"
+1:01PM DBG BATCH SAVE node="Node{g:@ (4, 7):000000000000000400000008-000000000000000100000007 4-2 ce045adc846ed2ee13e431e268fd3cf2565463ca6509f5108e78b4a668351942}#{left (4, 8)}{right (1, 7)}\n"
+1:01PM DBG BATCH SAVE node="Node{e:@ (4, 3):000000000000000400000004-000000000000000400000007 8-3 636f5f125325af925d4f7618358b29f5b5b21d65638b5735037135867db1d6f8}#{left (4, 4)}{right (4, 7)}\n"
+1:01PM DBG BATCH SAVE node="Node{g:@ (4, 2):000000000000000400000003-00000000000000010000000a 12-4 b78349a496803188bf2265c7726569b10608da4dc1666d4ced72d498843d1097}#{left (4, 3)}{right (1, 10)}\n"
+1:01PM DBG BATCH SAVE node="Node{r:{@ (4, 14):- 1-0 ded306b2ff816600afc7cd5f175886ef973df5bc91be96fa25570c969b75e806}#\n"
+1:01PM DBG BATCH SAVE node="Node{r:@ (4, 13):00000000000000020000000d-00000000000000040000000e 2-1 b77aad3b975329e79a20d61b4b2489d80c5ded9cd95165e429cb64c0dfdb500b}#{left (2, 13)}{right (4, 14)}\n"
+1:01PM DBG BATCH SAVE node="Node{r:@ (4, 12):00000000000000030000000d-00000000000000040000000d 4-2 9f29a057ce4e58a0e4f7b3d935bf647d2a09f05664366b252e15e8c1611d0b35}#{left (3, 13)}{right (4, 13)}\n"
+1:01PM DBG BATCH SAVE node="Node{s:e@ (4, 16):- 1-0 ebae82ef940b3816bd2258ddc64619cf1e7fd501690d1f6af981efbddc2e536b}#\n"
+1:01PM DBG BATCH SAVE node="Node{s:1@ (4, 18):- 1-0 4ab80bbee2d551fb08c7a8d301a67e3e48befe5b69a6e56277d7201270eedec7}#\n"
+1:01PM DBG BATCH SAVE node="Node{s:@ (4, 17):000000000000000400000012-000000000000000100000018 2-1 9efc0257b1d5d3bbb10ce547df31a61a1b6c61258f1c12034f5980bd92992749}#{left (4, 18)}{right (1, 24)}\n"
+1:01PM DBG BATCH SAVE node="Node{s:@ (4, 15):000000000000000400000010-000000000000000400000011 3-2 4ec090d274de4f0f8f4509c59cfcca1b38c3d599361982a911bc2be84baa331f}#{left (4, 16)}{right (4, 17)}\n"
+1:01PM DBG BATCH SAVE node="Node{s:@ (4, 11):00000000000000040000000c-00000000000000040000000f 7-3 cff331770f53c8e41e71e8bba7452f7471da81664722eda9c62b6f8aa0ea9cd1}#{left (4, 12)}{right (4, 15)}\n"
+1:01PM DBG BATCH SAVE node="Node{s:4@ (4, 21):- 1-0 2c02d09eac4fc1778c2bf99655cde972376bdf53fe8ac44f8b70352a039b189d}#\n"
+1:01PM DBG BATCH SAVE node="Node{s:@ (4, 20):00000000000000010000001b-000000000000000400000015 2-1 6fab95added7c8226454f850eba5cfb714e565ed97adacb92fc66fb2780661d3}#{left (1, 27)}{right (4, 21)}\n"
+1:01PM DBG BATCH SAVE node="Node{s:@ (4, 19):000000000000000400000014-00000000000000010000001d 5-3 0b24095231cd55eacf98b545e267c54ce15598681df05abfd60fb1f43297190a}#{left (4, 20)}{right (1, 29)}\n"
+1:01PM DBG BATCH SAVE node="Node{s:@ (4, 10):00000000000000040000000b-000000000000000400000013 12-4 525a1990e79b5684a296badfb87b01b92793656a70617663808d027ad8c73d53}#{left (4, 11)}{right (4, 19)}\n"
+1:01PM DBG BATCH SAVE node="Node{o:@ (4, 1):000000000000000400000002-00000000000000040000000a 24-5 989ce117152daa52a8780551be99ad011178ff50634370fb9aef6fd9e86e0527}#{left (4, 2)}{right (4, 10)}\n"
+1:01PM DBG prune start height=4
+1:01PM DBG pruning skipped, height is less than or equal to 0
+1:01PM DBG prune end height=4
+1:01PM DBG flushing metadata height=4
+1:01PM DBG flushing metadata finished height=4
+I[2026-10-03|13:01:58.249] committed state                              module=state height=4 block_app_hash=5968004B294D4A3E93CBBA88386EB2453601D26939E31946757793F513303A06
+D[2026-10-03|13:01:58.249] Updating evidence pool                       module=evidence last_block_height=4 last_block_time="2026-10-03 12:01:57.194148 +0000 UTC"
+D[2026-10-03|13:01:58.249] Update                                       module=mempool height=4 len(txs)=1
+D[2026-10-03|13:01:58.249] recheck txs                                  module=mempool height=4 num-txs=0
+D[2026-10-03|13:01:58.252] Received message from cs.statsMsgQueue       module=consensus peer=
+D[2026-10-03|13:01:58.252] Broadcast                                    module=p2p channel=32
+D[2026-10-03|13:01:58.252] Received tick                                module=consensus old_ti="{Duration:3s Height:4 Round:0 Step:RoundStepPropose}" new_ti="{Duration:975.489ms Height:5 Round:0 Step:RoundStepNewHeight}"
+D[2026-10-03|13:01:58.252] Scheduled timeout                            module=consensus dur=975.489ms height=5 round=0 step=RoundStepNewHeight
+I[2026-10-03|13:01:58.256] indexed block events                         module=txindex height=4
+D[2026-10-03|13:01:58.260] indexed transactions                         module=txindex height=4 num_txs=1
+D[2026-10-03|13:01:58.262] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50770
+D[2026-10-03|13:01:58.263] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50771
+D[2026-10-03|13:01:58.264] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50772
+D[2026-10-03|13:01:58.265] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50773
+D[2026-10-03|13:01:58.266] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50774
+D[2026-10-03|13:01:58.266] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50775
+D[2026-10-03|13:01:58.267] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50776
+D[2026-10-03|13:01:58.268] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50777
+D[2026-10-03|13:01:58.269] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50778
+D[2026-10-03|13:01:58.272] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50779
+D[2026-10-03|13:01:58.273] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50780
+D[2026-10-03|13:01:58.319] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50781
+D[2026-10-03|13:01:58.343] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50782
+D[2026-10-03|13:01:58.407] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50784
+D[2026-10-03|13:01:58.408] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50785
+D[2026-10-03|13:01:58.409] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50786
+D[2026-10-03|13:01:58.412] served RPC HTTP response                     module=rpc-server method=POST url=/ status=200 duration=0 remoteAddr=127.0.0.1:50787
+I[2026-10-03|13:01:58.522] service stop                                 msg="Stopping Node service" impl=Node
+I[2026-10-03|13:01:58.522] Stopping Node                                
+I[2026-10-03|13:01:58.522] service stop                                 module=events msg="Stopping EventBus service" impl=EventBus
+I[2026-10-03|13:01:58.522] service stop                                 module=pubsub msg="Stopping PubSub service" impl=PubSub
+I[2026-10-03|13:01:58.522] service stop                                 module=txindex msg="Stopping IndexerService service" impl=IndexerService
+I[2026-10-03|13:01:58.522] service stop                                 module=p2p msg="Stopping P2P Switch service" impl="P2P Switch"
+D[2026-10-03|13:01:58.522] Switch: Stopping reactors                    module=p2p 
+I[2026-10-03|13:01:58.522] service stop                                 module=mempool msg="Stopping Mempool service" impl=Mempool
+I[2026-10-03|13:01:58.522] service stop                                 module=blocksync msg="Stopping Blocksync service" impl=Blocksync
+I[2026-10-03|13:01:58.522] service stop                                 module=consensus msg="Stopping Consensus service" impl=ConsensusReactor
+I[2026-10-03|13:01:58.522] service stop                                 module=consensus msg="Stopping State service" impl=ConsensusState
+I[2026-10-03|13:01:58.522] service stop                                 module=consensus msg="Stopping TimeoutTicker service" impl=TimeoutTicker
+I[2026-10-03|13:01:58.522] service stop                                 module=consensus wal=/private/var/folders/tk/qv1h75l56vscdzw5zlqjxpgm0000gn/T/paperclip-run-nus-39-6edbb0bc-40f-CpqNIT/live-direct-fixed/node/data/cs.wal/wal msg="Stopping baseWAL service" impl=baseWAL
+I[2026-10-03|13:01:58.526] service stop                                 module=consensus wal=/private/var/folders/tk/qv1h75l56vscdzw5zlqjxpgm0000gn/T/paperclip-run-nus-39-6edbb0bc-40f-CpqNIT/live-direct-fixed/node/data/cs.wal/wal msg="Stopping Group service" impl=Group
+I[2026-10-03|13:01:58.526] service stop                                 module=evidence msg="Stopping Evidence service" impl=Evidence
+I[2026-10-03|13:01:58.526] service stop                                 module=statesync msg="Stopping StateSync service" impl=StateSync
+I[2026-10-03|13:01:58.526] service stop                                 module=pex msg="Stopping PEX service" impl=PEX
+I[2026-10-03|13:01:58.526] service stop                                 module=p2p book=/private/var/folders/tk/qv1h75l56vscdzw5zlqjxpgm0000gn/T/paperclip-run-nus-39-6edbb0bc-40f-CpqNIT/live-direct-fixed/node/config/addrbook.json msg="Stopping AddrBook service" impl=AddrBook
+E[2026-10-03|13:01:58.526] Stopped accept routine, as transport is closed module=p2p numPeers=0
+I[2026-10-03|13:01:58.526] Saving AddrBook to file                      module=p2p book=/private/var/folders/tk/qv1h75l56vscdzw5zlqjxpgm0000gn/T/paperclip-run-nus-39-6edbb0bc-40f-CpqNIT/live-direct-fixed/node/config/addrbook.json size=0
+I[2026-10-03|13:01:58.526] Closing rpc listener                         listener="&{Listener:0x621dc9eb2e00 sem:0x621dca509260 closeOnce:{_:{} done:{_:{} v:0} m:{_:{} mu:{state:0 sema:0}}} done:0x621dca5092d0}"
+I[2026-10-03|13:01:58.526] Closing blockstore                           
+I[2026-10-03|13:01:58.526] RPC HTTP server stopped                      module=rpc-server err="accept tcp 127.0.0.1:29957: use of closed network connection"
+E[2026-10-03|13:01:58.526] Error serving server                         err="accept tcp 127.0.0.1:29957: use of closed network connection"
+I[2026-10-03|13:01:58.527] Closing statestore                           
+I[2026-10-03|13:01:58.527] Closing evidencestore                        

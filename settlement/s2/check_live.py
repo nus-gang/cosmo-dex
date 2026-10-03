@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Bounded single-validator RPC/bootstrap test using public development keys."""
 import argparse
+import base64
+import http.client
+import threading
 import hashlib
 import json
 from pathlib import Path
@@ -9,6 +12,8 @@ import time
 
 from bootstrap import prepare
 from chain import Collector, RPC
+from direct import Direct
+from server import Server
 from transport import Engine, decode, encode
 
 
@@ -24,6 +29,8 @@ def run(chain, engine_binary, operators, output, port):
                   f'tcp://127.0.0.1:{port-1}', '--operator-accounts', operators)
     (output / 'init.json').write_bytes(encode(initial))
     engine = None
+    server = None
+    http_thread = None
     with (output / 'node.log').open('wb') as log:
         node = subprocess.Popen([chain, 'start', '--network', 's2', '--home', str(home),
                                  '--genesis-hash', initial['genesis_hash']], stdout=log, stderr=log)
@@ -64,8 +71,35 @@ def run(chain, engine_binary, operators, output, port):
                 observe()
             before = cli('snapshot', '--rpc', rpc)
             (output / 'deposited-snapshot.json').write_bytes(encode(before))
-            tx = cli('tx', '--rpc', rpc, '--user', '0', '--denom', 'DEVBASE',
-                     '--op', 'withdraw', '--amount', '1000000', '--request-id', f'{3:064x}')
+            # DIRECT remains usable even if the matching process is unavailable.
+            class ClosedEngine:
+                def request(self, *args):
+                    raise AssertionError('DIRECT must not consult matching admission')
+            server = Server(('127.0.0.1', 0), ClosedEngine(), Direct(client, manifest, output / 'direct'))
+            http_thread = threading.Thread(target=server.serve_forever, kwargs={'poll_interval': .05})
+            http_thread.start()
+            signed = output / 'withdraw.tx'
+            cli('tx', '--rpc', rpc, '--user', '0', '--denom', 'DEVBASE',
+                '--op', 'withdraw', '--amount', '1000000', '--request-id', f'{3:064x}', '--out', signed)
+            def http_request(method, path, body=None):
+                connection = http.client.HTTPConnection('127.0.0.1', server.server_port, timeout=10)
+                try:
+                    connection.request(method, path, None if body is None else encode(body),
+                                       {'Origin': 'http://127.0.0.1:5173', 'Content-Type': 'application/json'})
+                    response = connection.getresponse()
+                    return response.status, decode(response.read())
+                finally:
+                    connection.close()
+            status, submitted = http_request('POST', '/s1/txs', {'tx_bytes': base64.b64encode(signed.read_bytes()).decode()})
+            assert status == 202 and submitted['state'] == 'SUBMISSION_UNKNOWN', submitted
+            (output / 'withdraw-submit.json').write_bytes(encode(submitted))
+            for _ in range(50):
+                status, tx = http_request('GET', '/s1/txs/' + submitted['tx_hash'])
+                if status == 200 and tx['state'] == 'COMMITTED':
+                    break
+                time.sleep(.2)
+            else:
+                raise RuntimeError('DIRECT commit timeout: ' + str(tx))
             (output / 'withdraw.json').write_bytes(encode(tx))
             live = observe()
             after = cli('snapshot', '--rpc', rpc)
@@ -79,13 +113,18 @@ def run(chain, engine_binary, operators, output, port):
             assert int(restarted['observation']['observed_height']) >= int(live['observation']['observed_height'])
             (output / 'status-before-restart.json').write_bytes(encode(live))
             (output / 'status-after-restart.json').write_bytes(encode(restarted))
-            report = {'result': 'PASS', 'scope': 'single-validator real RPC, two deposits, direct withdrawal epoch, engine restart; signed HTTP orders and bilateral fill correction NOT_RUN',
+            report = {'result': 'PASS', 'scope': 'single-validator real RPC, two deposits, signed DIRECT HTTP withdrawal while engine unavailable, block/result verification, epoch, engine restart; signed HTTP orders and bilateral fill correction NOT_RUN',
                       'genesis_hash': manifest['context']['genesis_hash'],
                       'chain_binary_hash': hashlib.sha256(Path(chain).read_bytes()).hexdigest(),
                       'engine_binary_hash': hashlib.sha256(Path(engine_binary).read_bytes()).hexdigest()}
             (output / 'result.json').write_bytes(encode(report))
             print(json.dumps(report))
         finally:
+            if server:
+                server.shutdown()
+                server.server_close()
+            if http_thread:
+                http_thread.join(timeout=5)
             if engine:
                 engine.close()
             if node.poll() is None:
