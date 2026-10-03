@@ -18,6 +18,8 @@ jobs:
         run: sh scripts/build.sh
       - name: Public-key genesis propagation and reset guards
         run: python3 ops/s1/init-test.py
+      - name: Bounded logs and fail-closed supervisor
+        run: python3 ops/s1/log-test.py
       - name: Real four-validator consensus
         run: python3 ops/s1/integration.py --home .runtime/s1-ci --output .evidence/s1-ci
       - name: Upload public test evidence (no validator private keys)
