@@ -186,6 +186,12 @@ func Encoding() (*codec.ProtoCodec, client.TxConfig) {
 	return c, authtx.NewTxConfig(c, []signing.SignMode{signing.SignMode_SIGN_MODE_DIRECT})
 }
 func New(db dbm.DB, hash []byte, logger log.Logger) (*App, error) {
+	return NewForChain(db, hash, logger, ex.ChainID)
+}
+func NewForChain(db dbm.DB, hash []byte, logger log.Logger, chainID string) (*App, error) {
+	if chainID != ex.ChainID && chainID != ex.S2ChainID {
+		return nil, fmt.Errorf("WRONG_CHAIN")
+	}
 	if len(hash) != 32 {
 		return nil, fmt.Errorf("genesis hash required")
 	}
@@ -196,7 +202,7 @@ func New(db dbm.DB, hash []byte, logger log.Logger) (*App, error) {
 		}
 		return tx.TxDecoder()(raw)
 	}
-	b := baseapp.NewBaseApp("nusd", logger, db, decode, baseapp.SetChainID(ex.ChainID))
+	b := baseapp.NewBaseApp("nusd", logger, db, decode, baseapp.SetChainID(chainID))
 	b.SetVersion(Version)
 	b.SetInterfaceRegistry(c.InterfaceRegistry())
 	b.SetTxEncoder(tx.TxEncoder())
@@ -210,7 +216,7 @@ func New(db dbm.DB, hash []byte, logger log.Logger) (*App, error) {
 	bank := bankkeeper.NewBaseKeeper(c, runtime.NewKVStoreService(bk), auth, map[string]bool{authtypes.NewModuleAddress(ex.Module).String(): true}, authority, logger)
 	cons := consensuskeeper.NewKeeper(c, runtime.NewKVStoreService(ck), authority, nil)
 	b.SetParamStore(cons.ParamsStore)
-	a := &App{b, auth, bank, ex.Keeper{Key: ek, Bank: bank, Codec: c, GenesisHash: bytes.Clone(hash)}, c, tx, bytes.Clone(hash)}
+	a := &App{b, auth, bank, ex.Keeper{Key: ek, Bank: bank, Codec: c, GenesisHash: bytes.Clone(hash), Network: chainID}, c, tx, bytes.Clone(hash)}
 	ext.RegisterMsgServer(b.MsgServiceRouter(), a.Exchange)
 	ext.RegisterQueryServer(b.GRPCQueryRouter(), queryServer{a})
 	standard, e := ante.NewAnteHandler(ante.HandlerOptions{AccountKeeper: auth, BankKeeper: bank, SignModeHandler: tx.SignModeHandler()})
@@ -224,12 +230,17 @@ func New(db dbm.DB, hash []byte, logger log.Logger) (*App, error) {
 		return standard(ctx, t, sim)
 	})
 	b.SetInitChainer(a.init)
+	if chainID == ex.S2ChainID {
+		b.SetEndBlocker(func(ctx sdk.Context) (sdk.EndBlock, error) {
+			return sdk.EndBlock{}, a.saveS2Header(ctx)
+		})
+	}
 	if e := b.LoadLatestVersion(); e != nil {
 		return nil, e
 	}
 	if b.LastBlockHeight() > 0 {
 		stored := b.CommitMultiStore().GetKVStore(ek).Get([]byte("genesis"))
-		if !bytes.Equal(stored, hash) {
+		if !bytes.Equal(stored, hash) || (chainID == ex.S2ChainID) != (string(b.CommitMultiStore().GetKVStore(ek).Get([]byte("chain_id"))) == ex.S2ChainID) {
 			return nil, fmt.Errorf("genesis hash differs from persisted state")
 		}
 	}
@@ -293,7 +304,7 @@ func (a *App) guard(ctx sdk.Context, t sdk.Tx) error {
 	return nil
 }
 func (a *App) init(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
-	if req.ChainId != ex.ChainID {
+	if req.ChainId != a.Exchange.ChainID() {
 		return nil, fmt.Errorf("WRONG_CHAIN")
 	}
 	g, err := DecodeGenesis(req.AppStateBytes)
@@ -306,7 +317,11 @@ func (a *App) init(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseI
 		pub := &mldsa65.PubKey{Key: raw}
 		addr := sdk.AccAddress(pub.Address())
 		accounts = append(accounts, authtypes.NewBaseAccount(addr, pub, uint64(len(accounts)), 0))
-		balances = append(balances, banktypes.Balance{Address: addr.String(), Coins: sdk.NewCoins(sdk.NewCoin(ex.Quote, sdkmath.NewInt(1000000000000)), sdk.NewCoin(ex.Gas, sdkmath.NewInt(1000000000)))})
+		coins := sdk.NewCoins(sdk.NewCoin(ex.Quote, sdkmath.NewInt(1000000000000)), sdk.NewCoin(ex.Gas, sdkmath.NewInt(1000000000)))
+		if a.Exchange.ChainID() == ex.S2ChainID {
+			coins = coins.Add(sdk.NewCoin(ex.Base, sdkmath.NewInt(1000000000000)))
+		}
+		balances = append(balances, banktypes.Balance{Address: addr.String(), Coins: coins})
 	}
 	for _, op := range g.OperatorAccounts {
 		addr, _ := sdk.AccAddressFromBech32(op.Address)
@@ -322,6 +337,13 @@ func (a *App) init(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseI
 	a.Bank.InitGenesis(ctx, bg)
 	store := ctx.KVStore(a.Exchange.Key)
 	store.Set([]byte("genesis"), a.GenesisHash)
+	store.Set([]byte("chain_id"), []byte(a.Exchange.ChainID()))
+	if a.Exchange.ChainID() == ex.S2ChainID {
+		a.initS2Config(ctx)
+	}
+	for _, denom := range a.Exchange.Assets() {
+		store.Set([]byte("genesis_supply/"+denom), []byte(a.Bank.GetSupply(ctx, denom).Amount.String()))
+	}
 	store.Set([]byte("genesis_gas_supply"), []byte(a.Bank.GetSupply(ctx, ex.Gas).Amount.String()))
 	for _, raw := range g.PublicKeys {
 		store.Set([]byte("user/"+sdk.AccAddress((&mldsa65.PubKey{Key: raw}).Address()).String()), []byte{1})
@@ -332,6 +354,9 @@ func (a *App) init(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseI
 	return &abci.ResponseInitChain{Validators: req.Validators}, a.Exchange.Invariant(ctx)
 }
 func (a *App) snapshot(ctx sdk.Context) (map[string]any, error) {
+	if a.Exchange.ChainID() == ex.S2ChainID {
+		return a.s2Snapshot(ctx)
+	}
 	out := map[string]any{"observed_height": strconv.FormatInt(ctx.BlockHeight(), 10), "genesis_hash": hex.EncodeToString(a.GenesisHash), "chain_id": ex.ChainID, "state": "COMMITTED"}
 	users := []map[string]any{}
 	a.Auth.IterateAccounts(ctx, func(ac sdk.AccountI) bool {

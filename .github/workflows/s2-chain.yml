@@ -1,0 +1,30 @@
+name: S2 chain
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  chain-s2:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: chain/app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.5'
+          cache-dependency-path: chain/app/go.sum
+      - run: sh scripts/build.sh
+      - run: NUSD_BINARY="$PWD/bin/nusd" S2_EVIDENCE_DIR="$RUNNER_TEMP/s2-unit" go test -mod=readonly -race ./...
+      - run: python3 scripts/s2-smoke.py --binary bin/nusd --output "$RUNNER_TEMP/s2-comet"
+      - run: python3 scripts/s2-snapshot-check.py "$RUNNER_TEMP/s2-comet/final-snapshot.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: s2-chain-evidence
+          path: |
+            ${{ runner.temp }}/s2-unit
+            ${{ runner.temp }}/s2-comet/*.json
+            ${{ runner.temp }}/s2-comet/*.txt
+            ${{ runner.temp }}/s2-comet/*.log
+            ${{ runner.temp }}/s2-comet/node/config/genesis.json
