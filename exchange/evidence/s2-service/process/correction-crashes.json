@@ -1,0 +1,344 @@
+[
+  {
+    "ack_receipts": [
+      {
+        "code": "OK",
+        "command_seq": "1",
+        "context": {
+          "chain_id": "nus-s2-dev-1",
+          "config_hash": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+          "contract_hash": "2e103517c344f21c2b97fbe7e977f0e614c32c704b0f54978c5bb1fb3ae6ab0f",
+          "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+          "market_config_version": "1",
+          "market_id": "DEVBASE/DEVQUOTE",
+          "schema_version": "1"
+        },
+        "durability": "LOCAL_FSYNC",
+        "journal_commit_hash": "4062f7848aef0cc58940c0dfc29b4aae9afd7e23443433383405ce1bec8dd438",
+        "kind": "ORDER",
+        "observed_height": "100",
+        "owner": "1maAbhHO4Zp8mJ90RfkN1BnPTS0=",
+        "owner_epoch": "0",
+        "replicated": false,
+        "request_hash": "cccd34f5e048936e4505273a79352cf5aaf2362d4069533bdb730b95ba31ad27",
+        "request_id": "3333333333333333333333333333333333333333333333333333333333333333",
+        "result_hash": "c21399d8e2ce8e347c8d82e0bf51d5d444724d00f9218628a1c1cb78a1ae43e8",
+        "snapshot_id": "a3dec9f33f145fafc50c52b6e04c2e8161dd64c11d2318496cec301fac55b886",
+        "state": "LOCAL_ACCEPTED"
+      },
+      {
+        "code": "OK",
+        "command_seq": "2",
+        "context": {
+          "chain_id": "nus-s2-dev-1",
+          "config_hash": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+          "contract_hash": "2e103517c344f21c2b97fbe7e977f0e614c32c704b0f54978c5bb1fb3ae6ab0f",
+          "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+          "market_config_version": "1",
+          "market_id": "DEVBASE/DEVQUOTE",
+          "schema_version": "1"
+        },
+        "durability": "LOCAL_FSYNC",
+        "journal_commit_hash": "550c0f046cf2cb0aa2ed29863a401884c542109071ae73f0f607c9b6d6b21f40",
+        "kind": "ORDER",
+        "observed_height": "100",
+        "owner": "QIBxvK9P4FGwto+OWyqdu8Fdq9k=",
+        "owner_epoch": "0",
+        "replicated": false,
+        "request_hash": "1d0fabd9509dde6feb65a6387da888ce386b94f42b554df531c3ca2c63eb7ccc",
+        "request_id": "f36ff19481908b1f898ec6bd2369d8244bb20368e5cc3d963b65110a94dbcc77",
+        "result_hash": "d3466b9e25ea4a9d7c310713d3e67de30865c8a8fcf52e10868635f24367945a",
+        "snapshot_id": "a3dec9f33f145fafc50c52b6e04c2e8161dd64c11d2318496cec301fac55b886",
+        "state": "LOCAL_ACCEPTED"
+      }
+    ],
+    "outcome": "REPLAYED",
+    "point": "before",
+    "wal_sha256": "b549d833366902bbef111fd2366de7446dcb0cc78beaf0a19eaaca25c5f95242"
+  },
+  {
+    "ack_receipts": [
+      {
+        "code": "OK",
+        "command_seq": "1",
+        "context": {
+          "chain_id": "nus-s2-dev-1",
+          "config_hash": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+          "contract_hash": "2e103517c344f21c2b97fbe7e977f0e614c32c704b0f54978c5bb1fb3ae6ab0f",
+          "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+          "market_config_version": "1",
+          "market_id": "DEVBASE/DEVQUOTE",
+          "schema_version": "1"
+        },
+        "durability": "LOCAL_FSYNC",
+        "journal_commit_hash": "28c1b1c8a1268cd825ea091c933e3346299db1292b25336f7175ab65782a0fcb",
+        "kind": "ORDER",
+        "observed_height": "100",
+        "owner": "1maAbhHO4Zp8mJ90RfkN1BnPTS0=",
+        "owner_epoch": "0",
+        "replicated": false,
+        "request_hash": "cccd34f5e048936e4505273a79352cf5aaf2362d4069533bdb730b95ba31ad27",
+        "request_id": "3333333333333333333333333333333333333333333333333333333333333333",
+        "result_hash": "347647722567c74ef42ad7f3a2712a4860647cfcaced4dfd4639fe84ef48d169",
+        "snapshot_id": "f1a9e2fcb4a47926f4b5d5c296ce0a859ba91df5de27ce773ae2dc9c05f7b683",
+        "state": "LOCAL_ACCEPTED"
+      },
+      {
+        "code": "OK",
+        "command_seq": "2",
+        "context": {
+          "chain_id": "nus-s2-dev-1",
+          "config_hash": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+          "contract_hash": "2e103517c344f21c2b97fbe7e977f0e614c32c704b0f54978c5bb1fb3ae6ab0f",
+          "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+          "market_config_version": "1",
+          "market_id": "DEVBASE/DEVQUOTE",
+          "schema_version": "1"
+        },
+        "durability": "LOCAL_FSYNC",
+        "journal_commit_hash": "afac28cbf7b4c9804371e62e55641af687bcd153c7a4949dbbb1df18f8e9fbd6",
+        "kind": "ORDER",
+        "observed_height": "100",
+        "owner": "QIBxvK9P4FGwto+OWyqdu8Fdq9k=",
+        "owner_epoch": "0",
+        "replicated": false,
+        "request_hash": "1d0fabd9509dde6feb65a6387da888ce386b94f42b554df531c3ca2c63eb7ccc",
+        "request_id": "f36ff19481908b1f898ec6bd2369d8244bb20368e5cc3d963b65110a94dbcc77",
+        "result_hash": "0bf2236cd71107e34478f21c2ed77b71699c62fba6b050d1f01f1634eafc6fac",
+        "snapshot_id": "f1a9e2fcb4a47926f4b5d5c296ce0a859ba91df5de27ce773ae2dc9c05f7b683",
+        "state": "LOCAL_ACCEPTED"
+      }
+    ],
+    "outcome": "RECOVERY_REQUIRED",
+    "point": "partial",
+    "wal_sha256": "2d0fc9c9b162dd9af1cada253532ce90e060d0af14bc7872d5a8809ac6f41cb7"
+  },
+  {
+    "ack_receipts": [
+      {
+        "code": "OK",
+        "command_seq": "1",
+        "context": {
+          "chain_id": "nus-s2-dev-1",
+          "config_hash": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+          "contract_hash": "2e103517c344f21c2b97fbe7e977f0e614c32c704b0f54978c5bb1fb3ae6ab0f",
+          "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+          "market_config_version": "1",
+          "market_id": "DEVBASE/DEVQUOTE",
+          "schema_version": "1"
+        },
+        "durability": "LOCAL_FSYNC",
+        "journal_commit_hash": "5ba408be36ca90d88ca309c77cb9c64cd8288304d12b5644676958bb9a111eb1",
+        "kind": "ORDER",
+        "observed_height": "100",
+        "owner": "1maAbhHO4Zp8mJ90RfkN1BnPTS0=",
+        "owner_epoch": "0",
+        "replicated": false,
+        "request_hash": "cccd34f5e048936e4505273a79352cf5aaf2362d4069533bdb730b95ba31ad27",
+        "request_id": "3333333333333333333333333333333333333333333333333333333333333333",
+        "result_hash": "69504d69976f79fa9f0d8f034c5ccdaeb9db79bff2bfc6270c662ba4f71718b4",
+        "snapshot_id": "9c37ade43ae80348219481c19f3d2c91468e76c6df5fae8647ca40044b5196a2",
+        "state": "LOCAL_ACCEPTED"
+      },
+      {
+        "code": "OK",
+        "command_seq": "2",
+        "context": {
+          "chain_id": "nus-s2-dev-1",
+          "config_hash": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+          "contract_hash": "2e103517c344f21c2b97fbe7e977f0e614c32c704b0f54978c5bb1fb3ae6ab0f",
+          "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+          "market_config_version": "1",
+          "market_id": "DEVBASE/DEVQUOTE",
+          "schema_version": "1"
+        },
+        "durability": "LOCAL_FSYNC",
+        "journal_commit_hash": "9eff2474864fc81d3c7af4530930f7070e6b927886e43b4919f64780056f909a",
+        "kind": "ORDER",
+        "observed_height": "100",
+        "owner": "QIBxvK9P4FGwto+OWyqdu8Fdq9k=",
+        "owner_epoch": "0",
+        "replicated": false,
+        "request_hash": "1d0fabd9509dde6feb65a6387da888ce386b94f42b554df531c3ca2c63eb7ccc",
+        "request_id": "f36ff19481908b1f898ec6bd2369d8244bb20368e5cc3d963b65110a94dbcc77",
+        "result_hash": "85494f7e5d20c6be343044373502da2b66cbc541b6ecb19c50d432e9c3590882",
+        "snapshot_id": "9c37ade43ae80348219481c19f3d2c91468e76c6df5fae8647ca40044b5196a2",
+        "state": "LOCAL_ACCEPTED"
+      }
+    ],
+    "outcome": "RECOVERY_REQUIRED",
+    "point": "wal",
+    "wal_sha256": "ddba310ea57d0748209ae1d71fc4582320e7f4161292def43e6b99f5a112dc44"
+  },
+  {
+    "ack_receipts": [
+      {
+        "code": "OK",
+        "command_seq": "1",
+        "context": {
+          "chain_id": "nus-s2-dev-1",
+          "config_hash": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+          "contract_hash": "2e103517c344f21c2b97fbe7e977f0e614c32c704b0f54978c5bb1fb3ae6ab0f",
+          "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+          "market_config_version": "1",
+          "market_id": "DEVBASE/DEVQUOTE",
+          "schema_version": "1"
+        },
+        "durability": "LOCAL_FSYNC",
+        "journal_commit_hash": "b9473542ff3042de4e725386ff534829446e5c9dda9a32c2839bd7ef73aad01f",
+        "kind": "ORDER",
+        "observed_height": "100",
+        "owner": "1maAbhHO4Zp8mJ90RfkN1BnPTS0=",
+        "owner_epoch": "0",
+        "replicated": false,
+        "request_hash": "cccd34f5e048936e4505273a79352cf5aaf2362d4069533bdb730b95ba31ad27",
+        "request_id": "3333333333333333333333333333333333333333333333333333333333333333",
+        "result_hash": "b51fd971cda5b9f13e531fa9aa5c2b95c6cbfbe44d82da27011fdd9b7b557bc0",
+        "snapshot_id": "c568cc0df4246071da694528a329b9e8189405fa8fa948b6003d9a62245ab9be",
+        "state": "LOCAL_ACCEPTED"
+      },
+      {
+        "code": "OK",
+        "command_seq": "2",
+        "context": {
+          "chain_id": "nus-s2-dev-1",
+          "config_hash": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+          "contract_hash": "2e103517c344f21c2b97fbe7e977f0e614c32c704b0f54978c5bb1fb3ae6ab0f",
+          "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+          "market_config_version": "1",
+          "market_id": "DEVBASE/DEVQUOTE",
+          "schema_version": "1"
+        },
+        "durability": "LOCAL_FSYNC",
+        "journal_commit_hash": "1512d2397fe02580e0d87795fb3be53ad2755376e327853e1d62d699174469c1",
+        "kind": "ORDER",
+        "observed_height": "100",
+        "owner": "QIBxvK9P4FGwto+OWyqdu8Fdq9k=",
+        "owner_epoch": "0",
+        "replicated": false,
+        "request_hash": "1d0fabd9509dde6feb65a6387da888ce386b94f42b554df531c3ca2c63eb7ccc",
+        "request_id": "f36ff19481908b1f898ec6bd2369d8244bb20368e5cc3d963b65110a94dbcc77",
+        "result_hash": "cc2d28fce15d649ddc4001c4ecea7b0c7ae8ad299ceebfcfdbdcf1838af48095",
+        "snapshot_id": "c568cc0df4246071da694528a329b9e8189405fa8fa948b6003d9a62245ab9be",
+        "state": "LOCAL_ACCEPTED"
+      }
+    ],
+    "outcome": "RECOVERY_REQUIRED",
+    "point": "marker",
+    "wal_sha256": "de839f537cff750b07b0fecb0541da7af8ab04499a384c9de09d781a570c84b7"
+  },
+  {
+    "ack_receipts": [
+      {
+        "code": "OK",
+        "command_seq": "1",
+        "context": {
+          "chain_id": "nus-s2-dev-1",
+          "config_hash": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+          "contract_hash": "2e103517c344f21c2b97fbe7e977f0e614c32c704b0f54978c5bb1fb3ae6ab0f",
+          "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+          "market_config_version": "1",
+          "market_id": "DEVBASE/DEVQUOTE",
+          "schema_version": "1"
+        },
+        "durability": "LOCAL_FSYNC",
+        "journal_commit_hash": "71bf4cb219db19025b72306b2c9d1c328f8f965e6e067e2b3319b0e712784568",
+        "kind": "ORDER",
+        "observed_height": "100",
+        "owner": "1maAbhHO4Zp8mJ90RfkN1BnPTS0=",
+        "owner_epoch": "0",
+        "replicated": false,
+        "request_hash": "cccd34f5e048936e4505273a79352cf5aaf2362d4069533bdb730b95ba31ad27",
+        "request_id": "3333333333333333333333333333333333333333333333333333333333333333",
+        "result_hash": "1df21ce10ec7562410362020abd8c1a6955c42f529b85b005a40b75373f5c182",
+        "snapshot_id": "7b5f36ad5bbcfba467c77137c7da43e4d845d0837c54781efdacd1038656f55b",
+        "state": "LOCAL_ACCEPTED"
+      },
+      {
+        "code": "OK",
+        "command_seq": "2",
+        "context": {
+          "chain_id": "nus-s2-dev-1",
+          "config_hash": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+          "contract_hash": "2e103517c344f21c2b97fbe7e977f0e614c32c704b0f54978c5bb1fb3ae6ab0f",
+          "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+          "market_config_version": "1",
+          "market_id": "DEVBASE/DEVQUOTE",
+          "schema_version": "1"
+        },
+        "durability": "LOCAL_FSYNC",
+        "journal_commit_hash": "3f95f805276d9584fa1f9065842dbd8614b15cd5c6505c86be97dc394d8b5f84",
+        "kind": "ORDER",
+        "observed_height": "100",
+        "owner": "QIBxvK9P4FGwto+OWyqdu8Fdq9k=",
+        "owner_epoch": "0",
+        "replicated": false,
+        "request_hash": "1d0fabd9509dde6feb65a6387da888ce386b94f42b554df531c3ca2c63eb7ccc",
+        "request_id": "f36ff19481908b1f898ec6bd2369d8244bb20368e5cc3d963b65110a94dbcc77",
+        "result_hash": "86460bcdb4b821572da1ee2380bbd700a2cf7ca47874a57c7fbbac124c35b6e1",
+        "snapshot_id": "7b5f36ad5bbcfba467c77137c7da43e4d845d0837c54781efdacd1038656f55b",
+        "state": "LOCAL_ACCEPTED"
+      }
+    ],
+    "outcome": "REPLAYED",
+    "point": "rename",
+    "wal_sha256": "299a6084157eca8924835ec8ca6079144347bd887ec237d60e9e18d852b58d31"
+  },
+  {
+    "ack_receipts": [
+      {
+        "code": "OK",
+        "command_seq": "1",
+        "context": {
+          "chain_id": "nus-s2-dev-1",
+          "config_hash": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+          "contract_hash": "2e103517c344f21c2b97fbe7e977f0e614c32c704b0f54978c5bb1fb3ae6ab0f",
+          "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+          "market_config_version": "1",
+          "market_id": "DEVBASE/DEVQUOTE",
+          "schema_version": "1"
+        },
+        "durability": "LOCAL_FSYNC",
+        "journal_commit_hash": "d687be955a80d23cca3a46eb244649d1587f069f3b55dbbda2246ad51a683d13",
+        "kind": "ORDER",
+        "observed_height": "100",
+        "owner": "1maAbhHO4Zp8mJ90RfkN1BnPTS0=",
+        "owner_epoch": "0",
+        "replicated": false,
+        "request_hash": "cccd34f5e048936e4505273a79352cf5aaf2362d4069533bdb730b95ba31ad27",
+        "request_id": "3333333333333333333333333333333333333333333333333333333333333333",
+        "result_hash": "f412633dae2c8c71955177499a729c279d60b1cbfee953f612e40c9ca491bcb9",
+        "snapshot_id": "3e1fc1cb1d5670d8511b59d3d75298703922b95e3d0d67cc43495483e5645778",
+        "state": "LOCAL_ACCEPTED"
+      },
+      {
+        "code": "OK",
+        "command_seq": "2",
+        "context": {
+          "chain_id": "nus-s2-dev-1",
+          "config_hash": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+          "contract_hash": "2e103517c344f21c2b97fbe7e977f0e614c32c704b0f54978c5bb1fb3ae6ab0f",
+          "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+          "market_config_version": "1",
+          "market_id": "DEVBASE/DEVQUOTE",
+          "schema_version": "1"
+        },
+        "durability": "LOCAL_FSYNC",
+        "journal_commit_hash": "c4b4dba506d1cbcc5927fe3372cb960b16eb5185308392805ba1b4d4bb26f230",
+        "kind": "ORDER",
+        "observed_height": "100",
+        "owner": "QIBxvK9P4FGwto+OWyqdu8Fdq9k=",
+        "owner_epoch": "0",
+        "replicated": false,
+        "request_hash": "1d0fabd9509dde6feb65a6387da888ce386b94f42b554df531c3ca2c63eb7ccc",
+        "request_id": "f36ff19481908b1f898ec6bd2369d8244bb20368e5cc3d963b65110a94dbcc77",
+        "result_hash": "e3a9adeb445f3ad446ca30ab4825c30aa41b67e94fb3c9e2beb2bbfb1d5b6010",
+        "snapshot_id": "3e1fc1cb1d5670d8511b59d3d75298703922b95e3d0d67cc43495483e5645778",
+        "state": "LOCAL_ACCEPTED"
+      }
+    ],
+    "outcome": "REPLAYED",
+    "point": "commit",
+    "wal_sha256": "6676c5777d5f46c4bef8b8f000d416be04f86dfc0ac8cecbfc8da871e902c695"
+  }
+]

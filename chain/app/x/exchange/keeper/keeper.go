@@ -21,6 +21,8 @@ import (
 )
 
 const Module = "exchange"
+const Base = "DEVBASE"
+const S2ChainID = "nus-s2-dev-1"
 const Quote = "DEVQUOTE"
 const Gas = "DEVGAS"
 const ChainID = "nus-s1-dev-1"
@@ -30,6 +32,7 @@ type Keeper struct {
 	Bank        bankkeeper.BaseKeeper
 	Codec       codec.Codec
 	GenesisHash []byte
+	Network     string
 }
 type Position struct {
 	Amount string `json:"exchange_atoms"`
@@ -58,7 +61,33 @@ func put(s storetypes.KVStore, k []byte, v any) {
 	}
 	s.Set(k, b)
 }
+func (k Keeper) ChainID() string {
+	if k.Network == "" {
+		return ChainID
+	}
+	return k.Network
+}
+func (k Keeper) Assets() []string {
+	if k.ChainID() == S2ChainID {
+		return []string{Base, Quote}
+	}
+	return []string{Quote}
+}
 func (k Keeper) Position(ctx sdk.Context, owner string) Position {
+	return k.AssetPosition(ctx, owner, Quote)
+}
+func (k Keeper) AssetPosition(ctx sdk.Context, owner, denom string) Position {
+	if k.ChainID() == S2ChainID {
+		store := ctx.KVStore(k.Key)
+		amount, epoch := "0", "0"
+		if b := store.Get([]byte("a/" + denom + "/" + owner)); b != nil {
+			amount = string(b)
+		}
+		if b := store.Get([]byte("e/" + owner)); b != nil {
+			epoch = string(b)
+		}
+		return Position{amount, epoch}
+	}
 	p := Position{"0", "0"}
 	b := ctx.KVStore(k.Key).Get([]byte("p/" + owner))
 	if b != nil {
@@ -95,14 +124,14 @@ func Uint(s string) (uint64, error) {
 	return n, nil
 }
 func (k Keeper) apply(ctx sdk.Context, msg sdk.Msg, owner, denom, amount string, id []byte, epoch, expiry string, genesis []byte, withdraw bool) error {
-	if ctx.ChainID() != ChainID || !bytes.Equal(genesis, k.GenesisHash) {
+	if ctx.ChainID() != k.ChainID() || !bytes.Equal(genesis, k.GenesisHash) {
 		return fmt.Errorf("WRONG_CONTEXT")
 	}
 	addr, e := sdk.AccAddressFromBech32(owner)
 	if e != nil || addr.String() != owner {
 		return fmt.Errorf("NON_CANONICAL_INPUT")
 	}
-	if denom != Quote || len(id) != 32 {
+	if (denom != Quote && !(k.ChainID() == S2ChainID && denom == Base)) || len(id) != 32 {
 		return fmt.Errorf("NON_CANONICAL_INPUT")
 	}
 	n, e := Uint(amount)
@@ -139,7 +168,7 @@ func (k Keeper) apply(ctx sdk.Context, msg sdk.Msg, owner, denom, amount string,
 		ctx.EventManager().EmitEvent(sdk.NewEvent("exchange_retry", sdk.NewAttribute("original_tx_hash", r.TxHash)))
 		return nil
 	}
-	p := k.Position(ctx, owner)
+	p := k.AssetPosition(ctx, owner, denom)
 	current, e := Uint(p.Epoch)
 	if e != nil {
 		panic(e)
@@ -155,7 +184,7 @@ func (k Keeper) apply(ctx sdk.Context, msg sdk.Msg, owner, denom, amount string,
 		panic("corrupt amount")
 	}
 	amt := sdkmath.NewIntFromUint64(n)
-	coins := sdk.NewCoins(sdk.NewCoin(Quote, amt))
+	coins := sdk.NewCoins(sdk.NewCoin(denom, amt))
 	before := p.Epoch
 	operation := "DEPOSIT"
 	if withdraw {
@@ -172,7 +201,7 @@ func (k Keeper) apply(ctx sdk.Context, msg sdk.Msg, owner, denom, amount string,
 		p.Epoch = strconv.FormatUint(current+1, 10)
 		operation = "WITHDRAW"
 	} else {
-		if k.Bank.GetBalance(ctx, addr, Quote).Amount.LT(amt) {
+		if k.Bank.GetBalance(ctx, addr, denom).Amount.LT(amt) {
 			return fmt.Errorf("INSUFFICIENT_BANK_BALANCE")
 		}
 		if confirmed.Add(amt).BigInt().BitLen() > 128 {
@@ -184,9 +213,14 @@ func (k Keeper) apply(ctx sdk.Context, msg sdk.Msg, owner, denom, amount string,
 		confirmed = confirmed.Add(amt)
 	}
 	p.Amount = confirmed.String()
-	put(ctx.KVStore(k.Key), []byte("p/"+owner), p)
+	if k.ChainID() == S2ChainID {
+		ctx.KVStore(k.Key).Set([]byte("a/"+denom+"/"+owner), []byte(p.Amount))
+		ctx.KVStore(k.Key).Set([]byte("e/"+owner), []byte(p.Epoch))
+	} else {
+		put(ctx.KVStore(k.Key), []byte("p/"+owner), p)
+	}
 	txhash := sha256.Sum256(ctx.TxBytes())
-	r := Receipt{ChainID, hex.EncodeToString(genesis), owner, ids, hs, operation, Quote, amount, strconv.FormatInt(ctx.BlockHeight(), 10), fmt.Sprintf("%X", txhash), before, p.Epoch, "COMMITTED"}
+	r := Receipt{k.ChainID(), hex.EncodeToString(genesis), owner, ids, hs, operation, denom, amount, strconv.FormatInt(ctx.BlockHeight(), 10), fmt.Sprintf("%X", txhash), before, p.Epoch, "COMMITTED"}
 	put(ctx.KVStore(k.Key), []byte("r/"+owner+"/"+ids), r)
 	if e = k.Invariant(ctx); e != nil {
 		return e
@@ -195,6 +229,9 @@ func (k Keeper) apply(ctx sdk.Context, msg sdk.Msg, owner, denom, amount string,
 	return nil
 }
 func (k Keeper) Invariant(ctx sdk.Context) error {
+	if k.ChainID() == S2ChainID {
+		return k.s2Invariant(ctx)
+	}
 	total := sdkmath.ZeroInt()
 	it := storetypes.KVStorePrefixIterator(ctx.KVStore(k.Key), []byte("p/"))
 	defer it.Close()
@@ -247,4 +284,44 @@ func (k Keeper) Withdraw(c context.Context, m *types.MsgWithdraw) (*types.MsgWit
 		return nil, e
 	}
 	return &types.MsgWithdrawResponse{}, nil
+}
+
+// s2Invariant reconciles each asset independently, including all bank accounts.
+func (k Keeper) s2Invariant(ctx sdk.Context) error {
+	for _, denom := range append(k.Assets(), Gas) {
+		bankTotal := sdkmath.ZeroInt()
+		k.Bank.IterateAllBalances(ctx, func(_ sdk.AccAddress, coin sdk.Coin) bool {
+			if coin.Denom == denom {
+				bankTotal = bankTotal.Add(coin.Amount)
+			}
+			return false
+		})
+		supply := k.Bank.GetSupply(ctx, denom).Amount
+		key := "genesis_supply/" + denom
+		if denom == Gas {
+			key = "genesis_gas_supply"
+		}
+		initial, ok := sdkmath.NewIntFromString(string(ctx.KVStore(k.Key).Get([]byte(key))))
+		if !ok || !initial.Equal(supply) || !bankTotal.Equal(supply) {
+			return fmt.Errorf("SUPPLY_INVARIANT %s", denom)
+		}
+		if denom == Gas {
+			continue
+		}
+		total := sdkmath.ZeroInt()
+		it := storetypes.KVStorePrefixIterator(ctx.KVStore(k.Key), []byte("a/"+denom+"/"))
+		for ; it.Valid(); it.Next() {
+			n, ok := sdkmath.NewIntFromString(string(it.Value()))
+			if !ok || n.IsNegative() || n.BigInt().BitLen() > 128 {
+				it.Close()
+				return fmt.Errorf("INVALID_POSITION")
+			}
+			total = total.Add(n)
+		}
+		it.Close()
+		if !total.Equal(k.Bank.GetBalance(ctx, authtypes.NewModuleAddress(Module), denom).Amount) {
+			return fmt.Errorf("CUSTODY_INVARIANT %s", denom)
+		}
+	}
+	return nil
 }

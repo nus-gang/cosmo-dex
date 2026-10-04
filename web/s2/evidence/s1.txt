@@ -1,0 +1,20 @@
+✔ Go golden S1-DIRECT-01: message/body/auth/SignDoc and signature (12.326667ms)
+✔ Go golden S1-DIRECT-02: message/body/auth/SignDoc and signature (4.15925ms)
+✔ Go golden S1-DIRECT-03: message/body/auth/SignDoc and signature (3.880875ms)
+✔ decimal input rejects rounding, exponent, leading zeros and overflow (0.31925ms)
+✔ random session keys differ; closed session cannot sign (7.527917ms)
+✔ lost response keeps same hash and locks next signature; 404 cannot fail TX (39.469083ms)
+✔ wrong hash, zero height, inconsistent result cannot confirm (16.457958ms)
+✔ excess withdrawal never signs/submits (6.634125ms)
+✔ height 11 C=61 cannot regress to height 9 C=60; stale input cannot sign (8.079167ms)
+✔ network/account skew is labelled, not equality-gated; exact bigint heights (6.873791ms)
+✔ confirmed receipt provides a floor even before next account refresh (6.46875ms)
+✔ out-of-order completion checks watermark at response time; closed session rejects pending read (15.521583ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 226.966

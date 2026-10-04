@@ -1,0 +1,197 @@
+[
+  {
+    "context": {
+      "chain_id": "nus-s2-dev-1",
+      "config_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+      "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+      "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+      "market_config_version": "1",
+      "market_id": "DEVBASE/DEVQUOTE",
+      "schema_version": "1"
+    },
+    "fills": [
+      {
+        "command_seq": "2",
+        "execution_price_ticks": "10000",
+        "fee_base_atoms": "0",
+        "fee_policy_version": "1",
+        "fee_quote_atoms": "0",
+        "fill_id": "6f02976d2db860ab3a017b9e7a0756f271580cfc38e95d1e14b756cef9da53b6",
+        "match_index": "0",
+        "own_order_id": "3333333333333333333333333333333333333333333333333333333333333333",
+        "quantity_lots": "1000",
+        "reason": "S2_UNSETTLED",
+        "revision": "1",
+        "state": "PENDING"
+      }
+    ],
+    "ledger": [
+      {
+        "A": "6000000",
+        "C": "10000000",
+        "D": "1000000",
+        "P": "0",
+        "R": "3000000",
+        "denom": "DEVBASE"
+      },
+      {
+        "A": "0",
+        "C": "0",
+        "D": "0",
+        "P": "10000000",
+        "R": "0",
+        "denom": "DEVQUOTE"
+      }
+    ],
+    "next_cursor": "eyJvd25lciI6IjFtYUFiaEhPNFpwOG1KOTBSZmtOMUJuUFRTMD0iLCJjb250ZXh0X2hhc2giOiI1OTA0NGM4MDQ1NWEwNWM2NzBmMmQ0YzEwYTcwMzlkNzNjMWE1NTA3MWE0MzIzNDc4ODMxZGU3ODNjMWM0MDJhIiwic2VxIjozLCJvcmRlcnMiOjEsImZpbGxzIjoxfQ==",
+    "observed_height": "100",
+    "orders": [
+      {
+        "admission_seq": "1",
+        "cancelled_qty_lots": "0",
+        "corrected_qty_lots": "0",
+        "filled_qty_lots": "1000",
+        "limit_price_ticks": "10000",
+        "max_qty_lots": "2000",
+        "order_hash": "cccd34f5e048936e4505273a79352cf5aaf2362d4069533bdb730b95ba31ad27",
+        "order_id": "3333333333333333333333333333333333333333333333333333333333333333",
+        "order_type": "LIMIT_GTC",
+        "owner_epoch": "0",
+        "remaining_qty_lots": "1000",
+        "revision": "2",
+        "side": "SELL",
+        "state": "PARTIALLY_FILLED"
+      }
+    ],
+    "owner": "1maAbhHO4Zp8mJ90RfkN1BnPTS0=",
+    "owner_epoch": "0",
+    "revision": "3",
+    "snapshot_id": "9ff795d16f77b68bf1092f9487cd5de3e08c6ecde21fb9fab718a2024a27fc3a",
+    "stream_seq": "3"
+  },
+  {
+    "context": {
+      "chain_id": "nus-s2-dev-1",
+      "config_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+      "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+      "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+      "market_config_version": "1",
+      "market_id": "DEVBASE/DEVQUOTE",
+      "schema_version": "1"
+    },
+    "fills": [],
+    "ledger": [
+      {
+        "A": "6000000",
+        "C": "10000000",
+        "D": "1000000",
+        "P": "0",
+        "R": "3000000",
+        "denom": "DEVBASE"
+      },
+      {
+        "A": "0",
+        "C": "0",
+        "D": "0",
+        "P": "10000000",
+        "R": "0",
+        "denom": "DEVQUOTE"
+      }
+    ],
+    "next_cursor": "END",
+    "observed_height": "100",
+    "orders": [
+      {
+        "admission_seq": "3",
+        "cancelled_qty_lots": "0",
+        "corrected_qty_lots": "0",
+        "filled_qty_lots": "0",
+        "limit_price_ticks": "10000",
+        "max_qty_lots": "2000",
+        "order_hash": "c50da0e3f0ec284e85036bd88e319df2ca9f480fb7e34ad8e70c1c6fd1b0321f",
+        "order_id": "abababababababababababababababababababababababababababababababab",
+        "order_type": "LIMIT_GTC",
+        "owner_epoch": "0",
+        "remaining_qty_lots": "2000",
+        "revision": "1",
+        "side": "SELL",
+        "state": "OPEN"
+      }
+    ],
+    "owner": "1maAbhHO4Zp8mJ90RfkN1BnPTS0=",
+    "owner_epoch": "0",
+    "revision": "3",
+    "snapshot_id": "9ff795d16f77b68bf1092f9487cd5de3e08c6ecde21fb9fab718a2024a27fc3a",
+    "stream_seq": "3"
+  },
+  {
+    "context": {
+      "chain_id": "nus-s2-dev-1",
+      "config_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+      "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+      "genesis_hash": "b26170d7924f298bfa82bf617fe2ecd269321e939cca94f14886949cb628f8df",
+      "market_config_version": "1",
+      "market_id": "DEVBASE/DEVQUOTE",
+      "schema_version": "1"
+    },
+    "fills": [
+      {
+        "command_seq": "2",
+        "execution_price_ticks": "10000",
+        "fee_base_atoms": "0",
+        "fee_policy_version": "1",
+        "fee_quote_atoms": "0",
+        "fill_id": "6f02976d2db860ab3a017b9e7a0756f271580cfc38e95d1e14b756cef9da53b6",
+        "match_index": "0",
+        "own_order_id": "f36ff19481908b1f898ec6bd2369d8244bb20368e5cc3d963b65110a94dbcc77",
+        "quantity_lots": "1000",
+        "reason": "S2_UNSETTLED",
+        "revision": "1",
+        "state": "PENDING"
+      }
+    ],
+    "ledger": [
+      {
+        "A": "0",
+        "C": "0",
+        "D": "0",
+        "P": "1000000",
+        "R": "0",
+        "denom": "DEVBASE"
+      },
+      {
+        "A": "90000000",
+        "C": "100000000",
+        "D": "10000000",
+        "P": "0",
+        "R": "0",
+        "denom": "DEVQUOTE"
+      }
+    ],
+    "next_cursor": "END",
+    "observed_height": "100",
+    "orders": [
+      {
+        "admission_seq": "2",
+        "cancelled_qty_lots": "0",
+        "corrected_qty_lots": "0",
+        "filled_qty_lots": "1000",
+        "limit_price_ticks": "10000",
+        "max_qty_lots": "1000",
+        "order_hash": "1d0fabd9509dde6feb65a6387da888ce386b94f42b554df531c3ca2c63eb7ccc",
+        "order_id": "f36ff19481908b1f898ec6bd2369d8244bb20368e5cc3d963b65110a94dbcc77",
+        "order_type": "LIMIT_GTC",
+        "owner_epoch": "0",
+        "remaining_qty_lots": "0",
+        "revision": "1",
+        "side": "BUY",
+        "state": "FILLED_PENDING"
+      }
+    ],
+    "owner": "QIBxvK9P4FGwto+OWyqdu8Fdq9k=",
+    "owner_epoch": "0",
+    "revision": "3",
+    "snapshot_id": "9ff795d16f77b68bf1092f9487cd5de3e08c6ecde21fb9fab718a2024a27fc3a",
+    "stream_seq": "3"
+  }
+]

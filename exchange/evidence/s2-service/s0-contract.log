@@ -1,0 +1,10 @@
+PASS Python independent bytes/hash comparison: 3 signatures, 2 fills, 10 batches; no crypto/parser/state verification
+PASS 8 reference wire shape examples; no product parser claim
+PASS amount codec 17, complete message bytes 14, wire 10, state examples 17; reference only
+PASS rc3 specification: fee=17 cap=21 decision=34 API=6; crypto/application NOT_RUN
+PASS 5 registration transport examples; actual crypto NOT_RUN
+PASS rc4 snapshot full outputs: 60; product crypto/differential NOT_RUN
+PASS 24 S0 specification examples; file integrity and schema tag mapping
+contract_sha256=afa3471a2210a90cde0004b3219b231468bf0b8471e8068f8e16b096b3549d84
+vectors_sha256=bb1b437d23a365f1083e85353bf62bcef6517cda94288ff7e2d0b4cb5fccd55b
+NOT_RUN: generated proto compilation, product parser/crypto/state, Go/Rust/TS cross-verification, repository CI

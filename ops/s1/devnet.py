@@ -57,7 +57,7 @@ def init(a):
     for i in range(4):
         home = root / f'node{i}'
         port = a.base_port + i * 10
-        cli(binary, 'init', '--home', home, '--operator-accounts', a.operators.resolve(),
+        cli(binary, 'init', '--network', getattr(a, 'network', 's1'), '--home', home, '--operator-accounts', a.operators.resolve(),
             '--rpc', f'tcp://127.0.0.1:{port+1}', '--p2p', f'tcp://127.0.0.1:{port}', *user_args)
         g = json.loads((home / 'config/genesis.json').read_text())
         genesis = genesis or g
@@ -91,6 +91,7 @@ def init(a):
         for private in ('priv_validator_key.json', 'node_key.json'):
             (home / 'config' / private).chmod(0o600)
     manifest = {'schema': 1, 'scope': 'single-host real four-validator synthetic devnet',
+                'network': getattr(a, 'network', 's1'),
                 'binary': str(binary), 'binary_sha256': digest(binary),
                 'version': cli(binary, 'version'), 'genesis_sha256': gh,
                 'go_mod_sha256': digest(ROOT/'chain/app/go.mod'),
@@ -141,17 +142,49 @@ def serve(home):
     processes, logs = {}, {}
     ending = False
 
-    def stop(i):
-        proc = processes.pop(i, None)
-        if proc and proc.poll() is None:
-            proc.terminate()
+    def stop_many(indices):
+        # Signal every validator before waiting: the four-node grace period is
+        # 15 seconds total, below the enclosing runtime's 25-second deadline.
+        selected = {i: processes[i] for i in indices if i in processes}
+        errors = []
+        for i, proc in selected.items():
+            if proc.poll() is None:
+                try:
+                    proc.terminate()
+                except ProcessLookupError:
+                    pass
+                except OSError as error:
+                    errors.append(f'node{i}: SIGTERM failed: {error}')
+        deadline = time.monotonic() + 15
+        while any(p.poll() is None for p in selected.values()) and time.monotonic() < deadline:
+            time.sleep(.05)
+        for i, proc in selected.items():
+            if proc.poll() is None:
+                errors.append(f'node{i}: SIGTERM deadline exceeded; forced SIGKILL')
+                try:
+                    proc.kill()
+                except ProcessLookupError:
+                    pass
+                except OSError as error:
+                    errors.append(f'node{i}: SIGKILL failed: {error}')
+        deadline = time.monotonic() + 5
+        for i, proc in selected.items():
             try:
-                proc.wait(timeout=15)
+                proc.wait(timeout=max(.01, deadline - time.monotonic()))
+                processes.pop(i, None)
             except subprocess.TimeoutExpired:
-                proc.kill()
-                proc.wait(timeout=5)
-        if i in logs:
-            logs.pop(i).finish()
+                errors.append(f'node{i}: still running after SIGKILL (pid={proc.pid})')
+        for i in indices:
+            if i in logs:
+                try:
+                    logs.pop(i).finish()
+                except Exception as error:
+                    errors.append(f'node{i}: {error}')
+        if errors:
+            raise RuntimeError('; '.join(errors))
+
+    def stop(i):
+        stop_many([i])
 
     def start(i):
         if i in processes and processes[i].poll() is None:
@@ -163,7 +196,7 @@ def serve(home):
         # Validator processes receive no Paperclip/GitHub credentials.
         env = {k: v for k, v in os.environ.items() if k in ('PATH', 'HOME', 'TMPDIR', 'LANG')}
         try:
-            processes[i] = subprocess.Popen([m['binary'], 'start', '--home', n['home'],
+            processes[i] = subprocess.Popen([m['binary'], 'start', '--network', m.get('network', 's1'), '--home', n['home'],
                                 '--genesis-hash', m['genesis_sha256']], env=env,
                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             logs[i] = LogPump(processes[i].stdout, sink)
@@ -210,10 +243,10 @@ def serve(home):
                             raise ValueError('node must be 0..3 or all')
                         if action not in ('stop', 'start', 'restart', 'status'):
                             raise ValueError('invalid action')
-                        for i in indices:
-                            if action in ('stop', 'restart'):
-                                stop(i)
-                            if action in ('start', 'restart'):
+                        if action in ('stop', 'restart'):
+                            stop_many(indices)
+                        if action in ('start', 'restart'):
+                            for i in indices:
                                 start(i)
                         result = {'running': sorted(processes), 'pids': {i: p.pid for i,p in processes.items()}}
                     except Exception as e:
@@ -223,11 +256,10 @@ def serve(home):
                         raise RuntimeError(result['error'])
     finally:
         errors = []
-        for i in range(4):
-            try:
-                stop(i)
-            except Exception as error:
-                errors.append(f'node{i}: {error}')
+        try:
+            stop_many(list(range(4)))
+        except Exception as error:
+            errors.append(str(error))
         path.unlink(missing_ok=True)
         lock.close()
         if errors:
@@ -255,6 +287,7 @@ def main():
     p.add_argument('--home', type=Path, default=ROOT/'.runtime/s1')
     p.add_argument('--binary', type=Path, default=ROOT/'chain/app/bin/nusd')
     p.add_argument('--operators', type=Path, default=ROOT/'chain/app/config/operator-accounts.json')
+    p.add_argument('--network', choices=['s1', 's2'], default='s1')
     p.add_argument('--base-port', type=int, default=28656)
     p.add_argument('--user-public-keys', type=Path, help='JSON array of two public keys; init only')
     p.add_argument('--node', default='all')

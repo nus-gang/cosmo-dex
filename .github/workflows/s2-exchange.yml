@@ -1,0 +1,39 @@
+name: S2 Exchange local service
+on:
+  pull_request:
+  push:
+    branches: [main, 'exchange/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  s2-exchange:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - run: rustup toolchain install 1.92.0 --profile minimal --component rustfmt --component clippy
+      - name: Component, process fault, and schema checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .evidence/s2-exchange/process
+          export S2_PROCESS_EVIDENCE="$PWD/.evidence/s2-exchange/process"
+          export S2_CAPACITY_EVIDENCE="$PWD/.evidence/s2-exchange/capacity.json"
+          export S2_RUNTIME_SCHEMA_OUTPUT="$PWD/.evidence/s2-exchange/schema.json"
+          git rev-parse HEAD > .evidence/s2-exchange/commit.txt
+          { rustc --version; cargo --version; uname -a; } > .evidence/s2-exchange/environment.txt
+          sha256sum exchange/Cargo.lock protocol/s2/manifest.json protocol/s2/profile.json > .evidence/s2-exchange/SHA256SUMS
+          cargo fmt --manifest-path exchange/Cargo.toml --check
+          cargo test --locked --manifest-path exchange/Cargo.toml --all-features --all-targets 2>&1 | tee .evidence/s2-exchange/tests.log
+          cargo clippy --locked --manifest-path exchange/Cargo.toml --all-features --all-targets -- -D warnings 2>&1 | tee .evidence/s2-exchange/clippy.log
+          python3 exchange/tools/check_s2_projection.py "$S2_RUNTIME_SCHEMA_OUTPUT" | tee .evidence/s2-exchange/schema.log
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: s2-exchange-${{ github.sha }}
+          path: .evidence/s2-exchange/
+          include-hidden-files: true
+          if-no-files-found: error

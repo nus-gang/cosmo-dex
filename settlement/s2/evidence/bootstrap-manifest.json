@@ -1,0 +1,22 @@
+{
+  "recorded_at": "2026-10-03T11:46:11.782909+00:00",
+  "base_head": "fe7ed79345cd345950ea52cbf770cee6c20d4d42",
+  "unit_result": "14 PASS, 0 skip",
+  "live_result": {
+    "chain_binary_hash": "8a57a899f1b3e24d884e5f264367d0f67267255dc4aa414370dde87513cce1d1",
+    "engine_binary_hash": "2e542c7d5f767dca75f55d135ca723b76d00c51831c0836a32bf3055ebcd4095",
+    "genesis_hash": "344fc226ee96bf229fa1af3f9237edf427ce9dfedef1fe782d468b2cd044b7ed",
+    "result": "PASS",
+    "scope": "single-validator real RPC, two deposits, direct withdrawal epoch, engine restart; signed HTTP orders and bilateral fill correction NOT_RUN"
+  },
+  "hashes": {
+    "settlement/s2/bootstrap.py": "a08c8f49af4efd06c9cddd49d83458cc2ad8fdac6516becc55cda4ae962ea780",
+    "settlement/s2/server.py": "72c4d6c34380fe4927ebcbe5c61795f83173236319d90ce4087dd3793c81d6a8",
+    "settlement/s2/transport.py": "957332645782e9daf82e3936d1011f740fcf83ba9ee653bd3611d468ee7dcb1a",
+    "settlement/s2/chain.py": "5cf3383af22904f069f9bf4924742276723938463ce84fae1f587154164493a2",
+    "settlement/s2/test_adapter.py": "a0e1f521fb76e716919220c5d544a4de24540a9865797ff170341a666b4b3a4b",
+    "settlement/s2/test_bootstrap.py": "6b79da28833e5e28b8532e832a0c5c91d5360c82ec4de4a465c0040dc9696fc6",
+    "settlement/s2/check_live.py": "4dd2ef6230382a213094872fbc8a483b2bed9acea013adc8d484dfa9676f5406"
+  },
+  "ci_prior_head": "fe7ed79: S1 REST manifest oracle/source mapping drift; rc4 manifest-check failed; unresolved"
+}

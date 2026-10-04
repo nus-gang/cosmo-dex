@@ -5,3 +5,5 @@ pub mod policy;
 pub type Result<T> = std::result::Result<T, &'static str>;
 
 pub mod decision;
+
+pub mod s2;

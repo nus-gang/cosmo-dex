@@ -1,0 +1,39 @@
+{
+  "scope": "approved Chain synthetic unit snapshot decode/startup compatibility; no live RPC or deposit acceptance",
+  "chain_head": "7ce952475b4985096344d713467208722b5e7693",
+  "source_sha256": "cfe3e5dd09a09a625b23996963bfec69338da8bca2004449a53575bd34a0ec52",
+  "snapshot_id": "50b76ea71c613c9bde99fc4e44fb6ea66542bffcce0d9498e246c273cf1a9828",
+  "genesis_hash": "0707070707070707070707070707070707070707070707070707070707070707",
+  "response": {
+    "body": {
+      "context": {
+        "chain_id": "nus-s2-dev-1",
+        "config_hash": "70281595d471947a56d9bf8a97553dd388a85b107c215a95cc6f34ea9f5f321f",
+        "contract_hash": "2e103517c344f21c2b97fbe7e977f0e614c32c704b0f54978c5bb1fb3ae6ab0f",
+        "genesis_hash": "0707070707070707070707070707070707070707070707070707070707070707",
+        "market_config_version": "1",
+        "market_id": "DEVBASE/DEVQUOTE",
+        "schema_version": "1"
+      },
+      "durability": "LOCAL_FSYNC",
+      "mode": "CATCHING_UP",
+      "observation": {
+        "block_age_ms": "1791024282496",
+        "catching_up": true,
+        "cursor_height": "10",
+        "fresh": false,
+        "last_success_age_ms": "18446744073709551615",
+        "observed_height": "10",
+        "query_latency_ms": "0",
+        "received_at_unix_ms": "0",
+        "snapshot_id": "50b76ea71c613c9bde99fc4e44fb6ea66542bffcce0d9498e246c273cf1a9828"
+      },
+      "reason": "OBSERVATION_REQUIRED",
+      "replicated": false,
+      "revision": "2",
+      "settlement_submission_enabled": false,
+      "stream_seq": "0"
+    },
+    "http_status": "200"
+  }
+}

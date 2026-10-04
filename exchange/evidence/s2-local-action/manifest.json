@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-02T19:12:40.705997+00:00",
+  "environment": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+  "baseline": "fc473b9e27608f1ad696e7b40074d82c8761ae21",
+  "sha256": {
+    "exchange/src/s2/sequencer.rs": "b4afc180cb6e1f4dd709633d4b5f448dd1a0c9b40d51be042ea9e453020260fd",
+    "exchange/tests/s2_sequencer.rs": "9e4ccdaf4ec88f314c1744ba1ce85e303c93d24da83fb7b2438039a4ae0c1672",
+    "exchange/Cargo.lock": "ab4f76dd87448219ade436d508822b423b036a5131cdc732150a59e2e764e894",
+    "protocol/s2/CONTRACT.md": "328a5f050786971bba5e1589a9dd7b0f30704ae82bf079ba6ec19025128d586a"
+  },
+  "genesis": "synthetic fixed snapshot fixture; no chain run",
+  "tests": 30,
+  "test_seconds": 1.77
+}

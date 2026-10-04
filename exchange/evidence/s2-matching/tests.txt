@@ -1,0 +1,58 @@
+   Compiling nus-exchange-contract v0.1.0 (/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/worktrees/NUS-38/exchange)
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-10-02 17:32:03.799 xcodebuild[19378:27919512]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 17:32:04.001 xcodebuild[19378:27919476] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-10-02 17:32:04.541 xcodebuild[19404:27919577]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 17:32:04.724 xcodebuild[19404:27919572] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-10-02 17:32:03.799 xcodebuild[19401:27919514]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 17:32:04.001 xcodebuild[19401:27919503] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-10-02 17:32:04.541 xcodebuild[19403:27919576]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 17:32:04.725 xcodebuild[19403:27919570] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: output of `xcrun` while finding MacOSX.sdk
+  |
+  = note: 2026-10-02 17:32:03.799 xcodebuild[19355:27919513]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 17:32:04.001 xcodebuild[19355:27919473] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+          2026-10-02 17:32:04.541 xcodebuild[19405:27919580]  DVTFilePathFSEvents: Failed to start fs event stream.
+          2026-10-02 17:32:04.725 xcodebuild[19405:27919575] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
+
+warning: `nus-exchange-contract` (bin "vectors") generated 1 warning
+warning: `nus-exchange-contract` (test "upstream_ioc") generated 1 warning
+warning: `nus-exchange-contract` (bin "decision") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.34s
+     Running tests/s2_ledger.rs (exchange/target/debug/deps/s2_ledger-96913962f0f507ed)
+
+running 5 tests
+test shared_available_prevents_overreservation_and_self_trade ... ok
+test fees_are_per_fill_ceil_and_exactly_reversed ... ok
+test all_failed_fills_leave_both_parties_unchanged ... ok
+test partial_price_improvement_cancel_and_pending_not_spendable ... ok
+test exhaustive_small_fills_conserve_net_plus_fee_and_hold_limit ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests/s2_matching.rs (exchange/target/debug/deps/s2_matching-9d128082d64b43f5)
+
+running 7 tests
+test no_liquidity_gtc_ioc_and_invalid_inputs ... ok
+test fee_rejected_prefix_preserves_prior_fill ... ok
+test expiry_at_height_before_match_sorted_by_admission ... ok
+test sell_taker_highest_bid_first_and_price_limit ... ok
+test ioc_error_callback_applies_once_to_ledger ... ok
+test stp_stops_at_self_and_preserves_prior_fill ... ok
+test price_fifo_partial_and_deterministic_rebuild ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/upstream_ioc.rs (exchange/target/debug/deps/upstream_ioc-cde834b85b3ed8c1)
+
+running 2 tests
+test real_cancel_and_zero_fill_ioc ... ok
+test real_ioc_error_retains_callback_debits ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

@@ -1,0 +1,70 @@
+{
+  "cases": [
+    {
+      "id": "S2-AT01",
+      "owners": "B/F/H/J",
+      "required_evidence": "실제 두 자산 예치 TX/height, C/module/supply, genesis bytes hash",
+      "a_stage_result": "NOT_RUN"
+    },
+    {
+      "id": "S2-AT02",
+      "owners": "C/H/J",
+      "required_evidence": "FIFO/부분체결/취소/STP/IOC Err callback 원명령과 ID/누계",
+      "a_stage_result": "NOT_RUN"
+    },
+    {
+      "id": "S2-AT03",
+      "owners": "C/D/H/J",
+      "required_evidence": "실제 두 키 서명과 wrong domain/context/epoch/expiry/ID 재시도",
+      "a_stage_result": "NOT_RUN"
+    },
+    {
+      "id": "S2-AT04",
+      "owners": "C/H/J",
+      "required_evidence": "C/R/D/P 전후, 가격개선·fee25·동시과예약 부정",
+      "a_stage_result": "NOT_RUN"
+    },
+    {
+      "id": "S2-AT05",
+      "owners": "B/C/D/H/J",
+      "required_evidence": "직접 출금 TX/epoch·양측 및 후속 정정·gap/단절/역행",
+      "a_stage_result": "NOT_RUN"
+    },
+    {
+      "id": "S2-AT06",
+      "owners": "C/F/H/J",
+      "required_evidence": "crash 지점·원본 WAL/marker·외부 ACK ledger·재생 hash·writer2 거절",
+      "a_stage_result": "NOT_RUN"
+    },
+    {
+      "id": "S2-AT07",
+      "owners": "D/E/H/J",
+      "required_evidence": "브라우저 시연·세션/계정전환·키전송0·UNKNOWN/stale",
+      "a_stage_result": "NOT_RUN"
+    },
+    {
+      "id": "S2-AT08",
+      "owners": "F/G/J",
+      "required_evidence": "S0/S1 회귀·문서 단독 새 환경·실측 자원/시간",
+      "a_stage_result": "NOT_RUN"
+    },
+    {
+      "id": "S2-AT09",
+      "owners": "I/J",
+      "required_evidence": "승인 PR head/main SHA/tree·필수 CI·새 checkout 독립 QA",
+      "a_stage_result": "NOT_RUN"
+    }
+  ],
+  "legacy_full_pass": "0/16",
+  "not_promoted": [
+    "T04",
+    "T06",
+    "T07",
+    "T08",
+    "T09",
+    "T10",
+    "T13",
+    "T14",
+    "T16"
+  ]
+}

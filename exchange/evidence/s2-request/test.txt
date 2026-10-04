@@ -1,0 +1,10 @@
+   Compiling nus-exchange-contract v0.1.0 (/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/worktrees/NUS-38/exchange)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.91s
+     Running tests/s2_request.rs (worktrees/NUS-38/exchange/target/debug/deps/s2_request-73368ad901ca6ea0)
+
+running 2 tests
+test local_actions_and_origin_do_not_accept_owner_or_origin_aliases ... ok
+test signed_envelopes_preserve_bytes_and_reject_ambiguous_input ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
