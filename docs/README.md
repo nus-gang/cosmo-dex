@@ -1,9 +1,12 @@
 # 문서 목차
 
-처음 실행한다면 [S1 사용자 시작 안내](quickstart.md)를 따른다. 문서의 제품 기준은 main `32781aa97d62ec747e7a25c10fdb8b58030d79f2`이며 새 문서 검토·병합 상태는 [검증 기록](verification.md)과 Paperclip DOC-1에서 구분한다.
+S2 후보의 두 자산·주문은 [S2 시작 안내](s2-quickstart.md), 기동·복구는 [S2 운영](../ops/s2/README.md)을 따른다. 후보 `84ea152`와 main 인수 상태는 [검증 기록](verification.md#s2-통합-후보)에서 구분한다.
+
+S1을 처음 실행한다면 [S1 사용자 시작 안내](quickstart.md)를 따른다. 문서의 제품 기준은 main `32781aa97d62ec747e7a25c10fdb8b58030d79f2`이며 새 문서 검토·병합 상태는 [검증 기록](verification.md)과 Paperclip DOC-1에서 구분한다.
 
 | 독자·목적 | 시작점 | 권위 있는 상세 정의 |
 |---|---|---|
+| 사용자: S2 예치·주문·취소/IOC·복구 | [S2 시작 안내](s2-quickstart.md) | [S2 계약](../protocol/s2/CONTRACT.md), [운영](../ops/s2/README.md) |
 | 사용자: 설치와 두 계정 100→40→60 | [사용자 시작 안내](quickstart.md) | [브라우저 동작과 시험](../web/s1/README.md) |
 | 전체 구성과 지원 범위 | [구성·데이터 흐름](architecture.md) | [S1 계약](../protocol/s1/CONTRACT.md) |
 | 개발자: API·서명·금액 | [API 안내](api.md) | [REST](../settlement/s1/README.md), [Chain 앱](../chain/app/README.md) |

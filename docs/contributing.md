@@ -1,5 +1,7 @@
 # 개발 환경과 문서 기여
 
+이 페이지의 기존 설명은 **S1 고정 기준**이다. S2 후보의 두 자산·주문·복구는 [S2 시작 안내](s2-quickstart.md), 적용 SHA와 인수 상태는 [검증 기록](verification.md#s2-통합-후보)을 따른다.
+
 [문서 목차](README.md) · [S1 사용자 설치](quickstart.md)
 
 ## 버전과 실행 범위
@@ -12,7 +14,7 @@
 | S1 사용자 시연 | Python ≥3.10, Node ≥22.18, npm, Chrome, macOS/Linux | [시작 안내](quickstart.md), [Wallet](../web/s1/README.md) |
 | 저장소 S0 CI 재현 | Go 1.24.4, Rust 1.92.0, Node 24.21.0, Python | [S0 workflow](../.github/workflows/s0.yml), [.node-version](../.node-version), [rust-toolchain](../rust-toolchain.toml) |
 
-SDK v0.55.0, CometBFT v0.40.0은 [S1 계약](../protocol/s1/CONTRACT.md)과 앱 go.mod/go.sum을 함께 따른다. S0 초기 골격의 Rust 1.85.1·Node 22.14.0 설명은 [역사 기록](development.md)이며 현재 pin이 아니다. 사용자 입출금 시연에는 Rust/Docker/MetaMask/Paperclip 토큰이 필요하지 않다.
+SDK v0.55.0, CometBFT v0.40.0은 [S1 계약](../protocol/s1/CONTRACT.md)과 앱 go.mod/go.sum을 함께 따른다. S0 초기 골격의 Rust 1.85.1·Node 22.14.0 설명은 [역사 기록](development.md)이며 현재 pin이 아니다. S1 사용자 입출금 시연에는 Rust/Docker/MetaMask/Paperclip 토큰이 필요하지 않다.
 
 저장소 루트에서:
 
@@ -38,3 +40,7 @@ S0 독립 보안은 [재현 안내](../security/README.md), 실제 개발망·RE
 5. 후보 head·필수 CI와 함께 CTO → QA 네이티브 검토를 요청한다. QA는 안내를 독립 재현한다. 리뷰어는 판정하고, 실행 담당자가 승인된 head를 정상 병합한다. main SHA·CI·최종 접근 경로를 확인하기 전 완료라고 보고하지 않는다.
 
 키·seed·토큰·node home/DB는 문서나 증거 ZIP에 넣지 않는다. 공개키 JSON은 백업이라고 설명하지 않는다. shared runtime 변경·제품 구현·공개 배포는 별도 승인 범위다.
+
+## S2 문서·통합 검토
+
+S2는 Go 1.26.5·Rust 1.92.0·Node 24.21.0과 기존 lock으로 같은 checkout을 빌드한다. [S2 CI](../.github/workflows/s2-integration.yml)와 [운영 검증 명령](../ops/s2/README.md)을 따른다. Docs의 CTO→QA 검토 뒤 main 통합 실행은 [CEO의 NUS-44](http://localhost:3100/NUS/issues/NUS-44), 새 main checkout 독립 QA는 [NUS-45](http://localhost:3100/NUS/issues/NUS-45)가 맡는다. 문서 PR만으로 main 전달 완료를 선언하지 않는다.
