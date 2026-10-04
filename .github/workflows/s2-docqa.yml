@@ -1,0 +1,99 @@
+name: S2 documentation transport
+on:
+  push:
+    branches: ['sre/nus-50-docqa-transport', 'qa/docqa/**']
+  pull_request:
+    paths: ['tests/docqa/**', '.github/workflows/s2-docqa.yml']
+permissions:
+  contents: read
+jobs:
+  docqa:
+    name: S2 isolated documentation environment
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          path: transport
+          persist-credentials: false
+      - name: Resolve independently pinned driver
+        id: input
+        working-directory: transport
+        run: |
+          python3 - <<'PY'
+          import json, os, re, subprocess
+          c=json.load(open('tests/docqa/input.json'))
+          ref=c['driver_ref']
+          if ref=='SELF': ref=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert re.fullmatch('[0-9a-f]{40}',ref)
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f: f.write('driver_ref='+ref+'\n')
+          PY
+      - uses: actions/checkout@v4
+        with:
+          ref: 84ea15219512b84cdf0f57c59913ae99ed1f3fee
+          path: product
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: aad819f20add7595e449e21b83221063466565b5
+          path: docs
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.input.outputs.driver_ref }}
+          path: qa
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.5'
+          cache-dependency-path: product/chain/app/go.sum
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.21.0'
+      - name: Build fixed product and browser
+        working-directory: product
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.92.0 --profile minimal
+          (cd chain/app && sh scripts/build.sh)
+          cargo +1.92.0 build --locked --manifest-path exchange/Cargo.toml --bin exchange-s2
+          (cd web && npm ci --ignore-scripts && npx playwright-core install --with-deps chromium && node s2/build.mjs)
+      - name: Finite environment control and browser driver
+        run: >-
+          python3 transport/tests/docqa/transport.py
+          --product product --docs docs --driver-root qa
+          --home "${{ runner.temp }}/docqa/home" --output public
+      - name: Record incomplete runs and resolved actions
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p public
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          p=Path('public/manifest.json')
+          if not p.exists(): p.write_text(json.dumps({'result':'INCOMPLETE','document_qa':'NOT_RUN','run_id':os.environ['GITHUB_RUN_ID'],'attempt':os.environ['GITHUB_RUN_ATTEMPT'],'reason':'transport did not produce cleanup evidence'},indent=2)+'\n')
+          actions=[]
+          # Action archives carry resolved SHAs in the runner setup log; record local action metadata too.
+          root=Path(os.environ['RUNNER_WORKSPACE']).parent/'_actions'
+          for f in root.glob('**/action.yml'):
+            actions.append({'path':str(f.relative_to(root)),'action_yml_sha256':hashlib.sha256(f.read_bytes()).hexdigest()})
+          Path('public/actions.json').write_text(json.dumps(actions,indent=2)+'\n')
+          files={str(f):hashlib.sha256(f.read_bytes()).hexdigest() for f in Path('public').glob('*') if f.is_file() and f.name!='SHA256SUMS.json'}
+          Path('public/SHA256SUMS.json').write_text(json.dumps(files,indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: s2-docqa-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            public/manifest.json
+            public/browser.json
+            public/http.json
+            public/public-keys.json
+            public/first.png
+            public/restarted.png
+            public/actions.json
+            public/SHA256SUMS.json
+          if-no-files-found: error
