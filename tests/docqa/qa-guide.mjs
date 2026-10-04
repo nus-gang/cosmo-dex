@@ -5,7 +5,7 @@ import {writeFile,readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import path from 'node:path';
 export default async function({page,control,output}) {
-  const evidence={result:'FAIL',scope:'S2 documentation §§1–3 and same-home restart',started:new Date().toISOString(),steps:[],receipts:[],txs:[]};
+  const evidence={result:'FAIL',diagnostic:true,scope:'S2 documentation §§1–3 and same-home restart',started:new Date().toISOString(),steps:[],receipts:[],txs:[]};
   const responses=[]; let posts=0,navigations=0,phase='setup';
   page.on('request',r=>{if(new URL(r.url()).pathname==='/s1/txs'&&r.method()==='POST')posts++;});
   const allowed=new Set(['/s2/orders','/s2/cancels','/s2/me/withdraw-prepare','/s2/me/withdraw-abort']);
@@ -45,8 +45,8 @@ export default async function({page,control,output}) {
     assert.equal(abort.body.code,'STALE','same-height rejection must be observed for QA-S2G-02');
     assert.equal(String(abort.body.observed_height),String(evidence.prepareHeight));
     evidence.abortStale={receipt:abort,status:await text('status')};
-    await until('next finalized fresh observation',async()=>{const t=await text('freshness');const m=t.match(/높이 (\d+)/);return m&&BigInt(m[1])>BigInt(evidence.prepareHeight)&&t.includes('접수 가능')&&t.includes('OK');});
-    evidence.retryHealth=await control('health');evidence.retryFreshness=await text('freshness');
+    await until('next finalized observation diagnostic',async()=>{const t=await text('freshness');const m=t.match(/높이 (\d+)/);return m&&BigInt(m[1])>BigInt(evidence.prepareHeight);});
+    evidence.retryHealth=await control('health');evidence.retryFreshness=await text('freshness');assert.equal(evidence.retryHealth.api.mode,'OPEN');assert.equal(evidence.retryHealth.api.observation.fresh,true);assert(evidence.retryFreshness.includes('WITHDRAW_FROZEN'));await page.screenshot({path:path.join(output,'withdraw-frozen.png')});
     assert.notEqual(await text('status'),'출금 준비 동결 해제','polling must not auto-abort');
     await page.locator('#abort-withdraw').click();
     await until('abort withdrawal',async()=>await text('status')==='출금 준비 동결 해제');
@@ -63,6 +63,6 @@ export default async function({page,control,output}) {
     assert.deepEqual(JSON.parse(await text('public')),publicKeys);assert.equal(await page.locator('#genesis').inputValue(),pins.chain_genesis);assert.equal(navigations,0);await page.screenshot({path:path.join(output,'restarted.png')});evidence.secondStop=await control('stop');
     await Promise.all(responses);for(const r of evidence.receipts.filter(r=>['/s2/orders','/s2/cancels'].includes(r.path))){assert.equal(r.body.durability,'LOCAL_FSYNC');assert.equal(r.body.replicated,false);}
     evidence.samePage=true;evidence.navigationsAfterKeyCreation=navigations;evidence.txPosts=posts;evidence.result='PASS';return {scope:evidence.scope,documentQA:'PASS',samePage:true,navigationsAfterKeyCreation:navigations};
-  } catch(e) {evidence.failure={phase,error:String(e),status:await text('status').catch(()=>null)};throw e;}
+  } catch(e) {evidence.failure={phase,error:String(e),status:await text('status').catch(()=>null),freshness:await text('freshness').catch(()=>null)};throw e;}
   finally {await Promise.all(responses);evidence.finished=new Date().toISOString();await writeFile(path.join(output,'qa-guide.json'),JSON.stringify(evidence,null,2)+'\n');}
 }
