@@ -1,4 +1,4 @@
-// Independent QA oracle from aad819f docs/s2-quickstart.md §§1–3/restart.
+// Independent QA oracle from 614cfa5 docs/s2-quickstart.md §§1–3/restart.
 // Only real UI input; response observation excludes authentication and secret data.
 import assert from 'node:assert/strict';
 import {writeFile,readFile} from 'node:fs/promises';
@@ -38,15 +38,25 @@ export default async function({page,control,output}) {
     await login(0);await check('A cumulative pending',expectA(0,1500000,15000000,8500000));
     phase='P-unusable';await login(1);await order('SELL','GTC','0.001','10','REJECTED');await check('B cannot reserve pending BASE',expectB(15000500,1500000,84999500));
     phase='withdraw-hold';const txsBefore=posts;await page.locator('#asset').selectOption('DEVBASE');await page.locator('#amount').fill('0.001');await page.locator('#withdraw').click();await until('UNSETTLED_HOLD',async()=>(await text('status')).includes('정산 미구현/미정산 보류'));await Promise.all(responses);assert.equal(posts,txsBefore);assert.equal(posts,2);assert(evidence.receipts.some(r=>r.path==='/s2/me/withdraw-prepare'&&r.body.code==='UNSETTLED_HOLD'));evidence.withdraw={txPostsBefore:txsBefore,txPostsAfter:posts,status:await text('status')};
+    const prepared=evidence.receipts.find(r=>r.path==='/s2/me/withdraw-prepare');
+    evidence.prepareHeight=prepared.body.observed_height;
     await page.locator('#abort-withdraw').click();await until('abort receipt',async()=>{await Promise.all(responses);return evidence.receipts.some(r=>r.path==='/s2/me/withdraw-abort');});
     const abort=evidence.receipts.find(r=>r.path==='/s2/me/withdraw-abort');
-    if(abort.body.code==='STALE') {
-      // Guide troubleshooting: inspect observed height/health before retrying a final rejection.
-      evidence.abortStale={receipt:abort,health:await control('health')};
-      await until('next finalized observation',async()=>{const m=(await text('freshness')).match(/높이 (\d+)/);return m&&BigInt(m[1])>BigInt(abort.body.observed_height);});
-      await page.locator('#abort-withdraw').click();
-    }
+    assert.equal(abort.body.code,'STALE','same-height rejection must be observed for QA-S2G-02');
+    assert.equal(String(abort.body.observed_height),String(evidence.prepareHeight));
+    evidence.abortStale={receipt:abort,status:await text('status')};
+    await until('next finalized fresh observation',async()=>{const t=await text('freshness');const m=t.match(/높이 (\d+)/);return m&&BigInt(m[1])>BigInt(evidence.prepareHeight)&&t.includes('접수 가능')&&t.includes('OK');});
+    evidence.retryHealth=await control('health');evidence.retryFreshness=await text('freshness');
+    assert.notEqual(await text('status'),'출금 준비 동결 해제','polling must not auto-abort');
+    await page.locator('#abort-withdraw').click();
     await until('abort withdrawal',async()=>await text('status')==='출금 준비 동결 해제');
+    await Promise.all(responses);
+    const retried=evidence.receipts.filter(r=>r.path==='/s2/me/withdraw-abort').at(-1);
+    assert.equal(retried.body.code,'OK');assert(BigInt(retried.body.observed_height)>BigInt(evidence.prepareHeight));
+    evidence.abortSuccess={receipt:retried,status:await text('status')};
+    await check('B abort retains D/P',expectB(15000500,1500000,84999500));
+    await login(0);await check('A abort retains D/P and cancelled order',expectA(0,1500000,15000000,8500000));
+    assert((await text('orders')).includes('CANCELLED_OFFCHAIN'));assert.equal(posts,txsBefore);
     phase='before-restart';evidence.before=[await snapshot(0),await snapshot(1)];await page.screenshot({path:path.join(output,'first.png')});evidence.firstStop=await control('stop');
     phase='restart';evidence.restartHealth=await control('start');evidence.after=[await snapshot(0),await snapshot(1)];
     for(let i=0;i<2;i++){for(const k of ['ledger','orders','fills'])assert.deepEqual(evidence.after[i][k],evidence.before[i][k],`restart account ${i} ${k}`);assert.equal(evidence.before[i].chain.split(' · ')[0],evidence.after[i].chain.split(' · ')[0]);}
