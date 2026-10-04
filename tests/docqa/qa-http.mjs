@@ -31,8 +31,8 @@ export default async function({page,control,output}) {
    export async function negatives(){const c=clients[0];await c.refresh();const v=c.views.view;const conflict=keys[0].order(c.views.ctx,v.owner_epoch,v.observed_height,'SELL','GTC','2','10',saved.find(s=>s.id===v.orders[0].order_id)?.id??v.orders[0].order_id);const invalid=keys[0].order(c.views.ctx,v.owner_epoch,v.observed_height,'SELL','GTC','1','10');const bytes=base64.decode(invalid.signature_base64);bytes[0]^=1;invalid.signature_base64=base64.encode(bytes);return [await send(0,conflict,0),await send(0,invalid,1)];}
    export async function order(i,side,tif,qty,price){const c=clients[i];await c.refresh();const e=await c.order(side,tif,qty,price);return {id:e.id,state:e.state,receipt:e.receipt};}
    export async function cancelAll(i){const c=clients[i];await c.refresh();const ids=c.views.view.orders.filter(o=>['OPEN','PARTIALLY_FILLED'].includes(o.state)).map(o=>o.order_id);const results=[];for(const id of ids){await c.refresh();const e=await c.cancel(id);results.push({id:e.id,state:e.state,receipt:e.receipt});}return results;}
-  `,resolveDir:process.cwd(),sourcefile:'qa-http-browser.ts'},bundle:true,write:false,platform:'node',format:'esm',target:'es2022'});
-  await control('temporary_start');await page.goto('http://127.0.0.1:5173');qa=await import('data:text/javascript;base64,'+Buffer.from(bundled.outputFiles[0].text).toString('base64'));
+  `,resolveDir:process.cwd(),sourcefile:'qa-http-browser.ts'},bundle:true,write:false,platform:'node',format:'cjs',target:'es2022'});
+  await control('temporary_start');await page.goto('http://127.0.0.1:5173');const mod={exports:{}};new Function('require','module','exports',bundled.outputFiles[0].text)(require,mod,mod.exports);qa=mod.exports;
   const publicKeys=await call('publicKeys');await writeFile(path.join(output,'public-keys.json'),JSON.stringify(publicKeys,null,2));
   report.pins=await control('init',{publicKeys});await control('temporary_stop');report.firstHealth=await control('start');await call('bind',report.pins.chain_genesis);
   report.initial=[await call('view',0),await call('view',1)];
