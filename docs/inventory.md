@@ -42,6 +42,7 @@
 | 페이지 | 실제 차이와 이번 처리 |
 |---|---|
 | README, docs 목차 | 완료된 S2를 현재 시작점으로 표시; S1/S0 재현 유지 |
+| quickstart | S1 재현 명령은 보존하고 S2 미래 후보 표현만 현재 안내로 연결 |
 | s2-quickstart | 후보 SHA만 검증 main으로 변경; 명령·수치·동결 해제·키/원장 보존 절차 유지 |
 | verification, CHANGELOG | main CI·독립 QA·최종 승인·HTTP 동시성 연결, OBS01 실패/성공 분리·NOTE01 측정 정정 |
 | architecture, api, contributing | 현재 S2와 S1 고정 설명 구분; 후속 문서 CTO→QA→부모 CEO 정상 병합 경로 |
