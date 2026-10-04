@@ -2,6 +2,6 @@
   "product_ref": "aad654bcf6760bc9af162b681a5996487ffc715e",
   "docs_ref": "aad654bcf6760bc9af162b681a5996487ffc715e",
   "docs_tree": "d96faa7e8bab62e71016f6e1c52c0411b4416d6f",
-  "driver_ref": "da27be39b9922472cfb36e1841bbfe9ac6a0d43a",
+  "driver_ref": "33867e34bd297140cd1b2756ad72cf2326401c11",
   "driver_path": "tests/docqa/qa-http.mjs"
 }
