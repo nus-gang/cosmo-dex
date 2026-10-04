@@ -1,5 +1,18 @@
 # 변경 기록
 
+## S2 main 인수 — aad654bc (2026-10-04)
+
+### Added
+
+- [PR #34](https://github.com/nus-gang/cosmo-dex/pull/34)·[PR #35](https://github.com/nus-gang/cosmo-dex/pull/35)의 두 자산 예치·서명 주문·잠정 부분 체결·취소/IOC·같은 home 재생이 main에 반영되고 [독립 QA·최종 인수](verification.md#s2-main-인수)를 완료했다.
+
+### Fixed
+
+- README·목차·[S2 설치 안내](s2-quickstart.md)의 후보/인수 대기 표현과 checkout을 검증된 main `aad654bcf6760bc9af162b681a5996487ffc715e`로 갱신한다.
+- [검증 기록](verification.md#s2-main-인수)에 최초 DIRECT_UNAVAILABLE 실패와 별도 attempt2 성공, 응답 헤더까지의 지연 측정 정정 및 보존한 제약을 연결한다.
+
+아래 후보 작성·수정 기록은 당시 이력으로 보존한다. S3 정산·영속 키 복구·분산 내구성은 이번 완료 기능이 아니다.
+
 ## S2-G 문서 후보 — 통합 기준 84ea152
 
 ### Added

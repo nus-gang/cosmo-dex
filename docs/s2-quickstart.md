@@ -2,7 +2,7 @@
 
 [문서 목차](README.md) · [S1 재현](quickstart.md) · [S2 운영 상세](../ops/s2/README.md) · [검증 기록](verification.md)
 
-이 안내는 **실험 후보** `84ea15219512b84cdf0f57c59913ae99ed1f3fee`를 재현한다. 한 호스트의 4검증인에서 DEVBASE/DEVQUOTE를 실제 예치하고 서명 주문·부분 체결·취소·가격 제한 IOC를 확인한다. 체결은 **잠정**이며 온체인 정산과 수취 자산 출금은 제공하지 않는다. 후보의 CTO 승인과 전체 S2/main 인수는 별개다.
+이 안내는 **검증된 main** `aad654bcf6760bc9af162b681a5996487ffc715e`의 S2 로컬 PoC를 재현한다. 한 호스트의 4검증인에서 DEVBASE/DEVQUOTE를 실제 예치하고 서명 주문·부분 체결·취소·가격 제한 IOC를 확인한다. 체결은 **잠정**이며 온체인 정산과 수취 자산 출금은 제공하지 않는다. S2 main 인수는 완료됐으며 [독립 QA·최종 승인·알려진 관측](verification.md#s2-main-인수)을 함께 확인한다.
 
 키는 생성한 브라우저 탭 메모리에만 있다. **새로고침·탭 종료 후 복구할 수 없으며 공개키 JSON은 지갑 백업이 아니다.** 기존 S1 DB를 업그레이드하지 않는다. 별도 S2 home·genesis·journal을 만들고 기존 원장을 보존한다.
 
@@ -17,8 +17,8 @@
 ```sh
 git clone https://github.com/nus-gang/cosmo-dex.git cosmo-dex-s2
 cd cosmo-dex-s2
-git fetch origin 84ea15219512b84cdf0f57c59913ae99ed1f3fee
-git checkout --detach 84ea15219512b84cdf0f57c59913ae99ed1f3fee
+git fetch origin aad654bcf6760bc9af162b681a5996487ffc715e
+git checkout --detach aad654bcf6760bc9af162b681a5996487ffc715e
 go version
 rustc +1.92.0 --version
 node --version

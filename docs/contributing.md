@@ -1,6 +1,6 @@
 # 개발 환경과 문서 기여
 
-이 페이지의 기존 설명은 **S1 고정 기준**이다. S2 후보의 두 자산·주문·복구는 [S2 시작 안내](s2-quickstart.md), 적용 SHA와 인수 상태는 [검증 기록](verification.md#s2-통합-후보)을 따른다.
+이 페이지의 기존 설명은 **S1 고정 기준**이다. S2의 두 자산·주문·복구는 [S2 시작 안내](s2-quickstart.md), 적용 SHA와 인수 상태는 [검증 기록](verification.md#s2-main-인수)을 따른다.
 
 [문서 목차](README.md) · [S1 사용자 설치](quickstart.md)
 
@@ -43,4 +43,4 @@ S0 독립 보안은 [재현 안내](../security/README.md), 실제 개발망·RE
 
 ## S2 문서·통합 검토
 
-S2는 Go 1.26.5·Rust 1.92.0·Node 24.21.0과 기존 lock으로 같은 checkout을 빌드한다. [S2 CI](../.github/workflows/s2-integration.yml)와 [운영 검증 명령](../ops/s2/README.md)을 따른다. Docs의 CTO→QA 검토 뒤 main 통합 실행은 [CEO의 NUS-44](http://localhost:3100/NUS/issues/NUS-44), 새 main checkout 독립 QA는 [NUS-45](http://localhost:3100/NUS/issues/NUS-45)가 맡는다. 문서 PR만으로 main 전달 완료를 선언하지 않는다.
+S2는 Go 1.26.5·Rust 1.92.0·Node 24.21.0과 기존 lock으로 같은 checkout을 빌드한다. [S2 CI](../.github/workflows/s2-integration.yml)와 [운영 검증 명령](../ops/s2/README.md)을 따른다. 최초 S2 [CEO main 통합](http://localhost:3100/NUS/issues/NUS-44)과 [새 main 독립 QA](http://localhost:3100/NUS/issues/NUS-45)는 완료됐다. 후속 문서 변경은 Docs의 CTO→QA 검토 뒤 [부모 실행 담당 CEO](http://localhost:3100/NUS/issues/NUS-1)가 승인 head·필수 CI를 확인해 정상 병합하고 새 main SHA의 CI·접근 경로를 인수한다. 문서 PR만으로 main 전달 완료를 선언하지 않는다.

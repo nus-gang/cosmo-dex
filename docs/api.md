@@ -1,6 +1,6 @@
 # API·서명·금액 안내
 
-이 페이지의 기존 설명은 **S1 고정 기준**이다. S2 후보의 두 자산·주문·복구는 [S2 시작 안내](s2-quickstart.md), 적용 SHA와 인수 상태는 [검증 기록](verification.md#s2-통합-후보)을 따른다.
+이 페이지의 기존 설명은 **S1 고정 기준**이다. S2의 두 자산·주문·복구는 [S2 시작 안내](s2-quickstart.md), 적용 SHA와 인수 상태는 [검증 기록](verification.md#s2-main-인수)을 따른다.
 
 [문서 목차](README.md) · [사용자 시작 안내](quickstart.md)
 
