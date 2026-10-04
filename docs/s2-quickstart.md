@@ -93,11 +93,19 @@ python3 -c 'import json; print(json.load(open(".runtime/s2/runtime.json"))["chai
 출금 준비를 해제한 뒤 재시작 시연을 계속하려면 다음 순서를 따른다.
 
 1. 준비 요청 당시의 확정 관측 높이를 기록한다. 해제 직전에 준비를 다시 누르면 준비 높이도 다시 설정되므로 누르지 않는다.
-2. 화면의 관측 높이가 **준비 당시보다 높아지고**, 신선도 표시가 **접수 가능 · OK**인지 확인한다(health `mode=OPEN`, `observation.fresh=true`). 같은 높이에서 해제를 누르면 `STALE`로 거절되며 동결은 유지된다. 몇 초 기다렸다는 사실만으로 해제를 보장하지 않는다.
+2. 터미널 B에서 다음 명령으로 **전역 runtime health**를 확인한다. 같은 S2 home을 사용하며, 별도 home 경로를 지정했다면 그 경로로 바꾼다.
+
+   ```sh
+   python3 ops/s2/runtime.py health --home .runtime/s2
+   ```
+
+   출력 JSON의 **`api.mode="OPEN"`**, **`api.observation.fresh=true`**, **`api.observation.observed_height`가 준비 당시 높이보다 큼**을 모두 확인한다(높이 문자열은 정수로 비교한다). 조건을 만족하지 않으면 health를 다시 확인하고 전역 RPC/신선도 장애를 먼저 복구한다. 같은 높이에서 해제를 누르면 `STALE`로 거절되며 동결은 유지된다. 몇 초 기다렸다는 사실만으로 해제를 보장하지 않는다.
+
+   전역 health가 OPEN/fresh여도 준비한 계정의 개인 화면은 **접수 닫힘 · 마지막 관측값 · WITHDRAW_FROZEN**일 수 있다. 이는 해제 전 정상적인 계정 동결 표시이며, 개인 화면의 **접수 가능 · OK를 기다리지 않는다**. 개인 화면과 전역 health의 관측 시점·높이도 다를 수 있으므로 위 전역 health 출력으로 조건을 확인한다.
 3. 조건을 확인한 뒤 **출금 준비 해제**를 누른다. 이미 `STALE`을 받았다면 버튼을 **다시 눌러 명시적으로 재시도**한다. polling으로 높이가 갱신돼도 자동으로 해제되지는 않는다.
 4. **출금 준비 동결 해제** 완료 표시를 확인한다. 해제는 D/P 정산·취소 주문 복구·출금 권한 부여가 아니다. D/P와 취소 기록은 유지되고 추가 출금 TX는 없어야 한다. 아래 절차에서 같은 탭/키와 같은 home을 유지해 재시작한다.
 
-높이·신선도 조건과 원장 검증은 [해제 구현](../exchange/src/s2/sequencer.rs)의 `abort_withdraw`, 같은 높이 거절→다음 높이 성공·취소 주문 미복구는 [회귀시험](../exchange/tests/s2_sequencer.rs)의 `withdraw_cancels_only_open_reserve_and_retains_pending_hold`를 따른다.
+전역 OPEN과 개인 WITHDRAW_FROZEN의 구분은 [개인 조회 구현](../exchange/src/s2/service.rs)의 `ledger_view`, health 출력의 `api` 필드는 [runtime 명령](../ops/s2/runtime.py)을 따른다. 높이·신선도 조건과 원장 검증은 [해제 구현](../exchange/src/s2/sequencer.rs)의 `abort_withdraw`, 같은 높이 거절→다음 높이 성공·취소 주문 미복구는 [회귀시험](../exchange/tests/s2_sequencer.rs)의 `withdraw_cancels_only_open_reserve_and_retains_pending_hold`를 따른다.
 
 D/P=0인 별도 새 시나리오에서는 일반 출금이 가능하다. **직접 출금**은 엔진 승인 없이 확정 C에서 서명하는 별도 경로이며 잠정 P의 출금이 아니다. 실제 확정 출금으로 owner epoch가 바뀌면 구 주문과 상대방·후속 의존 체결이 동결/정정된다. 이 정정은 온체인 체결 정산이 아니다. 기본 시연 수치를 보존하려면 직접 출금 실험은 별도 새 home에서 수행한다. [자동 브라우저 시험](../web/s2/README.md)은 직접 출금·양측 정정 후 D/P=0 일반 출금을 별도로 검증한다.
 
@@ -116,8 +124,9 @@ python3 ops/s1/devnet.py log --home .runtime/s2/chain --node 0
 
 | 상황 | 다음 행동 |
 |---|---|
-| 준비 해제에서 같은 높이 `STALE` | 준비 높이보다 높은 확정 관측 높이와 접수 가능 · OK(health OPEN/fresh)를 확인한 뒤 **출금 준비 해제**를 다시 누르고 **출금 준비 동결 해제** 표시를 확인한다. 자동 해제나 대기 시간만으로 성공을 가정하지 않는다. |
-| 실제 RPC 장애·지연·접수 닫힘 | 관측 높이·사유와 RPC/health를 확인해 복구한다. REST polling은 1초, 총 신선도 5초 초과·높이 역행·catch-up 미완료 때 신규 주문을 닫는다. 높이 증가만으로 복구를 판단하지 않는다. |
+| 준비 해제에서 같은 높이 `STALE` | `python3 ops/s2/runtime.py health --home .runtime/s2` 출력에서 `api.mode=OPEN`·`api.observation.fresh=true`·준비 높이보다 높은 `api.observation.observed_height`를 확인한 뒤 **출금 준비 해제**를 다시 누르고 **출금 준비 동결 해제** 표시를 확인한다. 자동 해제나 대기 시간만으로 성공을 가정하지 않는다. |
+| 개인 화면 `WITHDRAW_FROZEN` | 출금 준비 후 해제 전 정상적인 계정 동결 표시다. 개인 화면 접수 가능을 기다리지 말고 §3의 전역 health·높이 조건을 확인해 명시적으로 해제한다. |
+| 실제 전역 RPC 장애·지연·STALE | 전역 health의 관측 높이·사유·fresh와 RPC를 확인해 복구한다. REST polling은 1초, 총 신선도 5초 초과·높이 역행·catch-up 미완료 때 신규 주문을 닫는다. 높이 증가만으로 복구를 판단하지 않는다. |
 | UNKNOWN 주문·미확인 TX | 원래 명령 receipt·TX hash를 조회한다. 404·timeout을 실패 확정으로 보지 않으며, 주문 재시도는 동일 서명 원문/ID를 쓴다. 새 ID·새 TX로 대체하지 않는다. |
 | 403 또는 웹이 안 열림 | `http://127.0.0.1:5173`을 사용한다. init 전 임시 웹이 남아 있으면 그 소유 터미널에서 종료한다. |
 | 이미 존재하는 home·두 번째 writer | 기존 실행과 home 소유권을 확인한다. lock 삭제로 우회하지 않는다. |

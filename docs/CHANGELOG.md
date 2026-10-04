@@ -8,6 +8,8 @@
 
 ### Fixed
 
+- [PR #35](https://github.com/nus-gang/cosmo-dex/pull/35)의 [출금 준비 해제 안내](s2-quickstart.md#3-별도-ioc와-출금-제한-확인)에서 개인 화면 접수 가능 선행 조건을 전역 runtime health의 OPEN/fresh·준비보다 높은 관측 높이 확인으로 바로잡고, 해제 전 정상적인 WITHDRAW_FROZEN 표시와 RPC 장애를 구분했다.
+
 - [PR #35](https://github.com/nus-gang/cosmo-dex/pull/35)의 [출금 준비 해제 안내](s2-quickstart.md#3-별도-ioc와-출금-제한-확인)에 더 높은 확정 관측 높이·fresh 확인, 같은 높이 STALE 뒤 명시적 재시도와 완료 확인을 보완했다.
 
 - [PR #35](https://github.com/nus-gang/cosmo-dex/pull/35)의 승인·증거·인계 링크에 Paperclip origin을 명시해 GitHub에서도 로컬 보드로 연결되게 수정했다. 다른 설치의 주소 적용은 [검증 안내](verification.md)를 따른다.
