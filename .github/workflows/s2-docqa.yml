@@ -93,6 +93,7 @@ jobs:
             public/browser.json
             public/http.json
             public/public-keys.json
+            public/withdraw-frozen.png
             public/first.png
             public/restarted.png
             public/actions.json
