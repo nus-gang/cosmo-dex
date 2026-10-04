@@ -1,9 +1,10 @@
 # S2 통합 실행
 
 단일 호스트의 네 검증인, 합성 DEVBASE/DEVQUOTE, 로컬 `LOCAL_FSYNC` PoC다.
-정산·분산 복제·자동 failover·실자산·main QA·처리량 보장은 포함하지 않는다.
+정산·분산 복제·자동 failover·실자산·처리량 보장은 포함하지 않는다.
+검증된 main의 설치·사용은 [S2 시작 안내](../../docs/s2-quickstart.md), 완료된 독립 main QA와 최초 통합 시험의 구분은 [검증 기록](../../docs/verification.md#s2-main-인수)을 따른다.
 
-## 같은 후보 빌드와 시험
+## 같은 checkout 빌드와 시험
 
 Go 1.26.5, Rust 1.92.0, Node `.node-version`, 기존 lock을 사용한다.
 

@@ -18,7 +18,7 @@
 
 새 문서는 구성·API 탐색, 검증 출처, 변경 기록, 문서 영향 기여 지침이다. 상세 규약·운영 명령·기존 보안 및 실패 기록의 사본을 새로 만들지 않는다. 중복된 실행 순서는 새 사용자의 재현에 필요한 최소 범위로 quickstart에 모으며 상세 시험은 원본으로 연결한다.
 
-## S2-G 영향 조사
+## S2-G 영향 조사 (최초 후보 당시)
 
 [Docs 업무](http://localhost:3100/NUS/issues/NUS-42)의 기준은 F 승인 후보 `84ea152`/tree `eb436444d338cab5482bda29ad4333a981538b22`, 착수 원격 main `ec8961c`다. 기존 DOC-1 인벤토리와 S1 재현은 보존한다.
 
@@ -34,3 +34,18 @@
 | protocol/s2, exchange/S2.md, settlement/s2 | 규범을 복제하지 않고 연결; 수치·상태·서명·cursor·보류 출금 설명의 원본 |
 
 모듈 README의 단일 검증인/NOT_RUN·심사 후보 문구는 해당 구성요소 작성 당시 기록이다. 새 4검증인 F 증거는 verification에서 따로 연결한다. 원본 PDF·S0/S1 증거·역사적 판정은 변경하지 않는다.
+
+## S2 완료 후 유지보수 (2026-10-04)
+
+기준 main `aad654bcf6760bc9af162b681a5996487ffc715e` / tree `d96faa7e8bab62e71016f6e1c52c0411b4416d6f`. [CEO 후속 인계](http://localhost:3100/NUS/issues/NUS-42#document-post-s2-maintenance)와 [최종 인수](verification.md#s2-main-인수)를 대조한다. 기존 S1·후보 조사와 원시 실패 기록은 보존한다.
+
+| 페이지 | 실제 차이와 이번 처리 |
+|---|---|
+| README, docs 목차 | 완료된 S2를 현재 시작점으로 표시; S1/S0 재현 유지 |
+| s2-quickstart | 후보 SHA만 검증 main으로 변경; 명령·수치·동결 해제·키/원장 보존 절차 유지 |
+| verification, CHANGELOG | main CI·독립 QA·최종 승인·HTTP 동시성 연결, OBS01 실패/성공 분리·NOTE01 측정 정정 |
+| architecture, api, contributing | 현재 S2와 S1 고정 설명 구분; 후속 문서 CTO→QA→부모 CEO 정상 병합 경로 |
+| ops/s2/README | 기존 통합 시험과 완료된 독립 main QA 구분, 사용자 안내 연결; 운영 명령 동일 |
+| 관련 모듈 README·규범·시험 원문 | 구성요소 작성 당시 후보/NOT_RUN은 보존하고 현행 종합 근거에서 연결; 구현 변경 없음 |
+
+검증 범위는 변경 링크·앵커·shell 구문, 검증 main 안내와 shell 블록 동일성, 규범/제품 diff 없음 및 새 PR CI다. 상속 QA를 이번 직접 실행으로 보고하지 않는다.
