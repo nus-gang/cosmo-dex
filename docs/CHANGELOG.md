@@ -8,6 +8,8 @@
 
 ### Fixed
 
+- [PR #35](https://github.com/nus-gang/cosmo-dex/pull/35)의 [출금 준비 해제 안내](s2-quickstart.md#3-별도-ioc와-출금-제한-확인)에 더 높은 확정 관측 높이·fresh 확인, 같은 높이 STALE 뒤 명시적 재시도와 완료 확인을 보완했다.
+
 - [PR #35](https://github.com/nus-gang/cosmo-dex/pull/35)의 승인·증거·인계 링크에 Paperclip origin을 명시해 GitHub에서도 로컬 보드로 연결되게 수정했다. 다른 설치의 주소 적용은 [검증 안내](verification.md)를 따른다.
 
 - README·목차·공통 안내의 S1 범위를 명시하고 S2 후보의 기능·API·운영 및 [검증 경계](verification.md#s2-통합-후보)를 연결했다.
