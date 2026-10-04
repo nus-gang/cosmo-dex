@@ -89,6 +89,7 @@ jobs:
           name: s2-docqa-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             public/manifest.json
+            public/qa-guide.json
             public/browser.json
             public/http.json
             public/public-keys.json

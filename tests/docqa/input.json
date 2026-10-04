@@ -2,6 +2,6 @@
   "product_ref": "84ea15219512b84cdf0f57c59913ae99ed1f3fee",
   "docs_ref": "aad819f20add7595e449e21b83221063466565b5",
   "docs_tree": "2ec533e3689a2ae63772fe3db96c9a2b5bcd4faf",
-  "driver_ref": "SELF",
-  "driver_path": "tests/docqa/environment.mjs"
+  "driver_ref": "852b982d648435be31a4e9d31a0c2e7a1ffbe8a3",
+  "driver_path": "tests/docqa/qa-guide.mjs"
 }
