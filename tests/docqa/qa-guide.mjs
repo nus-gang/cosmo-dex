@@ -38,7 +38,15 @@ export default async function({page,control,output}) {
     await login(0);await check('A cumulative pending',expectA(0,1500000,15000000,8500000));
     phase='P-unusable';await login(1);await order('SELL','GTC','0.001','10','REJECTED');await check('B cannot reserve pending BASE',expectB(15000500,1500000,84999500));
     phase='withdraw-hold';const txsBefore=posts;await page.locator('#asset').selectOption('DEVBASE');await page.locator('#amount').fill('0.001');await page.locator('#withdraw').click();await until('UNSETTLED_HOLD',async()=>(await text('status')).includes('정산 미구현/미정산 보류'));await Promise.all(responses);assert.equal(posts,txsBefore);assert.equal(posts,2);assert(evidence.receipts.some(r=>r.path==='/s2/me/withdraw-prepare'&&r.body.code==='UNSETTLED_HOLD'));evidence.withdraw={txPostsBefore:txsBefore,txPostsAfter:posts,status:await text('status')};
-    await page.locator('#abort-withdraw').click();await until('abort withdrawal',async()=>await text('status')==='출금 준비 동결 해제');
+    await page.locator('#abort-withdraw').click();await until('abort receipt',async()=>{await Promise.all(responses);return evidence.receipts.some(r=>r.path==='/s2/me/withdraw-abort');});
+    const abort=evidence.receipts.find(r=>r.path==='/s2/me/withdraw-abort');
+    if(abort.body.code==='STALE') {
+      // Guide troubleshooting: inspect observed height/health before retrying a final rejection.
+      evidence.abortStale={receipt:abort,health:await control('health')};
+      await until('next finalized observation',async()=>{const m=(await text('freshness')).match(/높이 (\d+)/);return m&&BigInt(m[1])>BigInt(abort.body.observed_height);});
+      await page.locator('#abort-withdraw').click();
+    }
+    await until('abort withdrawal',async()=>await text('status')==='출금 준비 동결 해제');
     phase='before-restart';evidence.before=[await snapshot(0),await snapshot(1)];await page.screenshot({path:path.join(output,'first.png')});evidence.firstStop=await control('stop');
     phase='restart';evidence.restartHealth=await control('start');evidence.after=[await snapshot(0),await snapshot(1)];
     for(let i=0;i<2;i++){for(const k of ['ledger','orders','fills'])assert.deepEqual(evidence.after[i][k],evidence.before[i][k],`restart account ${i} ${k}`);assert.equal(evidence.before[i].chain.split(' · ')[0],evidence.after[i].chain.split(' · ')[0]);}
