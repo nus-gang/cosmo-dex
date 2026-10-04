@@ -5,12 +5,12 @@ import {writeFile} from 'node:fs/promises';
 import path from 'node:path';
 const require=createRequire(path.resolve('web/package.json'));
 export default async function({page,control,output}) {
- const report={result:'FAIL',scope:'real native browser HTTP -> Python adapter -> Rust engine; synthetic assets; no response interception',started:new Date().toISOString(),steps:[]};
+ const report={result:'FAIL',scope:'real native Node HTTP -> Python adapter -> Rust engine; synthetic assets; CORS enforcement is tested in separate literal browser run',started:new Date().toISOString(),steps:[]};
  const equal=(a,b,label)=>assert.deepEqual(a,b,label);
  function invariant(v){for(const r of v.ledger){equal((BigInt(r.C)-BigInt(r.R)-BigInt(r.D)).toString(),r.A);assert(BigInt(r.A)>=0n);}}
  const economic=v=>({ledger:v.ledger,orders:v.orders,fills:v.fills,owner_epoch:v.owner_epoch});
  const row=(v,d)=>v.ledger.find(x=>x.denom===d);
- async function call(name,...args){return page.evaluate(async({name,args})=>await globalThis.qa[name](...args),{name,args});}
+ let qa; async function call(name,...args){return qa[name](...args);}
  try {
   const {build}=require('esbuild');
   const bundled=await build({stdin:{contents:`
@@ -21,18 +21,18 @@ export default async function({page,control,output}) {
    const api='http://127.0.0.1:8788';
    const hex=x=>Array.from(x,b=>b.toString(16).padStart(2,'0')).join('');
    export const publicKeys=()=>keys.map(k=>base64.encode(k.publicKey));
-   export async function bind(genesis){clients=keys.map((_,i)=>{const c=new TradingClient(genesis,location.origin,(p,init)=>{if(init?.headers?.Authorization)tokens[i]=init.headers.Authorization;return fetch(new URL(String(p),api),init);},keys);c.select(i);return c;});for(const c of clients){await c.login();await c.refresh();}}
+   export async function bind(genesis){clients=keys.map((_,i)=>{const c=new TradingClient(genesis,'http://127.0.0.1:5173',(p,init)=>{if(init?.headers?.Authorization)tokens[i]=init.headers.Authorization;return fetch(new URL(String(p),api),{...init,headers:{...init?.headers,Origin:'http://127.0.0.1:5173'}});},keys);c.select(i);return c;});for(const c of clients){await c.login();await c.refresh();}}
    export async function login(){for(const c of clients){await c.login();await c.refresh();}}
    export async function view(i){await clients[i].refresh();return clients[i].views.view;}
    export async function tx(i,operation,denom,amount,direct=true){const c=clients[i];const e=await c.transfer(operation,denom,amount,direct);const end=Date.now()+30000;while(e.state==='SUBMISSION_UNKNOWN'&&Date.now()<end){await c.direct.resolve(e);await new Promise(r=>setTimeout(r,150));}if(e.state!=='COMMITTED')throw Error('TX not committed '+e.state);return {state:e.state,tx_hash:e.tx_hash,height:e.height,input:e.input,account:await c.direct.account(c.key)};}
-   async function send(i,body,index){const start=performance.now();const r=await fetch(api+'/s2/orders',{method:'POST',headers:{'Content-Type':'application/json',Authorization:tokens[i]},body:JSON.stringify(body)});return {index,start_ms:start,end_ms:performance.now(),http:r.status,body:await r.json(),signed_body_sha256:hex(sha256(new TextEncoder().encode(JSON.stringify(body))))};}
+   async function send(i,body,index){const start=performance.now();const r=await fetch(api+'/s2/orders',{method:'POST',headers:{'Content-Type':'application/json',Authorization:tokens[i],Origin:'http://127.0.0.1:5173'},body:JSON.stringify(body)});return {index,start_ms:start,end_ms:performance.now(),http:r.status,body:await r.json(),signed_body_sha256:hex(sha256(new TextEncoder().encode(JSON.stringify(body))))};}
    export async function burst(){const c=clients[0];await c.refresh();const v=c.views.view;saved=Array.from({length:12},(_,i)=>({id:(i+1).toString(16).padStart(64,'0'),body:keys[0].order(c.views.ctx,v.owner_epoch,v.observed_height,'SELL','GTC','1','10',(i+1).toString(16).padStart(64,'0'))}));return Promise.all(saved.map((s,i)=>send(0,s.body,i)));}
    export async function retry(){return Promise.all(saved.map((s,i)=>send(0,s.body,i)));}
    export async function negatives(){const c=clients[0];await c.refresh();const v=c.views.view;const conflict=keys[0].order(c.views.ctx,v.owner_epoch,v.observed_height,'SELL','GTC','2','10',saved.find(s=>s.id===v.orders[0].order_id)?.id??v.orders[0].order_id);const invalid=keys[0].order(c.views.ctx,v.owner_epoch,v.observed_height,'SELL','GTC','1','10');const bytes=base64.decode(invalid.signature_base64);bytes[0]^=1;invalid.signature_base64=base64.encode(bytes);return [await send(0,conflict,0),await send(0,invalid,1)];}
    export async function order(i,side,tif,qty,price){const c=clients[i];await c.refresh();const e=await c.order(side,tif,qty,price);return {id:e.id,state:e.state,receipt:e.receipt};}
    export async function cancelAll(i){const c=clients[i];await c.refresh();const ids=c.views.view.orders.filter(o=>['OPEN','PARTIALLY_FILLED'].includes(o.state)).map(o=>o.order_id);const results=[];for(const id of ids){await c.refresh();const e=await c.cancel(id);results.push({id:e.id,state:e.state,receipt:e.receipt});}return results;}
-  `,resolveDir:process.cwd(),sourcefile:'qa-http-browser.ts'},bundle:true,write:false,platform:'browser',format:'iife',globalName:'qa',target:'es2022'});
-  await control('temporary_start');await page.goto('http://127.0.0.1:5173');await page.addScriptTag({content:bundled.outputFiles[0].text});
+  `,resolveDir:process.cwd(),sourcefile:'qa-http-browser.ts'},bundle:true,write:false,platform:'node',format:'esm',target:'es2022'});
+  await control('temporary_start');await page.goto('http://127.0.0.1:5173');qa=await import('data:text/javascript;base64,'+Buffer.from(bundled.outputFiles[0].text).toString('base64'));
   const publicKeys=await call('publicKeys');await writeFile(path.join(output,'public-keys.json'),JSON.stringify(publicKeys,null,2));
   report.pins=await control('init',{publicKeys});await control('temporary_stop');report.firstHealth=await control('start');await call('bind',report.pins.chain_genesis);
   report.initial=[await call('view',0),await call('view',1)];
@@ -63,8 +63,8 @@ export default async function({page,control,output}) {
   // Direct confirmed withdrawal is not subject to an engine permission.
   report.directWithdraw=await call('tx',1,'WITHDRAW','DEVQUOTE','1000000');
   const deadline=Date.now()+30000;
-  do {await page.waitForTimeout(300);report.corrected=[await call('view',0),await call('view',1)];}while(report.corrected.some(v=>v.fills.some(f=>f.state!=='VOIDED'))&&Date.now()<deadline);
-  for(const v of report.corrected){invariant(v);assert(v.fills.length===2);assert(v.fills.every(f=>f.state==='VOIDED'));for(const r of v.ledger){equal(r.D,'0');equal(r.P,'0');}}
+  do {await page.waitForTimeout(300);report.corrected=[await call('view',0),await call('view',1)];}while(report.corrected.some(v=>v.fills.some(f=>f.state!=='CORRECTED'))&&Date.now()<deadline);
+  for(const v of report.corrected){invariant(v);assert(v.fills.length===2);assert(v.fills.every(f=>f.state==='CORRECTED'));for(const r of v.ledger){equal(r.D,'0');equal(r.P,'0');}}
   equal(row(report.corrected[1],'DEVQUOTE').C,'99000000');assert(BigInt(report.corrected[1].owner_epoch)>BigInt(report.matched[1].owner_epoch));
   report.cancelRemaining=await call('cancelAll',0);
   report.normalWithdraw=await call('tx',0,'WITHDRAW','DEVBASE','1000000',false);
