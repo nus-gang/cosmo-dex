@@ -31,12 +31,12 @@ jobs:
           PY
       - uses: actions/checkout@v4
         with:
-          ref: 84ea15219512b84cdf0f57c59913ae99ed1f3fee
+          ref: aad654bcf6760bc9af162b681a5996487ffc715e
           path: product
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
-          ref: 83d40ca86c084af905016b8c48b7c492ae0c0de8
+          ref: aad654bcf6760bc9af162b681a5996487ffc715e
           path: docs
           persist-credentials: false
       - uses: actions/checkout@v4

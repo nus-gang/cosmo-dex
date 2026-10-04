@@ -1,6 +1,6 @@
 {
-  "product_ref": "84ea15219512b84cdf0f57c59913ae99ed1f3fee",
-  "docs_ref": "83d40ca86c084af905016b8c48b7c492ae0c0de8",
+  "product_ref": "aad654bcf6760bc9af162b681a5996487ffc715e",
+  "docs_ref": "aad654bcf6760bc9af162b681a5996487ffc715e",
   "docs_tree": "d96faa7e8bab62e71016f6e1c52c0411b4416d6f",
   "driver_ref": "1eb30448834c0a2bf121e219da8f77189b538022",
   "driver_path": "tests/docqa/qa-guide.mjs"
