@@ -677,3 +677,36 @@ fn offline_binary_create_open_and_profile_failure() {
     rows.push(json!({"mode":"unknown-profile","stderr":String::from_utf8_lossy(&output.stderr),"exit":output.status.code().unwrap().to_string()}));
     evidence("offline-binary", &json!(rows));
 }
+
+#[test]
+fn ancestor_alias_and_outside_namespace_are_rejected_before_creation() {
+    let (i, v) = initial(0);
+    let h = home(0);
+    let parent = h.parent().unwrap();
+    let alias = parent.parent().unwrap().join("alias");
+    symlink(parent, &alias).unwrap();
+    let attempted = alias.join("fee0");
+    assert!(
+        Engine::create(
+            &attempted,
+            Validated::new(i.clone()).unwrap(),
+            &canonical(&v).unwrap()
+        )
+        .is_err()
+    );
+    assert!(!h.exists());
+    let outside = parent.join("outside");
+    assert!(
+        Engine::create(
+            &outside,
+            Validated::new(i).unwrap(),
+            &canonical(&v).unwrap()
+        )
+        .is_err()
+    );
+    assert!(!outside.exists());
+    evidence(
+        "ancestor-confinement",
+        &json!({"outside_created":false,"symlink_ancestor_followed":false,"result":"PASS"}),
+    );
+}

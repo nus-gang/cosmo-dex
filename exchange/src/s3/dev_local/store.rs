@@ -9,7 +9,6 @@ use sha2::{Digest, Sha256};
 use std::{
     fs::{self, File},
     io::{Read, Seek, SeekFrom, Write},
-    os::unix::fs::DirBuilderExt,
     path::Path,
 };
 pub(super) fn frame(raw: &[u8]) -> Result<Vec<u8>> {
@@ -111,9 +110,7 @@ impl Store {
     pub fn create(path: &Path, c: Validated, bootstrap: &[u8]) -> Result<Self> {
         Self::namespace(path, &c)?;
         c.bootstrap(bootstrap)?;
-        fs::DirBuilder::new().mode(0o700).create(path)?;
-        File::open(path.parent().unwrap())?.sync_all()?;
-        let root = Root::open(path)?;
+        let root = Root::create(path)?;
         let lock = Lock::new(root.dir.file("writer.dev.lock", true)?)?;
         // Only ownership lock exists before the immutable guard reaches disk.
         root.dir.write_new("profile.guard.json", c.guard())?;

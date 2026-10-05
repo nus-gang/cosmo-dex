@@ -218,12 +218,60 @@ impl Dir {
         Ok(())
     }
 }
+// Walk every ancestor from / without following a symlink. Permission checks on
+// private roots/children are separate: system ancestors need not be owned by us.
+fn absolute_directory(path: &Path) -> Result<File> {
+    if !path.is_absolute() {
+        return Err(Error::Recovery("ABSOLUTE_PATH"));
+    }
+    let mut dir = fs::OpenOptions::new()
+        .read(true)
+        .custom_flags(FLAGS.0 | FLAGS.1 | FLAGS.2)
+        .open("/")?;
+    for component in path.components() {
+        let part = match component {
+            std::path::Component::RootDir => continue,
+            std::path::Component::Normal(p) => {
+                p.to_str().ok_or(Error::Recovery("PATH_ENCODING"))?
+            }
+            _ => return Err(Error::Recovery("CANONICAL_PATH")),
+        };
+        let n = name(part)?;
+        let fd = unsafe { openat(dir.as_raw_fd(), n.as_ptr(), FLAGS.0 | FLAGS.1 | FLAGS.2) };
+        if fd < 0 {
+            return Err(std::io::Error::last_os_error().into());
+        }
+        dir = unsafe { File::from_raw_fd(fd) };
+    }
+    Ok(dir)
+}
 pub(super) struct Root {
     pub dir: Dir,
     pub path: PathBuf,
     pub identity: serde_json::Value,
 }
 impl Root {
+    pub fn create(path: &Path) -> Result<Self> {
+        let parent = path.parent().ok_or(Error::Recovery("ROOT_PARENT"))?;
+        if fs::canonicalize(parent)?.as_os_str() != parent.as_os_str() {
+            return Err(Error::Recovery("CANONICAL_PATH"));
+        }
+        let parent = Dir {
+            file: absolute_directory(parent)?,
+        };
+        let leaf = path
+            .file_name()
+            .and_then(|s| s.to_str())
+            .ok_or(Error::Recovery("PATH_ENCODING"))?;
+        let created = parent.child(leaf, true)?;
+        let root = Self::open(path)?;
+        let actual = root.dir.file.metadata()?;
+        let expected = created.file.metadata()?;
+        if (actual.dev(), actual.ino()) != (expected.dev(), expected.ino()) {
+            return Err(Error::Recovery("ROOT_REPLACED"));
+        }
+        Ok(root)
+    }
     pub fn open(path: &Path) -> Result<Self> {
         if !path.is_absolute()
             || path.components().any(|c| {
@@ -236,10 +284,7 @@ impl Root {
         {
             return Err(Error::Recovery("CANONICAL_PATH"));
         }
-        let file = fs::OpenOptions::new()
-            .read(true)
-            .custom_flags(FLAGS.0 | FLAGS.1 | FLAGS.2)
-            .open(path)?;
+        let file = absolute_directory(path)?;
         let m = file.metadata()?;
         safe(&m, true)?;
         let identity = serde_json::json!({"canonical_path":path.to_str().ok_or(Error::Recovery("PATH_ENCODING"))?,"device":m.dev().to_string(),"inode":m.ino().to_string()});

@@ -17,7 +17,7 @@
 
 `Engine::create(home, validated, bootstrap_bytes)`는 존재하지 않는 새 canonical 절대 경로만 받는다. 부모 경로는 준비돼 있어야 하며 suffix는 `.runtime/s3-dev-local-v1/<guard run_uuid>/fee0|fee25`다. 새 root0700와 단일 `writer.dev.lock`을 만든 뒤 guard file fsync → no-replace link/unlink → root fsync를 완료하고 store를 초기화한다. guard를 자동 재발급하지 않는다.
 
-모든 하위 접근은 열린 디렉터리 FD에 상대적인 `openat/O_NOFOLLOW`, `mkdirat`, `linkat`, `renameat`, `unlinkat`을 사용한다. 디렉터리 열거도 `fdopendir/readdir`로 수행한다. owner·root0700·file0600·regular file·nlink1을 검사하고, root의 canonical path/device/inode와 열린 WAL/lock의 inode를 대조한다. 저장 root는 동일 사용자에 대한 보안 격리나 적대적인 호스트 관리자를 방어하는 경계가 아니다.
+root 생성과 개방은 `/`부터 모든 조상을 `openat/O_NOFOLLOW`로 순회한다. 모든 하위 접근은 열린 디렉터리 FD에 상대적인 `openat/O_NOFOLLOW`, `mkdirat`, `linkat`, `renameat`, `unlinkat`을 사용한다. 디렉터리 열거도 `fdopendir/readdir`로 수행한다. owner·root0700·file0600·regular file·nlink1을 검사하고, root의 canonical path/device/inode와 열린 WAL/lock의 inode를 대조한다. 저장 root는 동일 사용자에 대한 보안 격리나 적대적인 호스트 관리자를 방어하는 경계가 아니다.
 
 | 파일 | private 구현 의미 |
 |---|---|
