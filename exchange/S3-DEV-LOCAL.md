@@ -34,6 +34,8 @@ root 생성과 개방은 `/`부터 모든 조상을 `openat/O_NOFOLLOW`로 순�
 
 오류는 해당 writer를 `RECOVERY_REQUIRED`로 닫는다. 신규 명령·자동 정정·출금 준비·effect callback을 거절한다. 기존 chain 확정 자산을 되돌리지 않는다. 미상 tail·부분 원문·재해시 semantic 변조·임시 파일·inode 변경은 자동 truncate/delete/reseed 없이 원본 그대로 남긴다. 이 구현에는 손상 home을 수리하거나 미해결 `transaction.dev`를 삭제하는 API가 없다. 운영자 근거 검토와 체인 대사 없이 파일을 지워 재개하면 안 된다.
 
+저장 오류의 writer 폐쇄와 영속 candidate의 `RECOVERY_REQUIRED`는 `Writer::ensure_open`에서 함께 검사한다. `UNEXPECTED_FINAL_REJECTION`을 commit한 직후와 같은 home 재생 후 모두 `execute`의 모든 명령·`committed_attempt`·`with_committed_attempt`가 `Error::Recovery("RECOVERY_REQUIRED")`로 끝나며 새 WAL/marker/state/result를 만들지 않는다. D가 reader 문자열을 먼저 확인하는 것에 의존하지 않는다. `CATCHING_UP`의 기존 receipt/확정 결과 대사는 계속 가능하다. `reader`, `query_signed`, `reconcile_receipt_ledger`는 읽기 전용으로 남고, 복구 중 동일 signed 요청의 원 결과는 `execute` 대신 `query_signed`로 조회한다.
+
 완료된 marker와 완전한 prefix만 남은 crash/응답 유실은 명시적인 `Engine::open`에서 재생한다. `Prepared::replay`가 원 명령/서명을 다시 실행하고 full state·result·record를 비교한다. snapshot의 잔고나 FIFO를 그대로 역직렬화해 복원하지 않는다. guard/bootstrap 원문, seq/hash, fill, C/R/D/P, book/FIFO, cursor, correction revision, 결과 인덱스를 복원한다.
 
 ## D에 전달하는 Rust API
@@ -48,7 +50,7 @@ root 생성과 개방은 `/`부터 모든 조상을 `openat/O_NOFOLLOW`로 순�
 | `reader().get()` | 내부 전체 상태와 result map·commit·gate를 한 immutable Arc revision으로 읽음. 모든 계정/서명 증거를 담으므로 공개 REST에 그대로 노출하지 않음 |
 | `query_signed` | 인증/서명을 다시 확인하는 읽기 전용 원 결과 조회. 신규 binding을 만들지 않음. 복구 gate에서도 이미 공개된 결과 조회 가능 |
 | `reconcile_receipt_ledger` | client의 독립 receipt/seq/hash/offset entry 전체를 복원 결과와 비교. 응답하지 못한 commit의 추가 존재는 허용, client receipt 누락/변조는 거절 |
-| `committed_attempt` | commit된 attempt 조회. 반환 뒤 방송을 허가하는 token이 아님 |
+| `committed_attempt` | 열린 writer에서 commit된 attempt 조회. 저장 오류 또는 영속 RECOVERY_REQUIRED이면 거절. 반환 뒤 방송을 허가하는 token이 아님 |
 | `with_committed_attempt` | 단일 writer lock 아래 store와 원 TxRaw를 재검증하고 PREPARED/UNKNOWN에만 D callback을 실행. callback은 Engine에 재진입하지 않고 bounded IO만 수행. D가 방송 intent를 먼저 저장하고 결과불명·재시도를 기존 계약대로 대사해야 함 |
 
 변경 응답은 승인된 7필드 envelope다. `development_receipt=LOCAL_WRITE_COMPLETED_UNPROVEN_SPACE`, `durable_ack=false`, `storage_assurance=UNPROVEN_HOST_SPACE`. 내부 rc3 `CommandResult`는 변경하지 않는다. receipt ledger의 `{receipt,command_seq,record_hash,end_offset}`는 독립 시험/인계 컨테이너이며 새 public schema가 아니다. 개발 접수와 chain `COMMITTED`는 별도다. D의 실제 HTTP는 `/dev-local/v1/`·loopback·기존 인증/origin·계정 격리와 묶어 후속 업무에서 검증해야 한다.

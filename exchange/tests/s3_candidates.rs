@@ -1080,3 +1080,231 @@ fn terminal_receipt_cannot_reverse_an_already_resolved_attempt() {
     );
     assert_eq!(accepted.ledger(), c.ledger());
 }
+
+// CTO-authored regression; source helpers above remain unchanged.
+#[test]
+#[cfg(feature = "dev-local-demo")]
+fn cto_recovery_gate_must_reject_withdraw_prepare() {
+    use nus_exchange_contract::s3::dev_local::{Command, Engine as DevEngine};
+    let mut c = order(
+        order(setup(0, true), 0, "2", 1000, 10000, 191),
+        1,
+        "1",
+        1000,
+        10000,
+        192,
+    );
+    c = replay_check(
+        &c,
+        c.seal_batch("NORMAL", &observation(&c), NOW).unwrap(),
+        "SEAL_BATCH",
+    );
+    let a = attempt(&mut c, "SETTLE", None);
+    c = replay_check(&c, c.prepare_attempt(a.clone()).unwrap(), "ATTEMPT");
+    let v = next_snapshot(&c);
+    c = observe(c, v);
+    let mut failed = a.clone();
+    failed["state"] = json!("INCLUDED_FAILURE");
+    failed["confirmed_tx"] = proof(&mut c, &a, "1030"); // ASSET_DEFICIT: unexpected, closed for review.
+    c = replay_check(&c, c.resolve_attempt(failed).unwrap(), "RESOLVE_ATTEMPT");
+    let rejected = c.reject_final(c.rejection_evidence().unwrap()).unwrap();
+    c = replay_check(&c, rejected, "VOID_BATCH");
+    assert_eq!(c.mode(), "RECOVERY_REQUIRED");
+    let mut rows = Vec::new();
+    TRACE.with_borrow_mut(|trace| {
+        let t = trace.as_mut().unwrap();
+        for restart in [false, true] {
+            if restart {
+                drop(t.dev.engine.take());
+                t.dev.engine = Some(DevEngine::open(&t.dev.home,t.dev.config.clone()).unwrap());
+            }
+            let engine = t.dev.engine.as_ref().unwrap();
+            let before = engine.reader().get().unwrap();
+            assert_eq!(before.gate, "RECOVERY_REQUIRED");
+            let raw = canonical(&json!({"request_id":if restart {"b1".repeat(32)}else{"b0".repeat(32)}})).unwrap();
+            let result = engine.execute(Command::Local{kind:"WITHDRAW_PREPARE".into(),raw,session_owner:owner(2)}, &[], &observation(&c), NOW);
+            let after = engine.reader().get().unwrap();
+            rows.push(json!({"restart":restart,"gate_before":before.gate,"gate_after":after.gate,"seq_before":before.commit.command_seq.to_string(),"seq_after":after.commit.command_seq.to_string(),"state_changed":before.state!=after.state,"response":result.as_ref().ok(),"error":result.as_ref().err().map(|e|e.to_string())}));
+        }
+        dev_fixture::copy_home("cto-unexpected-final-rejection", &t.dev.home);
+    });
+    dev_fixture::evidence(
+        "cto-recovery-gate",
+        &json!({"scope":"CTO_SYNTHETIC_RPC_ACTUAL_DEV_STORE","expected":"RECOVERY_REQUIRED rejection with no publication before and after restart","observed":rows}),
+    );
+    println!("CTO_RECOVERY_GATE {}", json!(rows));
+    assert!(
+        rows.iter().all(|r| r["error"].is_string()
+            && r["seq_before"] == r["seq_after"]
+            && r["state_changed"] == false),
+        "RECOVERY_REQUIRED permitted withdrawal preparation"
+    );
+}
+
+#[test]
+#[cfg(feature = "dev-local-demo")]
+fn recovery_gate_preserves_store_and_signed_results_after_two_replays() {
+    use nus_exchange_contract::s3::dev_local::{Command, Engine as DevEngine, Error};
+    use std::{collections::BTreeMap, fs, path::Path};
+
+    fn files(root: &Path, dir: &Path, out: &mut BTreeMap<String, Vec<u8>>) {
+        for entry in fs::read_dir(dir).unwrap() {
+            let path = entry.unwrap().path();
+            if path.is_dir() {
+                files(root, &path, out);
+            } else {
+                out.insert(
+                    path.strip_prefix(root).unwrap().to_str().unwrap().into(),
+                    fs::read(path).unwrap(),
+                );
+            }
+        }
+    }
+    for bps in [0, 25] {
+        let mut c = setup(bps, true);
+        let (original_raw, original_sig) = sign_order(&c, 0, "2", 1000, 10000, 201);
+        c = order(c, 0, "2", 1000, 10000, 201);
+        let original = TRACE.with_borrow(|trace| {
+            trace
+                .as_ref()
+                .unwrap()
+                .dev
+                .engine
+                .as_ref()
+                .unwrap()
+                .reader()
+                .get()
+                .unwrap()
+                .receipts[&1]["receipt"]
+                .clone()
+        });
+        c = order(c, 1, "1", 1000, 10000, 202);
+        c = replay_check(
+            &c,
+            c.seal_batch("NORMAL", &observation(&c), NOW).unwrap(),
+            "SEAL_BATCH",
+        );
+        let a = attempt(&mut c, "SETTLE", None);
+        c = replay_check(&c, c.prepare_attempt(a.clone()).unwrap(), "ATTEMPT");
+        let v = next_snapshot(&c);
+        c = observe(c, v);
+        assert_eq!(c.mode(), "CATCHING_UP");
+        // Replayed CATCHING_UP permits reconciliation and the existing bounded
+        // effect API. It is not the terminal semantic recovery gate.
+        TRACE.with_borrow_mut(|trace| {
+            let t = trace.as_mut().unwrap();
+            drop(t.dev.engine.take());
+            let e = DevEngine::open(&t.dev.home, t.dev.config.clone()).unwrap();
+            assert_eq!(e.reader().get().unwrap().gate, "CATCHING_UP");
+            assert_eq!(
+                e.committed_attempt(a["tx_hash"].as_str().unwrap()).unwrap(),
+                Some(a.clone())
+            );
+            assert_eq!(
+                e.with_committed_attempt(a["tx_hash"].as_str().unwrap(), |_, raw| sha256(raw))
+                    .unwrap(),
+                Some(a["tx_hash"].as_str().unwrap().to_owned())
+            );
+            t.dev.engine = Some(e);
+        });
+        let mut failed = a.clone();
+        failed["state"] = json!("INCLUDED_FAILURE");
+        failed["confirmed_tx"] = proof(&mut c, &a, "1030");
+        c = replay_check(
+            &c,
+            c.resolve_attempt(failed.clone()).unwrap(),
+            "RESOLVE_ATTEMPT",
+        );
+        assert_eq!(c.mode(), "CATCHING_UP");
+        c = replay_check(
+            &c,
+            c.reject_final(c.rejection_evidence().unwrap()).unwrap(),
+            "VOID_BATCH",
+        );
+        assert_eq!(c.mode(), "RECOVERY_REQUIRED");
+        let (new_raw, new_sig) = sign_order(&c, 2, "2", 1000, 10000, 203);
+        let mut rows = Vec::new();
+        TRACE.with_borrow_mut(|trace| {
+            let t = trace.as_mut().unwrap();
+            let baseline = t.dev.engine.as_ref().unwrap().reader().get().unwrap();
+            assert_eq!(baseline.commit.command_seq, 7);
+            let ledger = baseline.receipts.values().cloned().collect::<Vec<_>>();
+            let mut stored = BTreeMap::new();
+            files(&t.dev.home, &t.dev.home, &mut stored);
+            for replay in 0..=2 {
+                if replay > 0 {
+                    drop(t.dev.engine.take());
+                    t.dev.engine = Some(DevEngine::open(&t.dev.home, t.dev.config.clone()).unwrap());
+                }
+                let e = t.dev.engine.as_ref().unwrap();
+                let mut probes = vec![
+                    ("new ORDER", Command::Signed { kind: "ORDER".into(), raw: new_raw.clone(), signature: new_sig.clone(), session_owner: owner(2) }),
+                    ("duplicate ORDER via execute", Command::Signed { kind: "ORDER".into(), raw: original_raw.clone(), signature: original_sig.clone(), session_owner: owner(0) }),
+                    ("CANCEL gate before decoding", Command::Signed { kind: "CANCEL".into(), raw: vec![], signature: vec![], session_owner: owner(0) }),
+                    ("SNAPSHOT", Command::Snapshot(canonical(c.latest().value()).unwrap())),
+                    ("SEAL", Command::Seal("NORMAL".into())),
+                    ("ATTEMPT", Command::Attempt(a.clone())),
+                    ("RESOLVE", Command::Resolve(failed.clone())),
+                    ("RECEIPT gate before validation", Command::Receipt(Value::Null)),
+                    ("REJECT_FINAL", Command::RejectFinal),
+                    ("APPLY", Command::Apply),
+                ];
+                for kind in ["WITHDRAW_PREPARE", "WITHDRAW_ABORT"] {
+                    probes.push((kind, Command::Local {
+                        kind: kind.into(),
+                        raw: canonical(&json!({"request_id":format!("{:02x}", 210 + replay).repeat(32)})).unwrap(),
+                        session_owner: owner(2),
+                    }));
+                }
+                for (label, command) in probes {
+                    let err = e.execute(command, &[], &observation(&c), NOW).unwrap_err();
+                    assert!(matches!(err, Error::Recovery("RECOVERY_REQUIRED")), "{label}: {err}");
+                    let after = e.reader().get().unwrap();
+                    assert_eq!(after.gate, "RECOVERY_REQUIRED");
+                    assert_eq!(after.commit, baseline.commit, "{label}");
+                    assert_eq!(after.state, baseline.state, "{label}");
+                    assert_eq!(after.receipts, baseline.receipts, "{label}");
+                    let mut actual = BTreeMap::new();
+                    files(&t.dev.home, &t.dev.home, &mut actual);
+                    assert_eq!(actual, stored, "{label}: persisted bytes changed");
+                    rows.push(json!({"replay":replay,"command":label,"error":"RECOVERY_REQUIRED","seq_before":"7","seq_after":"7","state_diff":[],"receipt_diff":[],"store_diff":[]}));
+                }
+                // The closed gate precedes even evidence parsing/staging.
+                assert!(matches!(e.execute(Command::Apply, &[(b"invalid raw".to_vec(), "invalid/media".into())], &observation(&c), NOW), Err(Error::Recovery("RECOVERY_REQUIRED"))));
+                let mut effects = 0;
+                assert!(matches!(e.with_committed_attempt(a["tx_hash"].as_str().unwrap(), |_, _| effects += 1), Err(Error::Recovery("RECOVERY_REQUIRED"))));
+                assert_eq!(effects, 0);
+                assert!(matches!(e.committed_attempt(a["tx_hash"].as_str().unwrap()), Err(Error::Recovery("RECOVERY_REQUIRED"))));
+                // Authenticated historical results remain queryable without a
+                // new binding, even while all execute commands are refused.
+                assert_eq!(e.query_signed("ORDER", &original_raw, &original_sig, &owner(0), &observation(&c), NOW).unwrap(), Some(original.clone()));
+                assert_eq!(e.query_signed("ORDER", &new_raw, &new_sig, &owner(2), &observation(&c), NOW).unwrap(), None);
+                assert!(e.query_signed("ORDER", &original_raw, &original_sig, &owner(2), &observation(&c), NOW).is_err());
+                let mut bad_sig = original_sig.clone();
+                bad_sig[0] ^= 1;
+                assert!(e.query_signed("ORDER", &original_raw, &bad_sig, &owner(0), &observation(&c), NOW).is_err());
+                e.reconcile_receipt_ledger(&ledger).unwrap();
+                let mut bad_ledger = ledger.clone();
+                bad_ledger[0]["receipt"]["durable_ack"] = json!(true);
+                assert!(e.reconcile_receipt_ledger(&bad_ledger).is_err());
+                let after = e.reader().get().unwrap();
+                assert_eq!(after.commit, baseline.commit);
+                assert_eq!(after.state, baseline.state);
+                assert_eq!(after.receipts, baseline.receipts);
+                let mut actual = BTreeMap::new();
+                files(&t.dev.home, &t.dev.home, &mut actual);
+                assert_eq!(actual, stored);
+            }
+            dev_fixture::evidence(&format!("recovery-ledger-fee{bps}"), &json!({
+                "scope":"SYNTHETIC_RPC_REAL_DEV_STORE_COMPONENT", "result":"PASS",
+                "catching_up_replay":"RECONCILIATION_AND_EFFECT_ALLOWED",
+                "state":baseline.state, "receipt_ledger":ledger,
+                "replay_runs":"2", "expected_diff":[], "blocked_commands":rows,
+                "effect_callback_calls":0, "signed_query_original_receipt":original,
+                "signed_query_new_id":null, "authentication_rejections":2,
+                "stored_files_sha256":stored.iter().map(|(name, bytes)| (name.clone(), sha256(bytes))).collect::<BTreeMap<_,_>>()
+            }));
+            dev_fixture::copy_home("economic-recovery", &t.dev.home);
+        });
+    }
+}

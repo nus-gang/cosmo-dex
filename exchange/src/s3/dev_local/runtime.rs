@@ -66,6 +66,18 @@ struct Writer {
     hook: Option<Hook>,
     closed: bool,
 }
+impl Writer {
+    fn ensure_open(&self) -> Result<()> {
+        // IO failures close this writer; semantic recovery is part of the
+        // committed candidate and survives open/replay. Check both under the
+        // writer lock before any mutation or effect. CATCHING_UP still permits
+        // the existing reconciliation commands.
+        if self.closed || self.candidate.mode() == "RECOVERY_REQUIRED" {
+            return Err(Error::Recovery("RECOVERY_REQUIRED"));
+        }
+        Ok(())
+    }
+}
 pub struct Engine {
     writer: Mutex<Writer>,
     reader: ReadView,
@@ -190,9 +202,7 @@ impl Engine {
             .writer
             .lock()
             .map_err(|_| Error::Recovery("WRITER_POISONED"))?;
-        if w.closed {
-            return Err(Error::Recovery("RECOVERY_REQUIRED"));
-        }
+        w.ensure_open()?;
         if let Err(e) = w.store.check() {
             self.close(&mut w)?;
             return Err(super::storage_error(e));
@@ -370,9 +380,7 @@ impl Engine {
             .writer
             .lock()
             .map_err(|_| Error::Recovery("WRITER_POISONED"))?;
-        if w.closed || w.candidate.mode() == "RECOVERY_REQUIRED" {
-            return Err(Error::Recovery("RECOVERY_REQUIRED"));
-        }
+        w.ensure_open()?;
         if let Err(e) = w.store.check() {
             self.close(&mut w)?;
             return Err(super::storage_error(e));
@@ -407,9 +415,7 @@ impl Engine {
             .writer
             .lock()
             .map_err(|_| Error::Recovery("WRITER_POISONED"))?;
-        if w.closed {
-            return Err(Error::Recovery("RECOVERY_REQUIRED"));
-        }
+        w.ensure_open()?;
         if let Err(e) = w.store.check() {
             self.close(&mut w)?;
             return Err(super::storage_error(e));
