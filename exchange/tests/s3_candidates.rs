@@ -17,8 +17,18 @@ use nus_exchange_contract::{
 };
 use serde_json::{Value, json};
 const NOW: u64 = 1791193000000;
-#[derive(Clone)]
+#[cfg(feature = "dev-local-demo")]
+#[path = "support/dev_fixture.rs"]
+mod dev_fixture;
+#[cfg(feature = "dev-local-demo")]
+struct DevTrace {
+    engine: Option<nus_exchange_contract::s3::dev_local::Engine>,
+    config: nus_exchange_contract::s3::dev_local::Validated,
+    home: std::path::PathBuf,
+}
 struct Trace {
+    #[cfg(feature = "dev-local-demo")]
+    dev: DevTrace,
     initial: Candidate,
     records: Vec<(Value, nus_exchange_contract::s3::evidence::Objects)>,
     commit: nus_exchange_contract::s3::journal::Commit,
@@ -83,6 +93,57 @@ fn replay_check(before: &Candidate, after: Candidate, mut kind: &str) -> Candida
                 t.initial.snapshot().value().clone(),
             );
         }
+        #[cfg(feature = "dev-local-demo")]
+        {
+            let engine = t.dev.engine.as_ref().unwrap();
+            let command = dev_fixture::record_command(
+                &before.full_state().unwrap(),
+                &prepared.record,
+                &objects,
+            );
+            let raw = objects
+                .entries()
+                .map(|(r, b)| (b.to_vec(), r["media_type"].as_str().unwrap().to_owned()))
+                .collect::<Vec<_>>();
+            let result = engine
+                .execute(command, &raw, &observation(&after), NOW)
+                .unwrap()
+                .unwrap();
+            assert_eq!(result["command_result"], prepared.result);
+            let view = engine.reader().get().unwrap();
+            assert_eq!(view.state, after.full_state().unwrap());
+            assert_eq!(view.commit.command_seq, after.sequence());
+            assert_eq!(result["durable_ack"], false);
+            if kind == "ATTEMPT" && after.attempts().last().unwrap()["kind"] == "SETTLE" {
+                let before = engine.reader().get().unwrap();
+                assert!(
+                    engine
+                        .execute(
+                            nus_exchange_contract::s3::dev_local::Command::RejectFinal,
+                            &[],
+                            &observation(&after),
+                            NOW
+                        )
+                        .is_err()
+                );
+                assert_eq!(before.state, engine.reader().get().unwrap().state);
+                assert_eq!(before.commit, engine.reader().get().unwrap().commit);
+            }
+
+            if kind == "ATTEMPT" {
+                let attempt = after.attempts().last().unwrap();
+                let hash = attempt["tx_hash"].as_str().unwrap();
+                let bytes = engine
+                    .with_committed_attempt(hash, |stored, raw| {
+                        assert_eq!(stored, attempt);
+                        assert_eq!(sha256(raw), hash);
+                        raw.len()
+                    })
+                    .unwrap()
+                    .unwrap();
+                assert!(bytes > 0);
+            }
+        }
         let (replayed, _) =
             Prepared::replay(before, &prepared.record, &objects, &t.commit).unwrap();
         assert_eq!(replayed.full_state().unwrap(), after.full_state().unwrap());
@@ -96,8 +157,24 @@ fn replay_check(before: &Candidate, after: Candidate, mut kind: &str) -> Candida
 }
 fn verify_trace() -> Value {
     use nus_exchange_contract::s3::{journal, record::Prepared};
-    TRACE.with_borrow(|trace| {
-        let t=trace.as_ref().unwrap();
+    TRACE.with_borrow_mut(|trace| {
+        let t=trace.as_mut().unwrap();
+        #[cfg(feature = "dev-local-demo")]
+        {
+            use nus_exchange_contract::s3::dev_local::Engine;
+            let view=t.dev.engine.as_ref().unwrap().reader().get().unwrap();
+            let ledger=view.receipts.values().cloned().collect::<Vec<_>>();
+            drop(t.dev.engine.take());
+            for _ in 0..2 {
+                let reopened=Engine::open(&t.dev.home,t.dev.config.clone()).unwrap();
+                let actual=reopened.reader().get().unwrap();
+                assert_eq!(actual.commit,view.commit);assert_eq!(actual.state,view.state);assert_eq!(actual.receipts,view.receipts);
+                reopened.reconcile_receipt_ledger(&ledger).unwrap();drop(reopened);
+            }
+            dev_fixture::evidence(&format!("economic-ledger-{}",view.commit.record_hash),&json!({"scope":"SYNTHETIC_RPC_REAL_DEV_STORE_COMPONENT","state":view.state,"receipt_ledger":ledger,"replay_runs":"2","expected_diff":[],"result":"PASS"}));
+            dev_fixture::copy_home("economic",&t.dev.home);
+            t.dev.engine=Some(Engine::open(&t.dev.home,t.dev.config.clone()).unwrap());
+        }
         let mut hashes=vec![];
         for _ in 0..2 {
             let mut state=t.initial.clone();let mut commit=empty_commit();
@@ -253,6 +330,13 @@ fn setup(bps: u32, all_funded: bool) -> Candidate {
             }
         }
     }
+    #[cfg(feature = "dev-local-demo")]
+    let config = {
+        let inputs = dev_fixture::inputs(bps, v["accounts"].as_array().unwrap());
+        let config = nus_exchange_contract::s3::dev_local::Validated::new(inputs).unwrap();
+        v["context"] = config.context().clone();
+        config
+    };
     v = finish_snapshot(v);
     let owners = v["accounts"]
         .as_array()
@@ -273,6 +357,21 @@ fn setup(bps: u32, all_funded: bool) -> Candidate {
     let c = Candidate::new(binding.decode(&canonical(&v).unwrap()).unwrap()).unwrap();
     TRACE.with_borrow_mut(|t| {
         *t = Some(Trace {
+            #[cfg(feature = "dev-local-demo")]
+            dev: {
+                let home = dev_fixture::home(bps);
+                let engine = nus_exchange_contract::s3::dev_local::Engine::create(
+                    &home,
+                    config.clone(),
+                    &canonical(&v).unwrap(),
+                )
+                .unwrap();
+                DevTrace {
+                    engine: Some(engine),
+                    config,
+                    home,
+                }
+            },
             initial: c.clone(),
             records: vec![],
             commit: empty_commit(),

@@ -15,3 +15,9 @@ pub mod snapshot;
 pub mod wire;
 
 pub mod record;
+
+#[cfg(all(
+    feature = "dev-local-demo",
+    any(target_os = "macos", target_os = "linux")
+))]
+pub mod dev_local;

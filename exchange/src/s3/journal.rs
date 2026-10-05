@@ -450,6 +450,9 @@ impl Journal {
     /// before publishing any recovered state. No external effects are sent here.
     pub fn open(path: &Path, context: Value) -> Result<(Self, Vec<Value>)> {
         validate_context(&context)?;
+        if fs::symlink_metadata(path.join("profile.guard.json")).is_ok() {
+            return Err(Error::RecoveryRequired("DEVELOPMENT_HOME"));
+        }
         check_directory(path, path)?;
         // Reject another generation without creating evidence files in its home.
         // Recheck under the writer lock in recover() to catch concurrent changes.

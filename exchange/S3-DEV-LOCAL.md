@@ -1,0 +1,77 @@
+# S3 개발 store·publisher 인계
+
+이 구현은 NUS-70의 로컬 component 후보다. `G00=FAIL_UNPROVEN / allowlist=[] / ACK=CLOSED`를 유지한다. 기본 build에 개발 경로가 없으며 `dev-local-demo` feature의 별도 `nus-s3-local-demo` binary만 입력 검증 및 오프라인 create/open을 제공한다. HTTP·RPC 방송·4검증인 기동·D/E/F 활성화·최종 runtime 승인·main/CI 인수는 포함하지 않는다.
+
+## 입력과 신뢰 경계
+
+`dev_local::Validated::new(Inputs)`는 다음 원문을 검증한다.
+
+- 독립 심사 인계에서 받은 `approved_runtime_sha256`와 runtime manifest 원문. manifest에서 계산한 값을 승인으로 자가 발급하면 안 된다.
+- A 후보 manifest `90169d322336a0c0de9bc6c48725d528d42fe74c78ea5b596fc7e059d747dda2`, rc3 manifest `3ff69e73057a2bb6dcff64820123d520b9ad3e5637abbd1ad7d38b8c1a49eb97` 및 상속 파일 전체. B의 `LocalDemoInputs`와 같은 5개 component descriptor 경로·집계 규칙을 사용한다. `COMPONENT_FIXTURE` scope는 공개 생성자가 거절한다.
+- 정확한 fee0/25 effective profile, canonical guard의 8개 필드, 전체 Context, 새 genesis bytes 및 공개 사용자 roster. Chain의 InitChain/SDK 검증은 승인 B의 책임이다. C의 초기 snapshot은 인증된 로컬 chain adapter의 동일 높이 원문이어야 한다. 이 API는 light client가 아니다.
+- 기존 rc3 `exchange/Cargo.toml` 원문은 시험용 `tests/support/rc3-exchange-Cargo.toml`로 보존한다. 현재 feature 설정을 상속 manifest에 다시 봉인하지 않는다. 실제 C 설정/lock/source는 component descriptor와 심사 증거에서 별도로 고정한다.
+
+`Validated` 필드는 비공개이며 검증 후 바이트를 소유한다. 합성 descriptor와 test pin을 사용한 시험은 byte 검증 시험일 뿐, 실제 승인 runtime을 증명하지 않는다. 최종 runtime pin은 CEO/CTO의 승인 component 인계 후 SRE가 실제 binary에 대조해야 한다.
+
+## 저장소와 장애 의미
+
+`Engine::create(home, validated, bootstrap_bytes)`는 존재하지 않는 새 canonical 절대 경로만 받는다. 부모 경로는 준비돼 있어야 하며 suffix는 `.runtime/s3-dev-local-v1/<guard run_uuid>/fee0|fee25`다. 새 root0700와 단일 `writer.dev.lock`을 만든 뒤 guard file fsync → no-replace link/unlink → root fsync를 완료하고 store를 초기화한다. guard를 자동 재발급하지 않는다.
+
+모든 하위 접근은 열린 디렉터리 FD에 상대적인 `openat/O_NOFOLLOW`, `mkdirat`, `linkat`, `renameat`, `unlinkat`을 사용한다. 디렉터리 열거도 `fdopendir/readdir`로 수행한다. owner·root0700·file0600·regular file·nlink1을 검사하고, root의 canonical path/device/inode와 열린 WAL/lock의 inode를 대조한다. 저장 root는 동일 사용자에 대한 보안 격리나 적대적인 호스트 관리자를 방어하는 경계가 아니다.
+
+| 파일 | private 구현 의미 |
+|---|---|
+| `profile.guard.json` | 승인 계약의 불변 guard 원문 |
+| `home.dev.json` | canonical path/device/inode, guard·bootstrap SHA256 결합 |
+| `runtime.dev.json`, `genesis.dev.json`, `effective.dev.json` | 재시작에도 caller가 새로 검증한 입력과 바이트 대조 |
+| `bootstrap.dev.json` | 최초 `ChainSnapshot` 원문. 잔고/book 덤프 import가 아님 |
+| `journal.dev.wal` | `S3D1` 72B header, rc3 16MiB payload ceiling·체크섬·full frame hash |
+| `commit.dev.json` | canonical `{command_seq,record_hash,end_offset}`. 모두 문자열이며 교체는 temp fsync/rename/root fsync 순서 |
+| `objects/sha256/<hash>`와 `.ref` | 상속 raw/typed/TX 상한과 media·SHA·length를 매번 재검증. no-replace publish |
+| `transaction.dev` 및 `*.tmp` | 작업 도중의 불확실성을 보존. 있으면 재시작 거절 |
+
+표준 `S3W1`·표준 home은 상호 거절한다. 표준 Journal에도 개발 guard 거절을 추가했다. legacy `correction.reserve`, arena, free-space 기반 지원 판단은 사용하지 않는다. capacity certificate는 논리 상한 검사에만 사용하며 확보한 물리 credit으로 표현하지 않는다.
+
+오류는 해당 writer를 `RECOVERY_REQUIRED`로 닫는다. 신규 명령·자동 정정·출금 준비·effect callback을 거절한다. 기존 chain 확정 자산을 되돌리지 않는다. 미상 tail·부분 원문·재해시 semantic 변조·임시 파일·inode 변경은 자동 truncate/delete/reseed 없이 원본 그대로 남긴다. 이 구현에는 손상 home을 수리하거나 미해결 `transaction.dev`를 삭제하는 API가 없다. 운영자 근거 검토와 체인 대사 없이 파일을 지워 재개하면 안 된다.
+
+완료된 marker와 완전한 prefix만 남은 crash/응답 유실은 명시적인 `Engine::open`에서 재생한다. `Prepared::replay`가 원 명령/서명을 다시 실행하고 full state·result·record를 비교한다. snapshot의 잔고나 FIFO를 그대로 역직렬화해 복원하지 않는다. guard/bootstrap 원문, seq/hash, fill, C/R/D/P, book/FIFO, cursor, correction revision, 결과 인덱스를 복원한다.
+
+## D에 전달하는 Rust API
+
+| API | 사용 조건과 결과 |
+|---|---|
+| `Engine::create`, `Engine::open` | 검증된 입력과 전용 home. 기존 home create·새 bootstrap으로 open 불가 |
+| `execute(Command, raw_evidence, observation, now)` | 인증/신뢰 RPC를 마친 D 전용. 원문 저장/재검증 → semantic replay → WAL fsync → marker fsync/rename/dir fsync → 단일 Arc 공개 후 개발 envelope 반환. 무효과 반복 관측은 `None` |
+| `Command::Signed` | ORDER/CANCEL 원 wire·서명과 인증 세션 owner. owner를 요청 본문에서 복사하지 않음. 동일 ID 재시도는 최초 결과, ID 충돌은 거절 |
+| `Command::Local` | 인증된 WITHDRAW_PREPARE/ABORT. 직접 출금 서명/TX 실행은 제공하지 않음 |
+| `Snapshot/Seal/Attempt/Resolve/Receipt/RejectFinal/Apply` | 기존 rc3 상태 전이·proof/capacity 검사 그대로. 경제 검증을 생략하는 별도 모드 없음 |
+| `reader().get()` | 내부 전체 상태와 result map·commit·gate를 한 immutable Arc revision으로 읽음. 모든 계정/서명 증거를 담으므로 공개 REST에 그대로 노출하지 않음 |
+| `query_signed` | 인증/서명을 다시 확인하는 읽기 전용 원 결과 조회. 신규 binding을 만들지 않음. 복구 gate에서도 이미 공개된 결과 조회 가능 |
+| `reconcile_receipt_ledger` | client의 독립 receipt/seq/hash/offset entry 전체를 복원 결과와 비교. 응답하지 못한 commit의 추가 존재는 허용, client receipt 누락/변조는 거절 |
+| `committed_attempt` | commit된 attempt 조회. 반환 뒤 방송을 허가하는 token이 아님 |
+| `with_committed_attempt` | 단일 writer lock 아래 store와 원 TxRaw를 재검증하고 PREPARED/UNKNOWN에만 D callback을 실행. callback은 Engine에 재진입하지 않고 bounded IO만 수행. D가 방송 intent를 먼저 저장하고 결과불명·재시도를 기존 계약대로 대사해야 함 |
+
+변경 응답은 승인된 7필드 envelope다. `development_receipt=LOCAL_WRITE_COMPLETED_UNPROVEN_SPACE`, `durable_ack=false`, `storage_assurance=UNPROVEN_HOST_SPACE`. 내부 rc3 `CommandResult`는 변경하지 않는다. receipt ledger의 `{receipt,command_seq,record_hash,end_offset}`는 독립 시험/인계 컨테이너이며 새 public schema가 아니다. 개발 접수와 chain `COMMITTED`는 별도다. D의 실제 HTTP는 `/dev-local/v1/`·loopback·기존 인증/origin·계정 격리와 묶어 후속 업무에서 검증해야 한다.
+
+VOID audit hash, timeout, NOT_FOUND, CheckTx만으로 보류를 풀 수 없다. 원 정산 확정 실패·다른 시도 전부 종결·raw block/results/TxRaw·원 receipt·같은 높이 C 검증을 기존 `proof.rs`/engine으로 통과해야 CORRECTION을 만들 수 있다. P 재사용과 COMMITTED 역전은 허용하지 않는다.
+
+## 로컬 재현
+
+설치된 Rust/Cargo cache만 사용한다. 아래 `NUS_TEST_TMPDIR`는 검토자가 준비한 쓰기 가능한 임시 디렉터리다. Paperclip 실행에서는 `PAPERCLIP_RUN_SCRATCH_DIR`를 우선 사용한다.
+
+```sh
+cargo test --offline --locked --manifest-path exchange/Cargo.toml \
+  --features dev-local-demo,fault-injection \
+  --test s3_dev_local --test s3_candidates -- --test-threads=1
+python3 exchange/scripts/verify-dev-local-evidence.py "$NUS70_EVIDENCE_DIR"
+cargo test --offline --locked --manifest-path exchange/Cargo.toml \
+  --test s3_accounting --test s3_storage --test s3_journal
+cargo check --offline --locked --manifest-path exchange/Cargo.toml \
+  --no-default-features --bin nus-s3-local-demo
+```
+
+마지막 명령은 feature 누락으로 실패해야 한다. 증거 수집에는 `NUS70_EVIDENCE_DIR=<새 증거 디렉터리>`를 설정한다. 경제 시험은 기존 합성 RPC·공개 시험키와 실제 ML-DSA 서명을 사용하며 개발 store/publisher를 거쳐 실행한다. receipt ledger와 실제 WAL/object/marker 원문을 기록하고 동일 home 두 번 재생을 비교한다. artifact에 복사된 home은 읽기 전용 증거다. 경로/inode를 편집해 재사용하지 않는다.
+
+binary 입력은 `validate|create|open --local-demo-profile <파일> --acknowledge-unproven-space --runtime-pin <독립 인계 hash> --input-set <bundle>`이며 create/open에 `--home`, create에만 `--bootstrap`이 추가된다. bundle은 `runtime_manifest/files/guard/genesis` exact bytes의 base64 JSON이고 private transport 형식이다. binary는 listener·worker를 시작하지 않는다.
+
+성능, 전원 상실, 실제 host ENOSPC/EDQUOT, 물리·metadata 예약/drain은 측정하지 않았다. 오류 주입과 process exit는 각각 모의 IO/component 결과다. 실제 DEV01~14 통합과 D/E/F·보호 main·CI·독립 QA는 NOT_RUN이며 동일 최종 후보의 CTO→Security 승인 후에만 NUS-70을 done으로 인수한다.
