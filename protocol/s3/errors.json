@@ -1,0 +1,150 @@
+{
+  "inherit": [
+    "protocol/v1/CONTRACT.md",
+    "protocol/v1/DECISION-PORT.md",
+    "protocol/v1/adr/G-FIX-01.md",
+    "protocol/s2/errors.json"
+  ],
+  "codespace": "exchange_s3",
+  "abci_codes": {
+    "RESOURCE_LIMIT": "1001",
+    "NON_CANONICAL_WIRE": "1002",
+    "INTEGER_RANGE": "1003",
+    "UNSUPPORTED_VERSION": "1004",
+    "CONTEXT_MISMATCH": "1005",
+    "OPERATOR_UNAUTHORIZED": "1006",
+    "RECEIPT_INCONSISTENCY": "1007",
+    "BATCH_CONFLICT": "1008",
+    "BATCH_CLOSED": "1009",
+    "BATCH_SEQUENCE_GAP": "1010",
+    "PREVIOUS_BATCH_HASH_MISMATCH": "1011",
+    "OPERATOR_EPOCH_MISMATCH": "1012",
+    "KEY_LENGTH": "1013",
+    "ADDRESS_MISMATCH": "1014",
+    "ACCOUNT_KEY_UNREGISTERED": "1015",
+    "ACCOUNT_KEY_MISMATCH": "1016",
+    "INVALID_SIGNATURE": "1017",
+    "ID_CONFLICT": "1018",
+    "EPOCH_MISMATCH": "1019",
+    "ORDER_REVOKED": "1020",
+    "EXPIRED": "1021",
+    "MARKET_LIMIT": "1022",
+    "BPS_RANGE": "1023",
+    "FEE_CAP": "1024",
+    "FEE_GE_RECEIVE": "1025",
+    "CUMULATIVE_QTY_EXCEEDED": "1026",
+    "INSUFFICIENT_CONFIRMED_BALANCE": "1027",
+    "DUPLICATE_FILL": "1028",
+    "EMPTY_BATCH": "1029",
+    "ASSET_DEFICIT": "1030",
+    "KV_BUDGET_EXCEEDED": "1031",
+    "SEQUENCE_OVERFLOW": "1032",
+    "INVALID_ENVELOPE": "1033",
+    "UNSUPPORTED_OPTION": "1034"
+  },
+  "new_or_overridden": [
+    {
+      "code": "BATCH_CLOSED",
+      "http_status": "409",
+      "retryable": false,
+      "state": "REJECTED"
+    },
+    {
+      "code": "BATCH_CONFLICT",
+      "http_status": "409",
+      "retryable": false,
+      "state": "REJECTED"
+    },
+    {
+      "code": "BATCH_SEQUENCE_GAP",
+      "http_status": "409",
+      "retryable": false,
+      "state": "REJECTED"
+    },
+    {
+      "code": "PREVIOUS_BATCH_HASH_MISMATCH",
+      "http_status": "409",
+      "retryable": false,
+      "state": "REJECTED"
+    },
+    {
+      "code": "OPERATOR_UNAUTHORIZED",
+      "http_status": "403",
+      "retryable": false,
+      "state": "REJECTED"
+    },
+    {
+      "code": "OPERATOR_EPOCH_MISMATCH",
+      "http_status": "409",
+      "retryable": false,
+      "state": "REJECTED"
+    },
+    {
+      "code": "EMPTY_BATCH",
+      "http_status": "400",
+      "retryable": false,
+      "state": "REJECTED"
+    },
+    {
+      "code": "DUPLICATE_FILL",
+      "http_status": "409",
+      "retryable": false,
+      "state": "REJECTED"
+    },
+    {
+      "code": "RECEIPT_INCONSISTENCY",
+      "http_status": "503",
+      "retryable": false,
+      "state": "RECOVERY_REQUIRED"
+    },
+    {
+      "code": "ATTEMPT_UNRESOLVED",
+      "http_status": "202",
+      "retryable": true,
+      "state": "SUBMISSION_UNKNOWN"
+    },
+    {
+      "code": "RETRY_BUDGET_EXHAUSTED",
+      "http_status": "503",
+      "retryable": false,
+      "state": "RECOVERY_REQUIRED"
+    },
+    {
+      "code": "ASSET_DEFICIT",
+      "http_status": "503",
+      "retryable": false,
+      "state": "RECOVERY_REQUIRED"
+    },
+    {
+      "code": "KV_BUDGET_EXCEEDED",
+      "http_status": "422",
+      "retryable": false,
+      "state": "REJECTED"
+    },
+    {
+      "code": "UNEXPECTED_FINAL_REJECTION",
+      "http_status": "503",
+      "retryable": false,
+      "state": "RECOVERY_REQUIRED"
+    },
+    {
+      "code": "EXPIRY_MARGIN",
+      "http_status": "422",
+      "retryable": false,
+      "state": "REJECTED"
+    },
+    {
+      "code": "UNSETTLED_HOLD",
+      "http_status": "409",
+      "retryable": true,
+      "state": "REJECTED"
+    },
+    {
+      "code": "S3_CONTEXT_REQUIRED",
+      "http_status": "400",
+      "retryable": false,
+      "state": "REJECTED"
+    }
+  ],
+  "numeric_abci_mapping": "Chain uses module codes in CONTRACT; SDK ante codes remain SDK codes, codespace distinguishes them"
+}

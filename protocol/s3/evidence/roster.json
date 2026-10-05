@@ -1,0 +1,67 @@
+{
+  "source": "Paperclip agents API; status does not establish person-day availability",
+  "agents": [
+    {
+      "id": "bbab0ef4-f898-4a3f-868e-95907150184b",
+      "name": "Wallet",
+      "role": "engineer",
+      "status": "idle"
+    },
+    {
+      "id": "280662e3-46b6-4f2b-988c-fa8878f29fbf",
+      "name": "Exchange",
+      "role": "engineer",
+      "status": "idle"
+    },
+    {
+      "id": "890452a8-05a2-45f1-a2bf-b0c01278d521",
+      "name": "CTO",
+      "role": "cto",
+      "status": "running"
+    },
+    {
+      "id": "67cfca39-4d60-4d4d-98d5-d57e186ae3e4",
+      "name": "CEO",
+      "role": "general",
+      "status": "running"
+    },
+    {
+      "id": "d16d2319-72eb-4a2a-b6c9-9fda4f4893b4",
+      "name": "QA",
+      "role": "qa",
+      "status": "idle"
+    },
+    {
+      "id": "731426db-1eed-4e0e-ac48-2f6e887627d0",
+      "name": "Settlement",
+      "role": "engineer",
+      "status": "idle"
+    },
+    {
+      "id": "868769a9-2cbc-4449-a25e-1ea8c04b2db4",
+      "name": "Docs",
+      "role": "general",
+      "status": "idle"
+    },
+    {
+      "id": "8ed0d728-5f08-4211-a115-ae6be939b955",
+      "name": "Chain",
+      "role": "engineer",
+      "status": "idle"
+    },
+    {
+      "id": "3a95ba0a-5e42-43e6-a5f4-6582c879c7cb",
+      "name": "Security",
+      "role": "security",
+      "status": "idle"
+    },
+    {
+      "id": "073c4baa-97d5-4f5e-bb47-68ea26fe7732",
+      "name": "SRE",
+      "role": "devops",
+      "status": "idle"
+    }
+  ],
+  "observed_during_run": "33e0cfb7-22e6-428e-994e-a61a7254fda4",
+  "exact_query_timestamp": "NOT_RECORDED"
+}
