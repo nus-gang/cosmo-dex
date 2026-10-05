@@ -2,7 +2,7 @@
 //! SDK envelope inspection binds worker attempts to the exact immutable batch.
 use super::{
     journal::sha256,
-    schema::{self, bytes, num},
+    schema::{self, num},
 };
 use crate::{
     Result,
@@ -130,12 +130,16 @@ pub fn identity(raw: &[u8]) -> Result<Value> {
 }
 /// Returns close audit bindings, or None for a settle envelope. Signature
 /// authorization executes on chain; no operator secret is required here.
-pub fn attempt_envelope(a: &Value, batch_wire: &[u8]) -> Result<Option<(String, String)>> {
-    let raw = bytes(&a["raw_tx"])?;
-    if raw.len() > 139264 || sha256(&raw) != a["tx_hash"] {
+pub fn attempt_envelope(
+    a: &Value,
+    objects: &super::evidence::Objects,
+    batch_wire: &[u8],
+) -> Result<Option<(String, String)>> {
+    let raw = objects.resolve(&a["raw_tx_ref"], super::evidence::TX)?;
+    if raw.len() > 139264 || sha256(raw) != a["tx_hash"] {
         return Err("INVALID_ENVELOPE");
     }
-    let tx = fields(&raw)?;
+    let tx = fields(raw)?;
     exact(&tx, &[1, 2, 3])?;
     if one(&tx, 3)?.data.len() != 3309 {
         return Err("KEY_LENGTH");

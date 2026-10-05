@@ -28,7 +28,7 @@ impl Drop for Dir {
     }
 }
 fn context() -> Value {
-    json!({"service_schema":"s3/2", "chain_id":"nus-s3-dev-1", "genesis_hash":"01".repeat(32), "contract_hash":"02".repeat(32), "config_hash":"03".repeat(32), "market_id":"DEVBASE/DEVQUOTE", "market_config_version":"1"})
+    json!({"service_schema":"s3/3", "chain_id":"nus-s3-dev-1", "genesis_hash":"01".repeat(32), "contract_hash":"02".repeat(32), "config_hash":"03".repeat(32), "market_id":"DEVBASE/DEVQUOTE", "market_config_version":"1"})
 }
 fn record(j: &Journal) -> Value {
     json!({"context":context(), "command_seq":(j.commit().command_seq+1).to_string(),
@@ -280,8 +280,8 @@ fn malformed_records_context_change_and_existing_namespace_are_rejected() {
     r["number"] = json!(1);
     assert!(j.append(&r, 4096, false).is_err());
     r = record(&j);
-    r["unicode"] = json!("한글");
-    assert!(j.append(&r, 4096, false).is_err());
+    r["unicode"] = json!("한글😀");
+    assert!(j.append(&r, 4096, false).is_ok());
     drop(j);
     assert!(Journal::open(&d.0, json!({"wrong":"context"})).is_err());
 }
@@ -299,6 +299,7 @@ fn content_addressed_raw_evidence_is_required_on_append_and_every_replay() {
         );
         let object =
             d.0.join("objects")
+                .join("sha256")
                 .join(reference["sha256"].as_str().unwrap());
         assert_eq!(fs::read(&object).unwrap(), raw);
         let mut r = record(&j);

@@ -5,9 +5,7 @@ use crate::Result;
 use serde_json::{Value, json};
 pub fn reference(v: &Value, media_type: &str) -> Result<Value> {
     let b = canonical(v).map_err(|_| "S3_CANONICAL")?;
-    Ok(
-        json!({"sha256":super::journal::sha256(&b),"byte_length":b.len().to_string(),"media_type":media_type}),
-    )
+    super::evidence::reference(&b, media_type)
 }
 use super::{
     dependencies::{Asset as DebitAsset, DebitDomain},
@@ -31,6 +29,29 @@ fn bump(v: &mut Value) -> Result<()> {
     Ok(())
 }
 impl Candidate {
+    /// Ingest exact bytes into the PRIVATE input cache. No ACK or IO is implied.
+    pub fn provide_evidence(&mut self, raw: &[u8], media: &str) -> Result<Value> {
+        self.objects.insert(raw, media)
+    }
+    pub fn evidence_bytes(&self, r: &Value, media: &str) -> Result<&[u8]> {
+        self.objects.resolve(r, media)
+    }
+    pub fn evidence_set(&self) -> Result<super::evidence::Objects> {
+        let mut objects = self.objects.clone();
+        for a in &self.attempts {
+            objects.insert_typed("Attempt", a)?;
+        }
+        for e in self.failure_evidence.values() {
+            objects.insert_typed("ResolutionEvidence", e)?;
+        }
+        if !self.observations.is_empty() {
+            objects.insert_typed("ChainSnapshot", self.latest().value())?;
+        }
+        Ok(objects)
+    }
+    pub fn capacity(&self) -> Result<super::capacity::Certificate> {
+        super::capacity::certificate(&self.full_state()?, &self.evidence_set()?)
+    }
     pub fn mode(&self) -> &str {
         if self
             .batches
@@ -186,6 +207,7 @@ impl Candidate {
     /// unbroadcast PREPARED envelope is unresolved after process death.
     pub fn prepare_attempt(&self, a: Value) -> Result<Self> {
         schema::validate("Attempt", &a)?;
+        self.objects.graph(&a)?;
         if let Some(old) = self.attempts.iter().find(|v| v["tx_hash"] == a["tx_hash"]) {
             return if old == &a {
                 Ok(self.clone())
@@ -260,6 +282,7 @@ impl Candidate {
         }
         let audit = wire::attempt_envelope(
             &a,
+            &self.objects,
             self.batch_wire(batch["batch_id"].as_str().unwrap())
                 .unwrap(),
         )?;
@@ -309,6 +332,7 @@ impl Candidate {
     /// monotonic counters. Timeout/NOT_FOUND are represented only as UNKNOWN.
     pub fn resolve_attempt(&self, a: Value) -> Result<Self> {
         schema::validate("Attempt", &a)?;
+        self.objects.graph(&a)?;
         let ix = self
             .attempts
             .iter()
@@ -344,9 +368,14 @@ impl Candidate {
                     return Err("ATTEMPT_CONFLICT");
                 }
                 let t = &a["confirmed_tx"];
-                proof::confirmed(t, self.latest().context(), &self.history_refs())?;
+                proof::confirmed(
+                    t,
+                    self.latest().context(),
+                    &self.history_refs(),
+                    &self.objects,
+                )?;
                 if t["tx_hash"] != a["tx_hash"]
-                    || t["raw_tx"] != a["raw_tx"]
+                    || t["raw_tx_ref"] != a["raw_tx_ref"]
                     || num(&t["height"])? < num(&a["first_possible_height"])?
                     || num(&t["height"])? > num(&a["timeout_height"])?
                     || (t["abci_code"] == "0") != (to == "INCLUDED_SUCCESS")
@@ -358,7 +387,7 @@ impl Candidate {
                 if !a["confirmed_tx"].is_null() {
                     return Err("ATTEMPT_CONFLICT");
                 }
-                proof::absence(&a, self.latest(), &self.history_refs())?;
+                proof::absence(&a, self.latest(), &self.history_refs(), &self.objects)?;
             }
             _ => return Err("ATTEMPT_CONFLICT"),
         }
@@ -366,8 +395,39 @@ impl Candidate {
         n.attempts[ix] = a;
         Ok(n)
     }
+    /// Deterministic local selection among proven failures. All settle attempts
+    /// and the same-height lookup still have to be present and resolved.
+    pub fn rejection_evidence(&self) -> Result<Value> {
+        let batch = &self.batches[self.active()?]["batch"];
+        let attempts: Vec<_> = self
+            .attempts
+            .iter()
+            .filter(|a| a["batch"] == *batch && a["kind"] == "SETTLE")
+            .cloned()
+            .collect();
+        let failed = attempts
+            .iter()
+            .find(|a| a["state"] == "INCLUDED_FAILURE")
+            .ok_or("FAILURE_EVIDENCE_REQUIRED")?;
+        let codes: Value =
+            serde_json::from_str(include_str!("../../../protocol/s3/errors.json")).unwrap();
+        let reason = codes["abci_codes"]
+            .as_object()
+            .unwrap()
+            .iter()
+            .find(|(_, code)| **code == failed["confirmed_tx"]["abci_code"])
+            .map(|(k, _)| k.as_str())
+            .unwrap_or("UNEXPECTED_FINAL_REJECTION");
+        let snapshot = self.latest();
+        Ok(
+            json!({"context":snapshot.context(),"batch":batch,"observed_snapshot":snapshot.value(),"settle_attempts":attempts,
+            "batch_lookup":{"context":snapshot.context(),"observed_height":snapshot.height().to_string(),"snapshot_id":snapshot.id(),"requested_seq":batch["batch_seq"],"last_seq":snapshot.value()["last_batch_seq"],"last_hash":snapshot.value()["last_batch_hash"],"status":"NOT_FOUND_AT_HEIGHT","receipt":null},
+            "failed_tx_hash":failed["tx_hash"],"rejection_code":reason}),
+        )
+    }
     pub fn reject_final(&self, e: Value) -> Result<Self> {
         schema::validate("ResolutionEvidence", &e)?;
+        self.objects.graph(&e)?;
         let ix = self.active()?;
         let b = &self.batches[ix];
         let id = b["batch"]["batch_id"].as_str().unwrap();
@@ -384,6 +444,9 @@ impl Candidate {
             .filter(|a| a["batch"] == b["batch"] && a["kind"] == "SETTLE")
             .cloned()
             .collect();
+        if e != self.rejection_evidence()? {
+            return Err("FAILURE_EVIDENCE_CONFLICT");
+        }
         let lookup = &e["batch_lookup"];
         if e["context"] != *self.latest().context()
             || e["batch"] != b["batch"]
@@ -447,6 +510,7 @@ impl Candidate {
     /// against the one-inflight limit. The frozen state exposes apply pending.
     pub fn record_receipt(&self, r: Value) -> Result<Self> {
         schema::validate("ResolutionReceipt", &r)?;
+        self.objects.graph(&r)?;
         if let Some(old) = self
             .resolutions
             .iter()
@@ -464,14 +528,26 @@ impl Candidate {
             .position(|b| b["batch"] == r["batch"])
             .ok_or("BATCH_NOT_FOUND")?;
         let b = &self.batches[ix];
-        proof::receipt(&r, &b["batch"], self.latest(), &self.history_refs())?;
+        proof::receipt(
+            &r,
+            &b["batch"],
+            self.latest(),
+            &self.history_refs(),
+            &self.objects,
+        )?;
         let tx = &r["terminal_tx"];
-        let attempt = self
+        let attempt_index = self
             .attempts
             .iter()
-            .find(|a| a["tx_hash"] == tx["tx_hash"] && a["batch"] == b["batch"])
+            .position(|a| a["tx_hash"] == tx["tx_hash"] && a["batch"] == b["batch"])
             .ok_or("ATTEMPT_NOT_FOUND")?;
-        if attempt["raw_tx"] != tx["raw_tx"]
+        let attempt = &self.attempts[attempt_index];
+        match attempt["state"].as_str().ok_or("ATTEMPT_CONFLICT")? {
+            "PREPARED" | "SUBMISSION_UNKNOWN" => {}
+            "INCLUDED_SUCCESS" if attempt["confirmed_tx"] == *tx => {}
+            _ => return Err("RECEIPT_INCONSISTENCY"),
+        }
+        if attempt["raw_tx_ref"] != tx["raw_tx_ref"]
             || num(&tx["height"])? < num(&attempt["first_possible_height"])?
             || num(&tx["height"])? > num(&attempt["timeout_height"])?
         {
@@ -489,6 +565,10 @@ impl Candidate {
                 .ok_or("FAILURE_EVIDENCE_REQUIRED")?;
             if attempt["kind"] != "CLOSE"
                 || b["state"] != "CLOSING"
+                || self
+                    .objects
+                    .typed(&r["resolution_evidence_ref"], "ResolutionEvidence")?
+                    != *e
                 || r["failed_tx_hash"] != e["failed_tx_hash"]
                 || r["resolution_evidence_hash"]
                     != schema::hash("NUS/S3/RESOLUTION_EVIDENCE/V1", e)?
@@ -513,6 +593,9 @@ impl Candidate {
             return Err("RECEIPT_INCONSISTENCY");
         }
         let mut n = self.next()?;
+        n.attempts[attempt_index]["state"] = json!("INCLUDED_SUCCESS");
+        n.attempts[attempt_index]["confirmed_tx"] = tx.clone();
+        n.attempts[attempt_index]["absence_proof"] = Value::Null;
         n.resolutions.push(r.clone());
         n.batches[ix]["receipt"] = json!({"context":r["context"],"batch":r["batch"],"disposition":r["disposition"],"terminal_height":tx["height"],"terminal_tx_hash":tx["tx_hash"],"batch_receipt_v2":r["batch_receipt_v2"]});
         n.batches[ix]["reason"] = json!("ENGINE_APPLY_PENDING");
@@ -698,7 +781,7 @@ impl Candidate {
                 b["reason"] = json!("");
                 b["observed_height"] = json!(target.height().to_string());
                 bump(b)?;
-                n.applied.push(json!({"batch_id":b["batch"]["batch_id"],"receipt_hash":schema::hash("NUS/S3/VIEW/V1",r)?,"revision":b["revision"],"command_seq":n.seq.to_string(),"snapshot_id":target.id()}));
+                n.applied.push(json!({"batch_id":b["batch"]["batch_id"],"receipt_hash":super::journal::sha256(&canonical(r).map_err(|_| "S3_CANONICAL")?),"revision":b["revision"],"command_seq":n.seq.to_string(),"snapshot_id":target.id()}));
             }
         }
         n.snapshot = target.clone();
@@ -708,25 +791,13 @@ impl Candidate {
         Ok(n)
     }
     pub fn evidence_objects(&self) -> Result<Vec<(Vec<u8>, String)>> {
-        let mut objects = Vec::new();
-        for a in &self.attempts {
-            objects.push((
-                canonical(a).map_err(|_| "S3_CANONICAL")?,
-                "application/json".into(),
-            ));
-        }
-        if !self.observations.is_empty() {
-            objects.push((
-                canonical(&json!(
-                    self.observations
-                        .iter()
-                        .map(|s| s.value())
-                        .collect::<Vec<_>>()
-                ))
-                .map_err(|_| "S3_CANONICAL")?,
-                "application/json".into(),
-            ));
-        }
-        Ok(objects)
+        let objects = self.evidence_set()?;
+        let refs = objects.graph(&self.full_state()?)?;
+        refs.iter()
+            .map(|r| {
+                let media = r["media_type"].as_str().ok_or("EVIDENCE_TYPE")?;
+                Ok((objects.resolve(r, media)?.to_vec(), media.to_owned()))
+            })
+            .collect()
     }
 }

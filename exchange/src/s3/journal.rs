@@ -42,13 +42,13 @@ pub fn sha256(bytes: &[u8]) -> String {
     hex::encode(Sha256::digest(bytes))
 }
 
-/// The S3 schema contains ASCII values and decimal strings, never JSON numbers.
-/// BTreeMap-backed serde_json objects provide lexicographic ASCII key order.
+/// Contract canonical JSON: Python ensure_ascii=True, sorted keys, no spaces.
+/// Text counts Unicode scalar values; supplementary characters use two escapes.
 pub fn canonical(value: &Value) -> Result<Vec<u8>> {
     fn check(v: &Value) -> bool {
         match v {
             Value::Null | Value::Bool(_) => true,
-            Value::String(s) => s.is_ascii() && !s.contains(char::from(127)),
+            Value::String(_) => true,
             Value::Array(a) => a.iter().all(check),
             Value::Object(o) => o.iter().all(|(k, v)| k.is_ascii() && check(v)),
             Value::Number(_) => false,
@@ -57,7 +57,19 @@ pub fn canonical(value: &Value) -> Result<Vec<u8>> {
     if !check(value) {
         return Err(Error::InvalidRecord("NON_CANONICAL_VALUE"));
     }
-    serde_json::to_vec(value).map_err(|_| Error::InvalidRecord("JSON"))
+    let json = serde_json::to_string(value).map_err(|_| Error::InvalidRecord("JSON"))?;
+    let mut ascii = String::with_capacity(json.len());
+    for c in json.chars() {
+        if c < '\u{7f}' {
+            ascii.push(c);
+        } else {
+            use std::fmt::Write;
+            for u in c.encode_utf16(&mut [0; 2]) {
+                write!(&mut ascii, "\\u{u:04x}").unwrap();
+            }
+        }
+    }
+    Ok(ascii.into_bytes())
 }
 
 pub fn frame(payload: &[u8]) -> Result<Vec<u8>> {
@@ -140,7 +152,7 @@ fn validate_context(context: &Value) -> Result<()> {
         .as_object()
         .ok_or(Error::InvalidRecord("S3_CONTEXT"))?;
     if object.len() != 7
-        || context["service_schema"] != "s3/2"
+        || context["service_schema"] != "s3/3"
         || context["chain_id"] != "nus-s3-dev-1"
         || context["market_id"] != "DEVBASE/DEVQUOTE"
         || context["market_config_version"] != "1"
@@ -151,6 +163,47 @@ fn validate_context(context: &Value) -> Result<()> {
         return Err(Error::InvalidRecord("S3_CONTEXT"));
     }
     Ok(())
+}
+
+fn private_dir(path: &Path) -> Result<()> {
+    let mut builder = fs::DirBuilder::new();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::DirBuilderExt;
+        builder.mode(0o700);
+    }
+    builder.create(path)?;
+    Ok(())
+}
+fn secure_options() -> OpenOptions {
+    let mut options = OpenOptions::new();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
+        #[cfg(target_os = "macos")]
+        options.custom_flags(0x100); // O_NOFOLLOW
+        #[cfg(target_os = "linux")]
+        options.custom_flags(0x20000); // O_NOFOLLOW
+    }
+    options
+}
+fn check_owner_permissions(metadata: &fs::Metadata, root: &Path) -> Result<()> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        if metadata.uid() != fs::symlink_metadata(root)?.uid() || metadata.mode() & 0o077 != 0 {
+            return Err(Error::RecoveryRequired("EVIDENCE_PERMISSIONS"));
+        }
+    }
+    Ok(())
+}
+fn check_directory(path: &Path, root: &Path) -> Result<()> {
+    let m = fs::symlink_metadata(path).map_err(|_| Error::RecoveryRequired("EVIDENCE_MISSING"))?;
+    if !m.is_dir() || m.file_type().is_symlink() {
+        return Err(Error::RecoveryRequired("EVIDENCE_DIRECTORY"));
+    }
+    check_owner_permissions(&m, root)
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -222,73 +275,123 @@ impl Journal {
         if self.poisoned {
             return Err(Error::RecoveryRequired("POISONED_WRITER"));
         }
-        if media_type.is_empty() || !media_type.is_ascii() {
-            return Err(Error::InvalidRecord("EVIDENCE_TYPE"));
-        }
-        let reference = json!({"sha256":sha256(bytes),"byte_length":bytes.len().to_string(),"media_type":media_type});
+        let reference =
+            super::evidence::reference(bytes, media_type).map_err(Error::InvalidRecord)?;
+        super::evidence::verify(&reference, bytes).map_err(Error::InvalidRecord)?;
         let hash = reference["sha256"].as_str().unwrap();
-        let dir = self.dir.join("objects");
+        let root = self.dir.join("objects");
+        let dir = root.join("sha256");
+        self.poisoned = true;
+        for path in [&root, &dir] {
+            if fs::symlink_metadata(path).is_err_and(|e| e.kind() == std::io::ErrorKind::NotFound) {
+                private_dir(path)?;
+                sync_dir(path.parent().unwrap())?;
+            }
+            check_directory(path, &self.dir)?;
+        }
         let destination = dir.join(hash);
-        if destination.exists() {
-            self.verify_evidence(&reference)?;
+        if fs::symlink_metadata(&destination).is_ok() {
+            self.read_evidence(&reference)?;
+            self.poisoned = false;
             return Ok(reference);
         }
-        self.poisoned = true;
-        if !dir.exists() {
-            fs::create_dir(&dir)?;
-            sync_dir(&self.dir)?;
-        }
         let temporary = dir.join(format!("{hash}.tmp"));
-        let mut f = OpenOptions::new()
+        let mut f = secure_options()
             .write(true)
             .create_new(true)
             .open(&temporary)?;
         f.write_all(bytes)?;
         f.sync_all()?;
-        fs::rename(temporary, destination)?;
+        // link is atomic NOREPLACE; unlike rename it cannot overwrite a winner.
+        // The lock and private namespace prevent cooperating writer races.
+        let mut readback = Vec::new();
+        secure_options()
+            .read(true)
+            .open(&temporary)?
+            .read_to_end(&mut readback)?;
+        super::evidence::verify(&reference, &readback).map_err(Error::InvalidRecord)?;
+        // Persist the role as well as the raw digest. Otherwise a restart could
+        // adopt identical bytes under a different media type.
+        let descriptor = dir.join(format!("{hash}.ref"));
+        let descriptor_tmp = dir.join(format!("{hash}.ref.tmp"));
+        let mut meta = secure_options()
+            .write(true)
+            .create_new(true)
+            .open(&descriptor_tmp)?;
+        meta.write_all(&canonical(&reference)?)?;
+        meta.sync_all()?;
+        fs::hard_link(&temporary, &destination)?;
+        fs::hard_link(&descriptor_tmp, &descriptor)?;
+        sync_dir(&dir)?;
+        fs::remove_file(&descriptor_tmp)?;
+        fs::remove_file(&temporary)?;
         sync_dir(&dir)?;
         self.poisoned = false;
         Ok(reference)
     }
-    fn verify_evidence(&self, reference: &Value) -> Result<()> {
-        if reference.as_object().is_none_or(|o| o.len() != 3)
-            || !valid_hash(&reference["sha256"])
-            || reference["media_type"].as_str().is_none_or(str::is_empty)
-        {
-            return Err(Error::RecoveryRequired("EVIDENCE_REF"));
-        }
+    pub fn read_evidence(&self, reference: &Value) -> Result<Vec<u8>> {
+        super::schema::validate("EvidenceRef", reference).map_err(Error::InvalidRecord)?;
         let size = decimal(reference, "byte_length")?;
-        let path = self
-            .dir
-            .join("objects")
-            .join(reference["sha256"].as_str().unwrap());
-        let mut f = File::open(path).map_err(|_| Error::RecoveryRequired("EVIDENCE_MISSING"))?;
-        if f.metadata()?.len() != size {
+        let limit = super::evidence::limit(reference["media_type"].as_str().unwrap())
+            .map_err(Error::InvalidRecord)?;
+        if size == 0 || size > limit as u64 {
+            return Err(Error::RecoveryRequired("EVIDENCE_SIZE"));
+        }
+        let root = self.dir.join("objects");
+        let dir = root.join("sha256");
+        check_directory(&root, &self.dir)?;
+        check_directory(&dir, &self.dir)?;
+        let hash = reference["sha256"].as_str().unwrap();
+        let descriptor = secure_options()
+            .read(true)
+            .open(dir.join(format!("{hash}.ref")))
+            .map_err(|_| Error::RecoveryRequired("EVIDENCE_DESCRIPTOR_MISSING"))?;
+        if !descriptor.metadata()?.is_file() {
+            return Err(Error::RecoveryRequired("EVIDENCE_DESCRIPTOR"));
+        }
+        check_owner_permissions(&descriptor.metadata()?, &self.dir)?;
+        let mut meta = Vec::new();
+        descriptor.take(4097).read_to_end(&mut meta)?;
+        if meta.len() > 4096 || meta != canonical(reference)? {
+            return Err(Error::RecoveryRequired("EVIDENCE_DESCRIPTOR"));
+        }
+        let path = dir.join(hash);
+        let f = secure_options()
+            .read(true)
+            .open(path)
+            .map_err(|_| Error::RecoveryRequired("EVIDENCE_MISSING"))?;
+        let metadata = f.metadata()?;
+        if !metadata.is_file() || metadata.len() != size {
             return Err(Error::RecoveryRequired("EVIDENCE_LENGTH"));
         }
-        let mut hasher = Sha256::new();
-        let mut buffer = [0; 65536];
-        let mut length = 0u64;
-        loop {
-            let n = f.read(&mut buffer)?;
-            if n == 0 {
-                break;
-            }
-            length = length.checked_add(n as u64).ok_or(Error::ResourceLimit)?;
-            if length > size {
-                return Err(Error::RecoveryRequired("EVIDENCE_LENGTH"));
-            }
-            hasher.update(&buffer[..n]);
+        check_owner_permissions(&metadata, &self.dir)?;
+        let mut bytes = Vec::new();
+        f.take(size + 1).read_to_end(&mut bytes)?;
+        super::evidence::verify(reference, &bytes).map_err(Error::RecoveryRequired)?;
+        Ok(bytes)
+    }
+    fn verify_evidence(&self, reference: &Value) -> Result<()> {
+        self.read_evidence(reference).map(|_| ())
+    }
+    pub fn load_objects(&self, refs: &[Value]) -> Result<super::evidence::Objects> {
+        let mut objects = super::evidence::Objects::default();
+        for r in refs {
+            objects
+                .insert(&self.read_evidence(r)?, r["media_type"].as_str().unwrap())
+                .map_err(Error::RecoveryRequired)?;
         }
-        if length != size || hex::encode(hasher.finalize()) != reference["sha256"] {
-            return Err(Error::RecoveryRequired("EVIDENCE_HASH"));
-        }
-        Ok(())
+        Ok(objects)
     }
     fn verify_evidence_refs(&self, record: &Value) -> Result<()> {
         let refs = record["evidence_refs"]
             .as_array()
             .ok_or(Error::InvalidRecord("EVIDENCE_REFS"))?;
+        if refs
+            .windows(2)
+            .any(|p| p[0]["sha256"].as_str() >= p[1]["sha256"].as_str())
+        {
+            return Err(Error::InvalidRecord("EVIDENCE_REF_ORDER"));
+        }
         let mut seen = std::collections::BTreeSet::new();
         for reference in refs {
             if !seen.insert(reference["sha256"].as_str().unwrap_or("")) {
@@ -302,7 +405,7 @@ impl Journal {
     pub fn create(path: &Path, context: Value) -> Result<Self> {
         validate_context(&context)?;
         canonical(&context)?;
-        fs::create_dir(path)?;
+        private_dir(path)?;
         sync_dir(path.parent().ok_or(Error::InvalidRecord("PARENT"))?)?;
         let lock = OpenOptions::new()
             .read(true)
@@ -347,6 +450,7 @@ impl Journal {
     /// before publishing any recovered state. No external effects are sent here.
     pub fn open(path: &Path, context: Value) -> Result<(Self, Vec<Value>)> {
         validate_context(&context)?;
+        check_directory(path, path)?;
         // Reject another generation without creating evidence files in its home.
         // Recheck under the writer lock in recover() to catch concurrent changes.
         if fs::read(path.join("context.json"))? != canonical(&context)? {
@@ -512,9 +616,10 @@ impl Journal {
         sync_dir(&target)?;
         sync_dir(&self.dir)
     }
-    // Fixed maximum reserve is deliberately conservative: every admitted payload and
-    // its caller-provided worst correction must fit MAX_PAYLOAD. Write real blocks,
-    // not set_len (which could create a sparse file). Ordinary append cannot use it.
+    // Legacy storage-fault fixture only. This reserve does NOT satisfy rc3 B:
+    // unlinking it makes blocks available to competing writers. NUS-66 must
+    // supply the supported dedicated allocator before any durable ACK service.
+    // Kept to preserve the original S3 storage experiments, never for admission.
     fn reserve(&mut self) -> Result<()> {
         #[cfg(feature = "fault-injection")]
         inject_io("reserve")?;
@@ -551,9 +656,9 @@ impl Journal {
         sync_dir(&self.dir)
     }
 
-    /// Caller supplies the actual conservative serialized maximum correction size
-    /// (CONTRACT §6), not an estimated record count. State stays private until Ok.
-    /// Internal correction may consume the dedicated reserve; normal append may not.
+    /// Low-level experimental append only. The rc3 capacity certificate and
+    /// dedicated allocation are not integrated here. Returning Commit proves
+    /// the marker sequence, NOT permission to return a durable service ACK.
     pub fn append(
         &mut self,
         record: &Value,

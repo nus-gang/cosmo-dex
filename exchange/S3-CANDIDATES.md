@@ -1,5 +1,7 @@
 # S3 비공개 엔진 후보 상태 — NUS-56 중간 구현
 
+현재 rc3 구현·검증 및 저장 플랫폼 선행 업무는 [S3-STORAGE.md](S3-STORAGE.md)를 따른다. 아래 본문은 이전 실행의 이력을 보존한다.
+
 2026-10-05. 이 코드는 **서비스 또는 durable ACK 경계가 아니다.** `s3::sequencer::Candidate`는 원자 공개 전에 검증할 비공개 상태를 계산한다. 승인된 raw 증거 저장·정정 용량 계약을 받기 전에는 S3 runtime/REST/정산 worker에 접속하지 않는다. S2 실행 파일과 기존 journal/outbox에는 연결하지 않았다.
 
 [NUS-64](/NUS/issues/NUS-64)의 `d45be33029705859b07a9516fd2229a56dc66f46`을 전용 branch에 병합했다. `s3/2`에서 CorrectionRecord는 after hash를 포함하지 않고, 완성된 상태 전체를 해시한다. 이전 `s3/1` journal은 자동 변환 없이 거절한다. 공통 protocol, 기존 lock, main, 다른 담당 branch를 수정하지 않았다.

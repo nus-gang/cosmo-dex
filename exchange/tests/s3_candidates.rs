@@ -17,6 +17,102 @@ use nus_exchange_contract::{
 };
 use serde_json::{Value, json};
 const NOW: u64 = 1791193000000;
+#[derive(Clone)]
+struct Trace {
+    initial: Candidate,
+    records: Vec<(Value, nus_exchange_contract::s3::evidence::Objects)>,
+    commit: nus_exchange_contract::s3::journal::Commit,
+}
+thread_local! { static TRACE: std::cell::RefCell<Option<Trace>> = const { std::cell::RefCell::new(None) }; }
+fn empty_commit() -> nus_exchange_contract::s3::journal::Commit {
+    nus_exchange_contract::s3::journal::Commit {
+        command_seq: 0,
+        record_hash: schema::ZERO.into(),
+        end_offset: 0,
+    }
+}
+fn replay_check(before: &Candidate, after: Candidate, mut kind: &str) -> Candidate {
+    use nus_exchange_contract::s3::{evidence::Objects, journal, record::Prepared};
+    if kind == "SETTLEMENT_APPLY"
+        && after.full_state().unwrap()["corrections"] != before.full_state().unwrap()["corrections"]
+    {
+        kind = "CORRECTION";
+    }
+    if kind == "VOID_BATCH" {
+        let a = before.full_state().unwrap();
+        let b = after.full_state().unwrap();
+        if b["resolution_receipts"].as_array().unwrap().len()
+            > a["resolution_receipts"].as_array().unwrap().len()
+            && b["resolution_receipts"].as_array().unwrap().last().unwrap()["disposition"]
+                == "COMMITTED"
+        {
+            kind = "RESOLVE_ATTEMPT";
+        }
+    }
+    TRACE.with_borrow_mut(|trace| {
+        let t = trace.as_mut().unwrap();
+        assert_eq!(
+            t.commit.command_seq,
+            before.sequence(),
+            "trace must not skip transitions"
+        );
+        let prepared =
+            Prepared::prepare(before, &after, kind, &observation(&after), NOW, &t.commit).unwrap();
+        let full = after.evidence_set().unwrap();
+        let mut objects = Objects::default();
+        for r in prepared.record["evidence_refs"].as_array().unwrap() {
+            let media = r["media_type"].as_str().unwrap();
+            objects
+                .insert(full.resolve(r, media).unwrap(), media)
+                .unwrap();
+        }
+        if let Some(dir) = std::env::var_os("S3_CANDIDATE_EVIDENCE_DIR") {
+            let dir = std::path::PathBuf::from(dir).join("objects");
+            std::fs::create_dir_all(&dir).unwrap();
+            for (r, raw) in objects.entries() {
+                let path = dir.join(r["sha256"].as_str().unwrap());
+                if path.exists() {
+                    assert_eq!(std::fs::read(&path).unwrap(), raw);
+                } else {
+                    std::fs::write(&path, raw).unwrap();
+                }
+                std::fs::write(path.with_extension("ref.json"), canonical(r).unwrap()).unwrap();
+            }
+            evidence(
+                &format!("bootstrap-{}", t.initial.snapshot().id()),
+                t.initial.snapshot().value().clone(),
+            );
+        }
+        let (replayed, _) =
+            Prepared::replay(before, &prepared.record, &objects, &t.commit).unwrap();
+        assert_eq!(replayed.full_state().unwrap(), after.full_state().unwrap());
+        let framed = journal::frame(&canonical(&prepared.record).unwrap()).unwrap();
+        t.commit.command_seq = after.sequence();
+        t.commit.record_hash = sha256(&framed);
+        t.commit.end_offset += framed.len() as u64;
+        t.records.push((prepared.record, objects));
+    });
+    after
+}
+fn verify_trace() -> Value {
+    use nus_exchange_contract::s3::{journal, record::Prepared};
+    TRACE.with_borrow(|trace| {
+        let t=trace.as_ref().unwrap();
+        let mut hashes=vec![];
+        for _ in 0..2 {
+            let mut state=t.initial.clone();let mut commit=empty_commit();
+            for (record,objects) in &t.records {
+                state=Prepared::replay(&state,record,objects,&commit).unwrap().0;
+                let frame=journal::frame(&canonical(record).unwrap()).unwrap();
+                commit.command_seq=state.sequence();commit.record_hash=sha256(&frame);commit.end_offset+=frame.len() as u64;
+            }
+            assert_eq!(commit,t.commit);
+            hashes.push(state.full_hash().unwrap());
+        }
+        assert_eq!(hashes[0],hashes[1]);
+        json!({"result":"PASS","replay_hashes":hashes,"commit_hash":t.commit.record_hash,"commands":t.records.len(),"records":t.records.iter().map(|(r,_)|r).collect::<Vec<_>>()})
+    })
+}
 fn evidence(name: &str, value: Value) {
     if let Some(dir) = std::env::var_os("S3_CANDIDATE_EVIDENCE_DIR") {
         let dir = std::path::PathBuf::from(dir);
@@ -174,7 +270,15 @@ fn setup(bps: u32, all_funded: bool) -> Candidate {
         bps,
     )
     .unwrap();
-    Candidate::new(binding.decode(&canonical(&v).unwrap()).unwrap()).unwrap()
+    let c = Candidate::new(binding.decode(&canonical(&v).unwrap()).unwrap()).unwrap();
+    TRACE.with_borrow_mut(|t| {
+        *t = Some(Trace {
+            initial: c.clone(),
+            records: vec![],
+            commit: empty_commit(),
+        })
+    });
+    c
 }
 fn order(c: Candidate, i: usize, side: &str, q: u64, p: u64, nonce: u8) -> Candidate {
     let (raw, sig) = sign_order(&c, i, side, q, p, nonce);
@@ -184,7 +288,7 @@ fn order(c: Candidate, i: usize, side: &str, q: u64, p: u64, nonce: u8) -> Candi
     assert_eq!(r.code, "OK");
     assert!(!d);
     n.full_state().unwrap();
-    n
+    replay_check(&c, n, "ORDER")
 }
 fn uint(tag: u64, n: u64) -> Vec<u8> {
     fn put(mut n: u64, v: &mut Vec<u8>) {
@@ -211,9 +315,9 @@ fn blob(tag: u64, b: &[u8]) -> Vec<u8> {
 fn join(v: &[Vec<u8>]) -> Vec<u8> {
     v.concat()
 }
-fn attempt(c: &Candidate, kind: &str, e: Option<&Value>) -> Value {
+fn attempt(c: &mut Candidate, kind: &str, e: Option<&Value>) -> Value {
     use bech32::ToBase32;
-    let b = &c.batches().last().unwrap()["batch"];
+    let b = c.batches().last().unwrap()["batch"].clone();
     let raw = c.batch_wire(b["batch_id"].as_str().unwrap()).unwrap();
     let op = bech32::encode(
         "nus",
@@ -273,7 +377,10 @@ fn attempt(c: &Candidate, kind: &str, e: Option<&Value>) -> Value {
         uint(4, 16),
     ]);
     let tx = join(&[blob(1, &body), blob(2, &auth), blob(3, &sign(16, &doc))]);
-    json!({"context":c.latest().context(),"batch":b,"attempt_no":"1","kind":kind,"state":"PREPARED","operator":owner(16),"operator_epoch":c.latest().value()["operator_epoch"],"account_number":"16","account_sequence":"0","timeout_height":timeout.to_string(),"first_possible_height":(c.latest().height()+1).to_string(),"gas_limit":gas.to_string(),"fee_atoms":fee.to_string(),"raw_tx":STANDARD.encode(&tx),"tx_hash":sha256(&tx),"broadcast_count":"0","confirmed_tx":null,"absence_proof":null})
+    let tx_ref = c
+        .provide_evidence(&tx, nus_exchange_contract::s3::evidence::TX)
+        .unwrap();
+    json!({"context":c.latest().context(),"batch":b,"attempt_no":"1","kind":kind,"state":"PREPARED","operator":owner(16),"operator_epoch":c.latest().value()["operator_epoch"],"account_number":"16","account_sequence":"0","timeout_height":timeout.to_string(),"first_possible_height":(c.latest().height()+1).to_string(),"gas_limit":gas.to_string(),"fee_atoms":fee.to_string(),"raw_tx_ref":tx_ref,"tx_hash":sha256(&tx),"broadcast_count":"0","confirmed_tx":null,"absence_proof":null})
 }
 fn next_snapshot(c: &Candidate) -> Value {
     let mut v = c.latest().value().clone();
@@ -290,20 +397,42 @@ fn observe(c: Candidate, v: Value) -> Candidate {
         .snapshot()
         .decode_related(&canonical(&v).unwrap())
         .unwrap();
-    c.observe(snap).unwrap()
+    replay_check(&c, c.observe(snap).unwrap(), "SNAPSHOT")
 }
-fn proof(c: &Candidate, a: &Value, code: &str) -> Value {
-    let s = c.latest().value();
-    let raw = schema::bytes(&a["raw_tx"]).unwrap();
-    let block = json!({"jsonrpc":"2.0","id":1,"result":{"block_id":{"hash":s["block_hash"].as_str().unwrap().to_uppercase()},"block":{"header":{"chain_id":"nus-s3-dev-1","height":s["height"],"last_block_id":{"hash":c.snapshot().value()["block_hash"]}},"data":{"txs":[STANDARD.encode(&raw)]}}}});
+fn proof(c: &mut Candidate, a: &Value, code: &str) -> Value {
+    let s = c.latest().value().clone();
+    let raw = c
+        .evidence_bytes(&a["raw_tx_ref"], nus_exchange_contract::s3::evidence::TX)
+        .unwrap();
+    let block = json!({"jsonrpc":"2.0","id":1,"result":{"block_id":{"hash":s["block_hash"].as_str().unwrap().to_uppercase()},"block":{"header":{"chain_id":"nus-s3-dev-1","height":s["height"],"last_block_id":{"hash":c.snapshot().value()["block_hash"]}},"data":{"txs":[STANDARD.encode(raw)]}}}});
     let space = if code == "0" { "" } else { "exchange_s3" };
     let results = json!({"jsonrpc":"2.0","id":1,"result":{"height":s["height"],"txs_results":[{"code":code.parse::<u32>().unwrap(),"codespace":space,"gas_wanted":a["gas_limit"],"gas_used":"12345"}]}});
-    json!({"tx_hash":a["tx_hash"],"raw_tx":a["raw_tx"],"height":s["height"],"tx_index":"0","block_hash":s["block_hash"],"abci_code":code,"codespace":space,"gas_wanted":a["gas_limit"],"gas_used":"12345","raw_block_response":STANDARD.encode(serde_json::to_vec(&block).unwrap()),"raw_results_response":STANDARD.encode(serde_json::to_vec(&results).unwrap())})
+    let block_ref = c
+        .provide_evidence(
+            &serde_json::to_vec(&block).unwrap(),
+            nus_exchange_contract::s3::evidence::RPC,
+        )
+        .unwrap();
+    let results_ref = c
+        .provide_evidence(
+            &serde_json::to_vec(&results).unwrap(),
+            nus_exchange_contract::s3::evidence::RPC,
+        )
+        .unwrap();
+    json!({"tx_hash":a["tx_hash"],"raw_tx_ref":a["raw_tx_ref"],"height":s["height"],"tx_index":"0","block_hash":s["block_hash"],"abci_code":code,"codespace":space,"gas_wanted":a["gas_limit"],"gas_used":"12345","raw_block_response_ref":block_ref,"raw_results_response_ref":results_ref})
 }
-fn receipt(c: &Candidate, a: &Value, failed: Option<&Value>) -> Value {
+fn receipt(c: &mut Candidate, a: &Value, failed: Option<&Value>) -> Value {
     let b = &a["batch"];
     let v = json!({"protocol_version":"2","chain_id":"nus-s3-dev-1","genesis_hash":c.latest().context()["genesis_hash"],"market_id":"DEVBASE/DEVQUOTE","batch_seq":b["batch_seq"],"batch_id":b["batch_id"],"batch_hash":b["batch_hash"],"committed_height":c.latest().height().to_string(),"tx_hash":a["tx_hash"]});
-    json!({"context":c.latest().context(),"batch":b,"disposition":if failed.is_some(){"VOID"}else{"COMMITTED"},"terminal_tx":proof(c,a,"0"),"batch_receipt_v2":if failed.is_some(){Value::Null}else{json!(STANDARD.encode(Codec::default().encode("BatchReceiptV1",&v).unwrap()))},"failed_tx_hash":failed.map(|e|e["failed_tx_hash"].clone()),"resolution_evidence_hash":failed.map(|e|schema::hash("NUS/S3/RESOLUTION_EVIDENCE/V1",e).unwrap())})
+    let terminal = proof(c, a, "0");
+    let resolution_ref = failed.map(|e| {
+        c.provide_evidence(
+            &canonical(e).unwrap(),
+            nus_exchange_contract::s3::evidence::TYPED,
+        )
+        .unwrap()
+    });
+    json!({"context":c.latest().context(),"batch":b,"disposition":if failed.is_some(){"VOID"}else{"COMMITTED"},"terminal_tx":terminal,"resolution_evidence_ref":resolution_ref,"batch_receipt_v2":if failed.is_some(){Value::Null}else{json!(STANDARD.encode(Codec::default().encode("BatchReceiptV1",&v).unwrap()))},"failed_tx_hash":failed.map(|e|e["failed_tx_hash"].clone()),"resolution_evidence_hash":failed.map(|e|schema::hash("NUS/S3/RESOLUTION_EVIDENCE/V1",e).unwrap())})
 }
 fn terminal_snapshot(c: &Candidate, a: &Value, commit: bool) -> Value {
     let mut v = next_snapshot(c);
@@ -355,30 +484,37 @@ fn signed_batch_committed_same_height_price_improvement_and_idempotency() {
                 .submit("ORDER", &raw, &sig, &owner(1), &observation(&c), NOW)
                 .unwrap();
             assert_eq!(result.code, "INSUFFICIENT_AVAILABLE");
-            c = rejected;
-            let (n, _) = c.prepare_withdraw(&owner(0)).unwrap();
-            c = n;
-            c = c.seal_batch("NORMAL", &observation(&c), NOW).unwrap();
+            c = replay_check(&c, rejected, "ORDER");
+            let raw = canonical(&json!({"request_id":"77".repeat(32)})).unwrap();
+            let (n, _, _) = c
+                .local_action("WITHDRAW_PREPARE", &raw, &owner(0), &observation(&c), NOW)
+                .unwrap();
+            c = replay_check(&c, n, "WITHDRAW_PREPARE");
+            c = replay_check(
+                &c,
+                c.seal_batch("NORMAL", &observation(&c), NOW).unwrap(),
+                "SEAL_BATCH",
+            );
             assert_eq!(
                 c.seal_batch("NORMAL", &observation(&c), NOW).unwrap_err(),
                 "BATCH_INFLIGHT"
             );
-            let a = attempt(&c, "SETTLE", None);
-            c = c.prepare_attempt(a.clone()).unwrap();
+            let a = attempt(&mut c, "SETTLE", None);
+            c = replay_check(&c, c.prepare_attempt(a.clone()).unwrap(), "ATTEMPT");
             let old = c.ledger().balance(&owner(1), Asset::Quote).unwrap().clone();
             assert_eq!((old.d, old.available().unwrap()), (12_000_000, 88_000_000));
             let mut unknown = a.clone();
             unknown["state"] = json!("SUBMISSION_UNKNOWN");
             unknown["broadcast_count"] = json!("1");
-            c = c.resolve_attempt(unknown).unwrap();
+            c = replay_check(&c, c.resolve_attempt(unknown).unwrap(), "RESOLVE_ATTEMPT");
             assert_eq!(c.ledger().balance(&owner(1), Asset::Quote).unwrap(), &old);
             let v = terminal_snapshot(&c, &a, true);
             c = observe(c, v);
             assert_eq!(c.mode(), "CATCHING_UP");
-            let r = receipt(&c, &a, None);
-            c = c.record_receipt(r.clone()).unwrap();
+            let r = receipt(&mut c, &a, None);
+            c = replay_check(&c, c.record_receipt(r.clone()).unwrap(), "VOID_BATCH");
             assert_eq!(c.ledger().balance(&owner(1), Asset::Quote).unwrap(), &old);
-            c = c.apply().unwrap();
+            c = replay_check(&c, c.apply().unwrap(), "SETTLEMENT_APPLY");
             let hash = c.full_hash().unwrap();
             assert_eq!(c.mode(), "OPEN");
             assert_eq!(
@@ -401,7 +537,7 @@ fn signed_batch_committed_same_height_price_improvement_and_idempotency() {
             );
             evidence(
                 &format!("committed-{bps}"),
-                json!({"scope":"SYNTHETIC_RPC_PRIVATE_CANDIDATE","attempt":a,"receipt":r,"after_state":c.full_state().unwrap(),"after_state_hash":hash,"expected_available_quote":"90000000","expected_diff":[],"result":"PASS"}),
+                json!({"scope":"SYNTHETIC_RPC_PRIVATE_CANDIDATE","attempt":a,"receipt":r,"after_state":c.full_state().unwrap(),"after_state_hash":hash,"semantic_trace":verify_trace(),"expected_available_quote":"90000000","expected_diff":[],"result":"PASS"}),
             );
             let mut bad = r;
             bad["disposition"] = json!("VOID");
@@ -424,9 +560,13 @@ fn void_closes_forward_dependencies_preserves_independent_fill_and_next_slot() {
             12000,
             12,
         );
-        c = c.seal_batch("NORMAL", &observation(&c), NOW).unwrap();
-        let a = attempt(&c, "SETTLE", None);
-        c = c.prepare_attempt(a.clone()).unwrap();
+        c = replay_check(
+            &c,
+            c.seal_batch("NORMAL", &observation(&c), NOW).unwrap(),
+            "SEAL_BATCH",
+        );
+        let a = attempt(&mut c, "SETTLE", None);
+        c = replay_check(&c, c.prepare_attempt(a.clone()).unwrap(), "ATTEMPT");
         c = order(c, 2, "1", 1000, 12000, 13); // A's same order -> F2
         c = order(c, 3, "2", 1000, 10000, 14);
         c = order(c, 2, "1", 1000, 12000, 15); // C QUOTE -> F3
@@ -451,20 +591,24 @@ fn void_closes_forward_dependencies_preserves_independent_fill_and_next_slot() {
         assert_eq!(c.apply().unwrap_err(), "UNSETTLED_HOLD");
         let mut failed = a.clone();
         failed["state"] = json!("INCLUDED_FAILURE");
-        failed["confirmed_tx"] = proof(&c, &a, "1019");
-        c = c.resolve_attempt(failed.clone()).unwrap();
+        failed["confirmed_tx"] = proof(&mut c, &a, "1019");
+        c = replay_check(
+            &c,
+            c.resolve_attempt(failed.clone()).unwrap(),
+            "RESOLVE_ATTEMPT",
+        );
         let e = json!({"context":c.latest().context(),"batch":a["batch"],"observed_snapshot":c.latest().value(),"settle_attempts":[failed],"batch_lookup":{"context":c.latest().context(),"observed_height":c.latest().height().to_string(),"snapshot_id":c.latest().id(),"requested_seq":a["batch"]["batch_seq"],"last_seq":"0","last_hash":schema::ZERO,"status":"NOT_FOUND_AT_HEIGHT","receipt":null},"failed_tx_hash":a["tx_hash"],"rejection_code":"EPOCH_MISMATCH"});
         let mut incomplete = e.clone();
         incomplete["settle_attempts"] = json!([]);
         assert!(c.reject_final(incomplete).is_err());
-        c = c.reject_final(e.clone()).unwrap();
-        let close = attempt(&c, "CLOSE", Some(&e));
-        c = c.prepare_attempt(close.clone()).unwrap();
+        c = replay_check(&c, c.reject_final(e.clone()).unwrap(), "VOID_BATCH");
+        let close = attempt(&mut c, "CLOSE", Some(&e));
+        c = replay_check(&c, c.prepare_attempt(close.clone()).unwrap(), "ATTEMPT");
         let v = terminal_snapshot(&c, &close, false);
         c = observe(c, v);
-        let r = receipt(&c, &close, Some(&e));
-        c = c.record_receipt(r.clone()).unwrap();
-        c = c.apply().unwrap();
+        let r = receipt(&mut c, &close, Some(&e));
+        c = replay_check(&c, c.record_receipt(r.clone()).unwrap(), "VOID_BATCH");
+        c = replay_check(&c, c.apply().unwrap(), "SETTLEMENT_APPLY");
         let state = c.full_state().unwrap();
         evidence(
             "directed-correction",
@@ -483,11 +627,16 @@ fn void_closes_forward_dependencies_preserves_independent_fill_and_next_slot() {
             state["corrections"][0]["surviving_fill_ids"],
             json!([ids[3]])
         );
-        c = c.seal_batch("NORMAL", &observation(&c), NOW).unwrap();
+        c = replay_check(
+            &c,
+            c.seal_batch("NORMAL", &observation(&c), NOW).unwrap(),
+            "SEAL_BATCH",
+        );
         let b = &c.batches()[1]["batch"];
         assert_eq!(b["batch_seq"], "2");
         assert_eq!(b["previous_batch_hash"], a["batch"]["batch_hash"]);
         assert_eq!(b["fill_ids"], json!([ids[3]]));
+        evidence("directed-correction-trace", verify_trace());
         println!(
             "S3_CANDIDATE {}",
             json!({"case":"directed-correction","scope":"SYNTHETIC_RPC_PRIVATE_CANDIDATE","corrected":ids[..3],"survivor":ids[3],"next_batch":b,"state_hash":c.full_hash().unwrap(),"expected_diff":[],"result":"PASS"})
@@ -500,7 +649,7 @@ fn schema_hash_and_context_negatives() {
     let c = setup(0, false);
     let valid = c.full_state().unwrap();
     schema::validate("EngineState", &valid).unwrap();
-    for version in ["s3/1", "s2/1", ""] {
+    for version in ["s3/1", "s3/2", "s2/1", ""] {
         let mut v = valid.clone();
         v["context"]["service_schema"] = json!(version);
         assert!(schema::validate("EngineState", &v).is_err());
@@ -538,39 +687,58 @@ fn inclusion_tampering_and_unknown_are_rejected_without_releasing_holds() {
         12000,
         22,
     );
-    c = c.seal_batch("NORMAL", &observation(&c), NOW).unwrap();
-    let a = attempt(&c, "SETTLE", None);
-    for field in ["batch", "raw_tx", "timeout_height", "gas_limit"] {
+    c = replay_check(
+        &c,
+        c.seal_batch("NORMAL", &observation(&c), NOW).unwrap(),
+        "SEAL_BATCH",
+    );
+    let a = attempt(&mut c, "SETTLE", None);
+    for field in ["batch", "raw_tx_ref", "timeout_height", "gas_limit"] {
         let mut bad = a.clone();
         match field {
             "batch" => bad["batch"]["fill_ids"] = json!([]),
-            "raw_tx" => bad[field] = json!(STANDARD.encode(b"wrong transaction")),
+            "raw_tx_ref" => {
+                bad[field] = c
+                    .provide_evidence(
+                        b"wrong transaction",
+                        nus_exchange_contract::s3::evidence::TX,
+                    )
+                    .unwrap()
+            }
             _ => bad[field] = json!("1"),
         };
         assert!(c.prepare_attempt(bad).is_err());
     }
-    c = c.prepare_attempt(a.clone()).unwrap();
+    c = replay_check(&c, c.prepare_attempt(a.clone()).unwrap(), "ATTEMPT");
     let v = terminal_snapshot(&c, &a, true);
     c = observe(c, v);
     assert_eq!(c.apply().unwrap_err(), "UNSETTLED_HOLD");
     let hash = c.full_hash().unwrap();
-    let valid = receipt(&c, &a, None);
+    let valid = receipt(&mut c, &a, None);
     for field in [
         "height",
         "tx_index",
         "block_hash",
         "abci_code",
-        "raw_tx",
-        "raw_results_response",
+        "raw_tx_ref",
+        "raw_results_response_ref",
         "batch_receipt_v2",
     ] {
         let mut bad = valid.clone();
         match field {
             "batch_receipt_v2" => bad[field] = json!(STANDARD.encode(b"invalid receipt")),
-            "raw_tx" => bad["terminal_tx"][field] = json!(STANDARD.encode(b"wrong tx")),
-            "raw_results_response" => {
-                bad["terminal_tx"][field] =
-                    json!(STANDARD.encode(b"{\"result\":{\"height\":\"101\",\"txs_results\":[]}}"))
+            "raw_tx_ref" => {
+                bad["terminal_tx"][field] = c
+                    .provide_evidence(b"wrong tx", nus_exchange_contract::s3::evidence::TX)
+                    .unwrap()
+            }
+            "raw_results_response_ref" => {
+                bad["terminal_tx"][field] = c
+                    .provide_evidence(
+                        b"{\"result\":{\"height\":\"101\",\"txs_results\":[]}}",
+                        nus_exchange_contract::s3::evidence::RPC,
+                    )
+                    .unwrap()
             }
             "block_hash" => bad["terminal_tx"][field] = json!("ff".repeat(32)),
             _ => bad["terminal_tx"][field] = json!("99"),
@@ -619,7 +787,13 @@ fn strict_wire_matches_approved_batch_and_transaction_vectors() {
         }
         a["raw_tx"] =
             json!(STANDARD.encode(hex::decode(tx["raw_tx_hex"].as_str().unwrap()).unwrap()));
-        wire::attempt_envelope(&a, &raw).unwrap();
+        let mut objects = nus_exchange_contract::s3::evidence::Objects::default();
+        let txraw = schema::bytes(&a["raw_tx"]).unwrap();
+        a.as_object_mut().unwrap().remove("raw_tx");
+        a["raw_tx_ref"] = objects
+            .insert(&txraw, nus_exchange_contract::s3::evidence::TX)
+            .unwrap();
+        wire::attempt_envelope(&a, &objects, &raw).unwrap();
     }
 }
 #[test]
@@ -632,19 +806,35 @@ fn eight_block_absence_proof_allows_envelope_retry_but_never_correction() {
         12000,
         42,
     );
-    c = c.seal_batch("NORMAL", &observation(&c), NOW).unwrap();
-    let a = attempt(&c, "SETTLE", None);
-    c = c.prepare_attempt(a.clone()).unwrap();
+    c = replay_check(
+        &c,
+        c.seal_batch("NORMAL", &observation(&c), NOW).unwrap(),
+        "SEAL_BATCH",
+    );
+    let a = attempt(&mut c, "SETTLE", None);
+    c = replay_check(&c, c.prepare_attempt(a.clone()).unwrap(), "ATTEMPT");
     let mut blocks = vec![];
     let mut prev = c.latest().value()["block_hash"].clone();
     for _ in 0..9 {
         let v = next_snapshot(&c);
         c = observe(c, v);
         if c.latest().height() <= 108 {
-            let s = c.latest().value();
+            let s = c.latest().value().clone();
             let b = json!({"result":{"block_id":{"hash":s["block_hash"]},"block":{"header":{"chain_id":"nus-s3-dev-1","height":s["height"],"last_block_id":{"hash":prev}},"data":{"txs":null}}}});
             let r = json!({"result":{"height":s["height"],"txs_results":null}});
-            blocks.push(json!({"height":s["height"],"block_hash":s["block_hash"],"raw_block_response":STANDARD.encode(serde_json::to_vec(&b).unwrap()),"raw_results_response":STANDARD.encode(serde_json::to_vec(&r).unwrap())}));
+            let br = c
+                .provide_evidence(
+                    &serde_json::to_vec(&b).unwrap(),
+                    nus_exchange_contract::s3::evidence::RPC,
+                )
+                .unwrap();
+            let rr = c
+                .provide_evidence(
+                    &serde_json::to_vec(&r).unwrap(),
+                    nus_exchange_contract::s3::evidence::RPC,
+                )
+                .unwrap();
+            blocks.push(json!({"height":s["height"],"block_hash":s["block_hash"],"raw_block_response_ref":br,"raw_results_response_ref":rr}));
             prev = s["block_hash"].clone();
         }
     }
@@ -663,12 +853,23 @@ fn eight_block_absence_proof_allows_envelope_retry_but_never_correction() {
             }
             "equality" => bad["absence_proof"]["observed_height"] = json!("108"),
             "found" => {
-                let raw = schema::bytes(&bad["absence_proof"]["blocks"][2]["raw_block_response"])
+                let raw = c
+                    .evidence_bytes(
+                        &bad["absence_proof"]["blocks"][2]["raw_block_response_ref"],
+                        nus_exchange_contract::s3::evidence::RPC,
+                    )
                     .unwrap();
-                let mut b: Value = serde_json::from_slice(&raw).unwrap();
-                b["result"]["block"]["data"]["txs"] = json!([a["raw_tx"]]);
-                bad["absence_proof"]["blocks"][2]["raw_block_response"] =
-                    json!(STANDARD.encode(serde_json::to_vec(&b).unwrap()));
+                let mut b: Value = serde_json::from_slice(raw).unwrap();
+                b["result"]["block"]["data"]["txs"] = json!([STANDARD.encode(
+                    c.evidence_bytes(&a["raw_tx_ref"], nus_exchange_contract::s3::evidence::TX)
+                        .unwrap()
+                )]);
+                bad["absence_proof"]["blocks"][2]["raw_block_response_ref"] = c
+                    .provide_evidence(
+                        &serde_json::to_vec(&b).unwrap(),
+                        nus_exchange_contract::s3::evidence::RPC,
+                    )
+                    .unwrap();
             }
             _ => bad["absence_proof"]["blocks"][2]["block_hash"] = json!(schema::ZERO),
         }
@@ -679,13 +880,104 @@ fn eight_block_absence_proof_allows_envelope_retry_but_never_correction() {
         json!({"scope":"SYNTHETIC_RPC_PRIVATE_CANDIDATE","attempt":expired,"observed_snapshot":c.latest().value(),"result":"PASS","correction_authorized":false}),
     );
     let old = c.ledger().clone();
-    c = c.resolve_attempt(expired.clone()).unwrap();
+    c = replay_check(
+        &c,
+        c.resolve_attempt(expired.clone()).unwrap(),
+        "RESOLVE_ATTEMPT",
+    );
     assert_eq!(c.ledger(), &old);
     let e = json!({"context":c.latest().context(),"batch":a["batch"],"observed_snapshot":c.latest().value(),"settle_attempts":[expired],"batch_lookup":{"context":c.latest().context(),"observed_height":"109","snapshot_id":c.latest().id(),"requested_seq":"1","last_seq":"0","last_hash":schema::ZERO,"status":"NOT_FOUND_AT_HEIGHT","receipt":null},"failed_tx_hash":a["tx_hash"],"rejection_code":"EXPIRED"});
     assert_eq!(c.reject_final(e).unwrap_err(), "FAILURE_EVIDENCE_REQUIRED");
-    let mut retry = attempt(&c, "SETTLE", None);
+    let mut retry = attempt(&mut c, "SETTLE", None);
     retry["attempt_no"] = json!("2");
     let n = c.prepare_attempt(retry).unwrap();
     assert_eq!(n.ledger(), &old);
     assert_eq!(n.batches().len(), 1);
+}
+
+#[test]
+fn semantic_replay_rejects_resealed_ledger_fifo_result_and_refs() {
+    use nus_exchange_contract::s3::record::Prepared;
+    let before = setup(0, false);
+    let after = order(before.clone(), 0, "2", 2000, 10000, 91);
+    let p = Prepared::prepare(
+        &before,
+        &after,
+        "ORDER",
+        &observation(&after),
+        NOW,
+        &empty_commit(),
+    )
+    .unwrap();
+    for field in ["ledger", "fifo", "result", "raw", "context"] {
+        let mut r = p.record.clone();
+        let mut state: Value =
+            serde_json::from_slice(&schema::bytes(&r["state_json"]).unwrap()).unwrap();
+        let mut result: Value =
+            serde_json::from_slice(&schema::bytes(&r["result_json"]).unwrap()).unwrap();
+        match field {
+            "ledger" => {
+                let row = state["accounts"]
+                    .as_array_mut()
+                    .unwrap()
+                    .iter_mut()
+                    .flat_map(|a| a["ledger"].as_array_mut().unwrap())
+                    .find(|r| r["R"] != "0")
+                    .unwrap();
+                row["R"] = json!("0");
+            }
+            "fifo" => state["orders"][0]["view"]["admission_seq"] = json!("99"),
+            "result" => result["ledger_changes"] = json!([]),
+            "raw" => r["signature"] = json!(STANDARD.encode(vec![0; 3309])),
+            "context" => r["context"]["genesis_hash"] = json!("ff".repeat(32)),
+            _ => unreachable!(),
+        }
+        let hash = schema::hash("NUS/S3/ENGINE_STATE/V1", &state).unwrap();
+        r["state_json"] = json!(STANDARD.encode(canonical(&state).unwrap()));
+        r["after_state_hash"] = json!(hash);
+        result["after_state_hash"] = r["after_state_hash"].clone();
+        r["result_json"] = json!(STANDARD.encode(canonical(&result).unwrap()));
+        r["result_hash"] = json!(schema::hash("NUS/S3/COMMAND_RESULT/V1", &result).unwrap());
+        assert!(
+            Prepared::replay(&before, &r, &after.evidence_set().unwrap(), &empty_commit()).is_err(),
+            "{field}"
+        );
+    }
+}
+
+#[test]
+fn terminal_receipt_cannot_reverse_an_already_resolved_attempt() {
+    let mut c = order(
+        order(setup(0, false), 0, "2", 2000, 10000, 92),
+        1,
+        "1",
+        1000,
+        12000,
+        93,
+    );
+    c = replay_check(
+        &c,
+        c.seal_batch("NORMAL", &observation(&c), NOW).unwrap(),
+        "SEAL_BATCH",
+    );
+    let a = attempt(&mut c, "SETTLE", None);
+    c = replay_check(&c, c.prepare_attempt(a.clone()).unwrap(), "ATTEMPT");
+    let v = terminal_snapshot(&c, &a, true);
+    c = observe(c, v);
+    let receipt = receipt(&mut c, &a, None);
+    let mut failure = a.clone();
+    failure["state"] = json!("INCLUDED_FAILURE");
+    failure["confirmed_tx"] = proof(&mut c, &a, "1019");
+    let n = c.resolve_attempt(failure).unwrap();
+    assert_eq!(
+        n.record_receipt(receipt.clone()).unwrap_err(),
+        "RECEIPT_INCONSISTENCY"
+    );
+    let accepted = c.record_receipt(receipt.clone()).unwrap();
+    assert_eq!(accepted.attempts()[0]["state"], "INCLUDED_SUCCESS");
+    assert_eq!(
+        accepted.attempts()[0]["confirmed_tx"],
+        receipt["terminal_tx"]
+    );
+    assert_eq!(accepted.ledger(), c.ledger());
 }

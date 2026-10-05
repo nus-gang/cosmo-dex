@@ -24,6 +24,12 @@ pub struct Outcome {
     pub code: String,
     pub fills: Vec<String>,
 }
+pub(super) struct CommandEvidence {
+    pub kind: String,
+    pub raw: Vec<u8>,
+    pub sig: Vec<u8>,
+    pub outcome: Outcome,
+}
 #[derive(Clone, Debug)]
 struct Bound {
     hash: String,
@@ -50,6 +56,7 @@ pub struct Order {
 #[derive(Clone, Debug)]
 pub struct Candidate {
     pub(super) snapshot: Snapshot,
+    pub(super) objects: super::evidence::Objects,
     pub(super) ledger: Ledger,
     pub(super) seq: u64,
     bindings: BTreeMap<(String, String, String), Bound>,
@@ -78,6 +85,7 @@ impl Candidate {
                 .map(|a| (a.owner.clone(), a.confirmed[0], a.confirmed[1])),
         )?;
         Ok(Self {
+            objects: super::evidence::Objects::default(),
             history: vec![snapshot.clone()],
             snapshot,
             ledger,
@@ -230,10 +238,10 @@ impl Candidate {
             "last_command_seq":self.seq.to_string(), "chain_snapshot":self.snapshot.value(), "mode":mode,
             "accounts":accounts, "orders":orders, "fills":fills,
             "bindings":bindings.into_iter().map(|(_,v)|v).collect::<Vec<_>>(),
-            "batches":self.batches, "attempt_refs":self.attempts.iter().map(|a| super::engine::reference(a,"application/json")).collect::<Result<Vec<_>>>()?,
+            "batches":self.batches, "attempt_refs":self.attempts.iter().map(|a| super::engine::reference(a,super::evidence::TYPED)).collect::<Result<Vec<_>>>()?,
             "dependencies":self.fill_order.iter().map(|id| self.outbox[id]["dependency"].clone()).collect::<Vec<_>>(),
             "resolution_receipts":self.resolutions, "applied_batches":self.applied, "corrections":self.corrections,
-            "latest_observation_ref":if self.observations.is_empty() {Value::Null} else {super::engine::reference(&json!(self.observations.iter().map(|s| s.value()).collect::<Vec<_>>()),"application/json")?},
+            "latest_observation_ref":if self.observations.is_empty() {Value::Null} else {super::engine::reference(self.latest().value(),super::evidence::TYPED)?},
             "stream_seq":self.seq.to_string()});
         schema::validate("EngineState", &value)?;
         canonical(&value).map_err(|_| "STATE_CANONICAL")?;
@@ -359,6 +367,29 @@ impl Candidate {
             },
         );
         Ok((next, outcome, false))
+    }
+    pub(super) fn latest_command(&self) -> Option<CommandEvidence> {
+        for ((kind, _, _), b) in &self.bindings {
+            if b.outcome.seq == self.seq {
+                return Some(CommandEvidence {
+                    kind: kind.clone(),
+                    raw: b.raw.clone(),
+                    sig: b.signature.clone(),
+                    outcome: b.outcome.clone(),
+                });
+            }
+        }
+        for ((kind, _, _), b) in &self.local_bindings {
+            if b.outcome.seq == self.seq {
+                return Some(CommandEvidence {
+                    kind: kind.clone(),
+                    raw: b.raw.clone(),
+                    sig: Vec::new(),
+                    outcome: b.outcome.clone(),
+                });
+            }
+        }
+        None
     }
     pub fn local_evidence(&self, kind: &str, owner: &str, id: &str) -> Option<&[u8]> {
         self.local_bindings

@@ -1,0 +1,1 @@
+{"id":1,"jsonrpc":"2.0","result":{"height":"101","txs_results":[{"code":1019,"codespace":"exchange_s3","gas_used":"12345","gas_wanted":"10000000"}]}}

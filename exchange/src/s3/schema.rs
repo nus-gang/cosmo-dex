@@ -1,4 +1,4 @@
-//! Pinned s3/2 structural validation. Semantic authority remains with the local
+//! Pinned s3/3 structural validation. Semantic authority remains with the local
 //! adapter and the sequencer. No permissive S2/rc1 storage migration exists.
 use super::journal::{canonical, sha256};
 use crate::{Result, codec};
@@ -28,6 +28,9 @@ pub fn hash(domain: &str, v: &Value) -> Result<String> {
     )))
 }
 pub fn validate(name: &str, v: &Value) -> Result<()> {
+    if SCHEMA["$defs"].get(name).is_none() {
+        return Err("S3_SCHEMA");
+    }
     match name {
         "U32" => {
             codec::integer(v, 32)?;
@@ -98,11 +101,18 @@ fn check(s: &Value, v: &Value) -> Result<()> {
         }
         Some("string") => {
             let a = v.as_str().ok_or("S3_SCHEMA")?;
-            if !a.is_ascii()
-                || a.contains(char::from(127))
-                || s["maxLength"].as_u64().is_some_and(|m| a.len() as u64 > m)
+            if s["maxLength"]
+                .as_u64()
+                .is_some_and(|m| a.chars().count() as u64 > m)
             {
                 return Err("S3_SCHEMA");
+            }
+            match s["pattern"].as_str() {
+                Some("^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$") => {
+                    bytes(v)?;
+                }
+                Some("^(0|[1-9][0-9]*)$") | Some("^[0-9a-f]{64}$") | None => {}
+                _ => return Err("S3_SCHEMA_PATTERN"),
             }
         }
         Some("boolean") if v.is_boolean() => {}
