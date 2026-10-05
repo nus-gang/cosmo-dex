@@ -6,11 +6,11 @@
       "type": "BatchView",
       "value": {
         "context": {
-          "service_schema": "s3/1",
+          "service_schema": "s3/2",
           "chain_id": "nus-s3-dev-1",
           "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
           "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
-          "config_hash": "eba02241192cd666104d8767e96203a97d089026b3025e2a3241c9638ebdcb9b",
+          "config_hash": "f89bcad038cd6563ec282fd8a598d015703da715329fc58b88c5e392b3763744",
           "market_id": "DEVBASE/DEVQUOTE",
           "market_config_version": "1"
         },
@@ -34,11 +34,11 @@
         ],
         "receipt": {
           "context": {
-            "service_schema": "s3/1",
+            "service_schema": "s3/2",
             "chain_id": "nus-s3-dev-1",
             "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
             "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
-            "config_hash": "eba02241192cd666104d8767e96203a97d089026b3025e2a3241c9638ebdcb9b",
+            "config_hash": "f89bcad038cd6563ec282fd8a598d015703da715329fc58b88c5e392b3763744",
             "market_id": "DEVBASE/DEVQUOTE",
             "market_config_version": "1"
           },
@@ -150,11 +150,11 @@
         ],
         "receipt": {
           "context": {
-            "service_schema": "s3/1",
+            "service_schema": "s3/2",
             "chain_id": "nus-s3-dev-1",
             "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
             "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
-            "config_hash": "eba02241192cd666104d8767e96203a97d089026b3025e2a3241c9638ebdcb9b",
+            "config_hash": "f89bcad038cd6563ec282fd8a598d015703da715329fc58b88c5e392b3763744",
             "market_id": "DEVBASE/DEVQUOTE",
             "market_config_version": "1"
           },
@@ -181,11 +181,11 @@
       "type": "BatchView",
       "value": {
         "context": {
-          "service_schema": "s3/1",
+          "service_schema": "s3/2",
           "chain_id": "nus-s3-dev-1",
           "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
           "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
-          "config_hash": "eba02241192cd666104d8767e96203a97d089026b3025e2a3241c9638ebdcb9b",
+          "config_hash": "f89bcad038cd6563ec282fd8a598d015703da715329fc58b88c5e392b3763744",
           "market_id": "DEVBASE/DEVQUOTE",
           "market_config_version": "1"
         },
@@ -209,11 +209,11 @@
         ],
         "receipt": {
           "context": {
-            "service_schema": "s3/1",
+            "service_schema": "s3/2",
             "chain_id": "nus-s3-dev-1",
             "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
             "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
-            "config_hash": "eba02241192cd666104d8767e96203a97d089026b3025e2a3241c9638ebdcb9b",
+            "config_hash": "f89bcad038cd6563ec282fd8a598d015703da715329fc58b88c5e392b3763744",
             "market_id": "DEVBASE/DEVQUOTE",
             "market_config_version": "1"
           },
@@ -240,11 +240,11 @@
       "type": "BatchView",
       "value": {
         "context": {
-          "service_schema": "s3/1",
+          "service_schema": "s3/2",
           "chain_id": "nus-s3-dev-1",
           "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
           "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
-          "config_hash": "eba02241192cd666104d8767e96203a97d089026b3025e2a3241c9638ebdcb9b",
+          "config_hash": "f89bcad038cd6563ec282fd8a598d015703da715329fc58b88c5e392b3763744",
           "market_id": "DEVBASE/DEVQUOTE",
           "market_config_version": "1"
         },
@@ -268,11 +268,11 @@
         ],
         "receipt": {
           "context": {
-            "service_schema": "s3/1",
+            "service_schema": "s3/2",
             "chain_id": "nus-s3-dev-1",
             "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
             "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
-            "config_hash": "eba02241192cd666104d8767e96203a97d089026b3025e2a3241c9638ebdcb9b",
+            "config_hash": "f89bcad038cd6563ec282fd8a598d015703da715329fc58b88c5e392b3763744",
             "market_id": "DEVBASE/DEVQUOTE",
             "market_config_version": "1"
           },
@@ -303,7 +303,7 @@
           "chain_id": "nus-s3-dev-1",
           "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
           "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
-          "config_hash": "eba02241192cd666104d8767e96203a97d089026b3025e2a3241c9638ebdcb9b",
+          "config_hash": "f89bcad038cd6563ec282fd8a598d015703da715329fc58b88c5e392b3763744",
           "market_id": "DEVBASE/DEVQUOTE",
           "market_config_version": "1"
         },
@@ -331,7 +331,7 @@
             "chain_id": "nus-s3-dev-1",
             "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
             "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
-            "config_hash": "eba02241192cd666104d8767e96203a97d089026b3025e2a3241c9638ebdcb9b",
+            "config_hash": "f89bcad038cd6563ec282fd8a598d015703da715329fc58b88c5e392b3763744",
             "market_id": "DEVBASE/DEVQUOTE",
             "market_config_version": "1"
           },
@@ -358,11 +358,11 @@
       "type": "BatchView",
       "value": {
         "context": {
-          "service_schema": "s3/1",
+          "service_schema": "s3/2",
           "chain_id": "nus-s3-dev-1",
           "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
           "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
-          "config_hash": "eba02241192cd666104d8767e96203a97d089026b3025e2a3241c9638ebdcb9b",
+          "config_hash": "f89bcad038cd6563ec282fd8a598d015703da715329fc58b88c5e392b3763744",
           "market_id": "DEVBASE/DEVQUOTE",
           "market_config_version": "1"
         },
@@ -386,11 +386,11 @@
         ],
         "receipt": {
           "context": {
-            "service_schema": "s3/1",
+            "service_schema": "s3/2",
             "chain_id": "nus-s3-dev-1",
             "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
             "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
-            "config_hash": "eba02241192cd666104d8767e96203a97d089026b3025e2a3241c9638ebdcb9b",
+            "config_hash": "f89bcad038cd6563ec282fd8a598d015703da715329fc58b88c5e392b3763744",
             "market_id": "DEVBASE/DEVQUOTE",
             "market_config_version": "1"
           },
@@ -418,11 +418,11 @@
       "type": "BatchView",
       "value": {
         "context": {
-          "service_schema": "s3/1",
+          "service_schema": "s3/2",
           "chain_id": "nus-s3-dev-1",
           "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
           "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
-          "config_hash": "eba02241192cd666104d8767e96203a97d089026b3025e2a3241c9638ebdcb9b",
+          "config_hash": "f89bcad038cd6563ec282fd8a598d015703da715329fc58b88c5e392b3763744",
           "market_id": "DEVBASE/DEVQUOTE",
           "market_config_version": "1"
         },

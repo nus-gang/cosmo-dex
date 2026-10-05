@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:nus:s3:1",
+  "$id": "urn:nus:s3:2",
   "$defs": {
     "U32": {
       "type": "string",
@@ -42,7 +42,7 @@
         "service_schema": {
           "type": "string",
           "enum": [
-            "s3/1"
+            "s3/2"
           ]
         },
         "chain_id": {
@@ -1043,6 +1043,85 @@
         "surviving_fill_ids",
         "before_state_hash",
         "after_state_hash",
+        "command_seq",
+        "revision"
+      ],
+      "additionalProperties": false
+    },
+    "CorrectionRecord": {
+      "type": "object",
+      "properties": {
+        "context": {
+          "$ref": "#/$defs/Context"
+        },
+        "correction_id": {
+          "$ref": "#/$defs/Hash"
+        },
+        "void_batch": {
+          "$ref": "#/$defs/BatchIdentity"
+        },
+        "resolution_receipt": {
+          "$ref": "#/$defs/ResolutionReceipt"
+        },
+        "chain_snapshot_id": {
+          "$ref": "#/$defs/Hash"
+        },
+        "chain_height": {
+          "$ref": "#/$defs/U64"
+        },
+        "root_fill_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Hash"
+          }
+        },
+        "corrected_fill_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Hash"
+          }
+        },
+        "affected_order_hashes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Hash"
+          }
+        },
+        "cancelled_order_hashes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Hash"
+          }
+        },
+        "surviving_fill_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Hash"
+          }
+        },
+        "before_state_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "command_seq": {
+          "$ref": "#/$defs/U64"
+        },
+        "revision": {
+          "$ref": "#/$defs/U64"
+        }
+      },
+      "required": [
+        "context",
+        "correction_id",
+        "void_batch",
+        "resolution_receipt",
+        "chain_snapshot_id",
+        "chain_height",
+        "root_fill_ids",
+        "corrected_fill_ids",
+        "affected_order_hashes",
+        "cancelled_order_hashes",
+        "surviving_fill_ids",
+        "before_state_hash",
         "command_seq",
         "revision"
       ],
@@ -2342,7 +2421,7 @@
         "schema_version": {
           "type": "string",
           "enum": [
-            "s3/1"
+            "s3/2"
           ]
         },
         "genesis_hash": {
@@ -2702,7 +2781,7 @@
         "corrections": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/Correction"
+            "$ref": "#/$defs/CorrectionRecord"
           }
         },
         "latest_observation_ref": {
@@ -2757,7 +2836,8 @@
         "ledger_changes",
         "after_state_hash",
         "committed_fill_ids",
-        "applied_batch_ids"
+        "applied_batch_ids",
+        "correction_results"
       ],
       "properties": {
         "command_seq": {
@@ -2823,6 +2903,12 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/Hash"
+          }
+        },
+        "correction_results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Correction"
           }
         }
       }

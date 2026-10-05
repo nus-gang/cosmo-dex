@@ -3,7 +3,7 @@ import copy
 import json
 from codec import write, read, ROOT
 
-s={'$schema':'https://json-schema.org/draft/2020-12/schema','$id':'urn:nus:s3:1','$defs':{}}
+s={'$schema':'https://json-schema.org/draft/2020-12/schema','$id':'urn:nus:s3:2','$defs':{}}
 d=s['$defs']
 for name,bits in [('U32',32),('U64',64),('Atoms',128)]:
     d[name]={'type':'string','pattern':'^(0|[1-9][0-9]*)$','maxLength':len(str(2**bits-1)),
@@ -21,7 +21,7 @@ def arr(n,maxn=None):
 def nullable(n):return {'anyOf':[ref(n),{'type':'null'}]}
 def obj(n,props):
     d[n]={'type':'object','properties':{k:ref(v) if isinstance(v,str) else v for k,v in props.items()},'required':list(props),'additionalProperties':False}
-obj('Context',{'service_schema':en('s3/1'),'chain_id':en('nus-s3-dev-1'),'genesis_hash':'Hash','contract_hash':'Hash','config_hash':'Hash','market_id':en('DEVBASE/DEVQUOTE'),'market_config_version':'U64'})
+obj('Context',{'service_schema':en('s3/2'),'chain_id':en('nus-s3-dev-1'),'genesis_hash':'Hash','contract_hash':'Hash','config_hash':'Hash','market_id':en('DEVBASE/DEVQUOTE'),'market_config_version':'U64'})
 obj('BatchIdentity',{'operator_epoch':'U64','batch_seq':'U64','batch_id':'Hash','batch_hash':'Hash','previous_batch_hash':'Hash','fill_ids':arr('Hash',8)})
 obj('ConfirmedTx',{'tx_hash':'Hash','raw_tx':'Bytes','height':'U64','tx_index':'U32','block_hash':'Hash','abci_code':'U32','codespace':'Text','gas_wanted':'U64','gas_used':'U64','raw_block_response':'Bytes','raw_results_response':'Bytes'})
 obj('AbsenceBlock',{'height':'U64','block_hash':'Hash','raw_block_response':'Bytes','raw_results_response':'Bytes'})
@@ -59,6 +59,10 @@ obj('Correction',{'context':'Context','correction_id':'Hash','void_batch':'Batch
   'chain_snapshot_id':'Hash','chain_height':'U64','root_fill_ids':arr('Hash'),'corrected_fill_ids':arr('Hash'),
   'affected_order_hashes':arr('Hash'),'cancelled_order_hashes':arr('Hash'),'surviving_fill_ids':arr('Hash'),
   'before_state_hash':'Hash','after_state_hash':'Hash','command_seq':'U64','revision':'U64'})
+# State commits the immutable record; the complete audit result is WAL-only.
+d['CorrectionRecord']=copy.deepcopy(d['Correction'])
+d['CorrectionRecord']['properties'].pop('after_state_hash')
+d['CorrectionRecord']['required'].remove('after_state_hash')
 obj('SettlementApply',{'context':'Context','chain_snapshot':'ChainSnapshot','receipts':arr('ResolutionReceipt'),
   'before_state_hash':'Hash','after_state_hash':'Hash','command_seq':'U64','stream_seq':'U64',
   'applied_batch_ids':arr('Hash'),'corrected_fill_ids':arr('Hash'),'holds':arr('Hold',32)})
@@ -92,10 +96,10 @@ obj('EvidenceRef',{'sha256':'Hash','byte_length':'U64','media_type':'Text'})
 obj('AppliedBatch',{'batch_id':'Hash','receipt_hash':'Hash','revision':'U64','command_seq':'U64','snapshot_id':'Hash'})
 extend('EngineState',{'accounts':arr('EngineAccount',16),'batches':arr('BatchView'),'attempt_refs':arr('EvidenceRef'),
   'dependencies':arr('Dependency'),'resolution_receipts':arr('ResolutionReceipt'),'applied_batches':arr('AppliedBatch'),
-  'corrections':arr('Correction'),'latest_observation_ref':nullable('EvidenceRef'),'stream_seq':'U64'})
-extend('CommandResult',{'ledger_changes':arr('LedgerChange',32),'committed_fill_ids':arr('Hash'),'applied_batch_ids':arr('Hash')})
+  'corrections':arr('CorrectionRecord'),'latest_observation_ref':nullable('EvidenceRef'),'stream_seq':'U64'})
+extend('CommandResult',{'ledger_changes':arr('LedgerChange',32),'committed_fill_ids':arr('Hash'),'applied_batch_ids':arr('Hash'),'correction_results':arr('Correction')})
 extend('JournalRecord',{'command_kind':en('ORDER','CANCEL','SNAPSHOT','EXPIRY','WITHDRAW_PREPARE','WITHDRAW_ABORT','CORRECTION','SEAL_BATCH','ATTEMPT','RESOLVE_ATTEMPT','SETTLEMENT_APPLY','VOID_BATCH'),'evidence_refs':arr('EvidenceRef')})
-extend('CommitMarker',{'schema_version':en('s3/1')})
+extend('CommitMarker',{'schema_version':en('s3/2')})
 s['oneOf']=[ref(n) for n in ['Attempt','ResolutionReceipt','BatchLookup','BatchView','ChainSnapshot','Correction','SettlementApply','Status','Error','WithdrawalReadiness','Network','SignedCommand','CommandReceipt','LedgerView','BookSnapshot','JournalRecord','CommitMarker']]
 write('schema.json',s)
 fee25=copy.deepcopy(read('profile.json'));fee25['profile']='s3-local-v1-fee25';fee25['active_fee_version']='2'

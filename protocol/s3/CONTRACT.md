@@ -1,6 +1,8 @@
-# S3 실행 계약 1.0.0-rc1
+# S3 실행 계약 1.0.0-rc2
 
-2026-10-05 · CTO · [NUS-54](/NUS/issues/NUS-54). **Security → QA 순차 검토 후보. 두 승인 전 B/C 착수 금지.** 승인된 [S3 계획](/NUS/issues/NUS-53#document-plan) revision `ece8cc33-a2e6-41ec-9810-0e4095fb3016`의 A 산출물이다. 제품 구현·실제 정산·main 인수 완료를 뜻하지 않는다.
+2026-10-05 · CTO · [NUS-54](/NUS/issues/NUS-54). **Security → QA 재심사 후보. 두 승인 전 rc2 의존 상태/결과 조립 금지.** 승인된 [S3 계획](/NUS/issues/NUS-53#document-plan) revision `ece8cc33-a2e6-41ec-9810-0e4095fb3016`의 A 산출물이다. 제품 구현·실제 정산·main 인수 완료를 뜻하지 않는다.
+
+[NUS-64](/NUS/issues/NUS-64)는 승인 rc1 head `0915375cac360f83d62a70587a0e7cf9c89604a1`의 상태 해시 순환 참조를 정정한다. 두 재심사 전 rc2 의존 조립은 열리지 않는다.
 
 ## 1. 권위·버전·환경
 
@@ -10,7 +12,7 @@
 
 - **사용자 OrderV1/CancelV1/WalletChallengeV1와 FillV1/FillIdentityV1의 tag/type/frame/hash를 그대로 재사용한다.** ML-DSA-65 pure, FIPS context empty, raw pk1952/signature3309, owner=SHA256(pk)[:20], nus lowercase Bech32를 유지한다. randomized 유효 서명도 허용한다. deterministic seed는 공개 fixture 생성 전용이다.
 - **BatchV2/BatchReceiptV2는 wire=2**다. VOID를 포함한 terminal 슬롯의 previous hash 의미가 확장되므로 v1과 구분한다. tag/type/layout은 v1과 같고, batch ID/HASH 도메인은 `NUS/BATCH_ID/V2`/`NUS/BATCH_HASH/V2`로 분리한다. 사용자 서명과 fill ID 도메인은 V1이다. 새 S3 genesis의 높이1에서만 v2 활성; S3 settle/close는 v1 및 다른 버전을 UNSUPPORTED_VERSION으로 거절한다. 기존 S1/S2 데이터/클라이언트의 자동 전환0. 향후 변경도 새 wire·벡터·활성 경계·CTO/Security/QA 승인이 필요하다.
-- S3 서비스 schema는 `s3/1`; S2 JSON을 S3로 자동 승격하지 않는다. 추가 SDK 메시지는 `nus.exchange.s3.v1` namespace와 `SIGN_MODE_DIRECT`를 사용하며 그 안에 strict BatchV2 bytes를 담는다. SDK 메시지 namespace의 v1과 서명된 배치 protocol_version=2는 별개다.
+- S3 서비스 schema는 `s3/2`; 기존 `s3/1`과 S2 JSON을 자동 승격하지 않는다. 정정 저장 형식 변경이므로 새 빈 S3 journal/marker/snapshot과 rc2 context에서만 시작하며 기존 저장소를 재해시해 import하지 않는다. S3W1 외부 프레임·72B header는 유지하고 context/marker가 `s3/2`를 강제한다. 추가 SDK 메시지는 `nus.exchange.s3.v1` namespace와 `SIGN_MODE_DIRECT`를 사용하며 그 안에 strict BatchV2 bytes를 담는다. SDK 메시지 namespace의 v1과 서명된 배치 protocol_version=2는 별개다.
 - 단일 호스트 4 Ed25519 검증인, 신뢰 로컬 RPC, ML-DSA 사용자·운영자 TX, `DEVBASE/DEVQUOTE` 한 시장, `LOCAL_FSYNC`, `replicated=false`. `profile.json`(0bps)과 `profile-fee25.json`(25bps)는 **서로 다른 새 genesis 실행**이다. manifest가 두 config hash를 따로 고정한다. 실행 중 fee/config 변경 없음.
 - `nus-s3-dev-1`, `.runtime/s3/` 아래 별도 genesis/home/engine journal/worker journal, 새 사용자·operator·admin 키. S1/S2 home 또는 실제 genesis와 같거나 `HELD_S2` import가 요청되면 시작 거절. 테스트 공개 seed를 runtime에 넣지 않는다. 실제 genesis 원본 bytes의 SHA256을 서명·앱·API·manifest에 결합한다. `vectors/genesis-fixture.bin`은 체인 genesis가 아니다.
 - 기본 시연은 2사용자. 독립 fill/최대 배치 검증에는 최대 16등록 사용자, 별도 현재/후임 operator와 genesis admin을 허용한다. 계정별 두 자산 bank=10^12 atoms, GAS=10^9 atoms, C=0/E=0. 실제 예치만 C를 만든다. 합의키·운영키·사용자키·admin키를 재사용하지 않는다. 기존 4개 gas 배분 주소를 자동 정산 권한자로 바꾸지 않는다.
@@ -135,7 +137,9 @@ S2의 무방향 owner 연결 성분 폐기를 재사용하지 않는다. fill �
 - P는 어떤 edge의 재원이 될 수 없다. 같은 owner라도 서로 다른 debit asset/주문이면 그것만으로 의존 edge를 만들지 않는다. 누계·R/D 결정의 실제 이전 명령 seq도 원 WAL에서 보존하며 이전 fill domain 연쇄를 끊지 않는다.
 - roots는 실패/VOID batch의 모든 fills 및 확인된 owner epoch/revoke event가 무효화하는 pending fills다. COMMITTED는 root/확장 후보에서 제외한다. 앞으로 향한 edge의 최소 고정점이 corrected 집합이다. 동일 reservation을 공유하는 후속 주문/잔량도 종료 대상에 넣는다.
 
-freeze → in-flight 해소·close → 원 WAL에 VOID_BATCH/correction plan append → closure 계산 → 영향 open 잔량 종료 → 최신 같은 H의 C 기준 전체 R/D/P 재계산 → 원자 marker → 새 snapshot 순서다. correction_id=SHA256(frame(`NUS/S3/CORRECTION/V1`, canonical JSON의 context·VOID identity·snapshot_id·정렬 root ID 목록)); 재시도/재생은 같은 ID다. 원 WAL을 수정하거나 원 receipt·lifetime matched_qty를 감소시키지 않는다. corrected_qty와 settled_qty를 별도 기록하고 `settled+pending+corrected=lifetime_matched<=signed max_qty`를 유지한다. 정정량으로 예전 주문을 rematch0.
+freeze → in-flight 해소·close → 원 WAL에 VOID_BATCH/correction plan append → closure 계산 → 영향 open 잔량 종료 → 최신 같은 H의 C 기준 전체 R/D/P 재계산 → 원자 marker → 새 snapshot 순서다. correction_id=SHA256(frame(`NUS/S3/CORRECTION/V1`, canon({"context": Context, "void_batch": BatchIdentity, "snapshot_id": chain_snapshot_id, "root_fill_ids": lexicographically_sorted_root_ids}))); 재시도/재생은 같은 ID다. 원 WAL을 수정하거나 원 receipt·lifetime matched_qty를 감소시키지 않는다. corrected_qty와 settled_qty를 별도 기록하고 `settled+pending+corrected=lifetime_matched<=signed max_qty`를 유지한다. 정정량으로 예전 주문을 rematch0.
+
+**비순환 해시:** `EngineState.corrections`는 after hash 없는 `CorrectionRecord` 전체를 append-only로 저장한다. 모든 상태 필드를 포함한 ENGINE_STATE 해시를 계산한 뒤, 같은 레코드에 그 해시를 추가한 완전한 `Correction`을 `CommandResult.correction_results`에 저장하고 COMMAND_RESULT 해시를 계산한다. 상태 해시의 임의 필드 제외/zero/null 정규화는 없다. 규범 계산 순서·재생·감사 검증은 `SCHEMA.md`의 정정 해시 절을 따른다.
 
 affected_order_hashes는 corrected fill 참조 주문 + 이번에 종료한 open 주문을 원 admission_seq순·중복 없이 모두 포함한다. cancelled_order_hashes는 이번 open 잔량 종료만 포함한다. corrected fill IDs는 (command_seq,match_index)순이며 result/correction/outbox가 일치한다. 독립 surviving fill은 ID/양측 원서명/가격/원 command순서를 보존해 **VOID seq+1/원 VOID hash**로 새 배치에 담는다. 새 epoch가 되었다면 old-epoch fills는 독립 survivor가 될 수 없다.
 

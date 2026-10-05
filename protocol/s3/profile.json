@@ -1,5 +1,5 @@
 {
-  "service_schema": "s3/1",
+  "service_schema": "s3/2",
   "profile": "s3-local-v1",
   "order_wire_version": "1",
   "batch_wire_version": "2",
