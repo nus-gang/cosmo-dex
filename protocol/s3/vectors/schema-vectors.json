@@ -6,11 +6,11 @@
       "type": "BatchView",
       "value": {
         "context": {
-          "service_schema": "s3/1",
+          "service_schema": "s3/3",
           "chain_id": "nus-s3-dev-1",
           "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
           "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
-          "config_hash": "eba02241192cd666104d8767e96203a97d089026b3025e2a3241c9638ebdcb9b",
+          "config_hash": "734e51d9293873b8e6fdae201881bdb71a0fc7442416d46f00fd1ccd8cce3203",
           "market_id": "DEVBASE/DEVQUOTE",
           "market_config_version": "1"
         },
@@ -34,11 +34,11 @@
         ],
         "receipt": {
           "context": {
-            "service_schema": "s3/1",
+            "service_schema": "s3/3",
             "chain_id": "nus-s3-dev-1",
             "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
             "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
-            "config_hash": "eba02241192cd666104d8767e96203a97d089026b3025e2a3241c9638ebdcb9b",
+            "config_hash": "734e51d9293873b8e6fdae201881bdb71a0fc7442416d46f00fd1ccd8cce3203",
             "market_id": "DEVBASE/DEVQUOTE",
             "market_config_version": "1"
           },
@@ -76,50 +76,114 @@
           {
             "height": "101",
             "block_hash": "40bc56d3ad2079ac52c4528e5abe38a510f9d38e00b28684094557637d191a15",
-            "raw_block_response": "eyJoZWlnaHQiOiIxMDEiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4cyI6W119",
-            "raw_results_response": "eyJoZWlnaHQiOiIxMDEiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4c19yZXN1bHRzIjpbXX0="
+            "raw_block_response_ref": {
+              "sha256": "2565093709fd555185ea4c09fe85e78ff6c47569b7bb9fb69d8debb266bd01ee",
+              "byte_length": "45",
+              "media_type": "application/json"
+            },
+            "raw_results_response_ref": {
+              "sha256": "9b2ead99d37423297a5bdea632f1d10cef21dd4004aa208b502b0a0cb05de3fc",
+              "byte_length": "53",
+              "media_type": "application/json"
+            }
           },
           {
             "height": "102",
             "block_hash": "822184d2fdbb530cce2a0dcf9c8821cd76909b06aa52e2eba56e2844514e6f3a",
-            "raw_block_response": "eyJoZWlnaHQiOiIxMDIiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4cyI6W119",
-            "raw_results_response": "eyJoZWlnaHQiOiIxMDIiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4c19yZXN1bHRzIjpbXX0="
+            "raw_block_response_ref": {
+              "sha256": "a8338ef7f82951c1acb58765d915e405956d2c21cd2ce636b08e20a0b9728007",
+              "byte_length": "45",
+              "media_type": "application/json"
+            },
+            "raw_results_response_ref": {
+              "sha256": "9bfb3b8b2be89c664ffffad3244415ff86f8bced751bd1182ee01373bb86c821",
+              "byte_length": "53",
+              "media_type": "application/json"
+            }
           },
           {
             "height": "103",
             "block_hash": "52c1af75dfcb2d6e7f3ea6ca13518d52776b6e9d4089234bf3f9030aa125a241",
-            "raw_block_response": "eyJoZWlnaHQiOiIxMDMiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4cyI6W119",
-            "raw_results_response": "eyJoZWlnaHQiOiIxMDMiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4c19yZXN1bHRzIjpbXX0="
+            "raw_block_response_ref": {
+              "sha256": "dd59a0f5ddb781a4f3639ba8f9af0e3d6b57545dbe5b36847a9a39a987ebad83",
+              "byte_length": "45",
+              "media_type": "application/json"
+            },
+            "raw_results_response_ref": {
+              "sha256": "d68301c2f1a6b777895097fe4b01c948934b3ad741671ea165d720c93ec1aebb",
+              "byte_length": "53",
+              "media_type": "application/json"
+            }
           },
           {
             "height": "104",
             "block_hash": "1e88d39f9338e58a646ea3d1987cc62194ca3b23a31ab8f9de7575624b2af02f",
-            "raw_block_response": "eyJoZWlnaHQiOiIxMDQiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4cyI6W119",
-            "raw_results_response": "eyJoZWlnaHQiOiIxMDQiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4c19yZXN1bHRzIjpbXX0="
+            "raw_block_response_ref": {
+              "sha256": "21d0a6ddca36a5f26ea457d8866af2470e87fc73adf49985eceec4c9f4d04b1c",
+              "byte_length": "45",
+              "media_type": "application/json"
+            },
+            "raw_results_response_ref": {
+              "sha256": "c1df0ffce9d7719f9fd3582bd9f9b880900bb27c3a92a1d0c104627f47f85e9c",
+              "byte_length": "53",
+              "media_type": "application/json"
+            }
           },
           {
             "height": "105",
             "block_hash": "6060db1358434fbee2b6476c98fa7afffdb3af6abcd78f05c7a8e864d1357a58",
-            "raw_block_response": "eyJoZWlnaHQiOiIxMDUiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4cyI6W119",
-            "raw_results_response": "eyJoZWlnaHQiOiIxMDUiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4c19yZXN1bHRzIjpbXX0="
+            "raw_block_response_ref": {
+              "sha256": "20cec3790d6afd5deee89c31cec327d40d0378ab4288fb3caff8b485c9a0c9f9",
+              "byte_length": "45",
+              "media_type": "application/json"
+            },
+            "raw_results_response_ref": {
+              "sha256": "a2fdb1d8be941a5ee3008fffe0a53d041a118ba913c96c3144d90343941c1087",
+              "byte_length": "53",
+              "media_type": "application/json"
+            }
           },
           {
             "height": "106",
             "block_hash": "6844b949add44636e9c133bccb47f16aff111fa4b0296ba9c168b5ad86ce5862",
-            "raw_block_response": "eyJoZWlnaHQiOiIxMDYiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4cyI6W119",
-            "raw_results_response": "eyJoZWlnaHQiOiIxMDYiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4c19yZXN1bHRzIjpbXX0="
+            "raw_block_response_ref": {
+              "sha256": "725425bfe672f4cbf0d054ce4dd0a11a943703a78bc1d203f60b547188456aa2",
+              "byte_length": "45",
+              "media_type": "application/json"
+            },
+            "raw_results_response_ref": {
+              "sha256": "7018ed384a8bfb7d69548af6a4c2810451003124a4cad80750752093e75e5e5c",
+              "byte_length": "53",
+              "media_type": "application/json"
+            }
           },
           {
             "height": "107",
             "block_hash": "b34d3e0cfc5cee2193e77b378ae860626fb9ccbe36e76d420a15899e0e25f2b4",
-            "raw_block_response": "eyJoZWlnaHQiOiIxMDciLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4cyI6W119",
-            "raw_results_response": "eyJoZWlnaHQiOiIxMDciLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4c19yZXN1bHRzIjpbXX0="
+            "raw_block_response_ref": {
+              "sha256": "0eeb993bed12a023b9b3f5158998a6c108eddd3e749ce420d6c63828911064d2",
+              "byte_length": "45",
+              "media_type": "application/json"
+            },
+            "raw_results_response_ref": {
+              "sha256": "a22fb3514d43cc9c3fc93966edd508e2504a6ad460662345f0a48076674d1330",
+              "byte_length": "53",
+              "media_type": "application/json"
+            }
           },
           {
             "height": "108",
             "block_hash": "70370ebaac8ea82767e288a1f0698aa26bf09281b966f18fec539d1d8d3ca72f",
-            "raw_block_response": "eyJoZWlnaHQiOiIxMDgiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4cyI6W119",
-            "raw_results_response": "eyJoZWlnaHQiOiIxMDgiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4c19yZXN1bHRzIjpbXX0="
+            "raw_block_response_ref": {
+              "sha256": "bb64dba1210dc3141ae4217ca9e14d0253bf0b3a2687cc59c6c21b1a7bf2340d",
+              "byte_length": "45",
+              "media_type": "application/json"
+            },
+            "raw_results_response_ref": {
+              "sha256": "04cc3d7c6df06dbf64eadc868636ea33cbeaf9ccc2b69ac6b9834518d641b7c7",
+              "byte_length": "53",
+              "media_type": "application/json"
+            }
           }
         ],
         "observation_snapshot_id": "8f7a793a2c95dcaf2c6197ebf43eb8c4652338b871911e76bb09328f2b25e2dc"
@@ -150,11 +214,11 @@
         ],
         "receipt": {
           "context": {
-            "service_schema": "s3/1",
+            "service_schema": "s3/3",
             "chain_id": "nus-s3-dev-1",
             "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
             "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
-            "config_hash": "eba02241192cd666104d8767e96203a97d089026b3025e2a3241c9638ebdcb9b",
+            "config_hash": "734e51d9293873b8e6fdae201881bdb71a0fc7442416d46f00fd1ccd8cce3203",
             "market_id": "DEVBASE/DEVQUOTE",
             "market_config_version": "1"
           },
@@ -181,11 +245,11 @@
       "type": "BatchView",
       "value": {
         "context": {
-          "service_schema": "s3/1",
+          "service_schema": "s3/3",
           "chain_id": "nus-s3-dev-1",
           "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
           "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
-          "config_hash": "eba02241192cd666104d8767e96203a97d089026b3025e2a3241c9638ebdcb9b",
+          "config_hash": "734e51d9293873b8e6fdae201881bdb71a0fc7442416d46f00fd1ccd8cce3203",
           "market_id": "DEVBASE/DEVQUOTE",
           "market_config_version": "1"
         },
@@ -209,11 +273,11 @@
         ],
         "receipt": {
           "context": {
-            "service_schema": "s3/1",
+            "service_schema": "s3/3",
             "chain_id": "nus-s3-dev-1",
             "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
             "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
-            "config_hash": "eba02241192cd666104d8767e96203a97d089026b3025e2a3241c9638ebdcb9b",
+            "config_hash": "734e51d9293873b8e6fdae201881bdb71a0fc7442416d46f00fd1ccd8cce3203",
             "market_id": "DEVBASE/DEVQUOTE",
             "market_config_version": "1"
           },
@@ -240,11 +304,11 @@
       "type": "BatchView",
       "value": {
         "context": {
-          "service_schema": "s3/1",
+          "service_schema": "s3/3",
           "chain_id": "nus-s3-dev-1",
           "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
           "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
-          "config_hash": "eba02241192cd666104d8767e96203a97d089026b3025e2a3241c9638ebdcb9b",
+          "config_hash": "734e51d9293873b8e6fdae201881bdb71a0fc7442416d46f00fd1ccd8cce3203",
           "market_id": "DEVBASE/DEVQUOTE",
           "market_config_version": "1"
         },
@@ -268,11 +332,11 @@
         ],
         "receipt": {
           "context": {
-            "service_schema": "s3/1",
+            "service_schema": "s3/3",
             "chain_id": "nus-s3-dev-1",
             "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
             "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
-            "config_hash": "eba02241192cd666104d8767e96203a97d089026b3025e2a3241c9638ebdcb9b",
+            "config_hash": "734e51d9293873b8e6fdae201881bdb71a0fc7442416d46f00fd1ccd8cce3203",
             "market_id": "DEVBASE/DEVQUOTE",
             "market_config_version": "1"
           },
@@ -303,7 +367,7 @@
           "chain_id": "nus-s3-dev-1",
           "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
           "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
-          "config_hash": "eba02241192cd666104d8767e96203a97d089026b3025e2a3241c9638ebdcb9b",
+          "config_hash": "734e51d9293873b8e6fdae201881bdb71a0fc7442416d46f00fd1ccd8cce3203",
           "market_id": "DEVBASE/DEVQUOTE",
           "market_config_version": "1"
         },
@@ -331,7 +395,7 @@
             "chain_id": "nus-s3-dev-1",
             "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
             "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
-            "config_hash": "eba02241192cd666104d8767e96203a97d089026b3025e2a3241c9638ebdcb9b",
+            "config_hash": "734e51d9293873b8e6fdae201881bdb71a0fc7442416d46f00fd1ccd8cce3203",
             "market_id": "DEVBASE/DEVQUOTE",
             "market_config_version": "1"
           },
@@ -358,11 +422,11 @@
       "type": "BatchView",
       "value": {
         "context": {
-          "service_schema": "s3/1",
+          "service_schema": "s3/3",
           "chain_id": "nus-s3-dev-1",
           "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
           "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
-          "config_hash": "eba02241192cd666104d8767e96203a97d089026b3025e2a3241c9638ebdcb9b",
+          "config_hash": "734e51d9293873b8e6fdae201881bdb71a0fc7442416d46f00fd1ccd8cce3203",
           "market_id": "DEVBASE/DEVQUOTE",
           "market_config_version": "1"
         },
@@ -386,11 +450,11 @@
         ],
         "receipt": {
           "context": {
-            "service_schema": "s3/1",
+            "service_schema": "s3/3",
             "chain_id": "nus-s3-dev-1",
             "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
             "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
-            "config_hash": "eba02241192cd666104d8767e96203a97d089026b3025e2a3241c9638ebdcb9b",
+            "config_hash": "734e51d9293873b8e6fdae201881bdb71a0fc7442416d46f00fd1ccd8cce3203",
             "market_id": "DEVBASE/DEVQUOTE",
             "market_config_version": "1"
           },
@@ -418,11 +482,11 @@
       "type": "BatchView",
       "value": {
         "context": {
-          "service_schema": "s3/1",
+          "service_schema": "s3/3",
           "chain_id": "nus-s3-dev-1",
           "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
           "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
-          "config_hash": "eba02241192cd666104d8767e96203a97d089026b3025e2a3241c9638ebdcb9b",
+          "config_hash": "734e51d9293873b8e6fdae201881bdb71a0fc7442416d46f00fd1ccd8cce3203",
           "market_id": "DEVBASE/DEVQUOTE",
           "market_config_version": "1"
         },
@@ -464,44 +528,100 @@
           {
             "height": "101",
             "block_hash": "40bc56d3ad2079ac52c4528e5abe38a510f9d38e00b28684094557637d191a15",
-            "raw_block_response": "eyJoZWlnaHQiOiIxMDEiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4cyI6W119",
-            "raw_results_response": "eyJoZWlnaHQiOiIxMDEiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4c19yZXN1bHRzIjpbXX0="
+            "raw_block_response_ref": {
+              "sha256": "2565093709fd555185ea4c09fe85e78ff6c47569b7bb9fb69d8debb266bd01ee",
+              "byte_length": "45",
+              "media_type": "application/json"
+            },
+            "raw_results_response_ref": {
+              "sha256": "9b2ead99d37423297a5bdea632f1d10cef21dd4004aa208b502b0a0cb05de3fc",
+              "byte_length": "53",
+              "media_type": "application/json"
+            }
           },
           {
             "height": "102",
             "block_hash": "822184d2fdbb530cce2a0dcf9c8821cd76909b06aa52e2eba56e2844514e6f3a",
-            "raw_block_response": "eyJoZWlnaHQiOiIxMDIiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4cyI6W119",
-            "raw_results_response": "eyJoZWlnaHQiOiIxMDIiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4c19yZXN1bHRzIjpbXX0="
+            "raw_block_response_ref": {
+              "sha256": "a8338ef7f82951c1acb58765d915e405956d2c21cd2ce636b08e20a0b9728007",
+              "byte_length": "45",
+              "media_type": "application/json"
+            },
+            "raw_results_response_ref": {
+              "sha256": "9bfb3b8b2be89c664ffffad3244415ff86f8bced751bd1182ee01373bb86c821",
+              "byte_length": "53",
+              "media_type": "application/json"
+            }
           },
           {
             "height": "104",
             "block_hash": "1e88d39f9338e58a646ea3d1987cc62194ca3b23a31ab8f9de7575624b2af02f",
-            "raw_block_response": "eyJoZWlnaHQiOiIxMDQiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4cyI6W119",
-            "raw_results_response": "eyJoZWlnaHQiOiIxMDQiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4c19yZXN1bHRzIjpbXX0="
+            "raw_block_response_ref": {
+              "sha256": "21d0a6ddca36a5f26ea457d8866af2470e87fc73adf49985eceec4c9f4d04b1c",
+              "byte_length": "45",
+              "media_type": "application/json"
+            },
+            "raw_results_response_ref": {
+              "sha256": "c1df0ffce9d7719f9fd3582bd9f9b880900bb27c3a92a1d0c104627f47f85e9c",
+              "byte_length": "53",
+              "media_type": "application/json"
+            }
           },
           {
             "height": "105",
             "block_hash": "6060db1358434fbee2b6476c98fa7afffdb3af6abcd78f05c7a8e864d1357a58",
-            "raw_block_response": "eyJoZWlnaHQiOiIxMDUiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4cyI6W119",
-            "raw_results_response": "eyJoZWlnaHQiOiIxMDUiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4c19yZXN1bHRzIjpbXX0="
+            "raw_block_response_ref": {
+              "sha256": "20cec3790d6afd5deee89c31cec327d40d0378ab4288fb3caff8b485c9a0c9f9",
+              "byte_length": "45",
+              "media_type": "application/json"
+            },
+            "raw_results_response_ref": {
+              "sha256": "a2fdb1d8be941a5ee3008fffe0a53d041a118ba913c96c3144d90343941c1087",
+              "byte_length": "53",
+              "media_type": "application/json"
+            }
           },
           {
             "height": "106",
             "block_hash": "6844b949add44636e9c133bccb47f16aff111fa4b0296ba9c168b5ad86ce5862",
-            "raw_block_response": "eyJoZWlnaHQiOiIxMDYiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4cyI6W119",
-            "raw_results_response": "eyJoZWlnaHQiOiIxMDYiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4c19yZXN1bHRzIjpbXX0="
+            "raw_block_response_ref": {
+              "sha256": "725425bfe672f4cbf0d054ce4dd0a11a943703a78bc1d203f60b547188456aa2",
+              "byte_length": "45",
+              "media_type": "application/json"
+            },
+            "raw_results_response_ref": {
+              "sha256": "7018ed384a8bfb7d69548af6a4c2810451003124a4cad80750752093e75e5e5c",
+              "byte_length": "53",
+              "media_type": "application/json"
+            }
           },
           {
             "height": "107",
             "block_hash": "b34d3e0cfc5cee2193e77b378ae860626fb9ccbe36e76d420a15899e0e25f2b4",
-            "raw_block_response": "eyJoZWlnaHQiOiIxMDciLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4cyI6W119",
-            "raw_results_response": "eyJoZWlnaHQiOiIxMDciLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4c19yZXN1bHRzIjpbXX0="
+            "raw_block_response_ref": {
+              "sha256": "0eeb993bed12a023b9b3f5158998a6c108eddd3e749ce420d6c63828911064d2",
+              "byte_length": "45",
+              "media_type": "application/json"
+            },
+            "raw_results_response_ref": {
+              "sha256": "a22fb3514d43cc9c3fc93966edd508e2504a6ad460662345f0a48076674d1330",
+              "byte_length": "53",
+              "media_type": "application/json"
+            }
           },
           {
             "height": "108",
             "block_hash": "70370ebaac8ea82767e288a1f0698aa26bf09281b966f18fec539d1d8d3ca72f",
-            "raw_block_response": "eyJoZWlnaHQiOiIxMDgiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4cyI6W119",
-            "raw_results_response": "eyJoZWlnaHQiOiIxMDgiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4c19yZXN1bHRzIjpbXX0="
+            "raw_block_response_ref": {
+              "sha256": "bb64dba1210dc3141ae4217ca9e14d0253bf0b3a2687cc59c6c21b1a7bf2340d",
+              "byte_length": "45",
+              "media_type": "application/json"
+            },
+            "raw_results_response_ref": {
+              "sha256": "04cc3d7c6df06dbf64eadc868636ea33cbeaf9ccc2b69ac6b9834518d641b7c7",
+              "byte_length": "53",
+              "media_type": "application/json"
+            }
           }
         ],
         "observation_snapshot_id": "8f7a793a2c95dcaf2c6197ebf43eb8c4652338b871911e76bb09328f2b25e2dc"
@@ -524,50 +644,114 @@
           {
             "height": "101",
             "block_hash": "40bc56d3ad2079ac52c4528e5abe38a510f9d38e00b28684094557637d191a15",
-            "raw_block_response": "eyJoZWlnaHQiOiIxMDEiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4cyI6W119",
-            "raw_results_response": "eyJoZWlnaHQiOiIxMDEiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4c19yZXN1bHRzIjpbXX0="
+            "raw_block_response_ref": {
+              "sha256": "2565093709fd555185ea4c09fe85e78ff6c47569b7bb9fb69d8debb266bd01ee",
+              "byte_length": "45",
+              "media_type": "application/json"
+            },
+            "raw_results_response_ref": {
+              "sha256": "9b2ead99d37423297a5bdea632f1d10cef21dd4004aa208b502b0a0cb05de3fc",
+              "byte_length": "53",
+              "media_type": "application/json"
+            }
           },
           {
             "height": "102",
             "block_hash": "822184d2fdbb530cce2a0dcf9c8821cd76909b06aa52e2eba56e2844514e6f3a",
-            "raw_block_response": "eyJoZWlnaHQiOiIxMDIiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4cyI6W119",
-            "raw_results_response": "eyJoZWlnaHQiOiIxMDIiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4c19yZXN1bHRzIjpbXX0="
+            "raw_block_response_ref": {
+              "sha256": "a8338ef7f82951c1acb58765d915e405956d2c21cd2ce636b08e20a0b9728007",
+              "byte_length": "45",
+              "media_type": "application/json"
+            },
+            "raw_results_response_ref": {
+              "sha256": "9bfb3b8b2be89c664ffffad3244415ff86f8bced751bd1182ee01373bb86c821",
+              "byte_length": "53",
+              "media_type": "application/json"
+            }
           },
           {
             "height": "103",
             "block_hash": "52c1af75dfcb2d6e7f3ea6ca13518d52776b6e9d4089234bf3f9030aa125a241",
-            "raw_block_response": "eyJoZWlnaHQiOiIxMDMiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4cyI6W119",
-            "raw_results_response": "eyJoZWlnaHQiOiIxMDMiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4c19yZXN1bHRzIjpbXX0="
+            "raw_block_response_ref": {
+              "sha256": "dd59a0f5ddb781a4f3639ba8f9af0e3d6b57545dbe5b36847a9a39a987ebad83",
+              "byte_length": "45",
+              "media_type": "application/json"
+            },
+            "raw_results_response_ref": {
+              "sha256": "d68301c2f1a6b777895097fe4b01c948934b3ad741671ea165d720c93ec1aebb",
+              "byte_length": "53",
+              "media_type": "application/json"
+            }
           },
           {
             "height": "104",
             "block_hash": "1e88d39f9338e58a646ea3d1987cc62194ca3b23a31ab8f9de7575624b2af02f",
-            "raw_block_response": "eyJoZWlnaHQiOiIxMDQiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4cyI6W119",
-            "raw_results_response": "eyJoZWlnaHQiOiIxMDQiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4c19yZXN1bHRzIjpbXX0="
+            "raw_block_response_ref": {
+              "sha256": "21d0a6ddca36a5f26ea457d8866af2470e87fc73adf49985eceec4c9f4d04b1c",
+              "byte_length": "45",
+              "media_type": "application/json"
+            },
+            "raw_results_response_ref": {
+              "sha256": "c1df0ffce9d7719f9fd3582bd9f9b880900bb27c3a92a1d0c104627f47f85e9c",
+              "byte_length": "53",
+              "media_type": "application/json"
+            }
           },
           {
             "height": "105",
             "block_hash": "6060db1358434fbee2b6476c98fa7afffdb3af6abcd78f05c7a8e864d1357a58",
-            "raw_block_response": "eyJoZWlnaHQiOiIxMDUiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4cyI6W119",
-            "raw_results_response": "eyJoZWlnaHQiOiIxMDUiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4c19yZXN1bHRzIjpbXX0="
+            "raw_block_response_ref": {
+              "sha256": "20cec3790d6afd5deee89c31cec327d40d0378ab4288fb3caff8b485c9a0c9f9",
+              "byte_length": "45",
+              "media_type": "application/json"
+            },
+            "raw_results_response_ref": {
+              "sha256": "a2fdb1d8be941a5ee3008fffe0a53d041a118ba913c96c3144d90343941c1087",
+              "byte_length": "53",
+              "media_type": "application/json"
+            }
           },
           {
             "height": "106",
             "block_hash": "6844b949add44636e9c133bccb47f16aff111fa4b0296ba9c168b5ad86ce5862",
-            "raw_block_response": "eyJoZWlnaHQiOiIxMDYiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4cyI6W119",
-            "raw_results_response": "eyJoZWlnaHQiOiIxMDYiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4c19yZXN1bHRzIjpbXX0="
+            "raw_block_response_ref": {
+              "sha256": "725425bfe672f4cbf0d054ce4dd0a11a943703a78bc1d203f60b547188456aa2",
+              "byte_length": "45",
+              "media_type": "application/json"
+            },
+            "raw_results_response_ref": {
+              "sha256": "7018ed384a8bfb7d69548af6a4c2810451003124a4cad80750752093e75e5e5c",
+              "byte_length": "53",
+              "media_type": "application/json"
+            }
           },
           {
             "height": "107",
             "block_hash": "b34d3e0cfc5cee2193e77b378ae860626fb9ccbe36e76d420a15899e0e25f2b4",
-            "raw_block_response": "eyJoZWlnaHQiOiIxMDciLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4cyI6W119",
-            "raw_results_response": "eyJoZWlnaHQiOiIxMDciLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4c19yZXN1bHRzIjpbXX0="
+            "raw_block_response_ref": {
+              "sha256": "0eeb993bed12a023b9b3f5158998a6c108eddd3e749ce420d6c63828911064d2",
+              "byte_length": "45",
+              "media_type": "application/json"
+            },
+            "raw_results_response_ref": {
+              "sha256": "a22fb3514d43cc9c3fc93966edd508e2504a6ad460662345f0a48076674d1330",
+              "byte_length": "53",
+              "media_type": "application/json"
+            }
           },
           {
             "height": "108",
             "block_hash": "70370ebaac8ea82767e288a1f0698aa26bf09281b966f18fec539d1d8d3ca72f",
-            "raw_block_response": "eyJoZWlnaHQiOiIxMDgiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4cyI6W119",
-            "raw_results_response": "eyJoZWlnaHQiOiIxMDgiLCJzY29wZSI6IlNZTlRIRVRJQyIsInR4c19yZXN1bHRzIjpbXX0="
+            "raw_block_response_ref": {
+              "sha256": "bb64dba1210dc3141ae4217ca9e14d0253bf0b3a2687cc59c6c21b1a7bf2340d",
+              "byte_length": "45",
+              "media_type": "application/json"
+            },
+            "raw_results_response_ref": {
+              "sha256": "04cc3d7c6df06dbf64eadc868636ea33cbeaf9ccc2b69ac6b9834518d641b7c7",
+              "byte_length": "53",
+              "media_type": "application/json"
+            }
           }
         ],
         "observation_snapshot_id": "8f7a793a2c95dcaf2c6197ebf43eb8c4652338b871911e76bb09328f2b25e2dc"

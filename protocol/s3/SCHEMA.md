@@ -1,10 +1,12 @@
 # S3 데이터·상태·오류 계약
 
-`schema.json`은 S3 추가 envelope의 모든 필드를 required로 두고 추가 key를 금지한다. null은 schema가 허용한 곳만 가능하다. context의 `service_schema=s3/1`이 없으면 S2 또는 구 JSON으로 해석하지 않고 거절한다. 실제 hostile JSON decoder는 duplicate key도 거절하고 문자열 정수의 U32/U64/U128 상한을 따로 검사한다. JSON Schema의 maxLength만으로 숫자 범위 검사를 대신하지 않는다.
+`schema.json`은 S3 추가 envelope의 모든 필드를 required로 두고 추가 key를 금지한다. null은 schema가 허용한 곳만 가능하다. context의 `service_schema=s3/3`이 없으면 S2 또는 구 JSON으로 해석하지 않고 거절한다. 실제 hostile JSON decoder는 duplicate key도 거절하고 문자열 정수의 U32/U64/U128 상한을 따로 검사한다. JSON Schema의 maxLength만으로 숫자 범위 검사를 대신하지 않는다.
 
 ## 저장·hash 형식
 
 S2와 같이 canonical JSON은 ASCII escape, key 사전순, 공백0, JSON boolean/null, 정수 문자열이다. 배열은 의미상 지정 순서를 보존한다. raw bytes는 canonical padded base64, hash는 lowercase hex64. hash는 length frame을 쓴다. `snapshot_id=SHA256(frame(NUS/S3/CHAIN_SNAPSHOT/V1, snapshot_id만 제거한 ChainSnapshot))`; state/result/view/evidence hash 도메인은 각각 `NUS/S3/ENGINE_STATE/V1`, `NUS/S3/COMMAND_RESULT/V1`, `NUS/S3/VIEW/V1`, `NUS/S3/RESOLUTION_EVIDENCE/V1`. domain을 생략한 JSON SHA와 교환하지 않는다. contract manifest 집합 해시는 별도 manifest 정의를 따른다.
+
+Text의 `maxLength:256`은 Unicode code point 수이며 UTF-16 code unit·UTF-8 byte 수가 아니다. 보충 평면 문자도 한 code point로 센다. canonical ASCII escape는 소문자 hex를 쓰며 U+10000..U+10FFFF는 surrogate pair 두 escape다. 예를 들어 U+1F600 하나의 JSON은 `"\ud83d\ude00"`14B,256개는3074B다. BMP/제어문자는 최대6B, quote/backslash/짧은 제어 escape는2B이므로 일반 문자열 상한은 `2+12*maxLength`다. 정규화·문자 삭제·trim으로 상한을 맞추지 않는다. 허용 문자 집합과 canonical bytes는 기존 rc3에서 바꾸지 않고 용량 계산만 이 정의에 맞춘다. [JSON Schema maxLength](https://json-schema.org/draft/2020-12/json-schema-validation#section-6.3.1)와 실제 검사 Python3.14.0의 [ASCII encoder](https://github.com/python/cpython/blob/v3.14.0/Lib/json/encoder.py#L46-L64)를 대조했다. 언어별 문자열 `.length`를 그대로 공통 길이 판정에 사용하지 않는다.
 
 Context는 chain/genesis/market/market config와 contract/config hash를 모두 묶는다. 모든 저장키의 최상위 namespace는 `(chain_id,genesis_hash,market_id)`다. 유일성 키와 값은 다음과 같다.
 
@@ -18,18 +20,32 @@ Context는 chain/genesis/market/market config와 contract/config hash를 모두 
 | ResolutionReceipt (worker 증거) | chain receipt hash | 위 compact chain receipt에 RPC ConfirmedTx 원시 증거를 결합한 조회·검증 결과; 실행 중 chain에 block_results를 저장하지 않음 |
 | LastBatch | market | 마지막 COMMITTED **또는 VOID** seq와 원 batch_hash; operator 교체에도 연속 |
 | Engine application | batch_id/terminal receipt hash | applied revision/command seq/chain snapshot/cursor/state hash; 효과1회 |
-| Correction | correction_id | 모든 root/dependency closure/영향 주문/취소 잔량/독립 survivors/전후 hash/증거; append-only |
+| CorrectionRecord (state) | correction_id | root/closure/영향 주문/취소 잔량/survivors/before hash/증거; after hash 없음, append-only |
+| Correction (WAL result) | command_seq/correction_id | 동일 CorrectionRecord + 해당 commit의 after_state_hash; CommandResult.correction_results에 저장 |
 | Raw evidence | SHA256(raw bytes) | exact bytes/length/type; 별도 fsync object와 WAL reference, 부분 파일 공개0 |
 
-accounts는 raw owner순, account.assets 및 asset totals는 denom순. 중복/누락 owner/denom을 거절한다. registered users는 실행 manifest와 정확히 일치하는 2..16개이며 임의 runtime 추가0. owner_events는 tx_index순이고, terminal_batch_seqs는 seq순이다. proof의 raw block/results는 JSON decode를 위한 문자열이 아니라 **수신 원문 bytes**를 base64로 보존한다. 해당 bytes의 SHA/길이는 evidence manifest에 있다. 계정별 내역은 인증된 자기 계정에만 제공한다.
+accounts는 raw owner순, account.assets 및 asset totals는 denom순. 중복/누락 owner/denom을 거절한다. registered users는 실행 manifest와 정확히 일치하는 2..16개이며 임의 runtime 추가0. owner_events는 tx_index순이고, terminal_batch_seqs는 seq순이다. proof의 raw block/results는 **수신 원문 bytes**를 객체 파일로 보존한다. `raw_block_response_ref`/`raw_results_response_ref`는 application/json, `raw_tx_ref`는 application/vnd.nus.txraw인 typed EvidenceRef다. base64 inline 대체형은 허용하지 않는다. 저장 위치·해시·fsync·완전성·재생 순서는 `STORAGE.md`를 따른다. 계정별 내역은 인증된 자기 계정에만 제공한다.
 
-`ConfirmedTx`는 신뢰 로컬 RPC의 확정 포함 관측이다. index/code/gas만 조합한 합성 객체는 제품 proof가 아니다. `AbsenceProof.blocks`는 first_possible_height..timeout_height를 빈 블록도 빠짐없이 담고 observed_height>timeout을 요구한다. account sequence와 last hash는 같은 observed snapshot에서 대조한다. 모든 attempt proof가 동일 genesis/chain history에 있어야 한다. ResolutionEvidence는 observed_snapshot과 batch_lookup의 같은 H/context, journal의 모든 settle_attempts(번호순), 포함 실패 failed_tx_hash/rejection_code를 담는다. 누락된 로컬 attempt가 없어야 하며 이 객체 전체 canonical JSON을 RESOLUTION_EVIDENCE 도메인으로 해시한다. close_attempt는 원 실패 증거의 입력이 아니므로 자기참조가 없다.
+`ConfirmedTx`는 신뢰 로컬 RPC의 확정 포함 관측이다. index/code/gas만 조합한 합성 객체는 제품 proof가 아니다. `AbsenceProof.blocks`는 first_possible_height..timeout_height를 빈 블록도 빠짐없이 담고 observed_height>timeout을 요구한다. account sequence와 last hash는 같은 observed snapshot에서 대조한다. 모든 attempt proof가 동일 genesis/chain history에 있어야 한다. ResolutionEvidence는 raw 자체가 아닌 그 exact bytes 참조를 포함한다. observed_snapshot과 batch_lookup의 같은 H/context, journal의 모든 settle_attempts(번호순), 포함 실패 failed_tx_hash/rejection_code를 담는다. 누락된 로컬 attempt가 없어야 하며 이 객체 전체 canonical JSON을 RESOLUTION_EVIDENCE 도메인으로 해시한다. close_attempt는 원 실패 증거의 입력이 아니므로 자기참조가 없다.
 
-ResolutionReceipt.COMMITTED는 batch_receipt_v2 non-null, failed_tx_hash/evidence_hash null, 최초 성공 TX code0을 요구한다. BatchReceiptV2의 모든 필드를 Context/BatchIdentity/terminal TX에 대조한다. VOID는 batch_receipt_v2 null, failed_tx_hash/evidence_hash non-null, 최초 close TX code0을 요구한다. Chain은 compact StoredResolutionReceipt만 원자 저장하고 worker가 확정 후 RPC block/results를 결합한다. 그 raw proof는 가스 산정의 chain write bytes에 들어가지 않는다. VOID가 단독으로 실패 또는 정정 증거가 되는 것은 아니다. read는 과거 operator epoch를 현재 권한으로 덮어쓰지 않는다.
+ResolutionReceipt.COMMITTED는 batch_receipt_v2 non-null, failed_tx_hash/evidence_hash null, 최초 성공 TX code0을 요구한다. BatchReceiptV2의 모든 필드를 Context/BatchIdentity/terminal TX에 대조한다. VOID는 batch_receipt_v2 null, failed_tx_hash/evidence_hash 및 resolution_evidence_ref non-null, 최초 close TX code0을 요구한다. COMMITTED는 resolution_evidence_ref도 null이다. ref 객체는 canonical ResolutionEvidence이며 SHA256(raw canonical bytes)와 RESOLUTION_EVIDENCE length-frame domain hash를 각각 검증한다. 후자를 전자의 파일명으로 사용하지 않는다. Chain은 compact StoredResolutionReceipt만 원자 저장하고 worker가 확정 후 RPC block/results를 결합한다. 그 raw proof는 가스 산정의 chain write bytes에 들어가지 않는다. VOID가 단독으로 실패 또는 정정 증거가 되는 것은 아니다. read는 과거 operator epoch를 현재 권한으로 덮어쓰지 않는다.
 
 BatchLookup은 조회H의 snapshot/LastBatch를 포함한다. seq>last이면 NOT_FOUND_AT_HEIGHT이며 receipt null, seq<=last이면 FOUND와 불변 receipt가 필요하다. 후자의 누락은 RECEIPT_INCONSISTENCY다. 요청한 genesis/market와 다른 receipt를 반환하지 않는다. 아직0인 last_seq의 last_hash는 zero32다. U64_MAX last_seq이면 새 슬롯을 만들 수 없어 시장을 닫는다.
 
 `schema.json`은 S2 정의를 복사해 S3 context/상태/추가 필드를 모두 물질화했다. S3 Engine/WAL은 S2 StoredOrder/Binding/CommandReceipt/Book/FIFO/JournalRecord 의미를 상속하되 context를 S3 Context로 바꾼 별도 schema로 저장한다. 추가로 `batches`, `attempt_refs`, `dependencies`, `resolution_receipts`, `applied_batches`, `corrections`, `latest_observation_ref` 및 각 content hash를 같은 state commit에 둔다. S2 `HELD_S2/submission_enabled=false`를 import하지 않고 신규 fill의 export_state는 `QUEUED_S3|SEALED_S3|TERMINAL_S3`이다. Fill 상태는 `PENDING|SUBMISSION_UNKNOWN|COMMITTED|CORRECTED`이고 revision은 최초1부터 바뀔 때만 증가한다. R/D/P 및 pending fee는 원 fill로 재구축하며 중간 전이 저장을 공개 snapshot으로 제공하지 않는다. 내부 arrays에 API page maxItems를 적용하지 않는다.
+
+## 정정 해시·계산 순서 (rc2 의미 유지, rc3 저장 참조)
+
+`EngineState.corrections[]`의 타입은 `CorrectionRecord`다. 이는 `Correction`의 **정확히 after_state_hash 한 필드가 없는 별도 저장 타입**이며 unknown key 규칙으로 그 필드의 zero/null/실제 hash 삽입을 모두 거절한다. `before_state_hash`는 직전 확정 EngineState를 가리켜 순환하지 않는다. 저장 상태에서 해시 필드를 필터링하는 projection은 정의하지 않는다. `state_hash=SHA256(frame(NUS/S3/ENGINE_STATE/V1, canon(EngineState)))`는 중첩된 과거 레코드까지 모든 필드를 그대로 포함한다. 도메인 V1은 length-frame/JSON 해시 알고리즘의 버전이며 `context.service_schema=s3/3`와 새 contract/config가 저장 버전을 구분한다.
+
+1. 직전 확정 상태 S0를 검증하고 H0를 계산한다. 같은 correction_id가 이미 적용되었다면 최초 WAL result를 검증해 그대로 조회한다. 새 seq/revision/레코드/자산 효과는 만들지 않는다. 같은 ID의 상이한 원증거는 `RECOVERY_REQUIRED`다.
+2. 실패/VOID·같은 H의 snapshot·폐쇄 집합 검증 후, 전체 상태 S1을 만든다. 신규 CorrectionRecord의 before_state_hash=H0, command_seq=이번 명령 seq, revision=1이다. 레코드 자체는 immutable이며 재정정으로 덮어쓰지 않는다. correction_id 계산의 정확한 네 key는 CONTRACT §8에 있다. root ID는 hex 사전순·중복0, 다른 목록은 기존 원순서 규칙을 따른다. corrections 배열은 (숫자 command_seq, correction_id) 오름차순으로 누적하며 과거 레코드를 그대로 보존한다.
+3. 완성한 S1 전체를 canonicalize하여 H1을 **한 번** 계산한다. 새로운 각 레코드의 필드를 그대로 복사하고 after_state_hash=H1을 추가하여 `Correction`을 만든다. 여러 정정이 같은 commit에 있으면 모두 같은 H0/H1을 사용한다.
+4. `CommandResult.correction_results`는 이번 commit에 append한 레코드와 1:1·같은 순서여야 한다. 정정 없는 명령은 빈 배열이며 필드 생략은 금지한다. result.after_state_hash=H1. 신규 정정의 corrected/affected 목록과 result의 해당 목록은 중복 없이 기존 원순서로 일치해야 한다. 내부 CORRECTION의 request_hash는 `SHA256(frame(NUS/S3/CORRECTION_COMMAND/V1, canon({"context": Context, "command_seq": seq, "snapshot_id": S1.chain_snapshot.snapshot_id, "correction_ids": 이번 ID 목록})))`다. 서명/wire는 기존 내부 명령대로 빈 bytes이다.
+5. result_hash=`SHA256(frame(NUS/S3/COMMAND_RESULT/V1, canon(CommandResult)))`를 계산한다. `JournalRecord.state_json/result_json`은 위 canonical bytes의 padded base64다. journal before/after/result hash를 각각 H0/H1/result_hash에 대조하고 기존 WAL record hash→fsync→marker→공개 순서를 수행한다. 현재 result/result_hash/Correction.after_state_hash/WAL hash를 S1에 다시 넣지 않는다. 원시 증거 ref는 현재/미래 state, result, correction, journal 자체의 ref가 되어서는 안 된다. `JournalRecord.evidence_refs`는 state/result/snapshot 및 typed evidence 객체에서 도달하는 전이 ref의 SHA순 유일 집합과 정확히 같아야 한다.
+6. 재생은 marker 경계와 원증거를 검증하고 S0에서 결정적 S1을 재계산한다. 저장된 state bytes, H1, 각 record/audit의 1:1 필드 동일성, before/after/command_seq/context, result bytes 및 result_hash를 모두 대조한다. 과거 audit.after_state_hash는 **그 당시 상태**의 hash이며 뒤의 S2 hash로 갱신하지 않는다. state의 과거 record 변조는 state hash 불일치, state 밖 audit 변조는 audit/state 대조 또는 result hash 불일치로 실패해야 한다. result index는 기존과 같이 상태 밖에 있고 원 WAL과 대조한다.
+
+S3 `s3/1`/`s3/2` snapshot/journal/marker를 rc3로 자동 변환하거나 저장 hash를 다시 봉인해 채택하지 않는다. 새로운 빈 S3 저장소와 별도 실행 context만 허용한다. 사용자/Batch protobuf·서명·hash domain, 기존 S1/S2·language lock에는 변경이 없다. `vectors/correction-state-hash.json`은 고정 합성 context의 1회/2회 정정 및 두 번 재생 입력/예상 raw bytes/hash다. fixture의 `contract_hash=11..`은 manifest 자기참조를 피하는 명시적 합성 식별자이며 실제 실행은 승인 manifest hash를 context에 넣는다. 실제 체인 proof·제품 WAL IO 검증을 대신하지 않는다.
 
 ## 배치·시도 전이표
 

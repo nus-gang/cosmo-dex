@@ -18,12 +18,20 @@ S2 상속 근거의 당시 IN_REVIEW/NOT_RUN 표기를 후속 PASS로 덮어쓰�
 
 ## ADR
 
-- **S3-01 / 사용자 v1 재사용·Batch v2 활성.** S3 genesis에 새 V1 주문/취소/auth를 서명하고 FillIdentityV1도 유지한다. VOID로 previous hash 의미가 확장되는 Batch/Receipt는 wire2, ID/HASH 도메인V2, 새 S3 genesis 높이1 활성으로 분리한다. Batch tag/type/layout은 v1과 같지만 의미 변경을 v1에 숨기지 않는다. v1 batch를 S3가 거절하는 raw fixture도 제공한다. SDK control namespace와 서비스schema s3/1은 별도다. 담당 CTO, A 전문검토 전 고정.
+- **S3-01 / 사용자 v1 재사용·Batch v2 활성.** S3 genesis에 새 V1 주문/취소/auth를 서명하고 FillIdentityV1도 유지한다. VOID로 previous hash 의미가 확장되는 Batch/Receipt는 wire2, ID/HASH 도메인V2, 새 S3 genesis 높이1 활성으로 분리한다. Batch tag/type/layout은 v1과 같지만 의미 변경을 v1에 숨기지 않는다. v1 batch를 S3가 거절하는 raw fixture도 제공한다. SDK control namespace와 서비스schema는 별도다(rc1 s3/1, S3-07에서 rc2 s3/2로 정정). 담당 CTO, A 전문검토 전 고정.
 - **S3-02 / 실패 슬롯 종료.** 실패 settle은 LastBatch를 바꾸지 않으므로 같은 seq 다른 본문을 피하려면 별도 종료 기록이 필요하다. MsgCloseBatch가 원 batch id/hash로 VOID 슬롯을 소비한다. operator의 포기 권한은 자산 이동0/COMMITTED역전0이고, engine correction은 별도의 실제 실패 증거까지 요구한다. 가짜 close proof·close/settle 순서·과거 missing receipt를 B/G/J가 검증한다. 새로운 value-moving wire를 만들지 않았다. 계획의 실패判定/과거seq/독립fill 다음seq를 구현 가능하게 하는 A 세부 결정이다.
 - **S3-03 / 실제 실패와 불포함 구분.** tx timeout은 SDK h>timeout, order expiry는 h>=expiry이다. raw 연속 block scan의 만료불포함 증거는 새 envelope 허가에만 사용하고 단독 correction은 금지한다. 확정 code!=0 포함1건+모든 시도해소+VOID 영수증 후만 정정한다. 조회/예산/합의 중단이면 보류한다. 담당 CTO/Settlement/Chain, B/C 착수 전 심사.
 - **S3-04 / 좁은 배치와 유한 비용.** 8fills·16proofs·128KiB·17검증/TX·34검증/block, 10M settle gas·20M blockgas, 3settle+2close 예산을 고정한다. 실직렬화와 고정 SDK gas/KV 모델로 산정하고 최초 실제 receipt 후 trace/지연을 재추정한다. budget초과는 자동증액0/rollback. 담당 CTO/Chain/SRE.
 - **S3-05 / 같은 H의 원자 적용.** receipt로 D/P 제거+snapshot C 교체+잔여R+epoch정정+cursor/book/revision 한 commit. 출금으로 기존 D가 C를 초과해도 unknown동안 옛 frozen view를 유지해 부분 음수 공개0. 담당 CTO/Exchange, C/G/J.
 - **S3-06 / 의존성.** 같은 order 또는 debit `(owner,epoch,asset)`의 pending predecessor를 원WAL에 기록해 앞으로 폐쇄한다. 같은owner 다른자산·독립 confirmed 재원은 보존한다. lifetime matched를 줄여재매칭0. 담당 CTO/Exchange/QA.
+
+## S3-07 / 정정 상태와 감사 결과의 비순환 해시
+
+2026-10-05 · CTO · [NUS-64](/NUS/issues/NUS-64) · Security→QA 재심사 후보.
+
+rc1은 EngineState 안의 Correction.after_state_hash가 해당 EngineState 자신의 hash여서 고정점을 요구했다. after를 zero로 치환하거나 암묵적으로 제외하면 서로 다른 JSON이 같은 상태 hash를 공유하고 구현별 projection이 갈린다. 상태에는 별도 CorrectionRecord(완전한 Correction에서 after 필드만 없음), WAL CommandResult에는 완전한 Correction을 저장하기로 결정했다. 상태를 한 번 해시한 뒤 감사 결과를 만들 수 있고 원증거·폐쇄·before hash·과거 기록 전부가 상태에 커밋된다. 감사 after 값은 WAL result hash와 상호 검증으로 보호한다. 현재 결과/WAL 해시는 상태에 역참조하지 않는다.
+
+파괴적 저장 형식 변경은 서비스 schema s3/2·contract rc2로 구분한다. 기존 s3/1 데이터 자동 migration/import는 허용하지 않으며 새 빈 S3 저장소에서만 활성화한다. 사용자 서명·BatchV2·SDK wrapper·WAL 외부 header와 magic·language lock은 유지한다. 구현 영향은 [NUS-56](/NUS/issues/NUS-56)의 상태/결과 조립과 공통 Context/profile/marker 소비 경계이며 제품 범위 확대나 운영 배포가 아니다. 계산/재생 규범은 SCHEMA의 정정 해시 절, 인수 증거는 1회/2회 누적 완전 상태와 raw bytes/hash fixture 및 변조 거절이다. 실제 SDK/IO/브라우저 검증은 담당 제품 업무에 남는다. 담당 CTO, 목표는 [NUS-56](/NUS/issues/NUS-56) 의존 조립 재개 전 두 전문 검토 완료이며 달력 납기 확약은 없다.
 
 ## DEC-01~12 담당·목표 경계
 
@@ -66,3 +74,21 @@ S2 상속 근거의 당시 IN_REVIEW/NOT_RUN 표기를 후속 PASS로 덮어쓰�
 **첫 실제 COMMITTED receipt 후 재추정:** B가 raw TX/receipt/H/index/gas_wanted-used/실제bytes/embeddedverify수/KV trace를 자기 업무에 등록하고 D가 조립→첫방송→headers→JSON→commit→apply 시간·시도횟수/가스예약·실패 원인을 등록한다. C는 journal/최대정정 frame 크기·fsync/복구측정, F는 CPU/RSS/disk와4노드환경을 추가한다. CTO는 해당 head/tree/config로 본 표의 남은 집중량·리뷰대기·실측비용을 갱신한다. 한 번의 receipt를 지속처리량으로 환산하지 않는다. gas모델 초과·최대fixture실패·배치여유 소진이면 계약변경영향·새fixture·Security→QA 재심사를 먼저 수행하고 B/C가 임의 한도를 바꾸지 않는다.
 
 실행비 보고 필드: 담당 run 경과/사용량(플랫폼 계측), CPU/RSS/disk, CI실행수·대기, 전문검토요청/시작/결정 시각. 측정 안 된 값은 `NOT_MEASURED`, 승인되지 않은 화폐 예산은 `NOT_APPROVED`로 둔다. 비용0 또는 이번주완료로 추정하지 않는다.
+
+## S3-08 / raw evidence 참조와 유한 정정 예약
+
+2026-10-05 · CTO · [NUS-65](/NUS/issues/NUS-65) · Security→QA 재심사 후보. 목표는 NUS-56 전체 크기 durable ACK/D 인계 전이며 달력 납기 확약0.
+
+승인 rc2의 raw JSON3MiB 하나가 receipt/state/correction/result와 중첩 base64 때문에 WAL16MiB를 넘었다. block_max_bytes로 JSON whitespace 크기를 추정할 수 없으므로 raw를 보존한 채 모든 크기를 typed content-addressed ref로 바꾼다. VOID receipt에는 ResolutionEvidence canonical object ref도 명시해 domain hash와 raw bytes를 재검증할 경로를 고정한다. state/record/result의 필드를 임의 제외하거나 payload 한도를 확대하지 않는다. 비순환 rc2 state/audit 계산은 유지한다.
+
+새 s3/3 context·새 저장소에 한정한다. RPC16MiB/TxRaw139264B/metadata256KiB, snapshot 목록128, batch당 raw80/TxRaw5/metadata96 및 drain40기록을 명시적 입력/출력 경계로 정한다. 미래 proof 크기를 평균/압축률로 추정하지 않는다. 전체 후보 이력, 최대N회 정정과 모든 survivor 목록까지 보수적으로 계산하며 계산·예약 실패는 신규 ACK 이전 거절이다. 과거 ACK에는 전용 예약을 유지한다. 누적1001 fills를 동시 pending1001 허가로 해석하지 않는다. 최적화되지 않은 큰 예약 비용은 profile/fixture에 노출하고 자원 확보를 전제하지 않는다.
+
+구현 owner는 Exchange(엔진/allocator), Settlement(원 evidence/worker), Chain(변경된 Context와 기존 compact receipt), SRE(실제 파일시스템 보장)다. CTO는 공통 규범·schema·fixture만 변경한다. 제품 범위·예산·version/lock 확대0. 실제 chain/IO 검증을 명세 oracle PASS로 대신하지 않는다. 세부 수치·DAG·재생·경계 및 제한은 STORAGE.md가 규범이다.
+
+### SEC-65-01 / Unicode 최악 길이 정정
+
+2026-10-05 · CTO · 목표: NUS-65 Security→QA 재제출 전. Security는 후보 `97f8338096bb7692042fd49bda56e9972a8316b4`에서 Text256의 예측1538B/실제3074B, 전체 schema-valid state의 예측127518B/실제128901B를 독립 재현했다. 6배 상한은 ASCII encoder의 보충 평면 surrogate pair12B를 누락했다. 이는 상한 명제의 반례이며 경제 실행 경로·실제16MiB 넘침·자산 손실 재현은 아니다.
+
+허용 Unicode나 원 bytes를 줄이는 대신 `maxLength`의 code point 단위를 명시하고 일반 문자열을 `2+12*maxLength`로 계산한다. 1배 최적화는 정확한 decimal/base64 pattern에만 적용하고 hex64는66B다. 임의 pattern과 `Hash` 이름만으로 ASCII를 추정하지 않는다. Text schema에는 설명만 보완하므로 새 wire/context version은 필요하지 않다. 미승인 rc3 후보를 새 head/tree/contract/vector manifest로 대체하고 원 검토·검증 이력은 보존한다.
+
+Security 원 state와 BMP/보충 평면/escape의 최대값을 실제 encoder로 직렬화해 Smax/Rmax/Jmax/B를 비교한다. 누적1000/1001 fills·200/201 orders·0/25bps, WAL/RPC16MiB/+1과 전용 예약 B/B−1도 다시 검사한다. 검토 소유자는 Security→QA이며 두 승인 전 NUS-56 blocker와 전체 크기 durable ACK/D 인계 제한을 유지한다.

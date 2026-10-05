@@ -1,0 +1,63 @@
+   Compiling nus-exchange-contract v0.1.0 (/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/worktrees/NUS-56/exchange)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.35s
+     Running tests/s2_journal.rs (exchange/target/debug/deps/s2_journal-116953b0cc8c02d6)
+
+running 14 tests
+test child_process ... ok
+test framing_matches_approved_fixture ... ok
+
+running 1 test
+test child_process ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.01s
+
+
+running 1 test
+test marker_write_failure_poisoning_preserves_unknown_tail ... ok
+
+running 1 test
+test child_process ... ok
+
+
+running 1 test
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.01stest single_writer_is_enforced_across_processes ... ok
+
+
+
+running 1 test
+test child_process ... ok
+
+test result: oktest committed_record_and_outbox_recover_atomically ... ok
+test resource_limit_has_no_sequence_or_wal_effect ... ok
+. 1 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.01s
+
+test malformed_records_context_change_and_existing_namespace_are_rejected ... ok
+test authenticated_s2_order_bytes_survive_process_restart ... ok
+test dropped_writer_reopens_while_unrelated_child_is_before_exec ... ok
+test correction_consumes_and_replenishes_reserve ... ok
+
+running 1 test
+test status_revision_reservations_survive_restart_and_fail_closed ... ok
+
+running 1 test
+test status_revision_missing_corrupt_or_exhausted_never_resets ... ok
+
+running 1 test
+
+running 1 test
+test crash_points_never_silently_lose_a_committed_record ... ok
+test completed_frame_loss_header_payload_marker_corruption_stop_recovery ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.32s
+
+     Running tests/s2_ledger.rs (exchange/target/debug/deps/s2_ledger-715fcbb829c0bba8)
+
+running 5 tests
+test fees_are_per_fill_ceil_and_exactly_reversed ... ok
+test all_failed_fills_leave_both_parties_unchanged ... ok
+test partial_price_improvement_cancel_and_pending_not_spendable ... ok
+test shared_available_prevents_overreservation_and_self_trade ... ok
+test exhaustive_small_fills_conserve_net_plus_fee_and_hold_limit ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+

@@ -1,0 +1,550 @@
+{
+  "issue": "NUS-65",
+  "finding": "SEC-65-01",
+  "candidate_version": "s3-1.0.0-rc3",
+  "replaces_rejected_candidate": "97f8338096bb7692042fd49bda56e9972a8316b4",
+  "approved_parent_head": "d45be33029705859b07a9516fd2229a56dc66f46",
+  "scope": "공통 protocol/s3 Unicode 용량 계약·schema 설명·oracle·fixture 정정. 제품 구현 아님.",
+  "environment": {
+    "python": "3.14.0 (main, Oct  7 2025, 09:34:52) [Clang 17.0.0 (clang-1700.0.13.3)]",
+    "platform": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+    "go": "go version go1.24.4 darwin/arm64"
+  },
+  "security_reproduction": {
+    "source_attachment": "2f842972-bb16-47d3-b1a8-6592a5f1d7bf",
+    "before": {
+      "text_schema": "PASS",
+      "text_bound": 1538,
+      "text_actual": 3074,
+      "state_schema": "PASS",
+      "state_bound": 127518,
+      "state_actual": 128901,
+      "state_underestimate": 1383,
+      "limitation": "schema-valid adversarial state; reachable economic trace/actual IO NOT_RUN"
+    },
+    "after": {
+      "text_schema": "PASS",
+      "text_bound": 3074,
+      "text_actual": 3074,
+      "state_schema": "PASS",
+      "state_bound": 129054,
+      "state_actual": 128901,
+      "state_underestimate": -153,
+      "limitation": "schema-valid adversarial state; reachable economic trace/actual IO NOT_RUN"
+    },
+    "unmodified_script_after": "Original underestimation assertion fails as expected; emitted values are checked actual<=bound."
+  },
+  "validation": {
+    "specification_oracle_without_manifest_checks": 13247,
+    "go_crypto_and_strict_codec_checks": 284,
+    "unicode_text_cases": 52,
+    "unicode_overlength_rejections": 13,
+    "unicode_full_S_R_J_B_shapes": 4,
+    "unicode_nested_shapes": 9,
+    "negative_control": "prior 6-byte capacity.py fails at supplementary_start 255 code points / 3062 bytes",
+    "raw_and_hash_regressions": "3MiB unchanged raw, 15 raw mutations, 17 hash mutations, 2 corrections / 4 replay steps PASS",
+    "boundaries": "WAL/RPC16MiB/+1; cumulative1000/1001 fills and200/201 orders at0/25bps; B/B-1; prior reservation and general free0 PASS",
+    "all_pending": "1000/1001 simultaneously pending worst-case admission remains rejected",
+    "final_manifest_validation": "Separate read-only check.py log is delivered with the pinned commit, outside this manifest to avoid self-reference"
+  },
+  "unicode_capacity": {
+    "scope": "SCHEMA/SERIALIZATION/RESERVATION MODEL; economic trace/chain/allocator IO NOT_RUN",
+    "finding": "SEC-65-01",
+    "text_bound_bytes": 3074,
+    "text_cases": [
+      {
+        "case": "ascii",
+        "code_points": 0,
+        "actual_bytes": 2
+      },
+      {
+        "case": "ascii",
+        "code_points": 1,
+        "actual_bytes": 3
+      },
+      {
+        "case": "ascii",
+        "code_points": 255,
+        "actual_bytes": 257
+      },
+      {
+        "case": "ascii",
+        "code_points": 256,
+        "actual_bytes": 258
+      },
+      {
+        "case": "quote",
+        "code_points": 0,
+        "actual_bytes": 2
+      },
+      {
+        "case": "quote",
+        "code_points": 1,
+        "actual_bytes": 4
+      },
+      {
+        "case": "quote",
+        "code_points": 255,
+        "actual_bytes": 512
+      },
+      {
+        "case": "quote",
+        "code_points": 256,
+        "actual_bytes": 514
+      },
+      {
+        "case": "backslash",
+        "code_points": 0,
+        "actual_bytes": 2
+      },
+      {
+        "case": "backslash",
+        "code_points": 1,
+        "actual_bytes": 4
+      },
+      {
+        "case": "backslash",
+        "code_points": 255,
+        "actual_bytes": 512
+      },
+      {
+        "case": "backslash",
+        "code_points": 256,
+        "actual_bytes": 514
+      },
+      {
+        "case": "nul",
+        "code_points": 0,
+        "actual_bytes": 2
+      },
+      {
+        "case": "nul",
+        "code_points": 1,
+        "actual_bytes": 8
+      },
+      {
+        "case": "nul",
+        "code_points": 255,
+        "actual_bytes": 1532
+      },
+      {
+        "case": "nul",
+        "code_points": 256,
+        "actual_bytes": 1538
+      },
+      {
+        "case": "control",
+        "code_points": 0,
+        "actual_bytes": 2
+      },
+      {
+        "case": "control",
+        "code_points": 1,
+        "actual_bytes": 8
+      },
+      {
+        "case": "control",
+        "code_points": 255,
+        "actual_bytes": 1532
+      },
+      {
+        "case": "control",
+        "code_points": 256,
+        "actual_bytes": 1538
+      },
+      {
+        "case": "short_escape",
+        "code_points": 0,
+        "actual_bytes": 2
+      },
+      {
+        "case": "short_escape",
+        "code_points": 1,
+        "actual_bytes": 4
+      },
+      {
+        "case": "short_escape",
+        "code_points": 255,
+        "actual_bytes": 512
+      },
+      {
+        "case": "short_escape",
+        "code_points": 256,
+        "actual_bytes": 514
+      },
+      {
+        "case": "bmp_start",
+        "code_points": 0,
+        "actual_bytes": 2
+      },
+      {
+        "case": "bmp_start",
+        "code_points": 1,
+        "actual_bytes": 8
+      },
+      {
+        "case": "bmp_start",
+        "code_points": 255,
+        "actual_bytes": 1532
+      },
+      {
+        "case": "bmp_start",
+        "code_points": 256,
+        "actual_bytes": 1538
+      },
+      {
+        "case": "bmp_korean",
+        "code_points": 0,
+        "actual_bytes": 2
+      },
+      {
+        "case": "bmp_korean",
+        "code_points": 1,
+        "actual_bytes": 8
+      },
+      {
+        "case": "bmp_korean",
+        "code_points": 255,
+        "actual_bytes": 1532
+      },
+      {
+        "case": "bmp_korean",
+        "code_points": 256,
+        "actual_bytes": 1538
+      },
+      {
+        "case": "bmp_end",
+        "code_points": 0,
+        "actual_bytes": 2
+      },
+      {
+        "case": "bmp_end",
+        "code_points": 1,
+        "actual_bytes": 8
+      },
+      {
+        "case": "bmp_end",
+        "code_points": 255,
+        "actual_bytes": 1532
+      },
+      {
+        "case": "bmp_end",
+        "code_points": 256,
+        "actual_bytes": 1538
+      },
+      {
+        "case": "supplementary_start",
+        "code_points": 0,
+        "actual_bytes": 2
+      },
+      {
+        "case": "supplementary_start",
+        "code_points": 1,
+        "actual_bytes": 14
+      },
+      {
+        "case": "supplementary_start",
+        "code_points": 255,
+        "actual_bytes": 3062
+      },
+      {
+        "case": "supplementary_start",
+        "code_points": 256,
+        "actual_bytes": 3074
+      },
+      {
+        "case": "emoji",
+        "code_points": 0,
+        "actual_bytes": 2
+      },
+      {
+        "case": "emoji",
+        "code_points": 1,
+        "actual_bytes": 14
+      },
+      {
+        "case": "emoji",
+        "code_points": 255,
+        "actual_bytes": 3062
+      },
+      {
+        "case": "emoji",
+        "code_points": 256,
+        "actual_bytes": 3074
+      },
+      {
+        "case": "unicode_end",
+        "code_points": 0,
+        "actual_bytes": 2
+      },
+      {
+        "case": "unicode_end",
+        "code_points": 1,
+        "actual_bytes": 14
+      },
+      {
+        "case": "unicode_end",
+        "code_points": 255,
+        "actual_bytes": 3062
+      },
+      {
+        "case": "unicode_end",
+        "code_points": 256,
+        "actual_bytes": 3074
+      },
+      {
+        "case": "mixed",
+        "code_points": 0,
+        "actual_bytes": 2
+      },
+      {
+        "case": "mixed",
+        "code_points": 1,
+        "actual_bytes": 3
+      },
+      {
+        "case": "mixed",
+        "code_points": 255,
+        "actual_bytes": 1137
+      },
+      {
+        "case": "mixed",
+        "code_points": 256,
+        "actual_bytes": 1143
+      }
+    ],
+    "full_shapes": [
+      {
+        "case": "bmp_korean",
+        "state_bytes": 127365,
+        "result_bytes": 21528,
+        "journal_bytes": 341521,
+        "state_sha256": "4989ddc59eccd74f1de4c6555dd49fa23d83159f83e84cd7161043f1be1e4d8c",
+        "result_sha256": "6896d204d0ade3dd371444dc74967a8a41d19b972046d7ae7470c08fc2b8b53f",
+        "journal_sha256": "13e04295b7d6c0c5a8dcc6d411e81740a32a0b27ff521435ca7df82b3af36885",
+        "serialized_drain_bytes": 1982464,
+        "certificate": {
+          "pending_fills": 0,
+          "orders": 0,
+          "max_state_bytes": 129054,
+          "max_result_bytes": 24600,
+          "max_journal_payload_bytes": 348184,
+          "max_drain_records": 2,
+          "max_new_evidence_objects": 2,
+          "evidence_reserved_bytes": 540672,
+          "reserved_bytes": 2015232,
+          "admissible": true
+        }
+      },
+      {
+        "case": "emoji",
+        "state_bytes": 128901,
+        "result_bytes": 24600,
+        "journal_bytes": 347665,
+        "state_sha256": "61d5a655a8e88ecc65ed6499fffe99f871b62672bb9cd6d251ea1456d7d95eb5",
+        "result_sha256": "7a5bd3a798af4beec3d94b52d48248012bf5d85ad790c90cd72c92851aa1830f",
+        "journal_sha256": "538c907e95da276c18009cf5bd5f41b5466ae9f419a6237e3a16c03fdab9031c",
+        "serialized_drain_bytes": 2007040,
+        "certificate": {
+          "pending_fills": 0,
+          "orders": 0,
+          "max_state_bytes": 129054,
+          "max_result_bytes": 24600,
+          "max_journal_payload_bytes": 348184,
+          "max_drain_records": 2,
+          "max_new_evidence_objects": 2,
+          "evidence_reserved_bytes": 540672,
+          "reserved_bytes": 2015232,
+          "admissible": true
+        }
+      },
+      {
+        "case": "control",
+        "state_bytes": 127365,
+        "result_bytes": 21528,
+        "journal_bytes": 341521,
+        "state_sha256": "d951e93911f298f69f10d81096c33d914058d732531e4e5ac4518a0baf07b131",
+        "result_sha256": "06b810c036e3f3b56b415068dc18db2abf3bfd477e099ecbc2b8ef286f7724c8",
+        "journal_sha256": "2dc81f62a2b46560fe423455679a6bcbefa1e3252f6a0c2d92d39f09658f3f58",
+        "serialized_drain_bytes": 1982464,
+        "certificate": {
+          "pending_fills": 0,
+          "orders": 0,
+          "max_state_bytes": 129054,
+          "max_result_bytes": 24600,
+          "max_journal_payload_bytes": 348184,
+          "max_drain_records": 2,
+          "max_new_evidence_objects": 2,
+          "evidence_reserved_bytes": 540672,
+          "reserved_bytes": 2015232,
+          "admissible": true
+        }
+      },
+      {
+        "case": "mixed",
+        "state_bytes": 126970,
+        "result_bytes": 20738,
+        "journal_bytes": 339945,
+        "state_sha256": "d72bb9540162ed1710ee30383333fd21a44368bb654a7613ab27c186057622e4",
+        "result_sha256": "faaee28dd70f111be13d2ce0967132633d19be1dbf15e7c682305983496b2cb9",
+        "journal_sha256": "82d3a2b27b7cc86c8172395103cdececdb07020eacdf4090ea2a0357c53aa4b1",
+        "serialized_drain_bytes": 1966080,
+        "certificate": {
+          "pending_fills": 0,
+          "orders": 0,
+          "max_state_bytes": 129054,
+          "max_result_bytes": 24600,
+          "max_journal_payload_bytes": 348184,
+          "max_drain_records": 2,
+          "max_new_evidence_objects": 2,
+          "evidence_reserved_bytes": 540672,
+          "reserved_bytes": 2015232,
+          "admissible": true
+        }
+      }
+    ],
+    "nested_shapes": [
+      {
+        "type": "ConfirmedTx",
+        "actual_bytes": 3911,
+        "bound_bytes": 3911
+      },
+      {
+        "type": "BatchView",
+        "actual_bytes": 11761,
+        "bound_bytes": 11761
+      },
+      {
+        "type": "ResolutionReceipt",
+        "actual_bytes": 11068,
+        "bound_bytes": 11068
+      },
+      {
+        "type": "CorrectionRecord",
+        "actual_bytes": 13784,
+        "bound_bytes": 13784
+      },
+      {
+        "type": "Correction",
+        "actual_bytes": 13870,
+        "bound_bytes": 13870
+      },
+      {
+        "type": "CommandResult",
+        "actual_bytes": 53140,
+        "bound_bytes": 53140
+      },
+      {
+        "type": "Attempt",
+        "actual_bytes": 10083,
+        "bound_bytes": 10083
+      },
+      {
+        "type": "ResolutionEvidence",
+        "actual_bytes": 157847,
+        "bound_bytes": 157847
+      },
+      {
+        "type": "ChainSnapshot",
+        "actual_bytes": 115304,
+        "bound_bytes": 115304
+      }
+    ],
+    "previous_candidate": {
+      "head": "97f8338096bb7692042fd49bda56e9972a8316b4",
+      "text_bound_bytes": 1538,
+      "state_bound_bytes": 127518,
+      "state_actual_bytes": 128901,
+      "state_underestimate_bytes": 1383
+    }
+  },
+  "cumulative_histories": [
+    {
+      "fills": 1000,
+      "orders": 200,
+      "bps": 0,
+      "certificate": {
+        "pending_fills": 2,
+        "orders": 200,
+        "max_state_bytes": 8496998,
+        "max_result_bytes": 118800,
+        "max_journal_payload_bytes": 11734479,
+        "max_drain_records": 282,
+        "max_new_evidence_objects": 564,
+        "evidence_reserved_bytes": 2793652224,
+        "reserved_bytes": 10984267776,
+        "admissible": true
+      }
+    },
+    {
+      "fills": 1001,
+      "orders": 201,
+      "bps": 0,
+      "certificate": {
+        "pending_fills": 2,
+        "orders": 201,
+        "max_state_bytes": 8512154,
+        "max_result_bytes": 119135,
+        "max_journal_payload_bytes": 11755360,
+        "max_drain_records": 283,
+        "max_new_evidence_objects": 565,
+        "evidence_reserved_bytes": 2793922560,
+        "reserved_bytes": 11028652032,
+        "admissible": true
+      }
+    },
+    {
+      "fills": 1000,
+      "orders": 200,
+      "bps": 25,
+      "certificate": {
+        "pending_fills": 2,
+        "orders": 200,
+        "max_state_bytes": 8496998,
+        "max_result_bytes": 118800,
+        "max_journal_payload_bytes": 11734479,
+        "max_drain_records": 282,
+        "max_new_evidence_objects": 564,
+        "evidence_reserved_bytes": 2793652224,
+        "reserved_bytes": 10984267776,
+        "admissible": true
+      }
+    },
+    {
+      "fills": 1001,
+      "orders": 201,
+      "bps": 25,
+      "certificate": {
+        "pending_fills": 2,
+        "orders": 201,
+        "max_state_bytes": 8512154,
+        "max_result_bytes": 119135,
+        "max_journal_payload_bytes": 11755360,
+        "max_drain_records": 283,
+        "max_new_evidence_objects": 565,
+        "evidence_reserved_bytes": 2793922560,
+        "reserved_bytes": 11028652032,
+        "admissible": true
+      }
+    }
+  ],
+  "large_raw_regression": {
+    "raw_response_bytes": 3145728,
+    "raw_response_sha256": "3a6bc3ad4851b52ca33f56f5fa632b23722ee6eaf066e4682cc7aac4978d31d2",
+    "state_bytes": 58230,
+    "result_bytes": 5205,
+    "journal_payload_bytes": 99671,
+    "after_state_hash": "7058a05f436f57d5d6a0309931fbe1b080ac309802482df96a920c595b324877",
+    "result_hash": "93053a5d178447faec90eba2ddcb46982b58e19138dca0e349bc286606ffeab5"
+  },
+  "largest_cumulative_reserved_bytes": 11028652032,
+  "limits": "schema-valid synthetic shapes; no economic execution trace, actual disk reservation or asset-loss reproduction. Modeled reservation is not spent or promised budget.",
+  "not_run": [
+    "actual SDK/chain proof",
+    "Rust/TS product and browser",
+    "allocator/preallocation/ENOSPC/fsync/crash",
+    "4 validators",
+    "main CI/independent product QA"
+  ],
+  "review": "Security then QA native stages; no independent approval claimed; NUS-56 blocker retained"
+}

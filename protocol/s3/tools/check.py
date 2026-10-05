@@ -25,7 +25,8 @@ def manifest():
             files[str(p.relative_to(ROOT))]=sha(p.read_bytes())
     locks=['chain/go.mod','chain/go.sum','chain/app/go.mod','chain/app/go.sum','exchange/Cargo.toml','exchange/Cargo.lock','web/package.json','web/package-lock.json']
     for p in locks:files[p]=sha((ROOT/p).read_bytes())
-    return {'version':'s3-1.0.0-rc1','status':'SECURITY_THEN_QA_REVIEW_PENDING',
+    return {'version':'s3-1.0.0-rc3','status':'SECURITY_THEN_QA_REVIEW_PENDING',
+      'supersedes_contract_sha':'d45be33029705859b07a9516fd2229a56dc66f46',
       'base_main_sha':'bd9e473196ac86fdedf655b2c93e6931f54faa83','base_tree':'31a0d1c65e9b71647cac6c4c45bf7e8d2dd9d7f3',
       'hash_algorithm':'SHA256(sorted sha256 + two spaces + repo-relative path + LF)',
       'contract_sha256':aggregate(files),'config_sha256':files['protocol/s3/profile.json'],
@@ -242,7 +243,7 @@ def run():
         try:validate(c['value'],defs[c['type']],defs);semantic(c['type'],c['value']);result='ACCEPT'
         except (ValueError,AssertionError,TypeError):result='REJECT'
         expect(result,c['expected'],'schema/'+c['id'])
-    for n in ['Correction','CommandResult','EngineState']:
+    for n in ['Correction','CorrectionRecord','CommandResult','EngineState']:
         for k,v in defs[n]['properties'].items():
             if v.get('type')=='array' and k not in ['accounts','ledger_changes']:expect('maxItems' in v,False,'no history truncation/'+n+'/'+k)
     keys=read('vectors/test-keys.json');old_keys=json.loads((ROOT/'protocol/s2/vectors/test-keys.json').read_text())
@@ -303,6 +304,12 @@ def run():
 
 if __name__=='__main__':
     run()
+    from check_state_hash import run as check_state_hash
+    check_state_hash()
+    from check_evidence_capacity import run as check_evidence_capacity
+    check_evidence_capacity()
+    from check_unicode_capacity import run as check_unicode_capacity
+    check_unicode_capacity()
     m=manifest()
     if sys.argv[1:]==['--seal']:
         (S3/'manifest.json').write_text(json.dumps(m,ensure_ascii=False,indent=2)+'\n')

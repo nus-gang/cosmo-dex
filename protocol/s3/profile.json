@@ -1,5 +1,5 @@
 {
-  "service_schema": "s3/1",
+  "service_schema": "s3/3",
   "profile": "s3-local-v1",
   "order_wire_version": "1",
   "batch_wire_version": "2",
@@ -30,7 +30,16 @@
   "initial_gas_atoms_per_signer": "1000000000",
   "fee_asset_policy_id": "RECEIVE_ASSET_V1",
   "active_fee_version": "1",
-  "fee_profiles": [{"version":"1","bps":"0"},{"version":"2","bps":"25"}],
+  "fee_profiles": [
+    {
+      "version": "1",
+      "bps": "0"
+    },
+    {
+      "version": "2",
+      "bps": "25"
+    }
+  ],
   "fee_profile_switch": "NEW_S3_GENESIS_ONLY",
   "min_expiry_delta_blocks": "20",
   "max_expiry_delta_blocks": "1000",
@@ -66,7 +75,11 @@
   "max_settle_attempts": "3",
   "max_close_attempts": "2",
   "max_rebroadcasts_per_attempt": "3",
-  "rebroadcast_backoff_ms": ["0","1000","2000"],
+  "rebroadcast_backoff_ms": [
+    "0",
+    "1000",
+    "2000"
+  ],
   "max_total_reserved_gas_per_batch": "36000000",
   "max_total_fee_atoms_per_batch": "72000",
   "max_keeper_read_ops": "128",
@@ -80,7 +93,10 @@
   "read_fill_page_items": "1000",
   "challenge_ttl_seconds": "120",
   "session_ttl_seconds": "300",
-  "origins": ["http://127.0.0.1:5173","http://localhost:5173"],
+  "origins": [
+    "http://127.0.0.1:5173",
+    "http://localhost:5173"
+  ],
   "durability": "LOCAL_FSYNC",
   "replicated": false,
   "wal_gc_enabled": false,
@@ -89,5 +105,22 @@
   "runtime_genesis_binding": "SHA256_EXACT_RUNTIME_GENESIS_BYTES",
   "scenario_repetitions": "3",
   "replays_per_crash": "2",
-  "http_concurrency": "12"
+  "http_concurrency": "12",
+  "max_raw_rpc_response_bytes": "16777216",
+  "max_evidence_object_bytes": "262144",
+  "max_raw_responses_per_batch": "80",
+  "max_raw_txs_per_batch": "5",
+  "max_attempt_objects_per_batch": "25",
+  "max_resolution_objects_per_batch": "2",
+  "max_snapshot_owner_events": "128",
+  "max_snapshot_terminal_slots": "128",
+  "max_drain_records_per_pending_fill": "40",
+  "drain_fixed_records": "2",
+  "storage_allocation_unit_bytes": "4096",
+  "storage_metadata_reserve_per_object_bytes": "8192",
+  "max_commit_marker_bytes": "4096",
+  "evidence_gc_enabled": false,
+  "evidence_addressing": "SHA256_EXACT_BYTES",
+  "rpc_content_encoding": "identity",
+  "max_canonical_objects_per_batch": "96"
 }

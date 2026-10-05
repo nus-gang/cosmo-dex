@@ -119,7 +119,16 @@
     "ENOSPC_injection",
     "exact_16MiB_payload",
     "16MiB_plus_1_payload",
-    "WAL_and_marker_common_rollback_external_ACK_detection"
+    "WAL_and_marker_common_rollback_external_ACK_detection",
+    "RPC_16MiB",
+    "RPC_16MiB_plus1",
+    "missing_raw_object",
+    "tampered_raw_object",
+    "wrong_raw_role",
+    "missing_transitive_ref",
+    "reserve_minus1_before_ACK",
+    "dedicated_reserve_with_general_free_zero",
+    "preallocated_space_crash_replay"
   ],
   "execution_requirement": "Each variant on fresh S3 home; no wall-clock races; barrier/tx_index proof. Injection mechanism and NOT_RUN boundaries recorded."
 }
