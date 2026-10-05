@@ -7,6 +7,11 @@ import json
 from codec import S3, canon
 
 LIMIT = 16777216
+# Only these exact schema patterns prove that no JSON escaping is needed.
+ASCII_PATTERNS = frozenset({
+    '^(0|[1-9][0-9]*)$',
+    '^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$',
+})
 
 
 def b64_size(n):
@@ -56,9 +61,12 @@ class Bounds:
         if kind=='boolean':return 5
         if kind=='null':return 4
         if kind=='string':
-            if path.endswith('Hash'):return 66
-            # Decimal/base64 alphabets do not need JSON escaping.
-            factor=1 if 'pattern' in spec else 6
+            if spec.get('pattern')=='^[0-9a-f]{64}$':return 66
+            if 'maxLength' not in spec:raise ValueError('UNBOUNDED_STRING '+path)
+            # maxLength counts code points, not UTF-16 units or encoded bytes.
+            # ensure_ascii=True emits two six-byte escapes for U+10000..10FFFF.
+            # An arbitrary pattern can still allow Unicode, quotes or backslashes.
+            factor=1 if spec.get('pattern') in ASCII_PATTERNS else 12
             return 2+factor*spec['maxLength']
         raise ValueError('UNBOUNDED_TYPE '+path)
 

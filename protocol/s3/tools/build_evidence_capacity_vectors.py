@@ -3,6 +3,7 @@ from codec import read, write, canon
 from check_evidence_capacity import sized_json, large_step, history_state
 from capacity import certificate
 from evidence import reference
+from check_unicode_capacity import measure as unicode_capacity
 
 fixture=read('vectors/correction-state-hash.json')
 raw=sized_json(3145728);step,objects=large_step(fixture,raw)
@@ -17,5 +18,6 @@ out=dict(scope='SCHEMA/SERIALIZATION/RESERVATION MODEL ONLY; historical shapes a
     known_limit='1000/1001 cumulative history is distinct from 1000/1001 simultaneously pending fills; dependency closure oracle remains separately required')
 for count,orders,bps in [(1000,200,0),(1001,201,0),(1000,200,25),(1001,201,25)]:
     out['cumulative_histories'].append(dict(fills=count,orders=orders,bps=bps,certificate=certificate(history_state(fixture,count,orders,bps))))
+out['unicode_capacity']=unicode_capacity()
 write('vectors/evidence-capacity.json',out)
 print('generated rc3 evidence/capacity fixtures')

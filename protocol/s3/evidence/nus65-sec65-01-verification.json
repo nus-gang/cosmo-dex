@@ -1,98 +1,52 @@
 {
-  "scope": "SCHEMA/SERIALIZATION/RESERVATION MODEL ONLY; historical shapes are synthetic, not reachable signed engine traces; actual fsync/chain proof NOT_RUN",
-  "reported_rc2": {
-    "head": "d45be33029705859b07a9516fd2229a56dc66f46",
-    "journal_payload_bytes": 16874108,
-    "limit": 16777216
+  "issue": "NUS-65",
+  "finding": "SEC-65-01",
+  "candidate_version": "s3-1.0.0-rc3",
+  "replaces_rejected_candidate": "97f8338096bb7692042fd49bda56e9972a8316b4",
+  "approved_parent_head": "d45be33029705859b07a9516fd2229a56dc66f46",
+  "scope": "공통 protocol/s3 Unicode 용량 계약·schema 설명·oracle·fixture 정정. 제품 구현 아님.",
+  "environment": {
+    "python": "3.14.0 (main, Oct  7 2025, 09:34:52) [Clang 17.0.0 (clang-1700.0.13.3)]",
+    "platform": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+    "go": "go version go1.24.4 darwin/arm64"
   },
-  "large_raw_regression": {
-    "raw_response_bytes": 3145728,
-    "raw_response_sha256": "3a6bc3ad4851b52ca33f56f5fa632b23722ee6eaf066e4682cc7aac4978d31d2",
-    "state_bytes": 58230,
-    "result_bytes": 5205,
-    "journal_payload_bytes": 99671,
-    "after_state_hash": "7058a05f436f57d5d6a0309931fbe1b080ac309802482df96a920c595b324877",
-    "result_hash": "93053a5d178447faec90eba2ddcb46982b58e19138dca0e349bc286606ffeab5"
+  "security_reproduction": {
+    "source_attachment": "2f842972-bb16-47d3-b1a8-6592a5f1d7bf",
+    "before": {
+      "text_schema": "PASS",
+      "text_bound": 1538,
+      "text_actual": 3074,
+      "state_schema": "PASS",
+      "state_bound": 127518,
+      "state_actual": 128901,
+      "state_underestimate": 1383,
+      "limitation": "schema-valid adversarial state; reachable economic trace/actual IO NOT_RUN"
+    },
+    "after": {
+      "text_schema": "PASS",
+      "text_bound": 3074,
+      "text_actual": 3074,
+      "state_schema": "PASS",
+      "state_bound": 129054,
+      "state_actual": 128901,
+      "state_underestimate": -153,
+      "limitation": "schema-valid adversarial state; reachable economic trace/actual IO NOT_RUN"
+    },
+    "unmodified_script_after": "Original underestimation assertion fails as expected; emitted values are checked actual<=bound."
   },
-  "cumulative_histories": [
-    {
-      "fills": 1000,
-      "orders": 200,
-      "bps": 0,
-      "certificate": {
-        "pending_fills": 2,
-        "orders": 200,
-        "max_state_bytes": 8496998,
-        "max_result_bytes": 118800,
-        "max_journal_payload_bytes": 11734479,
-        "max_drain_records": 282,
-        "max_new_evidence_objects": 564,
-        "evidence_reserved_bytes": 2793652224,
-        "reserved_bytes": 10984267776,
-        "admissible": true
-      }
-    },
-    {
-      "fills": 1001,
-      "orders": 201,
-      "bps": 0,
-      "certificate": {
-        "pending_fills": 2,
-        "orders": 201,
-        "max_state_bytes": 8512154,
-        "max_result_bytes": 119135,
-        "max_journal_payload_bytes": 11755360,
-        "max_drain_records": 283,
-        "max_new_evidence_objects": 565,
-        "evidence_reserved_bytes": 2793922560,
-        "reserved_bytes": 11028652032,
-        "admissible": true
-      }
-    },
-    {
-      "fills": 1000,
-      "orders": 200,
-      "bps": 25,
-      "certificate": {
-        "pending_fills": 2,
-        "orders": 200,
-        "max_state_bytes": 8496998,
-        "max_result_bytes": 118800,
-        "max_journal_payload_bytes": 11734479,
-        "max_drain_records": 282,
-        "max_new_evidence_objects": 564,
-        "evidence_reserved_bytes": 2793652224,
-        "reserved_bytes": 10984267776,
-        "admissible": true
-      }
-    },
-    {
-      "fills": 1001,
-      "orders": 201,
-      "bps": 25,
-      "certificate": {
-        "pending_fills": 2,
-        "orders": 201,
-        "max_state_bytes": 8512154,
-        "max_result_bytes": 119135,
-        "max_journal_payload_bytes": 11755360,
-        "max_drain_records": 283,
-        "max_new_evidence_objects": 565,
-        "evidence_reserved_bytes": 2793922560,
-        "reserved_bytes": 11028652032,
-        "admissible": true
-      }
-    }
-  ],
-  "rejected_mutations": 15,
-  "boundaries": {
-    "wal_16777216": "FIT",
-    "wal_16777217": "REJECT_BEFORE_DECODE",
-    "rpc_16777216": "ACCEPT_BYTES_ONLY",
-    "rpc_16777217": "EVIDENCE_SIZE_HOLD"
+  "validation": {
+    "specification_oracle_without_manifest_checks": 13247,
+    "go_crypto_and_strict_codec_checks": 284,
+    "unicode_text_cases": 52,
+    "unicode_overlength_rejections": 13,
+    "unicode_full_S_R_J_B_shapes": 4,
+    "unicode_nested_shapes": 9,
+    "negative_control": "prior 6-byte capacity.py fails at supplementary_start 255 code points / 3062 bytes",
+    "raw_and_hash_regressions": "3MiB unchanged raw, 15 raw mutations, 17 hash mutations, 2 corrections / 4 replay steps PASS",
+    "boundaries": "WAL/RPC16MiB/+1; cumulative1000/1001 fills and200/201 orders at0/25bps; B/B-1; prior reservation and general free0 PASS",
+    "all_pending": "1000/1001 simultaneously pending worst-case admission remains rejected",
+    "final_manifest_validation": "Separate read-only check.py log is delivered with the pinned commit, outside this manifest to avoid self-reference"
   },
-  "all_pending_history": "1000/1001 conservative worst-case reservation exceeds WAL limit: reject new ACK; never truncate history",
-  "known_limit": "1000/1001 cumulative history is distinct from 1000/1001 simultaneously pending fills; dependency closure oracle remains separately required",
   "unicode_capacity": {
     "scope": "SCHEMA/SERIALIZATION/RESERVATION MODEL; economic trace/chain/allocator IO NOT_RUN",
     "finding": "SEC-65-01",
@@ -503,5 +457,94 @@
       "state_actual_bytes": 128901,
       "state_underestimate_bytes": 1383
     }
-  }
+  },
+  "cumulative_histories": [
+    {
+      "fills": 1000,
+      "orders": 200,
+      "bps": 0,
+      "certificate": {
+        "pending_fills": 2,
+        "orders": 200,
+        "max_state_bytes": 8496998,
+        "max_result_bytes": 118800,
+        "max_journal_payload_bytes": 11734479,
+        "max_drain_records": 282,
+        "max_new_evidence_objects": 564,
+        "evidence_reserved_bytes": 2793652224,
+        "reserved_bytes": 10984267776,
+        "admissible": true
+      }
+    },
+    {
+      "fills": 1001,
+      "orders": 201,
+      "bps": 0,
+      "certificate": {
+        "pending_fills": 2,
+        "orders": 201,
+        "max_state_bytes": 8512154,
+        "max_result_bytes": 119135,
+        "max_journal_payload_bytes": 11755360,
+        "max_drain_records": 283,
+        "max_new_evidence_objects": 565,
+        "evidence_reserved_bytes": 2793922560,
+        "reserved_bytes": 11028652032,
+        "admissible": true
+      }
+    },
+    {
+      "fills": 1000,
+      "orders": 200,
+      "bps": 25,
+      "certificate": {
+        "pending_fills": 2,
+        "orders": 200,
+        "max_state_bytes": 8496998,
+        "max_result_bytes": 118800,
+        "max_journal_payload_bytes": 11734479,
+        "max_drain_records": 282,
+        "max_new_evidence_objects": 564,
+        "evidence_reserved_bytes": 2793652224,
+        "reserved_bytes": 10984267776,
+        "admissible": true
+      }
+    },
+    {
+      "fills": 1001,
+      "orders": 201,
+      "bps": 25,
+      "certificate": {
+        "pending_fills": 2,
+        "orders": 201,
+        "max_state_bytes": 8512154,
+        "max_result_bytes": 119135,
+        "max_journal_payload_bytes": 11755360,
+        "max_drain_records": 283,
+        "max_new_evidence_objects": 565,
+        "evidence_reserved_bytes": 2793922560,
+        "reserved_bytes": 11028652032,
+        "admissible": true
+      }
+    }
+  ],
+  "large_raw_regression": {
+    "raw_response_bytes": 3145728,
+    "raw_response_sha256": "3a6bc3ad4851b52ca33f56f5fa632b23722ee6eaf066e4682cc7aac4978d31d2",
+    "state_bytes": 58230,
+    "result_bytes": 5205,
+    "journal_payload_bytes": 99671,
+    "after_state_hash": "7058a05f436f57d5d6a0309931fbe1b080ac309802482df96a920c595b324877",
+    "result_hash": "93053a5d178447faec90eba2ddcb46982b58e19138dca0e349bc286606ffeab5"
+  },
+  "largest_cumulative_reserved_bytes": 11028652032,
+  "limits": "schema-valid synthetic shapes; no economic execution trace, actual disk reservation or asset-loss reproduction. Modeled reservation is not spent or promised budget.",
+  "not_run": [
+    "actual SDK/chain proof",
+    "Rust/TS product and browser",
+    "allocator/preallocation/ENOSPC/fsync/crash",
+    "4 validators",
+    "main CI/independent product QA"
+  ],
+  "review": "Security then QA native stages; no independent approval claimed; NUS-56 blocker retained"
 }

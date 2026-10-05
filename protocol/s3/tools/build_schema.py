@@ -11,7 +11,8 @@ for name,bits in [('U32',32),('U64',64),('Atoms',128)]:
 d['Hash']={'type':'string','pattern':'^[0-9a-f]{64}$'}
 d['Bytes']={'type':'string','pattern':'^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$','maxLength':22369624}
 d['Bool']={'type':'boolean'}
-d['Text']={'type':'string','maxLength':256}
+d['Text']={'type':'string','maxLength':256,
+    'description':'At most 256 Unicode code points, not UTF-16 code units or UTF-8 bytes. Canonical ASCII JSON uses at most 12 bytes per code point plus 2 quotes (3074 bytes). No normalization or truncation; see SCHEMA.md and STORAGE.md.'}
 def ref(n):return {'$ref':'#/$defs/'+n}
 def en(*items):return {'type':'string','enum':list(items)}
 def arr(n,maxn=None):

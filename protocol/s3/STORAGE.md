@@ -46,7 +46,7 @@ ACK 후보 S는 해당 명령의 매칭까지 포함한 완전한 private state�
 
 `tools/capacity.py`가 아래 규칙의 실행 가능한 상한 oracle이다. float/Number 또는 평균 압축률을 사용하지 않는다.
 
-1. 모든 변할 수 있는 U32/U64/U128의 최대 십진 자릿수, nullable의 큰 형식, 모든 enum의 최대 encoded 길이, Text의 ASCII escape 최악6배, 가능한 모든 properties/배열 separators를 포함한다. 고정 owner/key/signature/request/receipt byte 길이는 schema의 좁은 정의를 사용한다. 이미 서명한 주문 owner/wire/signature만 알려진 실제 길이를 쓴다.
+1. 모든 변할 수 있는 U32/U64/U128의 최대 십진 자릿수, nullable의 큰 형식, 모든 enum의 최대 encoded 길이, Text의 ASCII escape **code point당 최악12B**와 양쪽 따옴표2B, 가능한 모든 properties/배열 separators를 포함한다. `maxLength`는 Unicode code point 수다. 보충 평면 U+10000..U+10FFFF 하나는 `\uXXXX\uXXXX` surrogate pair로12B이므로 Text256의 상한은3074B다. BMP escape는 최대6B이며 quote/backslash/짧은 제어 escape도12B 상한 안에 든다. 임의 pattern이나 이름으로 ASCII를 추정하지 않는다. 정확히 검토한 decimal/base64 pattern만 문자당1B, hex64 pattern은 전체66B로 계산하고 나머지 유한 문자열은12B를 쓴다. 상한 없는 문자열은 UNBOUNDED_STRING으로 닫는다. 고정 owner/key/signature/request/receipt byte 길이는 schema의 좁은 정의를 사용한다. 이미 서명한 주문 owner/wire/signature만 알려진 실제 길이를 쓴다.
 2. state: 기존 orders/fills/batches를 전체 포함하고 batches/receipts/applied_batches/corrections 각각 N개, attempt refs는25N개를 추가한 최대 형식 Smax를 계산한다. bindings/dependencies는 이 drain에서 불변이다. 현재 snapshot/계정/잔고/모드/revision은 전체 최악 형식으로 계산한다. 과거 correction은 원 bytes 그대로 유지한다.
 3. result: 최대 N개 완전한 audit Correction, 각각 최대 N/O 목록, 최대32 ledger changes 및 나머지 목록을 포함해 Rmax를 계산한다. 모든 audit after hash는64hex 고정 폭이다.
 4. 한 pending fill당 최대1개의 별도 미래 batch로 계산한다. batch당 settle3+close2, attempt당 최대8블록×2 RPC 원문 = raw80개, TxRaw5개, canonical metadata96개를 예약한다. attempt의 PREPARED+방송 count1/2/3+terminal 각1개로 최대25개 immutable 버전을 포함한다. metadata96은 이25개와 최대40개 snapshot/관측, batch/lookup/proof 및 잔여 bookkeeping을 포함하는 **출력 상한**이다. refs 수는 retained 전이 객체 수 +181N+O+2로 잡는다. 모든 미래 raw가 cap에 도달한다고 계산하며 dedup을 예상해 공간을 줄이지 않는다.
@@ -74,5 +74,6 @@ A(x)=ceil(x/4096)*4096+8192로 파일별 allocation·metadata overhead를 예약
 - 원 bytes 누락/절단/변조/canonicalization, 잘못된 hash/길이/type, duplicate JSON key, 구 inline raw, 전이 ref 누락을 거절한다. 1회/2회 정정·과거 원 receipt·state/audit 해시·두 번 재생 모델을 유지한다.
 - 누적1000/1001 fills·200/201 orders·0/25bps는 전체 schema 저장 크기와2개 pending의 최악 예약을 함께 검사한다. 기존 모든 pending의 의존 폐쇄·0/25 fee oracle도 유지한다. 모든1000/1001 fills가 동시에 pending인 후보의 보수적 최악 N번 정정은 한도를 넘으므로 신규 ACK를 거절한다. 하나의 closure 성공 사례를 모든 미래의 크기 보장으로 오인하지 않는다.
 - WAL payload16MiB/+1과 RPC body16MiB/+1, 예약 정확한 B/B−1, 일반 여유0일 때 전용 크레딧 사용을 검사한다. framing 경계 fixture는 canonical JournalRecord **형상** 검사이며 decoded engine state나 실제 IO 수락을 주장하지 않는다.
+- SEC-65-01 회귀는 BMP·보충 평면·제어문자·quote/backslash·혼합 Text의0/1/255/256 code points,257 거절, 전체 state/result→base64 WAL의 실제 bytes≤Smax/Rmax/Jmax, allocation 반올림 후 B 및 B−1/기존 전용 예약을 검사한다. Security의 원 schema-valid128901B state를 그대로 재구성하며 경제 실행 trace나 실제 공간 부족 재현으로 주장하지 않는다. 중첩 receipt/정정/미래 evidence의 최악 Text도 포함한다.
 
 실제 fsync/preallocation/ENOSPC/crash/replay, 타 프로세스 경쟁, 실제 RPC/SDK 의미 검증과 C/D/F/G/J 제품 검증은 NOT_RUN이다. Exchange가 exact 승인 head/tree/contract/config/vector/lock을 소비하고 자기 allocator·엔진 구현으로 이를 입증해야 전체 크기 durable ACK와 D 인계를 완료할 수 있다. Security→QA 두 승인 전 NUS-56 blocker를 해제하지 않는다.

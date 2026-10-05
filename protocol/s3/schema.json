@@ -34,7 +34,8 @@
     },
     "Text": {
       "type": "string",
-      "maxLength": 256
+      "maxLength": 256,
+      "description": "At most 256 Unicode code points, not UTF-16 code units or UTF-8 bytes. Canonical ASCII JSON uses at most 12 bytes per code point plus 2 quotes (3074 bytes). No normalization or truncation; see SCHEMA.md and STORAGE.md."
     },
     "Context": {
       "type": "object",

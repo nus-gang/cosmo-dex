@@ -308,6 +308,8 @@ if __name__=='__main__':
     check_state_hash()
     from check_evidence_capacity import run as check_evidence_capacity
     check_evidence_capacity()
+    from check_unicode_capacity import run as check_unicode_capacity
+    check_unicode_capacity()
     m=manifest()
     if sys.argv[1:]==['--seal']:
         (S3/'manifest.json').write_text(json.dumps(m,ensure_ascii=False,indent=2)+'\n')

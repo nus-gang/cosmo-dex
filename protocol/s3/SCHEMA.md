@@ -6,6 +6,8 @@
 
 S2와 같이 canonical JSON은 ASCII escape, key 사전순, 공백0, JSON boolean/null, 정수 문자열이다. 배열은 의미상 지정 순서를 보존한다. raw bytes는 canonical padded base64, hash는 lowercase hex64. hash는 length frame을 쓴다. `snapshot_id=SHA256(frame(NUS/S3/CHAIN_SNAPSHOT/V1, snapshot_id만 제거한 ChainSnapshot))`; state/result/view/evidence hash 도메인은 각각 `NUS/S3/ENGINE_STATE/V1`, `NUS/S3/COMMAND_RESULT/V1`, `NUS/S3/VIEW/V1`, `NUS/S3/RESOLUTION_EVIDENCE/V1`. domain을 생략한 JSON SHA와 교환하지 않는다. contract manifest 집합 해시는 별도 manifest 정의를 따른다.
 
+Text의 `maxLength:256`은 Unicode code point 수이며 UTF-16 code unit·UTF-8 byte 수가 아니다. 보충 평면 문자도 한 code point로 센다. canonical ASCII escape는 소문자 hex를 쓰며 U+10000..U+10FFFF는 surrogate pair 두 escape다. 예를 들어 U+1F600 하나의 JSON은 `"\ud83d\ude00"`14B,256개는3074B다. BMP/제어문자는 최대6B, quote/backslash/짧은 제어 escape는2B이므로 일반 문자열 상한은 `2+12*maxLength`다. 정규화·문자 삭제·trim으로 상한을 맞추지 않는다. 허용 문자 집합과 canonical bytes는 기존 rc3에서 바꾸지 않고 용량 계산만 이 정의에 맞춘다. [JSON Schema maxLength](https://json-schema.org/draft/2020-12/json-schema-validation#section-6.3.1)와 실제 검사 Python3.14.0의 [ASCII encoder](https://github.com/python/cpython/blob/v3.14.0/Lib/json/encoder.py#L46-L64)를 대조했다. 언어별 문자열 `.length`를 그대로 공통 길이 판정에 사용하지 않는다.
+
 Context는 chain/genesis/market/market config와 contract/config hash를 모두 묶는다. 모든 저장키의 최상위 namespace는 `(chain_id,genesis_hash,market_id)`다. 유일성 키와 값은 다음과 같다.
 
 | 객체 | 키 | 보존 값/원자성 |

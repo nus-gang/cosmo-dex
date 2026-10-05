@@ -20,6 +20,8 @@ Python 표준라이브러리만 사용한다. Go 검사 모듈은 기존 `chain/
 
 검사 범위는 정수/fee·C_start gross·예상 장부·만료와 timeout 등호·과거 receipt·불명 보류·폐쇄·의존성/원자 공개 모델·정규 bytes/hash·실제 ML-DSA·manifest다. 1000/1001 fills의 저장 predecessor를 domain별 최신 목록과 대조하고, 압축 전 전체 의존 그래프와 모든 노드의 도달 집합이 같은지도 검사한다. [rc2 정정 검증](evidence/nus64-verification.json)과 [rc1 작성자 검증 원문](evidence/verification.txt)과 [실행 환경·구조화 결과](evidence/verification.json)를 보존한다. actual chain/IO/브라우저/main 인수는 NOT_RUN이다. oracle의 의도적 잘못된 예상값 검출을 제품 결함 주입 PASS로 부르지 않는다.
 
+NUS-65의 이전 rc3 검증은 [원 기록](evidence/nus65-verification.json)에 보존한다. Security SEC-65-01 수정 뒤의 용량 수치와 재검증은 [Unicode 수정 결과](evidence/nus65-sec65-01-verification.json)와 [원시 로그](evidence/nus65-sec65-01-verification.txt)를 사용한다. 최대 누적 fixture의 modeled 예약 B는11,028,652,032B이며 이전9,558,827,008B를 대체한다. 실제 공간 할당이나 비용 약속이 아니다.
+
 ## fixture 구성
 
 | 파일 | 입력/예상값 |
@@ -34,7 +36,7 @@ Python 표준라이브러리만 사용한다. Go 검사 모듈은 기존 `chain/
 | correction.json/correction-history.json | F1→F2→F3 폐쇄, F4 독립, F0 COMMITTED 유지; 누적1001/201 경계 |
 | schema-vectors.json | strict envelope와 실패예상. 11.. contract hash/합성 block proof는 runtime 권위가 아님 |
 | correction-state-hash.json | 완전한 EngineState 1회/2회 정정·WAL result bytes/hash·누적 재생과 변조 거절; 실제 체인/IO 증거 아님 |
-| evidence-capacity.json/evidence-objects/ | rc3 raw bytes 참조, 3MiB 재현 정정, 정확한 크기·예약 경계; 모의 저장 이력과 실제 제품 실행을 구분 |
+| evidence-capacity.json/evidence-objects/ | rc3 raw bytes 참조, 3MiB 재현 정정, 정확한 크기·예약 경계; SEC-65-01 Unicode Text·Smax/Rmax/Jmax/B 회귀; 모의 저장 이력과 실제 제품 실행을 구분 |
 | capacity.json | 실제 byte길이/hash와 고정 gas 모델·경계값 |
 
 `manifest.json`은 protocol/v1·s1·s2 전체 상속 파일, S3 전체(자기 자신 제외), 고정 language lock을 합친 SHA256 manifest다. 집합 hash는 경로순으로 `sha256 + 두 공백 + repo-relative path + LF`를 연결해 SHA256한다. fee0/fee25 config hash는 각각 고정되며 합성 genesis도 분리했다. runtime genesis는 여기서 null/NOT_RUN이며 B/F가 실제 원본으로 별도 채워야 한다. 후보 manifest를 runtime 허가로 해석하지 않는다.

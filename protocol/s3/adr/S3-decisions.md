@@ -84,3 +84,11 @@ rc1은 EngineState 안의 Correction.after_state_hash가 해당 EngineState 자�
 새 s3/3 context·새 저장소에 한정한다. RPC16MiB/TxRaw139264B/metadata256KiB, snapshot 목록128, batch당 raw80/TxRaw5/metadata96 및 drain40기록을 명시적 입력/출력 경계로 정한다. 미래 proof 크기를 평균/압축률로 추정하지 않는다. 전체 후보 이력, 최대N회 정정과 모든 survivor 목록까지 보수적으로 계산하며 계산·예약 실패는 신규 ACK 이전 거절이다. 과거 ACK에는 전용 예약을 유지한다. 누적1001 fills를 동시 pending1001 허가로 해석하지 않는다. 최적화되지 않은 큰 예약 비용은 profile/fixture에 노출하고 자원 확보를 전제하지 않는다.
 
 구현 owner는 Exchange(엔진/allocator), Settlement(원 evidence/worker), Chain(변경된 Context와 기존 compact receipt), SRE(실제 파일시스템 보장)다. CTO는 공통 규범·schema·fixture만 변경한다. 제품 범위·예산·version/lock 확대0. 실제 chain/IO 검증을 명세 oracle PASS로 대신하지 않는다. 세부 수치·DAG·재생·경계 및 제한은 STORAGE.md가 규범이다.
+
+### SEC-65-01 / Unicode 최악 길이 정정
+
+2026-10-05 · CTO · 목표: NUS-65 Security→QA 재제출 전. Security는 후보 `97f8338096bb7692042fd49bda56e9972a8316b4`에서 Text256의 예측1538B/실제3074B, 전체 schema-valid state의 예측127518B/실제128901B를 독립 재현했다. 6배 상한은 ASCII encoder의 보충 평면 surrogate pair12B를 누락했다. 이는 상한 명제의 반례이며 경제 실행 경로·실제16MiB 넘침·자산 손실 재현은 아니다.
+
+허용 Unicode나 원 bytes를 줄이는 대신 `maxLength`의 code point 단위를 명시하고 일반 문자열을 `2+12*maxLength`로 계산한다. 1배 최적화는 정확한 decimal/base64 pattern에만 적용하고 hex64는66B다. 임의 pattern과 `Hash` 이름만으로 ASCII를 추정하지 않는다. Text schema에는 설명만 보완하므로 새 wire/context version은 필요하지 않다. 미승인 rc3 후보를 새 head/tree/contract/vector manifest로 대체하고 원 검토·검증 이력은 보존한다.
+
+Security 원 state와 BMP/보충 평면/escape의 최대값을 실제 encoder로 직렬화해 Smax/Rmax/Jmax/B를 비교한다. 누적1000/1001 fills·200/201 orders·0/25bps, WAL/RPC16MiB/+1과 전용 예약 B/B−1도 다시 검사한다. 검토 소유자는 Security→QA이며 두 승인 전 NUS-56 blocker와 전체 크기 durable ACK/D 인계 제한을 유지한다.

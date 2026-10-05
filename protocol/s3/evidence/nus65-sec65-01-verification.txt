@@ -1,0 +1,35 @@
+python3 protocol/s3/tools/check.py --seal (pre-final evidence seal)
+PASS S3 correction hash: 2 cumulative states, 4 replay steps, 14 field sensitivities, 17 rejected mutations; actual chain/WAL IO NOT_RUN
+PASS rc3 evidence/capacity: 3MiB raw -> 99671B WAL; 15 negatives; RPC and WAL 16MiB/+1; four cumulative histories; reservation boundaries; all-pending unsafe admission rejected; filesystem/chain IO NOT_RUN
+PASS SEC-65-01 Unicode capacity: 52 text cases, 4 full S/R/J/B shapes, 9 nested shapes; Text 3074B, B/B-1 and prior reservation boundaries; chain/allocator IO NOT_RUN
+SEALED df6c671d69a99c6d5dc16ce0e13b052755830a8d0f94515e2dec5e139e027048
+PASS S3 specification oracle: 13247 checks; actual chain/IO/browser/main QA NOT_RUN
+
+GOMODCACHE=<run-scratch>/go-mod-cache GOCACHE=<run-scratch>/go-cache GOTMPDIR=<run-scratch>/go-temp go run -mod=readonly ../protocol/s3/tools/crypto.go check ../protocol/s3 (cwd=chain)
+go: downloading github.com/cloudflare/circl v1.6.3
+go: downloading golang.org/x/sys v0.28.0
+PASS S3 crypto + inherited Go strict codec: 284 checks; SDK execution/Rust/TS product NOT_RUN
+
+Security original unicode_repro.py, rejected candidate:
+{
+  "text_schema": "PASS",
+  "text_bound": 1538,
+  "text_actual": 3074,
+  "state_schema": "PASS",
+  "state_bound": 127518,
+  "state_actual": 128901,
+  "state_underestimate": 1383,
+  "limitation": "schema-valid adversarial state; reachable economic trace/actual IO NOT_RUN"
+}
+Corrected candidate:
+{
+  "text_schema": "PASS",
+  "text_bound": 3074,
+  "text_actual": 3074,
+  "state_schema": "PASS",
+  "state_bound": 129054,
+  "state_actual": 128901,
+  "state_underestimate": -153,
+  "limitation": "schema-valid adversarial state; reachable economic trace/actual IO NOT_RUN"
+}
+PASS negative control: prior 6-byte oracle rejected by new Unicode regression: supplementary_start, 255 code points, actual 3062B.
