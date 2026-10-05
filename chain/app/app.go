@@ -165,12 +165,13 @@ func DecodeGenesis(raw []byte) (Genesis, error) {
 
 type App struct {
 	*baseapp.BaseApp
-	Auth        authkeeper.AccountKeeper
-	Bank        bankkeeper.BaseKeeper
-	Exchange    ex.Keeper
-	Codec       *codec.ProtoCodec
-	TxConfig    client.TxConfig
-	GenesisHash []byte
+	Auth           authkeeper.AccountKeeper
+	Bank           bankkeeper.BaseKeeper
+	Exchange       ex.Keeper
+	Codec          *codec.ProtoCodec
+	TxConfig       client.TxConfig
+	GenesisHash    []byte
+	validateS3Init func(*abci.RequestInitChain) error
 }
 
 func Encoding() (*codec.ProtoCodec, client.TxConfig) {
@@ -191,6 +192,10 @@ func New(db dbm.DB, hash []byte, logger log.Logger) (*App, error) {
 	return NewForChain(db, hash, logger, ex.ChainID)
 }
 func NewForChain(db dbm.DB, hash []byte, logger log.Logger, chainID string) (*App, error) {
+	return newForChain(db, hash, logger, chainID, nil)
+}
+
+func newForChain(db dbm.DB, hash []byte, logger log.Logger, chainID string, binding *ex.S3Binding) (*App, error) {
 	if chainID != ex.ChainID && chainID != ex.S2ChainID && chainID != ex.S3ChainID {
 		return nil, fmt.Errorf("WRONG_CHAIN")
 	}
@@ -221,7 +226,7 @@ func NewForChain(db dbm.DB, hash []byte, logger log.Logger, chainID string) (*Ap
 	bank := bankkeeper.NewBaseKeeper(c, runtime.NewKVStoreService(bk), auth, map[string]bool{authtypes.NewModuleAddress(ex.Module).String(): true}, authority, logger)
 	cons := consensuskeeper.NewKeeper(c, runtime.NewKVStoreService(ck), authority, nil)
 	b.SetParamStore(cons.ParamsStore)
-	a := &App{b, auth, bank, ex.Keeper{Key: ek, Bank: bank, Codec: c, GenesisHash: bytes.Clone(hash), Network: chainID}, c, tx, bytes.Clone(hash)}
+	a := &App{BaseApp: b, Auth: auth, Bank: bank, Exchange: ex.Keeper{Key: ek, Bank: bank, Codec: c, GenesisHash: bytes.Clone(hash), Network: chainID, S3Binding: binding}, Codec: c, TxConfig: tx, GenesisHash: bytes.Clone(hash)}
 	ext.RegisterMsgServer(b.MsgServiceRouter(), a.Exchange)
 	s3.RegisterMsgServer(b.MsgServiceRouter(), a.Exchange)
 	ext.RegisterQueryServer(b.GRPCQueryRouter(), queryServer{a})
@@ -262,9 +267,19 @@ func NewForChain(db dbm.DB, hash []byte, logger log.Logger, chainID string) (*Ap
 		return nil, e
 	}
 	if b.LastBlockHeight() > 0 {
-		stored := b.CommitMultiStore().GetKVStore(ek).Get([]byte("genesis"))
-		if !bytes.Equal(stored, hash) || chainID != string(b.CommitMultiStore().GetKVStore(ek).Get([]byte("chain_id"))) {
+		store := b.CommitMultiStore().GetKVStore(ek)
+		stored := store.Get([]byte("genesis"))
+		if !bytes.Equal(stored, hash) || chainID != string(store.Get([]byte("chain_id"))) {
 			return nil, fmt.Errorf("genesis hash differs from persisted state")
+		}
+		if !bytes.Equal(store.Get([]byte("s3_binding")), binding.Bytes()) {
+			return nil, fmt.Errorf("S3_BINDING_MISMATCH")
+		}
+		if binding != nil {
+			var cfg ex.S3Config
+			if json.Unmarshal(store.Get(a.Exchange.S3Key("config")), &cfg) != nil || cfg.FeeBPS != binding.FeeBPS || cfg.FeeVersion != 1+binding.FeeBPS/25 {
+				return nil, fmt.Errorf("S3_BINDING_MISMATCH")
+			}
 		}
 	}
 	return a, nil

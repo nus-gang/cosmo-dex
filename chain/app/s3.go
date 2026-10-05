@@ -31,6 +31,17 @@ type S3Genesis struct {
 	ConfigHash   string   `json:"config_hash"`
 }
 
+// Reject a different local-demo genesis before BaseApp initializes its caches
+// and consensus store, so a rejected request cannot poison a later valid init.
+func (a *App) InitChain(req *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
+	if a.validateS3Init != nil {
+		if err := a.validateS3Init(req); err != nil {
+			return nil, err
+		}
+	}
+	return a.BaseApp.InitChain(req)
+}
+
 func uniqueValue(d *json.Decoder) error {
 	v, e := d.Token()
 	if e != nil {
@@ -86,6 +97,9 @@ func strictJSON(raw []byte, v any) error {
 	return nil
 }
 func DecodeS3Genesis(raw []byte) (S3Genesis, error) {
+	return decodeS3Genesis(raw, nil)
+}
+func decodeS3Genesis(raw []byte, binding *ex.S3Binding) (S3Genesis, error) {
 	var g S3Genesis
 	if e := strictJSON(raw, &g); e != nil {
 		return g, e
@@ -112,7 +126,14 @@ func DecodeS3Genesis(raw []byte) (S3Genesis, error) {
 	} else if g.FeeBPS != "0" {
 		return g, fmt.Errorf("INVALID_FEE_PROFILE")
 	}
-	if g.ContractHash != ex.S3ContractHash || g.ConfigHash != config {
+	contractHash := ex.S3ContractHash
+	if binding != nil {
+		if g.FeeBPS != strconv.FormatUint(binding.FeeBPS, 10) {
+			return g, fmt.Errorf("INVALID_FEE_PROFILE")
+		}
+		contractHash, config = binding.ContractHash, binding.ConfigHash
+	}
+	if g.ContractHash != contractHash || g.ConfigHash != config {
 		return g, fmt.Errorf("CONTEXT_MISMATCH")
 	}
 	seen := map[string]bool{}
@@ -121,7 +142,9 @@ func DecodeS3Genesis(raw []byte) (S3Genesis, error) {
 			if len(raw) != 1952 {
 				return g, fmt.Errorf("KEY_LENGTH")
 			}
-			addr := sdk.AccAddress((&mldsa65.PubKey{Key: raw}).Address()).String()
+			// Compare raw addresses before app encoding is initialized. Calling
+			// AccAddress.String here would cache the process's old Bech32 prefix.
+			addr := string((&mldsa65.PubKey{Key: raw}).Address())
 			if seen[addr] {
 				return g, fmt.Errorf("DUPLICATE_ACCOUNT")
 			}
@@ -131,7 +154,12 @@ func DecodeS3Genesis(raw []byte) (S3Genesis, error) {
 	return g, nil
 }
 func (a *App) initS3(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
-	g, e := DecodeS3Genesis(req.AppStateBytes)
+	if a.validateS3Init != nil {
+		if e := a.validateS3Init(req); e != nil {
+			return nil, e
+		}
+	}
+	g, e := decodeS3Genesis(req.AppStateBytes, a.Exchange.S3Binding)
 	if e != nil {
 		return nil, e
 	}
@@ -170,6 +198,9 @@ func (a *App) initS3(ctx sdk.Context, req *abci.RequestInitChain) (*abci.Respons
 	s := ctx.KVStore(a.Exchange.Key)
 	s.Set([]byte("genesis"), a.GenesisHash)
 	s.Set([]byte("chain_id"), []byte(ex.S3ChainID))
+	if binding := a.Exchange.S3Binding.Bytes(); binding != nil {
+		s.Set([]byte("s3_binding"), binding)
+	}
 	for _, d := range []string{ex.Base, ex.Quote, ex.Gas} {
 		s.Set([]byte("genesis_supply/"+d), []byte(a.Bank.GetSupply(ctx, d).Amount.String()))
 	}

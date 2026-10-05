@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"reflect"
 	"sort"
 	"strconv"
 
@@ -23,6 +24,28 @@ type S3Config struct {
 	FeeBPS     uint64
 	FeeVersion uint64
 }
+
+// S3Binding is supplied only by the explicit, build-tagged local-demo verifier.
+// Guard contains the immutable canonical guard bytes, not a caller's hash claim.
+// Standard S3 keeps a nil binding and its original fixed contract/profile.
+type S3Binding struct {
+	ContractHash string
+	ConfigHash   string
+	FeeBPS       uint64
+	Guard        string
+}
+
+func (b *S3Binding) Bytes() []byte {
+	if b == nil {
+		return nil
+	}
+	raw, err := json.Marshal(b)
+	if err != nil {
+		panic(err)
+	}
+	return raw
+}
+
 type LastBatch struct {
 	Seq  uint64
 	Hash string
@@ -103,6 +126,9 @@ func (k Keeper) Total(ctx sdk.Context, denom string) AssetTotal {
 }
 func (k Keeper) Context(ctx sdk.Context) map[string]string { return k.context(k.Config(ctx)) }
 func (k Keeper) context(c S3Config) map[string]string {
+	if k.S3Binding != nil {
+		return map[string]string{"service_schema": "s3/3", "chain_id": S3ChainID, "genesis_hash": hex.EncodeToString(k.GenesisHash), "contract_hash": k.S3Binding.ContractHash, "config_hash": k.S3Binding.ConfigHash, "market_id": S3Market, "market_config_version": "1"}
+	}
 	config := S3ConfigHash
 	if c.FeeBPS == 25 {
 		config = S3Fee25ConfigHash
@@ -268,7 +294,7 @@ func (k Keeper) StoredReceipt(ctx sdk.Context, seq uint64, last LastBatch) (*S3R
 		return nil, S3Error("RECEIPT_INCONSISTENCY")
 	}
 	var r S3Receipt
-	if json.Unmarshal(raw, &r) != nil || r.Batch.Seq != strconv.FormatUint(seq, 10) || r.Context["genesis_hash"] != hex.EncodeToString(k.GenesisHash) || r.Context["chain_id"] != S3ChainID || r.Context["market_id"] != S3Market || seq == last.Seq && r.Batch.Hash != last.Hash {
+	if json.Unmarshal(raw, &r) != nil || r.Batch.Seq != strconv.FormatUint(seq, 10) || !reflect.DeepEqual(r.Context, k.Context(ctx)) || seq == last.Seq && r.Batch.Hash != last.Hash {
 		return nil, S3Error("RECEIPT_INCONSISTENCY")
 	}
 	if r.Disposition != "COMMITTED" && r.Disposition != "VOID" {

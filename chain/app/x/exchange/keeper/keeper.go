@@ -33,6 +33,7 @@ type Keeper struct {
 	Codec       codec.Codec
 	GenesisHash []byte
 	Network     string
+	S3Binding   *S3Binding
 }
 type Position struct {
 	Amount string `json:"exchange_atoms"`
