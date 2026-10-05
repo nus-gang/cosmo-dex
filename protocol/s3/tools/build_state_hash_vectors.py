@@ -1,3 +1,4 @@
+from evidence import put, TX, JSON, verify_graph
 """Author-only synthetic full-state hash fixtures; no runtime or WAL IO claim."""
 import copy
 from codec import S3, read, write, canon, sha, frame, b64, encode
@@ -8,7 +9,7 @@ def digest(domain, value):
 
 
 def main():
-    ctx = dict(service_schema='s3/2', chain_id='nus-s3-dev-1',
+    ctx = dict(service_schema='s3/3', chain_id='nus-s3-dev-1',
                genesis_hash=sha((S3/'vectors/genesis-fixture.bin').read_bytes()),
                contract_hash='11'*32, config_hash=sha((S3/'profile.json').read_bytes()),
                market_id='DEVBASE/DEVQUOTE', market_config_version='1')
@@ -103,12 +104,29 @@ def main():
         identity = identities[i]
         snapshot = snapshots[i+1]
         raw = canon(dict(scope='SYNTHETIC_CLOSE_TX', seq=str(i+1)))
+        failed_raw=canon(dict(scope='SYNTHETIC_FAILED_SETTLE',seq=str(i+1)))
+        failed_tx=dict(tx_hash=sha(failed_raw),raw_tx_ref=put(failed_raw,TX),height=before['chain_snapshot']['height'],
+            tx_index='0',block_hash=before['chain_snapshot']['block_hash'],abci_code='1',codespace='synthetic',
+            gas_wanted='10000000',gas_used='1',
+            raw_block_response_ref=put(canon(dict(scope='SYNTHETIC_FAILURE_BLOCK',seq=str(i+1)))),
+            raw_results_response_ref=put(canon(dict(scope='SYNTHETIC_FAILURE_RESULTS',code='1'))))
+        attempt=dict(context=ctx,batch=identity,attempt_no='1',kind='SETTLE',state='INCLUDED_FAILURE',
+            operator=before['chain_snapshot']['operator'],operator_epoch='1',account_number='0',account_sequence=str(i),
+            timeout_height=str(208+i),first_possible_height=str(200+i),gas_limit='10000000',fee_atoms='20000',
+            raw_tx_ref=failed_tx['raw_tx_ref'],tx_hash=failed_tx['tx_hash'],broadcast_count='1',
+            confirmed_tx=failed_tx,absence_proof=None)
+        proof=dict(context=ctx,batch=identity,observed_snapshot=before['chain_snapshot'],settle_attempts=[attempt],
+            batch_lookup=dict(context=ctx,observed_height=before['chain_snapshot']['height'],
+                snapshot_id=before['chain_snapshot']['snapshot_id'],requested_seq=identity['batch_seq'],
+                last_seq=before['chain_snapshot']['last_batch_seq'],last_hash=before['chain_snapshot']['last_batch_hash'],
+                status='NOT_FOUND_AT_HEIGHT',receipt=None),failed_tx_hash=failed_tx['tx_hash'],rejection_code='EXPIRED')
         receipt = dict(context=ctx, batch=identity, disposition='VOID', batch_receipt_v2=None,
-            failed_tx_hash=sha(('failed'+str(i+1)).encode()), resolution_evidence_hash=sha(('proof'+str(i+1)).encode()),
-            terminal_tx=dict(tx_hash=sha(raw), raw_tx=b64(raw), height=snapshot['height'], tx_index='0',
+            failed_tx_hash=proof['failed_tx_hash'], resolution_evidence_hash=digest('RESOLUTION_EVIDENCE',proof),
+            resolution_evidence_ref=put(canon(proof),JSON),
+            terminal_tx=dict(tx_hash=sha(raw), raw_tx_ref=put(raw, TX), height=snapshot['height'], tx_index='0',
                 block_hash=snapshot['block_hash'], abci_code='0', codespace='', gas_wanted='3000000', gas_used='1',
-                raw_block_response=b64(canon(dict(scope='SYNTHETIC_BLOCK',height=snapshot['height']))),
-                raw_results_response=b64(canon(dict(scope='SYNTHETIC_RESULTS',code='0')))))
+                raw_block_response_ref=put(canon(dict(scope='SYNTHETIC_BLOCK',height=snapshot['height']))),
+                raw_results_response_ref=put(canon(dict(scope='SYNTHETIC_RESULTS',code='0')))))
         seq = str(5+i)
         record = dict(context=ctx, void_batch=identity, resolution_receipt=receipt,
             chain_snapshot_id=snapshot['snapshot_id'], chain_height=snapshot['height'],
@@ -154,7 +172,7 @@ def main():
                 block_age_ms='0',query_latency_ms='0',last_success_age_ms='0',catching_up=False,fresh=True),
             before_state_hash=before_hash,after_state_hash=after_hash,result_hash=result_hash,
             state_json=b64(canon(state)),result_json=b64(canon(result)),
-            external_event_ids=[record['correction_id']],evidence_refs=[])
+            external_event_ids=[record['correction_id']],evidence_refs=verify_graph([state,result]))
         fixture['steps'].append(dict(id='correction-'+str(i+1), before_state_hash=before_hash,
             after_state=copy.deepcopy(state),after_state_hash=after_hash,result=result,result_hash=result_hash,
             state_json=b64(canon(state)),result_json=b64(canon(result)),

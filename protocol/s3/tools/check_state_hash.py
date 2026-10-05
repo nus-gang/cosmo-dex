@@ -23,7 +23,9 @@ def hash_value(kind, value):
                           struct.pack('>Q', len(payload)) + payload).hexdigest()
 
 
-def verify_step(before, step, defs, validate):
+def verify_step(before, step, defs, validate, objects=None):
+    from evidence import verify_graph, resolve, OBJECTS
+    object_store=OBJECTS if objects is None else objects
     after, result = step['after_state'], step['result']
     validate(after, defs['EngineState'], defs)
     validate(result, defs['CommandResult'], defs)
@@ -37,6 +39,7 @@ def verify_step(before, step, defs, validate):
     validate(journal,defs['JournalRecord'],defs)
     for field in ['before_state_hash','after_state_hash','result_hash','state_json','result_json']:
         assert journal[field]==step[field]
+    assert journal['evidence_refs']==verify_graph([after,result],object_store)
     assert journal['context']==after['context'] and journal['command_seq']==result['command_seq']
     assert journal['snapshot']==after['chain_snapshot']
     assert after['context'] == before['context']
@@ -46,6 +49,8 @@ def verify_step(before, step, defs, validate):
     snapshot_id = snapshot.pop('snapshot_id')
     assert snapshot_id == hash_value('CHAIN_SNAPSHOT', snapshot) == result['snapshot_id']
     assert result['observed_height'] == snapshot['height']
+    for field in ['applied_batches','resolution_receipts']:
+        assert after[field][:len(before[field])]==before[field]
     old = before['corrections']
     assert after['corrections'][:len(old)] == old
     records = after['corrections'][len(old):]
@@ -70,7 +75,19 @@ def verify_step(before, step, defs, validate):
         assert record['root_fill_ids'] == sorted(set(record['root_fill_ids']))
         assert record['root_fill_ids'] == record['void_batch']['fill_ids']
         assert record['resolution_receipt']['batch'] == record['void_batch']
-        assert record['resolution_receipt']['disposition'] == 'VOID'
+        receipt=record['resolution_receipt']
+        assert receipt['disposition'] == 'VOID'
+        proof=json.loads(resolve(receipt['resolution_evidence_ref'],object_store))
+        validate(proof,defs['ResolutionEvidence'],defs)
+        assert receipt['resolution_evidence_hash']==hash_value('RESOLUTION_EVIDENCE',proof)
+        assert receipt['failed_tx_hash']==proof['failed_tx_hash']
+        assert receipt['batch']==proof['batch'] and receipt['context']==proof['context']
+        assert receipt in after['resolution_receipts']
+        applied=[a for a in after['applied_batches'] if a['batch_id']==receipt['batch']['batch_id']]
+        assert len(applied)==1 and applied[0]['receipt_hash']==hashlib.sha256(canonical(receipt)).hexdigest()
+        for tx in [receipt['terminal_tx'],proof['settle_attempts'][0]['confirmed_tx']]:
+            assert tx['tx_hash']==hashlib.sha256(resolve(tx['raw_tx_ref'],object_store)).hexdigest()
+
     # Fixed model has two disjoint fills, each fully matched, fee 0 and no open remainder.
     ids=set(result['corrected_fill_ids'])
     for previous,current in zip(before['fills'],after['fills']):
@@ -168,6 +185,10 @@ def run():
     mutations.append(('duplicate application',mutant))
     mutant=copy.deepcopy(second);mutant['after_state']['context']['service_schema']='s3/1'
     mutations.append(('old service schema',mutant))
+    mutant=copy.deepcopy(second);mutant['after_state']['context']['service_schema']='s3/2'
+    mutations.append(('old rc2 service schema',mutant))
+    mutant=copy.deepcopy(second);mutant['journal_record']['evidence_refs']=[]
+    mutations.append(('missing evidence closure',mutant))
     mutant=copy.deepcopy(second);mutant['result_json']=base64.b64encode(json.dumps(mutant['result']).encode()).decode()
     mutations.append(('noncanonical result bytes',mutant))
     mutant=copy.deepcopy(second);mutant['result_hash']='00'*32
