@@ -23,7 +23,9 @@
 
 기존 `correction.reserve`16MiB 파일을 지우고 일반 공간으로 append하는 부분은 이전 storage fault 실험으로 남긴다. **이는 rc3 전용 예약 구현이 아니다.** `Journal::append`의 Commit은 해당 marker 증거이고, 공개 durable ACK를 허용하는 반환값이 아니다. S3 executable/REST/worker는 여기에 연결하지 않았다.
 
-[NUS-66](/NUS/issues/NUS-66)의 SRE가 현재 APFS 또는 기존 무료 격리 환경의 실제 blocks·metadata·directory 공간 예약/소모·일반 free=0·경쟁 writer·crash 재생 방법을 마련하고 CTO→Security 검토를 받는다. 현재 APFS에서 지원 근거를 확보하지 못했고 기본/desktop-linux Docker daemon에도 연결되지 않았다. Exchange는 승인 환경을 받아 물리 allocator·reservation ledger·단일 publisher·bootstrap/ACK 대사·전체 semantic crash matrix를 구현·시험한 뒤 원 업무의 CTO→Security 검토로 보낸다. 계산 B, sparse 파일, 일반 reserve 삭제를 대신 쓰지 않는다.
+[NUS-66](/NUS/issues/NUS-66)은 CTO→Security가 저장 backend 지원 미입증 조사 보고서를 승인하여 완료했다. 64MiB APFS image에서 사전 할당8MiB의 같은 inode 소모는 일반 available458 blocks 조건에서 성공했으며, free=0·8192B metadata 상한·경쟁 writer·실제 B/B−1·reservation ledger crash는 NOT_RUN이다. 따라서 backend 지원 gate는 여전히 FAIL이다. Docker daemon 접속 실패도 조사 당시 관측이다.
+
+후속 [NUS-67](/NUS/issues/NUS-67)에서 CTO가 전용 slot의 같은 inode 소모, metadata 상한, WAL/allocator commit 결합과 지원 gate를 고정하고 Security→QA 검토를 받는다. 설계 제안과 승인 원 plan을 initialPlan revision `a0b7f122-f34a-4c7f-9b10-897e7de7590f`로 전달했다. Exchange는 해당 exact 설계를 받아 물리 allocator·reservation ledger·단일 publisher·bootstrap/ACK 대사·전체 semantic crash matrix를 구현·시험한 뒤 원 업무의 CTO→Security 검토로 보낸다. 계산 B, sparse 파일, 일반 reserve 삭제를 지원 근거로 사용하지 않는다.
 
 ## 재현
 

@@ -62,7 +62,7 @@
     "docker_default": "connection failed: /var/run/docker.sock absent",
     "docker_desktop_linux": "Cannot connect to Docker daemon at /Users/gangdongju/.docker/run/docker.sock",
     "observation_time": "Earlier in this run; not current daemon-state claim",
-    "dedicated_allocator": "NOT_RUN; NUS-66 SRE -> CTO -> Security"
+    "dedicated_allocator": "NOT_RUN; NUS-66 investigation approved but backend gate FAIL; NUS-67 CTO design -> Security -> QA"
   },
   "not_run": [
     "dedicated_preallocation_and_reservation_ledger",
@@ -100,8 +100,8 @@
     "exchange/tests/s3_storage.rs": "b3ad847a2b0f31e6c0dccad4f61360ad287a625beb639d999ac5d2f6d22441a8"
   },
   "evidence_files_sha256": {
-    "API.md": "18360bdcc13d1a9046e6a0f8f0d8150c405707378ba270f983172955ee1b2d53",
-    "REPORT.md": "351364e063244d42de636416ec9c8e0dd2eb0ddfef9d080c72d57c5ac0bdd928",
+    "API.md": "66f33175d4534767e2bd9a2dddbe6d73ec3944a69e115fc9d2fc984d9256df2a",
+    "REPORT.md": "e733cd7bf9e8ee908975054d07d4cdf39d6860aa416ec74d2001fa20014d2202",
     "clippy.txt": "8c9402ceb675c5940f3ddf597cc7fa978eadb14fb639e0bb0c44aae7ad95f3f0",
     "contract-oracle.txt": "489b88b364296502a4448833b753feb29b1dda55bb72ee8f6db858cdd929c03b",
     "oracle_inputs.py": "8cd08ecc80d021d7a3279cc031aadb7fb0d6bf4f3af4d56df3f9262dd39996e2",
@@ -234,5 +234,21 @@
     "raw/objects/ff7a9544c1d47a286c9270402fc01c407f78b2974500b68443f7b5f8fe1d277c": "ff7a9544c1d47a286c9270402fc01c407f78b2974500b68443f7b5f8fe1d277c",
     "raw/objects/ff7a9544c1d47a286c9270402fc01c407f78b2974500b68443f7b5f8fe1d277c.ref.json": "4f1066e6078679e7a89a7353e8335c72e8f57c84ee7cc96090e45f5010d55497",
     "validation.txt": "88ce1c5336f0ab426f9f5e73365c1c67b52ac0aee2b44b777c596884499391bb"
+  },
+  "handoff_update": {
+    "recorded_at": "2026-10-05T11:47:19.147873+00:00",
+    "tested_code_head": "17fb3a40dfb593dd18d15a2f317dbeb9c165eeed",
+    "tested_code_tree": "c4cddc4c231d21df6dc5e5be27869c4a36df788f",
+    "change_scope": "DOCUMENTATION_AND_STATUS_ONLY; NO_TEST_RERUN",
+    "completed_investigation_issue": "NUS-66",
+    "backend_gate": "FAIL_UNPROVEN",
+    "next_dependency_issue": "NUS-67",
+    "next_dependency_id": "0895a983-7b5a-4dab-92ff-157b55ed75ea",
+    "plan_revision": "a0b7f122-f34a-4c7f-9b10-897e7de7590f",
+    "owner": "CTO",
+    "native_review": [
+      "Security",
+      "QA"
+    ]
   }
 }

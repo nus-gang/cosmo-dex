@@ -1,6 +1,6 @@
 # NUS-56 rc3 구현·검증 진행 보고서
 
-2026-10-05 · Exchange · **저장 플랫폼 선행 업무 대기 / 전체 업무 미완료**
+2026-10-05 · Exchange · **NUS-67 allocator 설계·지원 gate 선행 / 전체 업무 미완료**
 
 [NUS-65](/NUS/issues/NUS-65) 승인 head `51ab101ff5408b873cba101129b4c06962d56cc7` / tree `2a88bdf883434c52172ba59bc82017c27e962f5c`와 Security→QA 완료를 확인하고 전용 branch에 병합했다. main 기준선 `bd9e473196ac86fdedf655b2c93e6931f54faa83`, 이전 Exchange 후보 `b8cff9be1d2f951945b559496661321284f142fb`에서 이어지는 변경이다. 최종 Exchange code/tree는 전달 `candidate.json`과 commit work product를 따른다. 공통 protocol/manifest/lock은 승인본 그대로이며 main·공유 checkout·다른 담당 branch 변경0이다.
 
@@ -23,7 +23,7 @@ rc3의 모든 raw RPC/TxRaw를 exact bytes typed ref로 바꾸고, 저장·전�
 | S2 원장/journal/sequencer/snapshot | 68 PASS | 5/14/40/9. helper1 포함. 기존 기능 회귀 |
 | clippy all-targets/all-features | PASS | -D warnings, 기존 Cargo.lock |
 | 승인 S3 oracle | 13,248 PASS | 공통 명세/fixture 결과이며 제품 시험에 합산0 |
-| 실제 전용 allocator·일반free0·경쟁 writer | NOT_RUN | NUS-66 선행, reserve 삭제 방식으로 대체0 |
+| 실제 전용 allocator·일반free0·경쟁 writer | NOT_RUN | NUS-67 설계·지원 gate 선행, reserve 삭제 방식으로 대체0 |
 | 전체 semantic crash·외부 ACK 대사·단일 publisher | NOT_RUN/미완료 | storage primitive crash와 분리 |
 | 실제 Chain/D/F/HTTP·독립 심사·main | NOT_RUN | 실제 genesis=null, 실자산0 |
 
@@ -39,7 +39,9 @@ Rust 항목107은 subprocess helper2를 포함한다. 자식 프로세스의 개
 
 기존 `correction.reserve`16MiB를 지운 뒤 일반 free에 append하는 구현은 다른 writer가 공간을 가져갈 수 있어 rc3를 충족하지 않는다. 이 경로는 과거 storage fault fixture로 명시했고 서비스 ACK에 사용하지 않는다.
 
-[NUS-66](/NUS/issues/NUS-66)에 SRE가 기존 무료 로컬 자원으로 지원 가능한 격리 storage/예약 primitive와 재현 방법을 준비하도록 위임했다. initialPlan revision `cdffc8d0-2754-41c8-a832-2bb8b4ccce29`와 CTO→Security 네이티브 review를 생성·확인했고 부모 blockedByIssueIds에 연결했다. 공통 계약 변경·새 예산·유료 자원은 위임 범위에 없다.
+[NUS-66](/NUS/issues/NUS-66)의 SRE 조사는 CTO→Security가 승인하여 완료했다. 승인 대상은 지원 미입증 조사 보고서다. 64MiB APFS image에서8MiB 사전 할당 소모는 available458 blocks 조건에서 성공했으나 free=0·8192B metadata 상한·경쟁 writer·실제 B/B−1·reservation ledger crash는 NOT_RUN이다. backend gate FAIL을 유지한다. [CTO 검토](/NUS/issues/NUS-66#document-cto-review)와 [Security 검토](/NUS/issues/NUS-66#document-security-review)는 제품 인수나 NUS-56 전체 완료를 승인하지 않았다.
+
+CTO의 후속 방향에 따라 [NUS-67](/NUS/issues/NUS-67)을 생성했다. 전용 사전 할당 slot의 같은 inode 소모·metadata 상한·WAL/allocator commit 결합·지원 gate 제안을 initialPlan revision `a0b7f122-f34a-4c7f-9b10-897e7de7590f`로 전달하고 Security→QA 네이티브 review를 확인했다. CTO가 exact 설계와 지원 판단을 고정해야 한다. Exchange는 현재 계약을 임의 변경하지 않는다. 새 예산·유료 자원·공개 배포는 범위 밖이다. 완료된 NUS-66을 미해결 blocker로 사용한 이전 문구는 이 기록으로 정정한다.
 
 Exchange는 그 승인 인계를 받아 실제 allocator·reservation ledger·단일 원자 publisher·bootstrap/외부 ACK 대사·전체 semantic crash matrix를 구현하고 검증해야 한다. 실제 receipt 연결은 이후 D/F가 수행한다. 이 업무의 최종 CTO→Security 검토는 아직 요청하지 않았고 완료를 선언하지 않는다.
 
@@ -48,3 +50,6 @@ Exchange는 그 승인 인계를 받아 실제 allocator·reservation ledger·�
 `summary.json`에 승인 contract/config/vector/lock, compiler/host 버전·명령, source/raw SHA256, PASS/NOT_RUN과 합성 genesis를 기록했다. `validation.txt`, `clippy.txt`, `contract-oracle.txt`는 최종 원시 stdout/stderr다. `raw/`에는 bootstrap·0/25bps record trace·17명령 정정 trace·60개 exact raw/typed objects와 descriptor·원서명·TX/batch/fill ID·높이·예상 diff가 있다. `oracle_inputs.py`는 승인 Python 규범을 읽기 전용으로 재현하며 protocol 파일을 생성/재봉인하지 않는다.
 
 보고서 artifact 및 patch·원시 증거 ZIP은 이 업무의 첨부와 artifact work product로 전달한다. 파일 경로만으로 인계하지 않는다.
+
+
+검증 대상 구현 commit은 `17fb3a40dfb593dd18d15a2f317dbeb9c165eeed`, tree `c4cddc4c231d21df6dc5e5be27869c4a36df788f`다. NUS-66 완료/NUS-67 인계를 반영하는 후속 변경은 문서·상태 metadata만 수정하며 위107개 검사를 새로 실행했다고 주장하지 않는다. 기존 원시 시험 기록과 소스 SHA256은 보존한다.
