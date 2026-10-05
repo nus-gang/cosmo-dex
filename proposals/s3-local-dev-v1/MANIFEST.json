@@ -1,0 +1,15 @@
+{
+  "candidate": "ALLOC-67-06/local-dev-v1",
+  "active_manifest_sha256": "3ff69e73057a2bb6dcff64820123d520b9ad3e5637abbd1ad7d38b8c1a49eb97",
+  "self_excluded": true,
+  "files_sha256": {
+    "CONTRACT.md": "93148b579e44f7e7b1dd617a5dc3c996bc321aa757572cbfbcea91d5cd0f666a",
+    "README.md": "aa8e37321428b4060713b90925d964071777cbabc6fbf028245c580913ccad62",
+    "acceptance.json": "21fed79638a1842e559b1c1f1a8a08b48ca406c38873811afc4e5805dbefb8e1",
+    "candidate.json": "265f3f402ca889172ee6136090da3ac6804d40bb92c6226893b74698e7e257b1",
+    "effective-profile-fee0.json": "3f191ced0b17538b4f755c4beda0859c00bfc41a325d5d581518eb23d7c18f41",
+    "effective-profile-fee25.json": "8719f0dcacb18268f55947afaf5d0e6fa0ea2d698509930b55925b492bb85fa1",
+    "verify.py": "174dc000da5c522b029fd0416e3c3fde8be954b550aaa69a5f456793592cb1bb"
+  },
+  "product_result": "NOT_RUN"
+}
