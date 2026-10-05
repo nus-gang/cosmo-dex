@@ -1,3 +1,4 @@
+from evidence import put, TX, refs
 """Authoring tool for public S3 fixtures; consumers run check.py, never regenerate."""
 import copy
 import sys
@@ -123,7 +124,7 @@ def finish():
     receipt=encode(receipt_fields)
     (S3/'vectors/receipt-demo.bin').write_bytes(receipt)
     write('vectors/receipt.json',{'scope':'SYNTHETIC_EXPECTATION_NOT_CHAIN_PROOF','fields':receipt_fields,'canonical_hex':receipt.hex(),'sha256':sha(receipt)})
-    context={'service_schema':'s3/2','chain_id':'nus-s3-dev-1','genesis_hash':GH,'contract_hash':'11'*32,
+    context={'service_schema':'s3/3','chain_id':'nus-s3-dev-1','genesis_hash':GH,'contract_hash':'11'*32,
       'config_hash':sha((S3/'profile.json').read_bytes()),'market_id':'DEVBASE/DEVQUOTE','market_config_version':'1'}
     identity={'operator_epoch':'1','batch_seq':'1','batch_id':demo['batch_id'],'batch_hash':demo['batch_hash'],
       'previous_batch_hash':'00'*32,'fill_ids':[f['fill_id'] for f in demo['fills']]}
@@ -132,8 +133,8 @@ def finish():
     absence={'tx_hash':tx['tx_hash'],'first_possible_height':'101','timeout_height':'108','observed_height':'109',
       'account_sequence':'0','last_batch_seq':'0','last_batch_hash':'00'*32,'receipt_absent':True,
       'blocks':[{'height':str(h),'block_hash':sha(f'synthetic block {h}'.encode()),
-        'raw_block_response':b64(canon({'scope':'SYNTHETIC','height':str(h),'txs':[]})),
-        'raw_results_response':b64(canon({'scope':'SYNTHETIC','height':str(h),'txs_results':[]}))} for h in range(101,109)],
+        'raw_block_response_ref':put(canon({'scope':'SYNTHETIC','height':str(h),'txs':[]})),
+        'raw_results_response_ref':put(canon({'scope':'SYNTHETIC','height':str(h),'txs_results':[]}))} for h in range(101,109)],
       'observation_snapshot_id':sha(b'synthetic snapshot 109')}
     negatives=[]
     for id,change in [('missing-context',lambda v:v.pop('context')),('unknown-state',lambda v:v.update(state='FINAL')),

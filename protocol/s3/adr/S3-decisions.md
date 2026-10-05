@@ -74,3 +74,13 @@ rc1은 EngineState 안의 Correction.after_state_hash가 해당 EngineState 자�
 **첫 실제 COMMITTED receipt 후 재추정:** B가 raw TX/receipt/H/index/gas_wanted-used/실제bytes/embeddedverify수/KV trace를 자기 업무에 등록하고 D가 조립→첫방송→headers→JSON→commit→apply 시간·시도횟수/가스예약·실패 원인을 등록한다. C는 journal/최대정정 frame 크기·fsync/복구측정, F는 CPU/RSS/disk와4노드환경을 추가한다. CTO는 해당 head/tree/config로 본 표의 남은 집중량·리뷰대기·실측비용을 갱신한다. 한 번의 receipt를 지속처리량으로 환산하지 않는다. gas모델 초과·최대fixture실패·배치여유 소진이면 계약변경영향·새fixture·Security→QA 재심사를 먼저 수행하고 B/C가 임의 한도를 바꾸지 않는다.
 
 실행비 보고 필드: 담당 run 경과/사용량(플랫폼 계측), CPU/RSS/disk, CI실행수·대기, 전문검토요청/시작/결정 시각. 측정 안 된 값은 `NOT_MEASURED`, 승인되지 않은 화폐 예산은 `NOT_APPROVED`로 둔다. 비용0 또는 이번주완료로 추정하지 않는다.
+
+## S3-08 / raw evidence 참조와 유한 정정 예약
+
+2026-10-05 · CTO · [NUS-65](/NUS/issues/NUS-65) · Security→QA 재심사 후보. 목표는 NUS-56 전체 크기 durable ACK/D 인계 전이며 달력 납기 확약0.
+
+승인 rc2의 raw JSON3MiB 하나가 receipt/state/correction/result와 중첩 base64 때문에 WAL16MiB를 넘었다. block_max_bytes로 JSON whitespace 크기를 추정할 수 없으므로 raw를 보존한 채 모든 크기를 typed content-addressed ref로 바꾼다. VOID receipt에는 ResolutionEvidence canonical object ref도 명시해 domain hash와 raw bytes를 재검증할 경로를 고정한다. state/record/result의 필드를 임의 제외하거나 payload 한도를 확대하지 않는다. 비순환 rc2 state/audit 계산은 유지한다.
+
+새 s3/3 context·새 저장소에 한정한다. RPC16MiB/TxRaw139264B/metadata256KiB, snapshot 목록128, batch당 raw80/TxRaw5/metadata96 및 drain40기록을 명시적 입력/출력 경계로 정한다. 미래 proof 크기를 평균/압축률로 추정하지 않는다. 전체 후보 이력, 최대N회 정정과 모든 survivor 목록까지 보수적으로 계산하며 계산·예약 실패는 신규 ACK 이전 거절이다. 과거 ACK에는 전용 예약을 유지한다. 누적1001 fills를 동시 pending1001 허가로 해석하지 않는다. 최적화되지 않은 큰 예약 비용은 profile/fixture에 노출하고 자원 확보를 전제하지 않는다.
+
+구현 owner는 Exchange(엔진/allocator), Settlement(원 evidence/worker), Chain(변경된 Context와 기존 compact receipt), SRE(실제 파일시스템 보장)다. CTO는 공통 규범·schema·fixture만 변경한다. 제품 범위·예산·version/lock 확대0. 실제 chain/IO 검증을 명세 oracle PASS로 대신하지 않는다. 세부 수치·DAG·재생·경계 및 제한은 STORAGE.md가 규범이다.

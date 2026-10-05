@@ -1,18 +1,18 @@
-# S3 실행 계약 1.0.0-rc2
+# S3 실행 계약 1.0.0-rc3
 
-2026-10-05 · CTO · [NUS-54](/NUS/issues/NUS-54). **Security → QA 재심사 후보. 두 승인 전 rc2 의존 상태/결과 조립 금지.** 승인된 [S3 계획](/NUS/issues/NUS-53#document-plan) revision `ece8cc33-a2e6-41ec-9810-0e4095fb3016`의 A 산출물이다. 제품 구현·실제 정산·main 인수 완료를 뜻하지 않는다.
+2026-10-05 · CTO · [NUS-54](/NUS/issues/NUS-54). **Security → QA 재심사 후보. 두 승인 전 rc3 의존 상태/결과 조립 금지.** 승인된 [S3 계획](/NUS/issues/NUS-53#document-plan) revision `ece8cc33-a2e6-41ec-9810-0e4095fb3016`의 A 산출물이다. 제품 구현·실제 정산·main 인수 완료를 뜻하지 않는다.
 
-[NUS-64](/NUS/issues/NUS-64)는 승인 rc1 head `0915375cac360f83d62a70587a0e7cf9c89604a1`의 상태 해시 순환 참조를 정정한다. 두 재심사 전 rc2 의존 조립은 열리지 않는다.
+[NUS-65](/NUS/issues/NUS-65)는 승인 rc2 head `d45be33029705859b07a9516fd2229a56dc66f46`의 raw receipt 중복 저장·정정 예약 경계를 정정한다. rc2의 비순환 상태/감사 해시 의미를 유지한다. 원 S3 범위의 공통 계약 변경이며 제품 범위·예산 확대0이다.
 
 ## 1. 권위·버전·환경
 
 원격 main `bd9e473196ac86fdedf655b2c93e6931f54faa83`, tree `31a0d1c65e9b71647cac6c4c45bf7e8d2dd9d7f3`에서 독립 checkout을 만들었다. S2 제품 QA는 `aad654bcf6760bc9af162b681a5996487ffc715e`의 상속 증거이며 뒤의 문서 병합을 새 제품 QA로 세지 않는다.
 
-규범은 이 문서 → `SCHEMA.md`/`batch.proto`/`messages.proto`/`schema.json` → `profile.json`/`errors.json`/fixture 순이다. 충돌은 구현자가 임의 선택할 사안이 아니라 계약 결함이며 접수를 닫고 A 수정·재심사를 요구한다. 기존 v1 rc4, S1 DIRECT, S2 매칭·WAL 규칙은 여기서 명시한 S3 확장 외 그대로다. `manifest.json`이 모든 상속 파일·규범·도구·fixture·lock 해시를 고정한다.
+규범은 이 문서 → `STORAGE.md`/`SCHEMA.md`/`batch.proto`/`messages.proto`/`schema.json` → `profile.json`/`errors.json`/fixture 순이다. 충돌은 구현자가 임의 선택할 사안이 아니라 계약 결함이며 접수를 닫고 A 수정·재심사를 요구한다. 기존 v1 rc4, S1 DIRECT, S2 매칭·WAL 규칙은 여기서 명시한 S3 확장 외 그대로다. `manifest.json`이 모든 상속 파일·규범·도구·fixture·lock 해시를 고정한다.
 
 - **사용자 OrderV1/CancelV1/WalletChallengeV1와 FillV1/FillIdentityV1의 tag/type/frame/hash를 그대로 재사용한다.** ML-DSA-65 pure, FIPS context empty, raw pk1952/signature3309, owner=SHA256(pk)[:20], nus lowercase Bech32를 유지한다. randomized 유효 서명도 허용한다. deterministic seed는 공개 fixture 생성 전용이다.
 - **BatchV2/BatchReceiptV2는 wire=2**다. VOID를 포함한 terminal 슬롯의 previous hash 의미가 확장되므로 v1과 구분한다. tag/type/layout은 v1과 같고, batch ID/HASH 도메인은 `NUS/BATCH_ID/V2`/`NUS/BATCH_HASH/V2`로 분리한다. 사용자 서명과 fill ID 도메인은 V1이다. 새 S3 genesis의 높이1에서만 v2 활성; S3 settle/close는 v1 및 다른 버전을 UNSUPPORTED_VERSION으로 거절한다. 기존 S1/S2 데이터/클라이언트의 자동 전환0. 향후 변경도 새 wire·벡터·활성 경계·CTO/Security/QA 승인이 필요하다.
-- S3 서비스 schema는 `s3/2`; 기존 `s3/1`과 S2 JSON을 자동 승격하지 않는다. 정정 저장 형식 변경이므로 새 빈 S3 journal/marker/snapshot과 rc2 context에서만 시작하며 기존 저장소를 재해시해 import하지 않는다. S3W1 외부 프레임·72B header는 유지하고 context/marker가 `s3/2`를 강제한다. 추가 SDK 메시지는 `nus.exchange.s3.v1` namespace와 `SIGN_MODE_DIRECT`를 사용하며 그 안에 strict BatchV2 bytes를 담는다. SDK 메시지 namespace의 v1과 서명된 배치 protocol_version=2는 별개다.
+- S3 서비스 schema는 `s3/3`; 기존 `s3/1`, `s3/2`와 S2 JSON을 자동 승격하지 않는다. 정정 저장 형식 변경이므로 새 빈 S3 journal/marker/snapshot과 rc3 context에서만 시작하며 기존 저장소를 재해시해 import하지 않는다. S3W1 외부 프레임·72B header는 유지하고 context/marker가 `s3/3`를 강제한다. 추가 SDK 메시지는 `nus.exchange.s3.v1` namespace와 `SIGN_MODE_DIRECT`를 사용하며 그 안에 strict BatchV2 bytes를 담는다. SDK 메시지 namespace의 v1과 서명된 배치 protocol_version=2는 별개다.
 - 단일 호스트 4 Ed25519 검증인, 신뢰 로컬 RPC, ML-DSA 사용자·운영자 TX, `DEVBASE/DEVQUOTE` 한 시장, `LOCAL_FSYNC`, `replicated=false`. `profile.json`(0bps)과 `profile-fee25.json`(25bps)는 **서로 다른 새 genesis 실행**이다. manifest가 두 config hash를 따로 고정한다. 실행 중 fee/config 변경 없음.
 - `nus-s3-dev-1`, `.runtime/s3/` 아래 별도 genesis/home/engine journal/worker journal, 새 사용자·operator·admin 키. S1/S2 home 또는 실제 genesis와 같거나 `HELD_S2` import가 요청되면 시작 거절. 테스트 공개 seed를 runtime에 넣지 않는다. 실제 genesis 원본 bytes의 SHA256을 서명·앱·API·manifest에 결합한다. `vectors/genesis-fixture.bin`은 체인 genesis가 아니다.
 - 기본 시연은 2사용자. 독립 fill/최대 배치 검증에는 최대 16등록 사용자, 별도 현재/후임 operator와 genesis admin을 허용한다. 계정별 두 자산 bank=10^12 atoms, GAS=10^9 atoms, C=0/E=0. 실제 예치만 C를 만든다. 합의키·운영키·사용자키·admin키를 재사용하지 않는다. 기존 4개 gas 배분 주소를 자동 정산 권한자로 바꾸지 않는다.
@@ -145,7 +145,7 @@ affected_order_hashes는 corrected fill 참조 주문 + 이번에 종료한 open
 
 `correction.json`은 F1→F2(같은 A 주문)→F3(C QUOTE 예약)를 정정하고 F4(B의 별도 확정 BASE에서 지출)는 보존하며 COMMITTED F0도 유지한다. 단순 owner 연결이라면 F4까지 지우는 오류를 검출한다. F4의 재원은 C_BASE이지 F1의 P_BASE가 아니다.
 
-S2 WAL fsync→marker(temp fsync/rename/dir fsync)→공개, writer lock, unknown tail 증거 보존, 복구 중 외부 방송0을 유지한다. S3 WAL magic=`S3W1`, 72B header 및 payload<=16MiB. 내부 이력·정정 ID 배열은 페이지200/1000 한도로 자르지 않는다. 신규 ACK 전에 현재 전체 이력+모든 pending correction+최대 proof refs·최대 자릿수를 포함한 최악 정정 frame 및 marker/temp 공간을 예약한다. 큰 raw RPC evidence는 content-addressed fsync 파일로 저장하고 그 hash/길이/ref가 WAL commit에 포함돼야 한다. 참조 누락시 성공 복구0. 1000/1001 fill·200/201 orders·0/25bps 경계 회귀와 16MiB/16MiB+1을 유지한다. 예약 소진은 새 ACK 전 거절, 이미 승인된 정정에는 전용 예약 사용, IO 불명은 RECOVERY_REQUIRED다.
+S2 WAL fsync→marker(temp fsync/rename/dir fsync)→공개, writer lock, unknown tail 증거 보존, 복구 중 외부 방송0을 유지한다. S3 WAL magic=`S3W1`, 72B header 및 payload<=16MiB. 내부 이력·정정 ID 배열은 페이지200/1000 한도로 자르지 않는다. 신규 ACK 전에 후보 전체 이력과 모든 pending fill의 미래 정정을 포함한 보수적 상한을 `STORAGE.md`의 숫자·계산 순서로 계산한다. 모든 크기의 raw RPC/TxRaw는 exact bytes content-addressed object로 보관하고 저장 `ConfirmedTx`/`AbsenceBlock`/`Attempt`에는 required typed EvidenceRef만 넣는다. VOID receipt의 canonical 실패 증거 ref와 기존 domain hash를 함께 검증한다. 원 bytes 재검증·전이 참조 누락 거절·fsync/replay 순서 및 전용 예약은 `STORAGE.md`가 규범이다. 단순 16MiB WAL 확대·raw trim/canonicalize·임의 필드 생략0. 누적1000/1001 fill·200/201 orders·0/25bps 및 WAL 16MiB/16MiB+1을 회귀한다. 누적 이력과 동시 pending 수는 별개이며 모든 1001 fills를 동시에 ACK한다는 보장은 없다. 보수적 최악 예약이 16MiB를 넘으면 신규 ACK를 거절한다. 예약 소진은 새 ACK 전 거절, 이미 승인된 정정에는 전용 예약 사용, IO 불명은 RECOVERY_REQUIRED다.
 
 WAL/marker/snapshot 공동 과거 롤백을 로컬 해시만으로 항상 탐지할 수 없으므로 독립 클라이언트 ACK ledger와 대조한다. 이 한계는 계속 LOCAL_FSYNC이고 분산 내구성 인수가 아니다.
 

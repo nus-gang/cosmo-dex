@@ -1,0 +1,7 @@
+python3 protocol/s3/tools/check.py
+PASS S3 correction hash: 2 cumulative states, 4 replay steps, 14 field sensitivities, 17 rejected mutations; actual chain/WAL IO NOT_RUN
+PASS rc3 evidence/capacity: 3MiB raw -> 99671B WAL; 15 negatives; RPC and WAL 16MiB/+1; four cumulative histories; reservation boundaries; all-pending unsafe admission rejected; filesystem/chain IO NOT_RUN
+PASS S3 specification oracle: 13248 checks; actual chain/IO/browser/main QA NOT_RUN
+
+GOMODCACHE=<run-scratch>/go-mod-cache GOCACHE=<run-scratch>/go-cache GOTMPDIR=<run-scratch> go run -mod=readonly ../protocol/s3/tools/crypto.go check ../protocol/s3 (cwd=chain)
+PASS S3 crypto + inherited Go strict codec: 284 checks; SDK execution/Rust/TS product NOT_RUN

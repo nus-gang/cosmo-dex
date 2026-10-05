@@ -1,10 +1,10 @@
 # S3-A 계약 인계
 
-[실행 계약](CONTRACT.md) · [schema/상태/API](SCHEMA.md) · [결정·회고·작업량](adr/S3-decisions.md) · [시험 행렬](acceptance.json) · [원시 fixture](vectors/) · [출처](evidence/SOURCES.md)
+[실행 계약](CONTRACT.md) · [schema/상태/API](SCHEMA.md) · [raw 저장·최악 예약](STORAGE.md) · [결정·회고·작업량](adr/S3-decisions.md) · [시험 행렬](acceptance.json) · [원시 fixture](vectors/) · [출처](evidence/SOURCES.md)
 
-상태: **Security → QA 재심사 후보**. 승인 전 rc2 의존 상태/결과 조립 금지. 기준 main `bd9e473196ac86fdedf655b2c93e6931f54faa83`, tree `31a0d1c65e9b71647cac6c4c45bf7e8d2dd9d7f3`. 이 폴더만 추가하며 기존 코드·lock·S1/S2 데이터는 변경하지 않았다. rc1 승인본은 [NUS-54](/NUS/issues/NUS-54), 비순환 해시 rc2의 head/tree·manifest·재심사는 [NUS-64](/NUS/issues/NUS-64)에 고정한다. I 이전 main 병합은 하지 않는다.
+상태: **Security → QA 재심사 후보**. 승인 전 rc3 의존 상태/결과 조립 금지. 기준 main `bd9e473196ac86fdedf655b2c93e6931f54faa83`, tree `31a0d1c65e9b71647cac6c4c45bf7e8d2dd9d7f3`. 이 폴더만 추가하며 기존 코드·lock·S1/S2 데이터는 변경하지 않았다. rc1 승인본은 [NUS-54](/NUS/issues/NUS-54), 비순환 해시 rc2는 [NUS-64](/NUS/issues/NUS-64) 승인 head `d45be33029705859b07a9516fd2229a56dc66f46`이다. raw 참조/최악 예약 rc3의 head/tree·manifest·재심사는 [NUS-65](/NUS/issues/NUS-65)에 고정한다. I 이전 main 병합은 하지 않는다.
 
-사용자 서명(Order/Cancel/Wallet)·FillIdentity는 V1을 재사용한다. Batch/BatchReceipt는 VOID 슬롯을 명시하는 wire2이며 `batch.proto`와 V2 해시 도메인·새 S3 genesis 높이1 활성 경계를 따른다. SDK wrapper는 `messages.proto`, 서비스 JSON은 `schema.json`의 s3/2이다.
+사용자 서명(Order/Cancel/Wallet)·FillIdentity는 V1을 재사용한다. Batch/BatchReceipt는 VOID 슬롯을 명시하는 wire2이며 `batch.proto`와 V2 해시 도메인·새 S3 genesis 높이1 활성 경계를 따른다. SDK wrapper는 `messages.proto`, 서비스 JSON은 `schema.json`의 s3/3이다.
 
 ## 소비자 검증
 
@@ -34,6 +34,7 @@ Python 표준라이브러리만 사용한다. Go 검사 모듈은 기존 `chain/
 | correction.json/correction-history.json | F1→F2→F3 폐쇄, F4 독립, F0 COMMITTED 유지; 누적1001/201 경계 |
 | schema-vectors.json | strict envelope와 실패예상. 11.. contract hash/합성 block proof는 runtime 권위가 아님 |
 | correction-state-hash.json | 완전한 EngineState 1회/2회 정정·WAL result bytes/hash·누적 재생과 변조 거절; 실제 체인/IO 증거 아님 |
+| evidence-capacity.json/evidence-objects/ | rc3 raw bytes 참조, 3MiB 재현 정정, 정확한 크기·예약 경계; 모의 저장 이력과 실제 제품 실행을 구분 |
 | capacity.json | 실제 byte길이/hash와 고정 gas 모델·경계값 |
 
 `manifest.json`은 protocol/v1·s1·s2 전체 상속 파일, S3 전체(자기 자신 제외), 고정 language lock을 합친 SHA256 manifest다. 집합 hash는 경로순으로 `sha256 + 두 공백 + repo-relative path + LF`를 연결해 SHA256한다. fee0/fee25 config hash는 각각 고정되며 합성 genesis도 분리했다. runtime genesis는 여기서 null/NOT_RUN이며 B/F가 실제 원본으로 별도 채워야 한다. 후보 manifest를 runtime 허가로 해석하지 않는다.
@@ -55,6 +56,7 @@ go run -mod=readonly ../protocol/s3/tools/crypto.go sign ../protocol/s3
 cd ..
 python3 protocol/s3/tools/build_vectors.py finish
 python3 protocol/s3/tools/build_state_hash_vectors.py
+python3 protocol/s3/tools/build_evidence_capacity_vectors.py
 python3 protocol/s3/tools/check.py --seal
 python3 protocol/s3/tools/check.py
 ```

@@ -1,0 +1,96 @@
+{
+  "scope": "SCHEMA/SERIALIZATION/RESERVATION MODEL ONLY; historical shapes are synthetic, not reachable signed engine traces; actual fsync/chain proof NOT_RUN",
+  "reported_rc2": {
+    "head": "d45be33029705859b07a9516fd2229a56dc66f46",
+    "journal_payload_bytes": 16874108,
+    "limit": 16777216
+  },
+  "large_raw_regression": {
+    "raw_response_bytes": 3145728,
+    "raw_response_sha256": "3a6bc3ad4851b52ca33f56f5fa632b23722ee6eaf066e4682cc7aac4978d31d2",
+    "state_bytes": 58230,
+    "result_bytes": 5205,
+    "journal_payload_bytes": 99671,
+    "after_state_hash": "7058a05f436f57d5d6a0309931fbe1b080ac309802482df96a920c595b324877",
+    "result_hash": "93053a5d178447faec90eba2ddcb46982b58e19138dca0e349bc286606ffeab5"
+  },
+  "cumulative_histories": [
+    {
+      "fills": 1000,
+      "orders": 200,
+      "bps": 0,
+      "certificate": {
+        "pending_fills": 2,
+        "orders": 200,
+        "max_state_bytes": 6948710,
+        "max_result_bytes": 112656,
+        "max_journal_payload_bytes": 9661903,
+        "max_drain_records": 282,
+        "max_new_evidence_objects": 564,
+        "evidence_reserved_bytes": 2793652224,
+        "reserved_bytes": 9521946624,
+        "admissible": true
+      }
+    },
+    {
+      "fills": 1001,
+      "orders": 201,
+      "bps": 0,
+      "certificate": {
+        "pending_fills": 2,
+        "orders": 201,
+        "max_state_bytes": 6962330,
+        "max_result_bytes": 112991,
+        "max_journal_payload_bytes": 9680736,
+        "max_drain_records": 283,
+        "max_new_evidence_objects": 565,
+        "evidence_reserved_bytes": 2793922560,
+        "reserved_bytes": 9558827008,
+        "admissible": true
+      }
+    },
+    {
+      "fills": 1000,
+      "orders": 200,
+      "bps": 25,
+      "certificate": {
+        "pending_fills": 2,
+        "orders": 200,
+        "max_state_bytes": 6948710,
+        "max_result_bytes": 112656,
+        "max_journal_payload_bytes": 9661903,
+        "max_drain_records": 282,
+        "max_new_evidence_objects": 564,
+        "evidence_reserved_bytes": 2793652224,
+        "reserved_bytes": 9521946624,
+        "admissible": true
+      }
+    },
+    {
+      "fills": 1001,
+      "orders": 201,
+      "bps": 25,
+      "certificate": {
+        "pending_fills": 2,
+        "orders": 201,
+        "max_state_bytes": 6962330,
+        "max_result_bytes": 112991,
+        "max_journal_payload_bytes": 9680736,
+        "max_drain_records": 283,
+        "max_new_evidence_objects": 565,
+        "evidence_reserved_bytes": 2793922560,
+        "reserved_bytes": 9558827008,
+        "admissible": true
+      }
+    }
+  ],
+  "rejected_mutations": 15,
+  "boundaries": {
+    "wal_16777216": "FIT",
+    "wal_16777217": "REJECT_BEFORE_DECODE",
+    "rpc_16777216": "ACCEPT_BYTES_ONLY",
+    "rpc_16777217": "EVIDENCE_SIZE_HOLD"
+  },
+  "all_pending_history": "1000/1001 conservative worst-case reservation exceeds WAL limit: reject new ACK; never truncate history",
+  "known_limit": "1000/1001 cumulative history is distinct from 1000/1001 simultaneously pending fills; dependency closure oracle remains separately required"
+}

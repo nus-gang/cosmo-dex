@@ -140,6 +140,30 @@
       "state": "REJECTED"
     },
     {
+      "code": "EVIDENCE_SIZE",
+      "http_status": "503",
+      "retryable": false,
+      "state": "RECOVERY_REQUIRED"
+    },
+    {
+      "code": "EVIDENCE_MISSING",
+      "http_status": "503",
+      "retryable": false,
+      "state": "RECOVERY_REQUIRED"
+    },
+    {
+      "code": "EVIDENCE_MISMATCH",
+      "http_status": "503",
+      "retryable": false,
+      "state": "RECOVERY_REQUIRED"
+    },
+    {
+      "code": "STORAGE_CAPACITY",
+      "http_status": "507",
+      "retryable": true,
+      "state": "REJECTED"
+    },
+    {
       "code": "S3_CONTEXT_REQUIRED",
       "http_status": "400",
       "retryable": false,
