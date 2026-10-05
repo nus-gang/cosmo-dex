@@ -1,0 +1,57 @@
+{
+  "scope": "AUTHOR_CONTRACT_HASH_CHECKS; independent Security/QA pending; actual chain/WAL IO NOT_RUN",
+  "issue": "NUS-64",
+  "executed_at_utc": "2026-10-05T09:21:51.600146+00:00",
+  "base_contract_sha": "0915375cac360f83d62a70587a0e7cf9c89604a1",
+  "base_contract_tree": "ad98a57e149b861369f7d716aed8fd0325aef4f8",
+  "versions": {
+    "python": "3.14.0 (main, Oct  7 2025, 09:34:52) [Clang 17.0.0 (clang-1700.0.13.3)]",
+    "go": "go1.24.4 darwin/arm64",
+    "platform": "macOS-15.6.1-arm64-arm-64bit-Mach-O"
+  },
+  "checks": [
+    {
+      "command": "python3 protocol/s3/tools/check.py",
+      "result": "PASS",
+      "exit_code": 0,
+      "stdout": "PASS S3 correction hash: 2 cumulative states, 4 replay steps, 14 field sensitivities, 15 rejected mutations; actual chain/WAL IO NOT_RUN\nPASS S3 specification oracle: 13283 checks; actual chain/IO/browser/main QA NOT_RUN\n"
+    },
+    {
+      "command": "cd chain; GOCACHE=$PAPERCLIP_RUN_SCRATCH_DIR/go-build GOMODCACHE=/Users/gangdongju/go/pkg/mod GOPROXY=off go run -mod=readonly ../protocol/s3/tools/crypto.go check ../protocol/s3",
+      "result": "PASS",
+      "exit_code": 0,
+      "stdout": "PASS S3 crypto + inherited Go strict codec: 284 checks; SDK execution/Rust/TS product NOT_RUN\n"
+    },
+    {
+      "command": "git diff --check",
+      "result": "PASS",
+      "exit_code": 0,
+      "stdout": ""
+    }
+  ],
+  "fixture_hashes": [
+    {
+      "id": "correction-1",
+      "state_hash": "eb8ffaeee1977cd2f9153cbc858b0728caf41821863e539c9b588f1ba3825a07",
+      "result_hash": "a2ab08ea212ba2cf1b5213631ec2feec3d385c07898a2a3db5260dd16bf3eb06"
+    },
+    {
+      "id": "correction-2",
+      "state_hash": "72badf373ef6778cdbb4bb2e6960944f14625ea6110d46a097e1c2e8fbde7faf",
+      "result_hash": "8ea01c1bdb586da3191e3b0724721c38379b5136abc1bfac543bff43a9f31ea0"
+    }
+  ],
+  "limits": [
+    "Schema-complete synthetic hash/replay fixture, not a reachable product execution trace or real proof.",
+    "Explicit fixture contract_hash 11.. and previous_commit_hash 77.. are not runtime identities.",
+    "Full-state hashing has no projection or placeholder normalization. S3 service storage changes from s3/1 to s3/2.",
+    "Original rc1 verification is retained as historical evidence; not relabeled as rc2 product QA.",
+    "Default Go module cache was sandbox-inaccessible; successful check used existing read-only module cache and run-owned build cache."
+  ],
+  "source_basis": [
+    "Approved NUS-54 CONTRACT/SCHEMA at exact base SHA",
+    "Development design v1 sections 9 and 14: atomic WAL/result boundary, deterministic hash comparison, append-only correction; LOCAL_FSYNC limitation remains from S3 approved scope.",
+    "Architecture: sequencer/WAL, durable outbox, on-chain confirmed authority."
+  ],
+  "candidate_binding": "Manifest includes this file; exact head/tree and final read-only manifest output are in Paperclip handoff, not recursively in this file."
+}

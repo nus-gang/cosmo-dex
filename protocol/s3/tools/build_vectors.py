@@ -123,7 +123,7 @@ def finish():
     receipt=encode(receipt_fields)
     (S3/'vectors/receipt-demo.bin').write_bytes(receipt)
     write('vectors/receipt.json',{'scope':'SYNTHETIC_EXPECTATION_NOT_CHAIN_PROOF','fields':receipt_fields,'canonical_hex':receipt.hex(),'sha256':sha(receipt)})
-    context={'service_schema':'s3/1','chain_id':'nus-s3-dev-1','genesis_hash':GH,'contract_hash':'11'*32,
+    context={'service_schema':'s3/2','chain_id':'nus-s3-dev-1','genesis_hash':GH,'contract_hash':'11'*32,
       'config_hash':sha((S3/'profile.json').read_bytes()),'market_id':'DEVBASE/DEVQUOTE','market_config_version':'1'}
     identity={'operator_epoch':'1','batch_seq':'1','batch_id':demo['batch_id'],'batch_hash':demo['batch_hash'],
       'previous_batch_hash':'00'*32,'fill_ids':[f['fill_id'] for f in demo['fills']]}
