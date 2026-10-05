@@ -28,7 +28,7 @@ impl Drop for Dir {
     }
 }
 fn context() -> Value {
-    json!({"service_schema":"s3/1", "chain_id":"nus-s3-dev-1", "genesis_hash":"01".repeat(32), "contract_hash":"02".repeat(32), "config_hash":"03".repeat(32), "market_id":"DEVBASE/DEVQUOTE", "market_config_version":"1"})
+    json!({"service_schema":"s3/2", "chain_id":"nus-s3-dev-1", "genesis_hash":"01".repeat(32), "contract_hash":"02".repeat(32), "config_hash":"03".repeat(32), "market_id":"DEVBASE/DEVQUOTE", "market_config_version":"1"})
 }
 fn record(j: &Journal) -> Value {
     json!({"context":context(), "command_seq":(j.commit().command_seq+1).to_string(),
@@ -343,6 +343,11 @@ fn missing_or_traversal_evidence_cannot_be_committed() {
 
 #[test]
 fn s3_magic_and_namespace_reject_s2_without_modifying_old_home() {
+    let old = Dir::new();
+    let mut rc1 = context();
+    rc1["service_schema"] = json!("s3/1");
+    assert!(Journal::create(&old.0, rc1).is_err());
+    assert!(!old.0.exists());
     use nus_exchange_contract::s2::journal as s2;
     let d = Dir::new();
     let old_context = json!({"schema_version":"1","genesis_hash":"S2 synthetic fixture"});

@@ -1,0 +1,16 @@
+{
+  "case": "raw-receipt-duplication",
+  "scope": "SCHEMA_AND_SERIALIZATION_ONLY_NOT_CHAIN_PROOF",
+  "approved_contract_head": "d45be33029705859b07a9516fd2229a56dc66f46",
+  "raw_response_bytes": 3145728,
+  "raw_response_sha256": "3a6bc3ad4851b52ca33f56f5fa632b23722ee6eaf066e4682cc7aac4978d31d2",
+  "raw_response_schema_base64_chars": 4194304,
+  "state_bytes": 8445916,
+  "result_bytes": 4199048,
+  "journal_payload_bytes": 16874108,
+  "payload_limit": 16777216,
+  "over_limit_bytes": 96892,
+  "schema_validation": "PASS",
+  "payload_fit": "FAIL",
+  "invariant": "Before ACK, reserve complete worst correction with all original evidence. Cannot substitute refs inside ResolutionReceipt fields under s3/2 schema."
+}

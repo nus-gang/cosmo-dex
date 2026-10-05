@@ -140,7 +140,7 @@ fn validate_context(context: &Value) -> Result<()> {
         .as_object()
         .ok_or(Error::InvalidRecord("S3_CONTEXT"))?;
     if object.len() != 7
-        || context["service_schema"] != "s3/1"
+        || context["service_schema"] != "s3/2"
         || context["chain_id"] != "nus-s3-dev-1"
         || context["market_id"] != "DEVBASE/DEVQUOTE"
         || context["market_config_version"] != "1"
