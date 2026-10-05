@@ -68,7 +68,7 @@ func (k Keeper) ChainID() string {
 	return k.Network
 }
 func (k Keeper) Assets() []string {
-	if k.ChainID() == S2ChainID {
+	if k.ChainID() == S2ChainID || k.ChainID() == S3ChainID {
 		return []string{Base, Quote}
 	}
 	return []string{Quote}
@@ -77,6 +77,9 @@ func (k Keeper) Position(ctx sdk.Context, owner string) Position {
 	return k.AssetPosition(ctx, owner, Quote)
 }
 func (k Keeper) AssetPosition(ctx sdk.Context, owner, denom string) Position {
+	if k.ChainID() == S3ChainID {
+		return k.s3Position(ctx, owner, denom)
+	}
 	if k.ChainID() == S2ChainID {
 		store := ctx.KVStore(k.Key)
 		amount, epoch := "0", "0"
@@ -131,7 +134,7 @@ func (k Keeper) apply(ctx sdk.Context, msg sdk.Msg, owner, denom, amount string,
 	if e != nil || addr.String() != owner {
 		return fmt.Errorf("NON_CANONICAL_INPUT")
 	}
-	if (denom != Quote && !(k.ChainID() == S2ChainID && denom == Base)) || len(id) != 32 {
+	if (denom != Quote && !((k.ChainID() == S2ChainID || k.ChainID() == S3ChainID) && denom == Base)) || len(id) != 32 {
 		return fmt.Errorf("NON_CANONICAL_INPUT")
 	}
 	n, e := Uint(amount)
@@ -167,6 +170,11 @@ func (k Keeper) apply(ctx sdk.Context, msg sdk.Msg, owner, denom, amount string,
 		}
 		ctx.EventManager().EmitEvent(sdk.NewEvent("exchange_retry", sdk.NewAttribute("original_tx_hash", r.TxHash)))
 		return nil
+	}
+	if k.ChainID() == S3ChainID {
+		if e := k.ReconcileAsset(ctx, denom, true); e != nil {
+			return e
+		}
 	}
 	p := k.AssetPosition(ctx, owner, denom)
 	current, e := Uint(p.Epoch)
@@ -213,7 +221,16 @@ func (k Keeper) apply(ctx sdk.Context, msg sdk.Msg, owner, denom, amount string,
 		confirmed = confirmed.Add(amt)
 	}
 	p.Amount = confirmed.String()
-	if k.ChainID() == S2ChainID {
+	if k.ChainID() == S3ChainID {
+		if e = k.s3ChangeTotal(ctx, denom, n, withdraw); e != nil {
+			return e
+		}
+		k.S3Set(ctx, "a/"+denom+"/"+owner, []byte(p.Amount))
+		k.S3Set(ctx, "e/"+owner, []byte(p.Epoch))
+		if withdraw {
+			k.S3OwnerEvent(ctx, "WITHDRAW", owner, before, p.Epoch, denom, amount, ids, nil)
+		}
+	} else if k.ChainID() == S2ChainID {
 		ctx.KVStore(k.Key).Set([]byte("a/"+denom+"/"+owner), []byte(p.Amount))
 		ctx.KVStore(k.Key).Set([]byte("e/"+owner), []byte(p.Epoch))
 	} else {
@@ -221,14 +238,25 @@ func (k Keeper) apply(ctx sdk.Context, msg sdk.Msg, owner, denom, amount string,
 	}
 	txhash := sha256.Sum256(ctx.TxBytes())
 	r := Receipt{k.ChainID(), hex.EncodeToString(genesis), owner, ids, hs, operation, denom, amount, strconv.FormatInt(ctx.BlockHeight(), 10), fmt.Sprintf("%X", txhash), before, p.Epoch, "COMMITTED"}
+	if k.ChainID() == S3ChainID {
+		r.TxHash = hex.EncodeToString(txhash[:])
+	}
 	put(ctx.KVStore(k.Key), []byte("r/"+owner+"/"+ids), r)
-	if e = k.Invariant(ctx); e != nil {
+	if k.ChainID() == S3ChainID {
+		e = k.ReconcileAsset(ctx, denom, false)
+	} else {
+		e = k.Invariant(ctx)
+	}
+	if e != nil {
 		return e
 	}
 	ctx.EventManager().EmitEvent(sdk.NewEvent("exchange_receipt", sdk.NewAttribute("owner", owner), sdk.NewAttribute("request_id", ids), sdk.NewAttribute("original_tx_hash", r.TxHash)))
 	return nil
 }
 func (k Keeper) Invariant(ctx sdk.Context) error {
+	if k.ChainID() == S3ChainID {
+		return k.s3Invariant(ctx)
+	}
 	if k.ChainID() == S2ChainID {
 		return k.s2Invariant(ctx)
 	}

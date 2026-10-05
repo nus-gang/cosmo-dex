@@ -2,6 +2,11 @@ module github.com/nus-gang/cosmo-dex/chain/app
 
 go 1.26.5
 
+// Reuse the reviewed V1 wire/signature codec without copying its implementation.
+replace github.com/nus-gang/cosmo-dex/chain => ..
+
+require github.com/nus-gang/cosmo-dex/chain v0.0.0
+
 require (
 	cosmossdk.io/log/v2 v2.1.0
 	cosmossdk.io/math v1.5.3
