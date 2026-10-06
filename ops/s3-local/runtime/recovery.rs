@@ -1,6 +1,6 @@
 //! Private, commit-pinned recovery cursor. No network, freshness or effect permit.
 use nus_exchange_contract::s3::dev_local::{
-    Engine, Error, RecoveryAttempt, RecoveryHistory, Result, View,
+    Engine, Error, RecoveryAttempt, RecoveryFailure, RecoveryHistory, Result, View,
 };
 use std::sync::Arc;
 
@@ -52,6 +52,16 @@ impl RecoveryCursor {
             .trusted_recovery_history(&self.view.commit, from, limit)?;
         self.closed = false;
         Ok(page)
+    }
+    /// Exact persisted failure bytes only; no reconstruction or broadcast permit.
+    pub fn failure(&mut self, batch_id: &str) -> Result<Option<RecoveryFailure>> {
+        if self.closed {
+            return Err(Error::Recovery("RECOVERY_CURSOR_CLOSED"));
+        }
+        self.closed = true;
+        let saved = self.engine.trusted_recovery_failure(&self.view.commit, batch_id)?;
+        self.closed = false;
+        Ok(saved)
     }
     pub fn attempt_at(&mut self, index: usize) -> Result<Option<RecoveryAttempt>> {
         if self.closed {

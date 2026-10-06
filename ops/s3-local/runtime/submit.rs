@@ -292,6 +292,23 @@ impl SubmitLane {
         self.closed = false;
         Ok(())
     }
+    /// Ask C to derive and validate final rejection from its persisted attempts
+    /// and latest observation. This does not create CLOSE, VOID receipt or Apply.
+    pub fn reject_final(&mut self, s: &Snapshot, o: &Observation) -> Result<()> {
+        self.reject_final_with(s, o, now)
+    }
+    fn reject_final_with(
+        &mut self, s: &Snapshot, o: &Observation,
+        clock: impl FnOnce() -> Result<u64>,
+    ) -> Result<()> {
+        if self.closed { return Err(Error::Recovery("SUBMIT_LANE_CLOSED")); }
+        self.closed = true;
+        let at = clock()?;
+        self.bound(s, o, at)?;
+        self.worker.reconcile(Command::RejectFinal, &[], o, at)?;
+        self.closed = false;
+        Ok(())
+    }
     /// Apply only C's already persisted observations and terminal evidence.
     /// No RPC, signing, receipt synthesis or economic logic lives in this lane.
     pub fn apply(&mut self, s: &Snapshot, o: &Observation) -> Result<()> {
@@ -469,6 +486,85 @@ mod tests {
         lane.resolve_inclusion_with(&s, &hash, &fixture::observation(&v),
             |s, tx| included(s, tx, 0), || Ok(fixture::NOW)).unwrap();
         (e, lane, s, inputs, home)
+    }
+    fn expected_failure(s: &Snapshot, tx: &[u8]) -> Result<Option<(serde_json::Value, Objects)>> {
+        use nus_exchange_contract::s3::evidence::RPC;
+        let (mut r, mut objects) = collect::inclusion_tests::input(s, vec![tx], serde_json::json!(1019));
+        let mut raw: serde_json::Value = serde_json::from_slice(
+            objects.resolve(&r["raw_results_response_ref"], RPC)?).unwrap();
+        raw["result"]["txs_results"][0]["codespace"] = serde_json::json!("exchange_s3");
+        r["raw_results_response_ref"] = objects.insert(&serde_json::to_vec(&raw).unwrap(), RPC)?;
+        collect::confirmed_in_block(s, tx, r, objects)
+    }
+    #[test]
+    fn final_rejection_persists_c_evidence_without_asset_release_and_replays() {
+        for bps in [0, 25] {
+            let (e, mut lane, s, hash, inputs, home) = prepared_at_next(bps);
+            lane.resolve_inclusion_with(&s, &hash, &fixture::observation(s.value()),
+                |s, tx| expected_failure(s, tx), || Ok(fixture::NOW)).unwrap();
+            let before = e.reader().get().unwrap();
+            lane.reject_final_with(&s, &fixture::observation(s.value()), || Ok(fixture::NOW)).unwrap();
+            let after = e.reader().get().unwrap();
+            assert_eq!(after.state["batches"][0]["state"], "REJECTED_FINAL");
+            // Failure bytes stay private and use the dedicated commit-pinned API.
+            assert!(after.state.get("failure_evidence").is_none());
+            let recovered = e.trusted_recovery_attempt_at(&after.commit, 0).unwrap().unwrap();
+            assert!(recovered.evidence.entries().all(|(_, raw)|
+                serde_json::from_slice::<serde_json::Value>(raw).ok()
+                    .is_none_or(|v| v.get("rejection_code").is_none())));
+
+            for k in ["accounts", "fills", "chain_snapshot", "corrections", "resolution_receipts", "attempt_refs"] {
+                assert!(!before.state[k].is_null(), "missing {k}");
+                assert_eq!(before.state[k], after.state[k], "{k}");
+            }
+            let batch = after.state["batches"][0]["batch"]["batch_id"].as_str().unwrap();
+            let mut cursor = recovery::RecoveryCursor::open(e.clone()).unwrap();
+            let saved = cursor.failure(batch).unwrap().unwrap();
+            assert_eq!(saved.commit, after.commit);
+            assert_eq!(saved.raw, saved.evidence.resolve(&saved.resolution_evidence_ref, TYPED).unwrap());
+            assert_eq!(saved.raw, canonical(&saved.resolution_evidence).unwrap());
+            assert!(cursor.failure(&"00".repeat(32)).unwrap().is_none());
+            drop(cursor); drop(lane); drop(e);
+            for _ in 0..2 {
+                let e = Arc::new(Engine::open(&home, Validated::new(inputs.clone()).unwrap()).unwrap());
+                assert_eq!(e.reader().get().unwrap().state, after.state);
+                assert_eq!(e.reader().get().unwrap().commit, after.commit);
+                let mut cursor = recovery::RecoveryCursor::open(e.clone()).unwrap();
+                let replay = cursor.failure(batch).unwrap().unwrap();
+                assert_eq!(replay.raw, saved.raw);
+                assert_eq!(replay.resolution_evidence_ref, saved.resolution_evidence_ref);
+                assert_eq!(replay.evidence.entries().count(), saved.evidence.entries().count());
+                assert!(e.with_committed_attempt(&hash, |_, _| panic!("terminal callback")).is_err());
+            }
+        }
+    }
+    #[test]
+    fn final_rejection_refuses_unresolved_and_successful_attempts() {
+        for success in [false, true] {
+            let (e, lane, s, _, _, _) = prepared_at_next(0);
+            let (e, mut lane, s) = if success {
+                drop(lane); drop(e);
+                let (e, lane, s, _, _) = terminal_ready(0); (e, lane, s)
+            } else { (e, lane, s) };
+            let before = e.reader().get().unwrap().commit.clone();
+            assert!(lane.reject_final_with(&s, &fixture::observation(s.value()), || Ok(fixture::NOW)).is_err());
+            assert!(lane.closed);
+            assert_eq!(e.reader().get().unwrap().commit, before);
+            assert!(lane.reject_final_with(&s, &fixture::observation(s.value()), || panic!("closed clock")).is_err());
+        }
+    }
+    #[test]
+    fn final_rejection_stale_or_clock_failure_preserves_commit() {
+        for stale in [false, true] {
+            let (e, mut lane, s, hash, _, _) = prepared_at_next(0);
+            lane.resolve_inclusion_with(&s, &hash, &fixture::observation(s.value()),
+                |s, tx| expected_failure(s, tx), || Ok(fixture::NOW)).unwrap();
+            let before = e.reader().get().unwrap().commit.clone();
+            assert!(lane.reject_final_with(&s, &fixture::observation(s.value()), ||
+                if stale { Ok(fixture::NOW + 6000) } else { Err(Error::Invalid("CLOCK")) }).is_err());
+            assert!(lane.closed);
+            assert_eq!(e.reader().get().unwrap().commit, before);
+        }
     }
     #[test]
     fn receipt_persists_from_recovered_terminal_without_apply_and_replays() {
@@ -892,6 +988,22 @@ mod tests {
         assert_eq!(e.reader().get().unwrap().commit, before.commit);
         let mut fresh = recovery::RecoveryCursor::open(e.clone()).unwrap();
         assert_eq!(fresh.attempt_at(0).unwrap().unwrap().attempt["state"], "INCLUDED_SUCCESS");
+    }
+    #[test]
+    fn failure_cursor_stale_commit_closes_without_reconstruction() {
+        let (e, mut lane, s, hash, _, _) = prepared_at_next(0);
+        let mut cursor = recovery::RecoveryCursor::open(e.clone()).unwrap();
+        lane.resolve_inclusion_with(&s, &hash, &fixture::observation(s.value()),
+            |s, tx| expected_failure(s, tx), || Ok(fixture::NOW)).unwrap();
+        lane.reject_final_with(&s, &fixture::observation(s.value()), || Ok(fixture::NOW)).unwrap();
+        let before = e.reader().get().unwrap();
+        let batch = before.state["batches"][0]["batch"]["batch_id"].as_str().unwrap();
+        assert!(matches!(cursor.failure(batch), Err(Error::Invalid("STALE_COMMIT"))));
+        assert!(matches!(cursor.failure(batch), Err(Error::Recovery("RECOVERY_CURSOR_CLOSED"))));
+        assert!(cursor.attempt_at(0).is_err());
+        assert!(cursor.history(None, 1).is_err());
+        assert!(cursor.view().is_err());
+        assert_eq!(e.reader().get().unwrap().commit, before.commit);
     }
     #[test]
     fn recovery_cursor_invalid_page_closes_and_preserves_store() {

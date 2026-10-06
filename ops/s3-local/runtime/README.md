@@ -191,3 +191,34 @@ Cargo.toml은 L-D 통합 설정이므로 C-only manifest와 구분한다.
 남은 범위: VOID/실패 증거·전체 worker scheduling, 웹 ChainPort, 초기화/launcher/
 cleanup/fault driver, 최종 binary/manifest·독립 pin·CTO→Security. 서비스0·RPC0·
 DEV NOT_RUN·runtime pin 미발급이며 원 G00/ACK와 부모 blocker는 그대로다.
+
+## 확정 실패 저장 연결 / 다음 API 경계
+
+`SubmitLane::reject_final`은 trusted snapshot·freshness를 대조하고 승인 C `Command::RejectFinal`에 위임한다. C가 저장된 시도·최신 관측으로 실패를 선택하고 검증한다. 오류 뒤 lane은 닫히며 CLOSE·VOID receipt·Apply를 자동 생성하지 않는다.
+
+현재 C의 commit-pinned attempt/history 복구 API에는 별도로 저장된 ResolutionEvidence 원문/참조/closure가 없다. 정확한 VOID 연결을 위해 원 C 업무에 trusted read-only batch 실패 증거 복구 API를 요청한다. SRE가 원문을 재계산하거나 hash-only로 대체하지 않는다. 서비스0·runtime pin 미발급·DEV NOT_RUN이다.
+
+## 승인된 실패 원문 복구 API 통합
+
+C 후보 `8bbacf927358fb96bb028230de527b5dcc1dd6e4`를 통합했다.
+[NUS-70 CTO 승인](/NUS/issues/NUS-70#document-failure-recovery-api-cto-review)
+revision `c6b449be-3e4d-4133-a09c-f13791cf588a`와
+[Security 승인](/NUS/issues/NUS-70#document-failure-recovery-api-security-review)
+revision `777de971-fc0e-497e-91a6-1a340b3722b6`의 동일 후보다.
+위 API 공백 기록은 이전 후보의 이력이며 이번 후보에서 해소됐다.
+
+`RecoveryCursor::failure(batch_id)`는 cursor의 같은 commit으로 C의
+`trusted_recovery_failure`를 호출한다. 저장된 typed 원문·참조·도달 Objects만
+반환하며 SRE 재계산·자동 보충·방송 허가는 없다. 오류 후 cursor 전체가 닫힌다.
+이전 home에 RejectFinal 원문이 없으면 새 C open은 실패하며 자동 수리하지 않는다.
+
+fee0/25 실패 저장 뒤 원문/참조 대조와 두 번 replay, terminal callback 거절,
+stale commit 거절 뒤 history/attempt/view 닫힘을 순수 fixture로 검증한다.
+실제 VOID/CLOSE 전송·worker scheduling·웹 ChainPort·초기화/launcher·최종 manifest는
+후속 작업이다. 서비스/RPC0·runtime pin 미발급·DEV NOT_RUN 유지.
+
+이 통합의 build cache는 checkout 형제 `NUS-73-build-target`에 보존한다.
+`CARGO_HOME=/Users/gangdongju/.cargo`, 설치 Rust 1.92.0의 절대 cargo/rustc,
+`--offline --locked --features dev-local-settlement --lib`를 사용했다.
+순수 submit 시험은 동일 dependency rlib들과 bech32를 명시적으로 연결한다.
+최초 rustc 명령에서 bech32 누락으로 실패한 로그와 보정 argv를 증거에 포함한다.
