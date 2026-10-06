@@ -107,3 +107,11 @@ Account 연결 검증: 기존 시험과 신규7개를 합쳐 **35 PASS/0 FAIL**.
 이 반환은 **전송 증거 조립**이며 실패 또는 정정 승인이 아니다. 승인 C `record_receipt`가 저장된 failure_evidence·CLOSE attempt·CLOSING·모든 settle attempt 종결과 정확한 증거를 다시 확인해야 한다. 수집기는 Command/Apply나 경제 전이를 실행하지 않는다. 그 연결은 worker 구현에 남는다. 기존 C/L-D 및 lock 변경0.
 
 기존 offline/locked rlib와 Rust1.92.0으로 `collect.rs` 순수시험 **46 PASS / 0 FAIL**(신규 VOID 5개 + 기존41개). VOID 양성 fixture는 전송 검증용 합성 schema이며 엔진이 승인한 실패 증거가 아니다. 원 bytes 보존·hash-only/변조 거절·lookup 불일치·실패/누락 CLOSE TX 거절을 확인했다. 실제 RPC/서비스0·DEV NOT_RUN·runtime pin 미발급. worker/signer·웹 ChainPort·초기화/launcher·최종 manifest 및 CTO→Security는 미완료다.
+
+## 비공개 operator signer
+
+`signer.rs::LocalSigner`는 별도 canonical 절대 key 디렉터리(root0700·현재 euid) 아래 `operator.seed` 32 bytes만 읽는다. directory FD에 상대적인 openat·NOFOLLOW/CLOEXEC/NONBLOCK, regular file·현재 euid·0600·nlink1·정확한 길이·읽기 전후 metadata를 검사한다. seed는 Zeroizing으로 지우고 fips204 PrivateKey의 ZeroizeOnDrop을 사용한다. 같은 uid의 악성 프로세스나 메모리/core dump에 대한 격리 보장은 아니다. 새 키 생성·실서비스 seed 사용·복구·보관 구현은 이 모듈에 없다.
+
+로드 시 pinned genesis/operator 구성에서 얻은 예상 공개키와 ML-DSA-65 파생 공개키가 일치해야 한다. 기대키를 REST/browser에서 받으면 안 된다. `OperatorSigner`를 구현하며 L-D가 조립한 bounded SignDoc에 빈 context와 FIPS 204 deterministic signing(rnd=0)을 사용한다. signer 자체가 SignDoc 경제 의미를 다시 구현하지 않는다. 승인 L-D는 결과 서명·operator address/key를 검증하며 영속 intent 뒤에만 방송한다. runtime 내부에서만 접근하고 HTTP API로 노출하지 않는다.
+
+기존 offline/locked cache의 fips204 0.4.6·libc·zeroize rlib를 사용했다. Cargo.toml/lock 수정0이며 최종 rustc build에서 이 세 rlib도 exact 명령·SHA 입력으로 기록해야 한다. 순수시험 **7 PASS / 0 FAIL**: 합성 키 실제 서명 검증·문서 상한, root/file 권한, 길이, 공개키 mismatch, symlink/hardlink, FIFO/디렉터리 거절. 시험 파일은 run scratch에서 생성·정리하며 공개 seed는 runtime용이 아니다. 최초 trait 오류 타입 컴파일 실패 후 C Error 타입으로 수정해 통과했다. 서비스/RPC0, DEV NOT_RUN. signer와 실제 worker의 통합은 후속 배선이다.
