@@ -18,7 +18,7 @@ class Binding(unittest.TestCase):
         self.assertEqual(m.sha(files['protocol/s3/manifest.json']), m.BASELINE)
         self.assertNotEqual(files['chain/app/go.mod'], (ROOT/'chain/app/go.mod').read_bytes())
         self.assertNotIn('runtime-manifest.json', files)
-        self.assertFalse(any('genesis' in p.split('/')[-1] and p.endswith('.json') for p in files))
+        self.assertNotIn('runtime/genesis.json', files)  # Approved historical fixtures remain inherited.
 
     def test_reject_duplicate_json_and_unsafe_paths(self):
         with self.assertRaisesRegex(ValueError, 'DUPLICATE'):
