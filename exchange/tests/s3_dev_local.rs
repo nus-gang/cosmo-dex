@@ -279,6 +279,7 @@ fn io_errors_close_admission_and_preserve_unknown() {
         let commit = e.reader().get().unwrap().commit.clone();
         assert!(e.trusted_recovery_history(&commit, None, 64).is_err());
         assert!(e.trusted_recovery_attempt_at(&commit, 0).is_err());
+        assert!(e.trusted_recovery_failure(&commit, nus_exchange_contract::s3::schema::ZERO).is_err());
         assert!(
             e.trusted_recovery_attempt(&commit, nus_exchange_contract::s3::schema::ZERO)
                 .is_err()
@@ -812,6 +813,10 @@ fn trusted_recovery_rejects_poisoned_writer() {
     ));
     assert!(matches!(
         e.trusted_recovery_attempt_at(&before.commit, 0),
+        Err(Error::Recovery("WRITER_POISONED"))
+    ));
+    assert!(matches!(
+        e.trusted_recovery_failure(&before.commit, schema::ZERO),
         Err(Error::Recovery("WRITER_POISONED"))
     ));
     let mut callbacks = 0;

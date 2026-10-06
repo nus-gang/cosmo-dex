@@ -71,6 +71,16 @@ pub struct RecoveryAttempt {
     pub attempt: Value,
     pub evidence: Objects,
 }
+/// Original committed failure evidence for one batch. Private trusted-runtime
+/// transport only; the bytes come from the store, never a new failure selection.
+#[derive(Clone, Debug)]
+pub struct RecoveryFailure {
+    pub commit: Commit,
+    pub resolution_evidence_ref: Value,
+    pub resolution_evidence: Value,
+    pub raw: Vec<u8>,
+    pub evidence: Objects,
+}
 pub const RECOVERY_HISTORY_PAGE_MAX: usize = 64;
 /// Internal full state/result/book/FIFO/cursor projection in one immutable Arc.
 /// Never expose all owners or signed evidence directly through public REST.
@@ -93,6 +103,16 @@ struct Writer {
     closed: bool,
 }
 impl Writer {
+    fn check_store(&self) -> Result<Vec<u8>> {
+        let bootstrap = self.store.check()?;
+        // Removing a root and its descriptor together can pass directory
+        // inventory checks. Pin these private roots at every read/effect/write
+        // boundary too, so a missing original cannot authorize a later CLOSE.
+        for id in self.candidate.failure_evidence.keys() {
+            load_failure(&self.store, &self.candidate, &self.config, id)?;
+        }
+        Ok(bootstrap)
+    }
     fn ensure_open(&self) -> Result<()> {
         // IO failures close this writer; semantic recovery is part of the
         // committed candidate and survives open/replay. Check both under the
@@ -114,6 +134,48 @@ fn receipt(c: &Validated, result: Value) -> Value {
 fn ledger_entry(c: &Validated, result: Value, commit: &Commit) -> Value {
     json!({"receipt":receipt(c,result),"command_seq":commit.command_seq.to_string(),"record_hash":commit.record_hash,"end_offset":commit.end_offset.to_string()})
 }
+fn load_failure(
+    store: &Store,
+    candidate: &Candidate,
+    config: &Validated,
+    batch_id: &str,
+) -> Result<Option<RecoveryFailure>> {
+    let Some(original) = candidate.failure_evidence.get(batch_id) else {
+        return Ok(None);
+    };
+    let batch = candidate
+        .batches()
+        .iter()
+        .find(|b| b["batch"]["batch_id"] == batch_id)
+        .ok_or(Error::Recovery("RECOVERY_FAILURE_BATCH"))?;
+    // Derive only a content-addressed selector from the committed candidate.
+    // Missing stored bytes are an error; do not synthesize/backfill the object.
+    let r = evidence::reference(&canonical(original)?, evidence::TYPED)?;
+    let root = json!({"resolution_evidence_ref":r});
+    let refs = candidate.evidence_set()?.graph(&root)?;
+    // Existing schema: one typed root, <=3 inline attempts, each <=1 TX,
+    // 2 inclusion RPC and 8 pairs of absence RPC. No schema/cap changes.
+    if refs.len() > 58 {
+        return Err(Error::Recovery("RECOVERY_EVIDENCE_BOUND"));
+    }
+    let refs = json!(refs);
+    let objects = store.load(&refs)?;
+    objects.verify_exact_refs(&root, &refs)?;
+    let resolution = objects.typed(&r, "ResolutionEvidence")?;
+    if resolution != *original
+        || resolution["context"] != *config.context()
+        || resolution["batch"] != batch["batch"]
+    {
+        return Err(Error::Recovery("RECOVERY_FAILURE_MISMATCH"));
+    }
+    Ok(Some(RecoveryFailure {
+        commit: store.commit.clone(),
+        raw: objects.resolve(&r, evidence::TYPED)?.to_vec(),
+        resolution_evidence_ref: r,
+        resolution_evidence: resolution,
+        evidence: objects,
+    }))
+}
 impl Engine {
     fn recovery_writer(&self, expected: &Commit) -> Result<(MutexGuard<'_, Writer>, Vec<u8>)> {
         let mut w = self
@@ -121,7 +183,7 @@ impl Engine {
             .lock()
             .map_err(|_| Error::Recovery("WRITER_POISONED"))?;
         w.ensure_open()?;
-        let bootstrap = match w.store.check() {
+        let bootstrap = match w.check_store() {
             Ok(raw) => raw,
             Err(e) => {
                 self.close(&mut w)?;
@@ -143,7 +205,7 @@ impl Engine {
         // Recheck identity/marker after the bounded read, still under the writer
         // lock. An integrity failure closes all later mutations and effects.
         match result.and_then(|v| {
-            w.store.check()?;
+            w.check_store()?;
             Ok(v)
         }) {
             Ok(v) => Ok(v),
@@ -257,6 +319,19 @@ impl Engine {
         };
         self.read_recovery_attempt(&mut w, attempt).map(Some)
     }
+    /// Select only by a batch ID from the same committed View. None means no
+    /// stored final rejection for that batch, never permission to CLOSE/VOID.
+    /// Reads also work after correction; the original observation is preserved.
+    pub fn trusted_recovery_failure(
+        &self,
+        expected: &Commit,
+        batch_id: &str,
+    ) -> Result<Option<RecoveryFailure>> {
+        let (mut w, _) = self.recovery_writer(expected)?;
+        schema::validate("Hash", &json!(batch_id))?;
+        let result = load_failure(&w.store, &w.candidate, &w.config, batch_id);
+        self.finish_recovery_read(&mut w, result)
+    }
     fn read_recovery_attempt(&self, w: &mut Writer, attempt: Value) -> Result<RecoveryAttempt> {
         let result = (|| {
             let r = evidence::reference(&canonical(&attempt)?, evidence::TYPED)?;
@@ -335,6 +410,11 @@ impl Engine {
         if commit != store.commit {
             return Err(Error::Recovery("REPLAY_COMMIT"));
         }
+        // A replayed selection is not the original byte source. Older homes
+        // missing a failure root stay closed, without automatic migration.
+        for id in candidate.failure_evidence.keys() {
+            load_failure(&store, &candidate, &c, id)?;
+        }
         Self::assembled(store, c, candidate, receipts)
     }
     fn assembled(
@@ -399,7 +479,7 @@ impl Engine {
             .lock()
             .map_err(|_| Error::Recovery("WRITER_POISONED"))?;
         w.ensure_open()?;
-        if let Err(e) = w.store.check() {
+        if let Err(e) = w.check_store() {
             self.close(&mut w)?;
             return Err(super::storage_error(e));
         }
@@ -488,6 +568,22 @@ impl Engine {
                 r["media_type"].as_str().unwrap(),
             )?;
         }
+        // EngineState/JournalRecord deliberately do not expose failure roots
+        // before a VOID receipt. Persist new roots and their closure privately
+        // in the same existing object/WAL transaction, before any response.
+        let new_failures: Vec<_> = after
+            .failure_evidence
+            .keys()
+            .filter(|id| !w.candidate.failure_evidence.contains_key(*id))
+            .cloned()
+            .collect();
+        for id in &new_failures {
+            let r = evidence::reference(&canonical(&after.failure_evidence[id])?, evidence::TYPED)?;
+            for r in full.graph(&json!({"resolution_evidence_ref":r}))? {
+                let media = r["media_type"].as_str().unwrap();
+                objects.insert(full.resolve(&r, media)?, media)?;
+            }
+        }
         let hook = w.hook.clone();
         let outcome = with_hook(&hook, || {
             w.store.begin(&objects)?;
@@ -497,6 +593,9 @@ impl Engine {
                     .map_err(|_| Error::Recovery("SEMANTIC_PREPARE"))?;
             if replayed.full_state()? != after.full_state()? || verified.result != p.result {
                 return Err(Error::Recovery("SEMANTIC_MISMATCH"));
+            }
+            for id in &new_failures {
+                load_failure(&w.store, &replayed, &w.config, id)?;
             }
             fault("candidate_verified")?;
             let commit = w.store.append(&p.record)?;
@@ -577,7 +676,7 @@ impl Engine {
             .lock()
             .map_err(|_| Error::Recovery("WRITER_POISONED"))?;
         w.ensure_open()?;
-        if let Err(e) = w.store.check() {
+        if let Err(e) = w.check_store() {
             self.close(&mut w)?;
             return Err(super::storage_error(e));
         }
@@ -612,7 +711,7 @@ impl Engine {
             .lock()
             .map_err(|_| Error::Recovery("WRITER_POISONED"))?;
         w.ensure_open()?;
-        if let Err(e) = w.store.check() {
+        if let Err(e) = w.check_store() {
             self.close(&mut w)?;
             return Err(super::storage_error(e));
         }

@@ -55,6 +55,7 @@ root 생성과 개방은 `/`부터 모든 조상을 `openat/O_NOFOLLOW`로 순�
 | `trusted_recovery_history(&Commit, Option<u64>, usize)` | 같은 commit의 bootstrap부터 마지막 저장 관측까지 높이 순서로 최대 64개 원문/검증된 Snapshot을 반환. 적용된 C와 마지막 관측을 별도 anchor로 포함. 다음 페이지는 `next_height` 사용 |
 | `trusted_recovery_attempt(&Commit, &str)` | commit된 TX hash로 PREPARED/UNKNOWN 및 terminal attempt와 그 참조 집합의 원 TxRaw·확정/부재 증거 조회. 없는 TX는 `None`. 방송 callback을 실행하지 않음 |
 | `trusted_recovery_attempt_at(&Commit, usize)` | 같은 View의 `state["attempt_refs"]` 순번으로 최대 한 attempt와 증거를 읽음. 저장한 TX hash나 sidecar 없이 재시작 탐색 가능. 범위 밖 순번은 `None` |
+| `trusted_recovery_failure(&Commit, &str)` | 같은 View의 batch ID로 저장된 `ResolutionEvidence` typed 값·원문·참조·정확한 도달 `Objects`를 반환. 실패 판정이 없는 batch 또는 없는 ID는 `None`. 원문이 빠졌으면 오류로 닫힘 |
 
 ### Trusted runtime 재시작 조회
 
@@ -82,7 +83,33 @@ history의 `None` 시작점은 bootstrap 높이이고 지정 높이는 포함된
 
 attempt 조회 입력은 기존 64자리 소문자 TX hash 또는 같은 commit의 attempt 순번이다. 임의 경로·EvidenceRef·object hash로 파일을 읽는 API는 없다. 현재 commit의 Attempt에서 도달하는 정확한 참조 집합만 store에서 읽고 typed Attempt와 원 TxRaw hash를 대조한다. 반환 `Objects`는 이 집합만 담은 메모리 사본이다. 기존 Attempt schema의 구조상 최대 20개 object(typed 1 + TX 1 + inclusion RPC 2 + absence RPC 16) 이내이며 각 media의 기존 byte 상한을 유지한다. 실제 semantic 유효 상태에서는 inclusion과 absence가 공존하지 않는다. 전체 store의 기존 검사는 계속 수행하므로 이 페이지 상한은 처리 지연/처리량 보장이 아니다.
 
-`CATCHING_UP`에서는 미적용 latest/history를 조회할 수 있다. 저장 오류·`RECOVERY_REQUIRED`·poisoned writer에서는 세 조회 API도 닫힌다. 저장/참조 불일치 감지는 reader gate를 `RECOVERY_REQUIRED`로 바꾸며 새로운 WAL·receipt·경제 상태를 만들지 않는다. 기존 `query_signed`의 읽기 전용 원 결과 복원은 유지한다. terminal 데이터를 조회한 뒤에도 `with_committed_attempt`는 `ATTEMPT_TERMINAL`을 반환하고 callback을 실행하지 않는다. 재방송은 언제나 현재 writer gate와 기존 effect API 규칙으로 별도 판정해야 한다.
+`CATCHING_UP`에서는 미적용 latest/history를 조회할 수 있다. 저장 오류·`RECOVERY_REQUIRED`·poisoned writer에서는 모든 trusted 복구 조회 API도 닫힌다. 저장/참조 불일치 감지는 reader gate를 `RECOVERY_REQUIRED`로 바꾸며 새로운 WAL·receipt·경제 상태를 만들지 않는다. 기존 `query_signed`의 읽기 전용 원 결과 복원은 유지한다. terminal 데이터를 조회한 뒤에도 `with_committed_attempt`는 `ATTEMPT_TERMINAL`을 반환하고 callback을 실행하지 않는다. 재방송은 언제나 현재 writer gate와 기존 effect API 규칙으로 별도 판정해야 한다.
+
+### 확정 실패 원문 복구
+
+`trusted_recovery_failure(&view.commit, batch_id)`는 `RecoveryFailure { commit, resolution_evidence_ref, resolution_evidence, raw, evidence }`의 사본을 반환한다. `raw`는 저장된 canonical `ResolutionEvidence` 파일의 바이트이고, `evidence.resolve(&resolution_evidence_ref, TYPED)`와 일치한다. `resolution_evidence`는 이 바이트를 기존 schema로 검증·해석한 값이다. `Objects`에는 root와 그 원문에서 도달하는 TxRaw·block/results 원문만 들어 있다. 다른 batch, 최신 관측, 무관한 Attempt object를 합치지 않는다. 이 private Rust 타입에도 `Serialize`, REST, CLI route 또는 callback은 없다.
+
+선택자는 같은 View의 `state["batches"][i]["batch"]["batch_id"]`인 64자리 소문자 hash다. 입력 경로·임의 `EvidenceRef`는 받지 않는다. 원래 실패 판정은 candidate의 batch별 저장값으로 선택하고, content address로 store에서 읽은 원문과 Context·전체 BatchIdentity·참조 집합을 대조한다. 최신 관측으로 실패 원문을 다시 만들거나 재선택하지 않는다. later Snapshot, CLOSE, VOID receipt, CORRECTION 뒤에도 그 배치의 원문은 동일하다. 정상 `CATCHING_UP`에서 읽을 수 있으며 `RECOVERY_REQUIRED`, 저장 오류, poisoned writer에서는 거절한다. 잘못된 선택자/없는 증거/`STALE_COMMIT`은 상태를 변경하지 않는다. `None`은 CLOSE/VOID나 보류 해제의 허가가 아니다.
+
+기존 schema의 최대 3개 inline settle attempt를 따른다. 반환 그래프의 보수적 상한은 root 1 + 3 × (TxRaw 1 + inclusion RPC 2 + absence RPC 16) = **58 objects**이며 각 media byte 상한도 그대로다. 실제 유효 attempt의 inclusion과 absence proof는 동시에 존재하지 않는다. typed root는 262,144B 상한을 따른다. 전체 store 검사가 포함되므로 object 상한은 응답 시간이나 메모리 총량 보장이 아니다.
+
+```rust,ignore
+let view = engine.reader().get()?;
+let batch_id = view.state["batches"][i]["batch"]["batch_id"].as_str().unwrap();
+if let Some(saved) = engine.trusted_recovery_failure(&view.commit, batch_id)? {
+    let original = saved.evidence.resolve(
+        &saved.resolution_evidence_ref,
+        nus_exchange_contract::s3::evidence::TYPED,
+    )?;
+    // saved.raw == original; saved.resolution_evidence is the decoded original.
+    // CLOSE signing and VOID collection consume this existing evidence.
+    // Broadcasting still requires the existing current-commit effect gate.
+}
+```
+
+이 보완 전의 `RejectFinal`은 실패 선택값을 candidate와 결정적 재생에 유지했지만, typed root를 store에 쓰는 시점은 `resolution_evidence_ref`가 포함된 VOID receipt 이후였다. 따라서 receipt 이전 재시작에 원문 출처가 없었다. 이제 새 실패 root와 도달 원문을 기존 `transaction.dev`의 immutable object 저장에 포함하고, 저장 재검증 후 WAL fsync→marker fsync/rename/dir fsync→공개→개발 응답 순서를 따른다. `JournalRecord`, `EngineState`, 계약 schema/해시/cap와 실패 경제 의미는 변경하지 않는다. 추가 private 원문 파일은 기존 object 경로와 no-replace 규칙을 따른다.
+
+`Engine::open`도 원 명령의 semantic replay를 마친 뒤 모든 저장된 실패 선택의 원문·참조 그래프를 확인한다. **이전 후보로 만든 home에서 `RejectFinal`은 있지만 typed root가 없는 경우 새 open은 오류로 끝난다.** 공통 store 검증이 조회·명령·방송 callback 경계에서도 모든 기존 실패 root를 확인한다. root와 descriptor를 함께 삭제해도 다른 batch 조회·새 명령·CLOSE 방송이 이를 우회하지 못하고 writer를 닫는다. 조회나 open으로 root를 생성·재계산·보충하지 않으며 자동 migration은 없다. 원문 파일이 이미 있는 이전 home은 기존 검증을 통과해야 한다. 새 합성 home에서 실행하는 component 범위이며 운영 데이터 migration이나 runtime pin 발급을 포함하지 않는다.
 
 변경 응답은 승인된 7필드 envelope다. `development_receipt=LOCAL_WRITE_COMPLETED_UNPROVEN_SPACE`, `durable_ack=false`, `storage_assurance=UNPROVEN_HOST_SPACE`. 내부 rc3 `CommandResult`는 변경하지 않는다. receipt ledger의 `{receipt,command_seq,record_hash,end_offset}`는 독립 시험/인계 컨테이너이며 새 public schema가 아니다. 개발 접수와 chain `COMMITTED`는 별도다. D의 실제 HTTP는 `/dev-local/v1/`·loopback·기존 인증/origin·계정 격리와 묶어 후속 업무에서 검증해야 한다.
 
