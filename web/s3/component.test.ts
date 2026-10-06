@@ -192,3 +192,65 @@ test('out-of-order closing response from prior account generation cannot close s
   assert.equal(p.accept({...account('alice',now),gate:'RECOVERY_REQUIRED'},g,now,0,old),false);
   assert.equal(p.view!.owner,'bob');assert.equal(p.ready(now),true);
 });
+
+const withdrawalHolds: Record<string,(v:Account)=>void>={
+  'ready-revoked':v=>{v.withdraw_ready=false;},
+  'unfrozen':v=>{v.withdraw_frozen=false;},
+  R:v=>{v.ledger[0].R='1';v.ledger[0].A='999999999999';},
+  D:v=>{v.ledger[0].D='1';v.ledger[0].A='999999999999';},
+  P:v=>{v.ledger[1].P='1';},
+  'pending-fill':v=>{v.fills=[{fill_id:'new',state:'PENDING',revision:v.revision}];},
+  'unknown-fill':v=>{v.fills=[{fill_id:'new',state:'SUBMISSION_UNKNOWN',revision:v.revision}];},
+  'pending-batch':v=>{v.batches=[{state:'SUBMISSION_UNKNOWN',revision:v.revision,batch:{batch_id:'ab'.repeat(32),batch_hash:'cd'.repeat(32),batch_seq:'1'}}];},
+};
+for(const [kind,hold] of Object.entries(withdrawalHolds)) for(const first of [true,false]) {
+  test(`OPEN/${kind} hold from ${first?'earlier':'later'} request blocks in-flight reopening and all signing`,async()=>{
+    const f=await clientFixture();let signatures=0;const direct=f.key.direct.bind(f.key);
+    f.key.direct=input=>{signatures++;return direct(input);};
+    try {
+      const responses=[deferred<Response>(),deferred<Response>(),deferred<Response>()];let requests=0;
+      const open=structuredClone(f.c.projection.view!);
+      f.setAccountReply(()=>responses[requests++].promise);
+      const pending=[f.c.refresh(),f.c.refresh()],i=first?0:1;
+      responses[1-i].resolve(new Response(JSON.stringify(open)));assert.equal(await pending[1-i],true);
+      const inflight=f.c.refresh();
+      const held={...structuredClone(open),revision:'2',received_at_unix_ms:String(Date.now())};hold(held);
+      responses[i].resolve(new Response(JSON.stringify(held)));assert.equal(await pending[i],true);
+      assert.equal(f.c.projection.view!.revision,'2');assert.equal(f.c.projection.open(),true);
+      assert.equal(f.c.canWithdraw(),false);assert.match(screen(f.c).status,/출금 보류/);
+      const ready={...open,revision:'3',received_at_unix_ms:String(Date.now())};
+      responses[2].resolve(new Response(JSON.stringify(ready)));assert.equal(await inflight,false);
+      await assert.rejects(()=>f.c.withdraw('DEVBASE','1'),/HELD/);
+      assert.equal(signatures,0);assert.equal(f.posts(),0);assert.equal(f.c.history.length,0);
+      f.setAccountReply(async()=>new Response(JSON.stringify({...ready,received_at_unix_ms:String(Date.now())})));
+      assert.equal(await f.c.refresh(),true);assert.equal(f.c.canWithdraw(),true);
+    }finally{f.c.destroy();}
+  });
+}
+for(const [kind,change,reason] of [
+  ['gap',(v:Account)=>{v.revision='4';},'REVISION_GAP_REQUERY'],
+  ['revision-regression',(v:Account)=>{v.revision='0';},'REVISION_REGRESSION'],
+  ['observation-regression',(v:Account)=>{v.received_at_unix_ms=String(BigInt(v.received_at_unix_ms)-1n);},'OBSERVATION_REGRESSION'],
+  ['economic-conflict',(v:Account)=>{v.ledger[0].P='1';},'REVISION_CONFLICT'],
+  ['invalid-ledger',(v:Account)=>{v.ledger[0].A='9';},'LEDGER_INVARIANT'],
+] as const) test(`superseded ready OPEN still validates ${kind} and invalidates pending reopen`,()=>{
+  const p=setup(),now=Date.now(),v=account('alice',now),g=p.generation;p.accept(v,g,now,0);
+  const a=p.beginObservation(),b=p.beginObservation();p.accept(v,g,now,0,b);
+  const pending=p.beginObservation(),invalid=structuredClone(v);change(invalid);
+  assert.equal(p.accept(invalid,g,now,0,a),false);assert.equal(p.reason,reason);assert.equal(p.ready(now),false);
+  assert.equal(p.accept(v,g,now,0,pending),false);assert.equal(p.ready(now),false);
+});
+test('service OPEN without withdrawal readiness permits prepare and abort',async()=>{
+  const f=await clientFixture();try {
+    const v={...structuredClone(f.c.projection.view!),withdraw_ready:false};
+    f.setView(v);assert.equal(await f.c.refresh(),true);assert.equal(f.c.canWithdraw(),false);
+    await f.c.prepare();await f.c.prepare(true);assert.equal(f.prepare(),2);assert.equal(f.posts(),0);
+  }finally{f.c.destroy();}
+});
+test('OPEN hold across prior recovery barrier cannot reopen service or an in-flight ready query',()=>{
+  const p=setup(),now=Date.now(),v=account('alice',now),g=p.generation;p.accept(v,g,now,0);
+  const old=p.beginObservation();p.close('RECOVERY_REQUIRED');const pending=p.beginObservation();
+  assert.equal(p.accept({...v,withdraw_ready:false},g,now,0,old),true);
+  assert.equal(p.open(now),false);assert.equal(p.accept(v,g,now,0,pending),false);
+  assert.equal(p.accept(v,g,now,0,p.beginObservation()),true);assert.equal(p.ready(now),true);
+});

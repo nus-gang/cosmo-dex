@@ -21,6 +21,14 @@ export interface Account {
   ledger: Ledger[]; withdraw_frozen: boolean; withdraw_ready: boolean;
   orders: any[]; fills: any[]; batches: any[];
 }
+// Service availability permits preparation; direct signing requires every hold cleared.
+// Call only after validating the complete account projection.
+function withdrawalReady(v: Account) {
+  return v.withdraw_ready===true && v.withdraw_frozen===true &&
+    v.ledger.every(r=>r.R==='0'&&r.D==='0'&&r.P==='0') &&
+    !v.batches.some(b=>!['COMMITTED','CORRECTED','VOID'].includes(b.state)) &&
+    !v.fills.some(f=>['PENDING','SUBMISSION_UNKNOWN'].includes(f.state));
+}
 export interface Observation { readonly generation: number; readonly sequence: number; readonly barrier: number }
 export class Projection {
   generation = 0; owner = ''; view?: Account; reason = 'NOT_CONNECTED';
@@ -34,10 +42,7 @@ export class Projection {
   beginObservation(): Observation {return {generation:this.generation,sequence:++this.#sequence,barrier:this.#barrier};}
   accept(v: Account, generation: number, now: number, elapsed: number, observation=this.beginObservation()): boolean {
     if (generation !== this.generation || observation.generation !== this.generation) return false;
-    // Request start order is not server observation order. Only reopening may
-    // discard an old/in-flight query; a closing observation must still be checked.
-    if (v.fresh === true && v.gate === 'OPEN' && (observation.sequence <= this.#observedSequence || observation.barrier !== this.#barrier)) return false;
-    this.#observedSequence=Math.max(this.#observedSequence,observation.sequence);
+    const superseded=observation.sequence<=this.#observedSequence || observation.barrier!==this.#barrier;
     try {
       context(v.context,this.ctx);
       if(v.owner!==this.owner)throw Error('ACCOUNT_MISMATCH');
@@ -67,9 +72,21 @@ export class Projection {
         for(const old of this.view.fills)if(old.state==='COMMITTED'&&!v.fills.some(f=>f.fill_id===old.fill_id&&f.state==='COMMITTED'))throw Error('COMMITTED_REGRESSION');
         if(revision>integer(this.view.revision)+1n&&!this.#resync){this.#resync=true;throw Error('REVISION_GAP_REQUERY');}
       }
+      // Validate observation/revision/gap before request-order filtering: even
+      // an OPEN response can revoke readiness or expose invalid economic state.
+      const serviceOpen=v.fresh===true && v.gate==='OPEN';
+      const ready=serviceOpen && withdrawalReady(v);
+      if(ready && superseded)return false;
+      this.#observedSequence=Math.max(this.#observedSequence,observation.sequence);
       this.view=structuredClone(v);this.#resync=false;this.#received=this.clock();this.#wall=now;
       this.#age=Number(BigInt(now)-integer(v.received_at_unix_ms))+elapsed;
-      if(v.fresh===true && v.gate==='OPEN')this.reason='OPEN';else this.close('HELD');
+      if(serviceOpen) {
+        // A valid withdrawal hold invalidates every query already in flight.
+        // Keep preparation available, but never reopen a closed service from
+        // a superseded request. A new authoritative query can reopen it.
+        if(!superseded || this.reason==='OPEN')this.reason='OPEN';
+        if(!ready)this.#barrier++;
+      }else this.close('HELD');
       return true;
     }catch(e){this.close((e as Error).message);return false;}
   }
@@ -80,6 +97,6 @@ export class Projection {
   }
   ready(now=Date.now()) {
     const v=this.view;
-    return !!v && this.open(now) && v.withdraw_ready===true && v.withdraw_frozen===true && v.ledger.every(r=>r.R==='0'&&r.D==='0'&&r.P==='0') && !v.batches.some(b=>!['COMMITTED','CORRECTED','VOID'].includes(b.state)) && !v.fills.some(f=>['PENDING','SUBMISSION_UNKNOWN'].includes(f.state));
+    return !!v && this.open(now) && withdrawalReady(v);
   }
 }
