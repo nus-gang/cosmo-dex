@@ -5,7 +5,10 @@ mod fs;
 mod runtime;
 mod store;
 pub use binding::{Inputs, Validated};
-pub use runtime::{Command, Engine, ReadView, View};
+pub use runtime::{
+    Command, Engine, RECOVERY_HISTORY_PAGE_MAX, ReadView, RecoveryAttempt, RecoveryHistory,
+    RecoveryObservation, View,
+};
 #[cfg(feature = "fault-injection")]
 use std::sync::Arc;
 #[derive(Debug)]

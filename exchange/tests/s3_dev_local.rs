@@ -276,6 +276,13 @@ fn io_errors_close_admission_and_preserve_unknown() {
         assert_eq!(e.reader().get().unwrap().gate, "RECOVERY_REQUIRED");
         assert!(e.execute(signed(&raw, &sig, 0), &[], &o, NOW).is_err());
         assert!(e.committed_attempt("x").is_err());
+        let commit = e.reader().get().unwrap().commit.clone();
+        assert!(e.trusted_recovery_history(&commit, None, 64).is_err());
+        assert!(e.trusted_recovery_attempt_at(&commit, 0).is_err());
+        assert!(
+            e.trusted_recovery_attempt(&commit, nus_exchange_contract::s3::schema::ZERO)
+                .is_err()
+        );
         assert!(
             e.with_committed_attempt("x", |_, _| panic!("closed gate broadcast"))
                 .is_err()
@@ -708,5 +715,164 @@ fn ancestor_alias_and_outside_namespace_are_rejected_before_creation() {
     evidence(
         "ancestor-confinement",
         &json!({"outside_created":false,"symlink_ancestor_followed":false,"result":"PASS"}),
+    );
+}
+
+#[test]
+#[cfg(feature = "fault-injection")]
+fn trusted_recovery_serializes_with_publication_and_stale_commit() {
+    use nus_exchange_contract::s3::dev_local::Error;
+    let (_, _, v, e) = new(0);
+    let e = Arc::new(e);
+    let old = e.reader().get().unwrap().commit.clone();
+    let (entered, at_barrier) = mpsc::channel();
+    let (resume, wait) = mpsc::channel();
+    let wait = std::sync::Mutex::new(wait);
+    e.set_fault_hook(Some(Arc::new(move |point| {
+        if point == "before_publish" {
+            entered.send(()).unwrap();
+            wait.lock()
+                .unwrap()
+                .recv_timeout(std::time::Duration::from_secs(10))
+                .unwrap();
+        }
+        Ok(())
+    })))
+    .unwrap();
+    let worker = e.clone();
+    let (raw, sig) = sign_order(&v, 0, "2", 1000, 10000, 244);
+    let writer = std::thread::spawn(move || {
+        worker.execute(signed(&raw, &sig, 0), &[], &observation(&v), NOW)
+    });
+    at_barrier
+        .recv_timeout(std::time::Duration::from_secs(10))
+        .unwrap();
+    assert_eq!(e.reader().get().unwrap().commit, old);
+    let (started, reading) = mpsc::channel();
+    let reader = e.clone();
+    let read = std::thread::spawn(move || {
+        started.send(()).unwrap();
+        reader.trusted_recovery_history(&old, None, 64)
+    });
+    reading
+        .recv_timeout(std::time::Duration::from_secs(10))
+        .unwrap();
+    resume.send(()).unwrap();
+    assert!(writer.join().unwrap().unwrap().is_some());
+    assert!(matches!(
+        read.join().unwrap(),
+        Err(Error::Invalid("STALE_COMMIT"))
+    ));
+    let current = e.reader().get().unwrap();
+    let page = e
+        .trusted_recovery_history(&current.commit, None, 1)
+        .unwrap();
+    assert_eq!(page.commit, current.commit);
+    assert_eq!(page.commit.command_seq, 1);
+    assert_eq!(e.reader().get().unwrap().gate, "OPEN");
+    evidence(
+        "trusted-publisher-barrier",
+        &json!({"result":"PASS","barrier":"before_publish","old_revision":0,"new_revision":1,"old_query":"STALE_COMMIT","new_query":"PASS","effect_callbacks":0}),
+    );
+}
+
+#[test]
+#[cfg(feature = "fault-injection")]
+fn trusted_recovery_rejects_poisoned_writer() {
+    use nus_exchange_contract::s3::{dev_local::Error, schema};
+    let (h, _, v, e) = new(0);
+    let e = Arc::new(e);
+    let before = e.reader().get().unwrap();
+    e.set_fault_hook(Some(Arc::new(|point| {
+        assert_ne!(point, "before_wal", "injected writer panic");
+        Ok(())
+    })))
+    .unwrap();
+    let writer = e.clone();
+    let (raw, sig) = sign_order(&v, 0, "2", 1000, 10000, 245);
+    assert!(
+        std::thread::spawn(move || writer.execute(
+            signed(&raw, &sig, 0),
+            &[],
+            &observation(&v),
+            NOW
+        ))
+        .join()
+        .is_err()
+    );
+    let wal = fs::read(h.join("journal.dev.wal")).unwrap();
+    let marker = fs::read(h.join("commit.dev.json")).unwrap();
+    assert!(matches!(
+        e.trusted_recovery_history(&before.commit, None, 64),
+        Err(Error::Recovery("WRITER_POISONED"))
+    ));
+    assert!(matches!(
+        e.trusted_recovery_attempt(&before.commit, schema::ZERO),
+        Err(Error::Recovery("WRITER_POISONED"))
+    ));
+    assert!(matches!(
+        e.trusted_recovery_attempt_at(&before.commit, 0),
+        Err(Error::Recovery("WRITER_POISONED"))
+    ));
+    let mut callbacks = 0;
+    assert!(
+        e.with_committed_attempt(schema::ZERO, |_, _| callbacks += 1)
+            .is_err()
+    );
+    assert_eq!(callbacks, 0);
+    assert_eq!(e.reader().get().unwrap().commit, before.commit);
+    assert_eq!(e.reader().get().unwrap().state, before.state);
+    assert_eq!(e.reader().get().unwrap().receipts, before.receipts);
+    assert_eq!(fs::read(h.join("journal.dev.wal")).unwrap(), wal);
+    assert_eq!(fs::read(h.join("commit.dev.json")).unwrap(), marker);
+    evidence(
+        "trusted-writer-poison",
+        &json!({"result":"PASS","read_errors":"WRITER_POISONED","callback_calls":0,"commit_diff":[],"state_diff":[],"receipt_diff":[],"wal_diff":[],"marker_diff":[]}),
+    );
+}
+
+#[test]
+fn trusted_recovery_history_page_ceiling_and_bootstrap_bytes() {
+    let (h, input, mut v, e) = new(0);
+    let bootstrap = fs::read(h.join("bootstrap.dev.json")).unwrap();
+    for height in 101..=165 {
+        v["height"] = json!(height.to_string());
+        v["block_hash"] = json!(sha256(height.to_string().as_bytes()));
+        finish(&mut v);
+        e.execute(
+            Command::Snapshot(canonical(&v).unwrap()),
+            &[],
+            &observation(&v),
+            NOW,
+        )
+        .unwrap();
+    }
+    let view = e.reader().get().unwrap();
+    drop(e);
+    let mut rows = Vec::new();
+    for _ in 0..2 {
+        let e = Engine::open(&h, Validated::new(input.clone()).unwrap()).unwrap();
+        let first = e.trusted_recovery_history(&view.commit, None, 64).unwrap();
+        assert_eq!(first.observations.len(), 64);
+        assert_eq!(first.observations[0].raw, bootstrap);
+        assert_eq!(first.observations[63].snapshot.height(), 163);
+        assert_eq!(first.next_height, Some(164));
+        assert_eq!(first.applied.snapshot.height(), 100);
+        assert_eq!(first.latest.snapshot.height(), 165);
+        let last = e
+            .trusted_recovery_history(&view.commit, first.next_height, 64)
+            .unwrap();
+        assert_eq!(last.observations.len(), 2);
+        assert_eq!(last.next_height, None);
+        assert_eq!(last.observations[0].snapshot.height(), 164);
+        assert_eq!(last.observations[1].snapshot.height(), 165);
+        assert_eq!(e.reader().get().unwrap().commit, view.commit);
+        assert_eq!(e.reader().get().unwrap().state, view.state);
+        assert_eq!(e.reader().get().unwrap().receipts, view.receipts);
+        rows.push(json!({"first_page_count":64,"next_height":164,"second_page_count":2,"final_next_height":null,"applied_height":100,"latest_height":165,"state_diff":[],"receipt_diff":[],"commit_diff":[]}));
+    }
+    evidence(
+        "trusted-history-ceiling",
+        &json!({"result":"PASS","replays":rows,"bootstrap_sha256":sha256(&bootstrap)}),
     );
 }
