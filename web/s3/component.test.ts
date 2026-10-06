@@ -142,3 +142,53 @@ test('delayed account refresh after account switch cannot restore prior view',as
     assert.equal(f.posts(),0);assert.equal(f.c.history.length,0);
   }finally{f.key.destroy();}
 });
+
+for(const recoveryFirst of [true,false]) for(const observationAge of ['equal','newer'] as const) {
+  test(`OPEN then recovery from ${recoveryFirst?'earlier':'later'} request (${observationAge} observation) closes and invalidates in-flight reopen`,async()=>{
+    const f=await clientFixture();let signatures=0;const direct=f.key.direct.bind(f.key);
+    f.key.direct=input=>{signatures++;return direct(input);};
+    try {
+      const responses=[deferred<Response>(),deferred<Response>(),deferred<Response>()];let requests=0;
+      const open=structuredClone(f.c.projection.view!);
+      f.setAccountReply(()=>responses[requests++].promise);
+      const pending=[f.c.refresh(),f.c.refresh()];
+      const recoveryIndex=recoveryFirst?0:1,openIndex=1-recoveryIndex;
+      responses[openIndex].resolve(new Response(JSON.stringify(open)));assert.equal(await pending[openIndex],true);
+      assert.equal(f.c.canWithdraw(),true);
+      // Even this newer request started before the closing response arrived.
+      const inflight=f.c.refresh();
+      if(observationAge==='newer')await new Promise(resolve=>setTimeout(resolve,2));
+      const recovery={...open,gate:'RECOVERY_REQUIRED',withdraw_ready:false,
+        received_at_unix_ms:observationAge==='newer'?String(Date.now()):open.received_at_unix_ms};
+      if(observationAge==='newer')assert.ok(BigInt(recovery.received_at_unix_ms)>BigInt(open.received_at_unix_ms));
+      responses[recoveryIndex].resolve(new Response(JSON.stringify(recovery)));
+      assert.equal(await pending[recoveryIndex],true);
+      assert.equal(f.c.projection.view!.gate,'RECOVERY_REQUIRED');
+      assert.equal(f.c.canWithdraw(),false);
+      responses[2].resolve(new Response(JSON.stringify({...open,received_at_unix_ms:String(Date.now())})));
+      assert.equal(await inflight,false);
+      await assert.rejects(()=>f.c.withdraw('DEVBASE','1'),/HELD/);
+      assert.equal(signatures,0);assert.equal(f.posts(),0);assert.equal(f.c.history.length,0);
+      f.setAccountReply(async()=>new Response(JSON.stringify({...open,received_at_unix_ms:String(Date.now())})));
+      assert.equal(await f.c.refresh(),true);assert.equal(f.c.canWithdraw(),true);
+      assert.equal(signatures,0);assert.equal(f.posts(),0);
+    }finally{f.c.destroy();}
+  });
+}
+test('valid closing observation across a prior barrier invalidates a pending recovery query',()=>{
+  const p=setup(),now=Date.now(),v=account('alice',now),g=p.generation;
+  p.accept(v,g,now,0);
+  const beforeHold=p.beginObservation();
+  p.close('DISCONNECTED');
+  const afterHold=p.beginObservation();
+  assert.equal(p.accept({...v,gate:'RECOVERY_REQUIRED',withdraw_ready:false},g,now,0,beforeHold),true);
+  assert.equal(p.accept(v,g,now,0,afterHold),false);
+  assert.equal(p.ready(now),false);
+  assert.equal(p.accept(v,g,now,0,p.beginObservation()),true);
+});
+test('out-of-order closing response from prior account generation cannot close selected account',()=>{
+  const p=setup(),now=Date.now(),g=p.generation,old=p.beginObservation();
+  p.select('bob');const current=account('bob',now);p.accept(current,p.generation,now,0);
+  assert.equal(p.accept({...account('alice',now),gate:'RECOVERY_REQUIRED'},g,now,0,old),false);
+  assert.equal(p.view!.owner,'bob');assert.equal(p.ready(now),true);
+});

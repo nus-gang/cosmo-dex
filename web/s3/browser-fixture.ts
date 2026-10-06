@@ -33,11 +33,12 @@ async function reorder(fault: string) {
   const pending=new Promise<Response>(r=>{release=r;});let requests=0;
   accountReply=async()=>{
     if(++requests===1)return pending;
+    if(fault==='late-recovery')return new Response(JSON.stringify(open));
     if(fault==='503')return new Response(null,{status:503});
     if(fault==='disconnect')throw Error('DISCONNECTED');
     return new Response(JSON.stringify({...open,gate:'RECOVERY_REQUIRED',withdraw_ready:false}));
   };
   const old=client.refresh();await client.refresh();
-  release(new Response(JSON.stringify(open)));await old;accountReply=undefined;component.render();
+  release(new Response(JSON.stringify(fault==='late-recovery'?{...open,received_at_unix_ms:String(Date.now()),gate:'RECOVERY_REQUIRED',withdraw_ready:false}:open)));await old;accountReply=undefined;component.render();
 }
 Object.assign(globalThis,{fixture:{client,component,reorder,posts:()=>posts,held:()=>{mode='held';selected=keys.findIndex(k=>k.owner===client.projection.owner);client.select(keys[selected]);},owners:keys.map(k=>k.owner)}});
