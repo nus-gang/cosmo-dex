@@ -76,3 +76,15 @@ Observation의 received_at은 전체 조회 뒤·저장 전 wall clock, query_la
 기존 offline/locked rlib와 Rust1.92.0으로 `--test ops/s3-local/runtime/collect.rs`를 빌드하여 **20 PASS / 0 FAIL**(신규 포함 시험7 + 기존 query/collect13)을 확인했다. exact 두 번째 TX/index·raw bytes 보존, 성공/실패 code, 빈 블록/미발견, 중복 TX, 잘못된 정수·범위, snapshot/hash/raw-ref 변조, TX 크기 거절을 메모리 fixture로 검증했다. 실제 socket/RPC/서비스0이며 기존 observer 시험20과 합산하지 않는다. 컴파일 명령은 `inclusion-build.json`, 원 결과는 `inclusion-tests.log`다.
 
 잔여 worker/receipt/absence/signer·ChainPort·초기화·launcher·최종 manifest·독립 승인 범위와 DEV NOT_RUN은 유지한다.
+
+## Batch 조회와 timeout 전체 부재 수집 (추가 진행)
+
+`ChainRead::batch`는 exact H의 B Batch 조회 원문과 `BatchLookup`을 반환한다. JSON-RPC id/error/code, canonical value·Context·H·snapshot id·requested seq·LastBatch를 검증한다. seq>LastBatch일 때만 NOT_FOUND_AT_HEIGHT/null을 허용하고, 이미 지난 seq의 누락은 RECEIPT_INCONSISTENCY다. FOUND는 조회 자료일 뿐이며 terminal TX 검증 전 COMMITTED가 아니다.
+
+`ChainRead::absence`는 C에 저장된 Attempt와 정확히8개 연속 snapshot을 받는다. timeout 이후 높이·같은 Context·계정 번호/sequence를 확인한 다음 Batch 조회1회, block/results16회까지만 수행한다. 각 RPC deadline2초, 원 증거 합계16MiB이며 C `proof::absence`가 TX 미포함·연속 block hash를 검증한다. 조회 오류는 재시도 없이 전파하고 partial proof/상태 전이를 반환하지 않는다. 반환은 메모리 proof와 원 evidence이며 영속화·Attempt 전이·봉투 재시도·정정은 수행하지 않는다. NOT_FOUND 단독으로 D/P를 해제하지 않는다.
+
+**현재 제한:** B snapshot의 accounts는 등록 사용자만 포함한다. 운영자가 여기에 없는 일반 구성은 IO 전에 ABSENCE_ACCOUNT로 닫힌다. 별도 동일 H auth Account 조회/검증 adapter 연결이 남아 있으며, 이번 구현을 일반 운영자 경로 완성으로 표시하지 않는다. 시험은 등록 운영자 합성 snapshot을 사용한다. 실제 초기화에서 이 제한을 우회하려고 운영자를 임의로 사용자 등록하지 않는다.
+
+Rust1.92.0·기존 offline/locked rlib로 **28 PASS/0 FAIL**(신규8+기존20), 실제 socket/RPC/서비스0. 8개 높이·17개 원 evidence 보존, 포함TX/깨진 hash chain·과거 seq 영수증 누락·잘못된 Context/H/id/정수·원문 canonical 위반·history gap·timeout equality·계정 누락·sequence 역행·총량초과·RPC 중단을 시험했다. 최초4개 실패는 fixture에서 운영자 계정이 없었던 것에 따른 panic이며 실패 로그를 보존하고 등록 운영자 fixture와 미등록 거절시험을 분리했다. 경제/Chain/C/lock 변경0. `absence-build.json` 명령과 `absence-tests.log`가 재현 근거다.
+
+다음 SRE 작업: 동일 H 운영자 Account 조회, receipt/signer/worker, 웹 ChainPort, fee0/25 초기화·launcher/정리/fault driver·최종 binary/manifest. CTO→Security 제출 전이며 runtime pin 미발급·DEV NOT_RUN·원 G00/ACK와 부모 blocker 유지.
