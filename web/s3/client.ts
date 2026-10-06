@@ -46,9 +46,9 @@ export class LocalClient {
     }catch(e){if(g===this.projection.generation){this.#capable=false;this.projection.close('AUTH_OR_CAPABILITY_FAILED');}throw e;}
   }
   async refresh() {
-    const g=this.projection.generation,start=performance.now();
+    const g=this.projection.generation,start=performance.now(),observation=this.projection.beginObservation();
     if(!this.#capable)throw Error('CAPABILITY_REQUIRED');
-    try {const v=await this.#request('account');return this.projection.accept(v,g,Date.now(),performance.now()-start);}
+    try {const v=await this.#request('account');return this.projection.accept(v,g,Date.now(),performance.now()-start,observation);}
     catch(e){if(g===this.projection.generation)this.projection.close((e as Error).message);return false;}
   }
   async prepare(abort=false) {
