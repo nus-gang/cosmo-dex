@@ -18,7 +18,7 @@ L-R은 승인 context와 두 opt-in을 공급하고 아래 transport를 배선�
 
 C/R/D/P/A는 하나의 account revision으로 교체한다. atoms는 canonical 정수 문자열과 bigint, A=C−R−D이며 P를 더하지 않는다. 개발 보장 문자열·접수와 확정 구분·batch seq/id/hash/H/TX·잠정/불명/COMMITTED/정정을 표시한다. COMMITTED 표시는 projection의 batch receipt와 연결되며 client가 독립 light-client proof를 검증한다는 뜻은 아니다.
 
-계정 전환은 generation을 증가시키고 view/session/capability/접수 안내를 즉시 비운다. 이전 generation 응답은 폐기한다. 동일 revision은 economic content 동일일 때 무효과, 충돌·역행은 닫힘, gap은 닫은 뒤 새로운 full account 조회에서 재동기화한다. 5초 원 관측 age, 2초 전달/query, monotonic 경과와 wall-clock 역행을 확인한다. 조회 시작 시 generation·단조 요청 번호·보류 barrier를 기록한다. 재개용 fresh OPEN은 이미 처리한 요청보다 오래되었거나 보류 전 시작했다면 폐기한다. 요청 시작 순서가 서버 관측 순서는 아니므로 닫힘 응답은 요청 번호·기존 barrier로 버리지 않고 Context/계정/원 관측 시각/원장 검증을 거친다. close 또는 recovery 응답은 barrier를 올려 당시 진행 중인 모든 재개 조회를 무효화한다. 보류 후 시작한 새 권위 조회만 다시 열 수 있으며 같은 revision을 포함한 원 관측 시각 역행도 거절한다. 단절·recovery는 새 출금을 닫는다. 화면 timer는 상태 표시만 갱신하고 TX를 만들지 않는다.
+계정 전환은 generation을 증가시키고 view/session/capability/접수 안내를 즉시 비운다. 이전 generation 응답은 폐기한다. 동일 revision은 economic content 동일일 때 무효과, 충돌·역행은 닫힘, gap은 닫은 뒤 새로운 full account 조회에서 재동기화한다. 5초 원 관측 age, 2초 전달/query, monotonic 경과와 wall-clock 역행을 확인한다. 조회 시작 시 generation·단조 요청 번호·보류 barrier를 기록한다. 서비스 OPEN과 직접 출금 가능을 구분한다. 전체 검증을 통과한 fresh OPEN 중 withdraw_ready/withdraw_frozen, R=D=P=0, 미해소 batch/fill 없음까지 충족한 재개 응답만 요청 순서 필터를 적용한다. 이미 처리한 요청보다 오래되었거나 보류 전 시작했다면 폐기한다. 요청 시작 순서가 서버 관측 순서는 아니므로 닫힘 응답은 요청 번호·기존 barrier로 버리지 않고 Context/계정/원 관측 시각/원장 검증을 거친다. Context/계정/경제·revision/gap·관측 시각 검증은 요청 순서 필터보다 먼저 실행하며 오류는 보류한다. 출금 준비 해제·R/D/P·미해소 batch/fill 관측도 barrier를 올린다. 서비스가 열린 동안 출금 보류는 준비/해제 API 사용을 막지 않지만, 이미 닫힌 서비스는 오래된 요청으로 열지 않는다. close 또는 recovery 응답은 barrier를 올려 당시 진행 중인 모든 재개 조회를 무효화한다. 보류 후 시작한 새 권위 조회만 다시 열 수 있으며 같은 revision을 포함한 원 관측 시각 역행도 거절한다. 단절·recovery는 새 출금을 닫는다. 화면 timer는 상태 표시만 갱신하고 TX를 만들지 않는다.
 
 출금 준비/명시적 해제는 승인 L-D endpoint만 호출한다. 개발 receipt는 ledger를 변경하지 않으며 다시 account를 읽는다. 준비 완료·fresh OPEN·R=D=P=0·불명/잠정 없음일 때만 직접 서명한다. 중복 클릭은 첫 await 전에 lock한다. 원 TxRaw/hash를 탭 history에 UNKNOWN으로 저장한 뒤 단 한 번 방송한다. 응답 유실/미발견에서는 조회만 허용하고 다른 TX 생성0. 확정 결과 이후에도 그 H 이상의 새 계정 projection을 받아야 다음 출금이 가능하다. 계정 전환 후에도 기존 키의 UNKNOWN latch를 유지한다.
 
@@ -36,3 +36,7 @@ node s3/browser.test.mjs <증거 디렉터리>
 `fixtures/ld-rest.json`은 L-D 직접 Rust handler의 원 합성 출력 복사본이다. Node 시험은 해당 shape와 합성 계정/시간 변형, 실제 일회성 ML-DSA 키·직접 TxRaw를 쓴다. Chrome 시험은 네트워크를 차단한 in-memory fixture와 실제 DOM으로 검증하며 HTTP/체인 서비스는 시작하지 않는다. `browser-fixture.ts`는 build entry에 포함되지 않는다. 모든 screenshot은 합성 component임을 표시한다.
 
 `G00=FAIL_UNPROVEN / allowlist=[] / ACK=CLOSED`, 표준 부모 blocker 유지. 실제 DEV01~14·runtime·main/CI·자산 보존 통합은 NOT_RUN. Helix 변경·새 UI 제품 채택이나 성능 보장을 포함하지 않는다. 독립 CTO→Security가 같은 최종 후보를 검토한 뒤에만 업무 완료다.
+
+## CTO-LE-R3-01 수정 검증
+
+Node component 50 PASS, Chrome 합성 DOM 12 PASS. CTO 원문 재현 R1/R2 및 R3 준비 해제·D/P 두 사례를 수정 없이 실행하여 보류·서명0·방송0을 확인했다. R3는 이전 후보에서 두 사례 FAIL을 먼저 재현했다. 출금 제한 8종의 요청 순서 양쪽, 기존 barrier를 지난 보류, 요청 순서 필터 앞 revision/gap/원장/시각 오류, 서비스 OPEN 중 준비·해제 가능을 검증했다. 실제 네트워크·체인·DEV12는 NOT_RUN이며 독립 심사는 기존 CTO→Security로 재제출한다.

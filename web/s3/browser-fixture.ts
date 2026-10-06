@@ -6,7 +6,7 @@ import { encode } from '../src/codec.ts';
 import { base64 } from './direct-codec.ts';
 import raw from './fixtures/ld-rest.json' with {type:'json'};
 const keys=[new LocalKey(),new LocalKey()],ctx=raw.owner_projection.context;
-let selected=0,posts=0,mode='ready';
+let selected=0,posts=0,mode='ready',revision=1;
 let accountReply: (()=>Promise<Response>)|undefined;
 const transport: typeof fetch=async(path,init)=>{
   let data:any;
@@ -18,7 +18,7 @@ const transport: typeof fetch=async(path,init)=>{
   else if(String(path).endsWith('capabilities'))data={...raw.receipt,api_prefix:'/dev-local/v1/',signed_result_query:true,automatic_withdraw:false,ws:false};
   else if(String(path).endsWith('account')) {
     if(accountReply)return accountReply();
-    data={...structuredClone(raw.other_projection),owner:keys[selected].owner,received_at_unix_ms:String(Date.now()),withdraw_frozen:true,withdraw_ready:true};
+    data={...structuredClone(raw.other_projection),revision:String(revision),owner:keys[selected].owner,received_at_unix_ms:String(Date.now()),withdraw_frozen:true,withdraw_ready:true};
     if(mode==='held'){data.ledger[0].P='1000000';data.withdraw_ready=false;data.fills=[{fill_id:'fixture-pending',state:'SUBMISSION_UNKNOWN',revision:'1'}];}
   }else data=raw.receipt;
   return new Response(JSON.stringify(data));
@@ -33,12 +33,21 @@ async function reorder(fault: string) {
   const pending=new Promise<Response>(r=>{release=r;});let requests=0;
   accountReply=async()=>{
     if(++requests===1)return pending;
-    if(fault==='late-recovery')return new Response(JSON.stringify(open));
+    if(['late-recovery','late-abort','late-DP'].includes(fault))return new Response(JSON.stringify(open));
     if(fault==='503')return new Response(null,{status:503});
     if(fault==='disconnect')throw Error('DISCONNECTED');
     return new Response(JSON.stringify({...open,gate:'RECOVERY_REQUIRED',withdraw_ready:false}));
   };
   const old=client.refresh();await client.refresh();
-  release(new Response(JSON.stringify(fault==='late-recovery'?{...open,received_at_unix_ms:String(Date.now()),gate:'RECOVERY_REQUIRED',withdraw_ready:false}:open)));await old;accountReply=undefined;component.render();
+  let response=open;
+  if(fault==='late-recovery')response={...open,received_at_unix_ms:String(Date.now()),gate:'RECOVERY_REQUIRED',withdraw_ready:false};
+  if(fault==='late-abort'||fault==='late-DP') {
+    response={...structuredClone(open),revision:String(++revision),received_at_unix_ms:String(Date.now()),withdraw_ready:false};
+    if(fault==='late-abort')response.withdraw_frozen=false;
+    else {response.ledger[0].D='1';response.ledger[0].A=String(BigInt(response.ledger[0].C)-1n);response.ledger[1].P='1';}
+  }
+  release(new Response(JSON.stringify(response)));await old;
+  if(fault==='late-abort'||fault==='late-DP')revision++;
+  accountReply=undefined;component.render();
 }
 Object.assign(globalThis,{fixture:{client,component,reorder,posts:()=>posts,held:()=>{mode='held';selected=keys.findIndex(k=>k.owner===client.projection.owner);client.select(keys[selected]);},owners:keys.map(k=>k.owner)}});
