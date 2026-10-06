@@ -1,7 +1,10 @@
 //! Read-only collection through the reviewed L-D decoder and C proof verifier.
 //! No browser input, engine command, freshness reset or automatic retry.
+#[path = "account.rs"]
+mod account;
 #[path = "query.rs"]
 mod query;
+pub use account::Account;
 use nus_exchange_contract::s3::{
     dev_local::{Error, Result},
     evidence::{Objects, RPC, TX},
@@ -38,6 +41,19 @@ impl ChainRead {
         }
         Ok((snapshot, raw))
     }
+    /// Query a chain-controlled account at exactly this trusted snapshot H.
+    pub fn account(&self, snapshot: &Snapshot, owner: &[u8]) -> Result<Account> {
+        let data = account::request(owner)?;
+        if snapshot.height() == 0 {
+            return Err(Error::Invalid("ACCOUNT_HEIGHT"));
+        }
+        let raw = self.rpc.fetch(Query::Abci {
+            path: "/cosmos.auth.v1beta1.Query/Account",
+            data_hex: &hex::encode(data),
+            height: snapshot.height(),
+        })?;
+        account::decode(snapshot, owner, &raw)
+    }
     /// Raw Batch lookup at exactly the validated observation height.
     pub fn batch(&self, snapshot: &Snapshot, seq: u64) -> Result<(Value, Vec<u8>)> {
         if seq == 0 {
@@ -65,6 +81,25 @@ impl ChainRead {
             current,
             history,
             attempt,
+            None,
+            |seq| self.batch(current, seq).map(|(_, raw)| raw),
+            |s| self.block(s),
+        )
+    }
+    /// The Account has private fields and can only be constructed by the
+    /// same-height decoder. Preserve its raw RPC in the returned evidence set.
+    pub fn absence_with_account(
+        &self,
+        current: &Snapshot,
+        history: &[&Snapshot],
+        attempt: &Value,
+        account: &Account,
+    ) -> Result<(Value, Objects)> {
+        collect_absence(
+            current,
+            history,
+            attempt,
+            Some(account),
             |seq| self.batch(current, seq).map(|(_, raw)| raw),
             |s| self.block(s),
         )
@@ -96,6 +131,7 @@ fn collect_absence(
     current: &Snapshot,
     history: &[&Snapshot],
     attempt: &Value,
+    auth: Option<&Account>,
     lookup: impl FnOnce(u64) -> Result<Vec<u8>>,
     mut fetch: impl FnMut(&Snapshot) -> Result<(Value, Objects)>,
 ) -> Result<(Value, Objects)> {
@@ -117,14 +153,22 @@ fn collect_absence(
             return Err(Error::Invalid("ABSENCE_HISTORY"));
         }
     }
-    let account = current.value()["accounts"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|a| a["owner"] == attempt["operator"])
-        .ok_or(Error::Invalid("ABSENCE_ACCOUNT"))?;
-    if account["account_number"] != attempt["account_number"]
-        || schema::num(&account["sequence"])? < schema::num(&attempt["account_sequence"])?
+    let (number, sequence) = if let Some(auth) = auth {
+        auth.at(current, &schema::bytes(&attempt["operator"])?)?
+    } else {
+        let account = current.value()["accounts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|a| a["owner"] == attempt["operator"])
+            .ok_or(Error::Invalid("ABSENCE_ACCOUNT"))?;
+        (
+            schema::num(&account["account_number"])?,
+            schema::num(&account["sequence"])?,
+        )
+    };
+    if number != schema::num(&attempt["account_number"])?
+        || sequence < schema::num(&attempt["account_sequence"])?
     {
         return Err(Error::Invalid("ABSENCE_ACCOUNT"));
     }
@@ -137,6 +181,10 @@ fn collect_absence(
     let mut objects = Objects::default();
     objects.insert(&raw, RPC)?;
     let mut total = raw.len();
+    if let Some(auth) = auth {
+        objects.insert(auth.raw(), RPC)?;
+        total += auth.raw().len();
+    }
     let mut blocks = Vec::with_capacity(8);
     for s in history {
         let (reference, evidence) = fetch(s)?;
@@ -157,7 +205,7 @@ fn collect_absence(
     let p = json!({"tx_hash":attempt["tx_hash"],
         "first_possible_height":attempt["first_possible_height"],
         "timeout_height":attempt["timeout_height"],"observed_height":current.height().to_string(),
-        "account_sequence":account["sequence"],"last_batch_seq":batch["last_seq"],
+        "account_sequence":sequence.to_string(),"last_batch_seq":batch["last_seq"],
         "last_batch_hash":batch["last_hash"],"receipt_absent":true,
         "blocks":blocks,"observation_snapshot_id":current.id()});
     let mut candidate = attempt.clone();
@@ -503,6 +551,7 @@ mod absence_tests {
             &s,
             &history.iter().collect::<Vec<_>>(),
             &a,
+            None,
             |_| Ok(raw.clone()),
             |s| {
                 calls += 1;
@@ -547,6 +596,7 @@ mod absence_tests {
                     &s,
                     &h,
                     &a,
+                    None,
                     |_| panic!("lookup forbidden"),
                     |_| panic!("block forbidden")
                 )
@@ -564,6 +614,7 @@ mod absence_tests {
                     &s,
                     &history.iter().collect::<Vec<_>>(),
                     &attempt(&s),
+                    None,
                     |_| Ok(rpc(&s, &lookup(&s))),
                     |h| block(h, found && h.height() == 204, broken && h.height() == 204)
                 )
@@ -582,11 +633,59 @@ mod absence_tests {
                 &s,
                 &history.iter().collect::<Vec<_>>(),
                 &a,
+                None,
                 |_| panic!("lookup forbidden"),
                 |_| panic!("block forbidden")
             )
             .is_err()
         );
+    }
+    #[test]
+    fn auth_account_enables_unregistered_operator_and_retains_raw() {
+        let s = snapshot(209);
+        let pk = [42; 1952];
+        let owner = nus_exchange_contract::codec::address(&pk).unwrap();
+        let raw = account::tests::rpc(&s, &account::tests::base(&owner, &pk, 9, 12));
+        let auth = account::decode(&s, &owner, &raw).unwrap();
+        let mut a = attempt(&s);
+        a["operator"] = json!(STANDARD.encode(owner));
+        a["account_number"] = json!("9");
+        a["account_sequence"] = json!("12");
+        let history: Vec<_> = (201..=208).map(snapshot).collect();
+        let h = history.iter().collect::<Vec<_>>();
+        let (p, o) = collect_absence(
+            &s,
+            &h,
+            &a,
+            Some(&auth),
+            |_| Ok(rpc(&s, &lookup(&s))),
+            |s| block(s, false, false),
+        )
+        .unwrap();
+        assert_eq!(p["account_sequence"], "12");
+        assert_eq!(o.entries().count(), 18);
+        assert!(o.entries().any(|(_, bytes)| bytes == raw));
+        for case in 0..4 {
+            let mut bad = a.clone();
+            let current = if case == 0 { snapshot(210) } else { s.clone() };
+            match case {
+                1 => bad["operator"] = json!(STANDARD.encode([99; 20])),
+                2 => bad["account_number"] = json!("10"),
+                3 => bad["account_sequence"] = json!("13"),
+                _ => {}
+            }
+            assert!(
+                collect_absence(
+                    &current,
+                    &h,
+                    &bad,
+                    Some(&auth),
+                    |_| panic!("no lookup"),
+                    |_| panic!("no block")
+                )
+                .is_err()
+            );
+        }
     }
     #[test]
     fn total_raw_evidence_budget_is_bounded() {
@@ -597,6 +696,7 @@ mod absence_tests {
             &s,
             &history.iter().collect::<Vec<_>>(),
             &attempt(&s),
+            None,
             |_| Ok(rpc(&s, &lookup(&s))),
             |s| {
                 calls += 1;
@@ -624,6 +724,7 @@ mod absence_tests {
                 &s,
                 &h,
                 &attempt(&s),
+                None,
                 |_| Err(Error::Invalid("RPC_ERROR")),
                 |_| panic!("no blocks")
             )
@@ -635,6 +736,7 @@ mod absence_tests {
                 &s,
                 &h,
                 &attempt(&s),
+                None,
                 |_| Ok(rpc(&s, &lookup(&s))),
                 |s| {
                     calls += 1;

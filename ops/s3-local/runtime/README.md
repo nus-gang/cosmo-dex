@@ -83,8 +83,13 @@ Observation의 received_at은 전체 조회 뒤·저장 전 wall clock, query_la
 
 `ChainRead::absence`는 C에 저장된 Attempt와 정확히8개 연속 snapshot을 받는다. timeout 이후 높이·같은 Context·계정 번호/sequence를 확인한 다음 Batch 조회1회, block/results16회까지만 수행한다. 각 RPC deadline2초, 원 증거 합계16MiB이며 C `proof::absence`가 TX 미포함·연속 block hash를 검증한다. 조회 오류는 재시도 없이 전파하고 partial proof/상태 전이를 반환하지 않는다. 반환은 메모리 proof와 원 evidence이며 영속화·Attempt 전이·봉투 재시도·정정은 수행하지 않는다. NOT_FOUND 단독으로 D/P를 해제하지 않는다.
 
-**현재 제한:** B snapshot의 accounts는 등록 사용자만 포함한다. 운영자가 여기에 없는 일반 구성은 IO 전에 ABSENCE_ACCOUNT로 닫힌다. 별도 동일 H auth Account 조회/검증 adapter 연결이 남아 있으며, 이번 구현을 일반 운영자 경로 완성으로 표시하지 않는다. 시험은 등록 운영자 합성 snapshot을 사용한다. 실제 초기화에서 이 제한을 우회하려고 운영자를 임의로 사용자 등록하지 않는다.
+**운영자 Account 연결:** `account.rs`와 `ChainRead::account`는 정확히 snapshot H의 `/cosmos.auth.v1beta1.Query/Account` 원문을 검증한다. 승인 SDK v0.55.0의 QueryAccountResponse/Any/BaseAccount와 ML-DSA Any만 허용한다. 주소·키 해시·H·RPC id/code, protobuf 중복/미지 필드·잘못된 wire·비최소 정수·overflow·잘림을 거절한다. 등록 사용자라면 snapshot의 계정 번호/sequence/키와도 같아야 한다. SDK가 생략한 0 scalar는 0으로 해석하고 u64 정수는 손실 없이 보존한다.
+
+`Account` 내부 필드는 private이다. `absence_with_account`는 검증된 Account의 snapshot id/owner/number/sequence를 IO 전에 대조하고 원 응답을 evidence에 추가한다. 등록되지 않은 운영자도 이 경로를 사용할 수 있으며 snapshot에 임의 사용자 추가는 하지 않는다. 기존 `absence`는 snapshot-only 경로여서 계정 누락을 계속 거절한다. Account는 신뢰 로컬 RPC 관측이며 Merkle 증명이 아니다. 서명·방송·영속화·worker 연결은 아직 남아 있다.
 
 Rust1.92.0·기존 offline/locked rlib로 **28 PASS/0 FAIL**(신규8+기존20), 실제 socket/RPC/서비스0. 8개 높이·17개 원 evidence 보존, 포함TX/깨진 hash chain·과거 seq 영수증 누락·잘못된 Context/H/id/정수·원문 canonical 위반·history gap·timeout equality·계정 누락·sequence 역행·총량초과·RPC 중단을 시험했다. 최초4개 실패는 fixture에서 운영자 계정이 없었던 것에 따른 panic이며 실패 로그를 보존하고 등록 운영자 fixture와 미등록 거절시험을 분리했다. 경제/Chain/C/lock 변경0. `absence-build.json` 명령과 `absence-tests.log`가 재현 근거다.
 
-다음 SRE 작업: 동일 H 운영자 Account 조회, receipt/signer/worker, 웹 ChainPort, fee0/25 초기화·launcher/정리/fault driver·최종 binary/manifest. CTO→Security 제출 전이며 runtime pin 미발급·DEV NOT_RUN·원 G00/ACK와 부모 blocker 유지.
+다음 SRE 작업: receipt/signer/worker, 웹 ChainPort, fee0/25 초기화·launcher/정리/fault driver·최종 binary/manifest. CTO→Security 제출 전이며 runtime pin 미발급·DEV NOT_RUN·원 G00/ACK와 부모 blocker 유지.
+
+
+Account 연결 검증: 기존 시험과 신규7개를 합쳐 **35 PASS/0 FAIL**. SDK v0.55.0 실제 Marshal 결과를 `testdata/account-sdk.go`로 offline 생성하고 Rust decoder와 대조했다. 이 generator는 합성 공개키만 쓰며 서비스/서명/방송을 실행하지 않는다. `account-build.json`·`account-sdk-build.json`과 로그가 명령 근거다. generator 첫 컴파일의 any 이름 충돌과 fixture 주소 hex 직렬화 오류는 수정했고 최초 실패 로그를 보존했다. 실제 RPC·worker·DEV 통합은 NOT_RUN이다.
