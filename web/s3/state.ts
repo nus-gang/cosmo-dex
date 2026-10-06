@@ -21,15 +21,20 @@ export interface Account {
   ledger: Ledger[]; withdraw_frozen: boolean; withdraw_ready: boolean;
   orders: any[]; fills: any[]; batches: any[];
 }
+export interface Observation { readonly generation: number; readonly sequence: number; readonly barrier: number }
 export class Projection {
   generation = 0; owner = ''; view?: Account; reason = 'NOT_CONNECTED';
+  #sequence = 0; #observedSequence = 0; #barrier = 0;
   #received = 0; #wall = 0; #age = Infinity; #resync = false;
   readonly ctx: Context; readonly clock: () => number;
   constructor(ctx: Context, clock = () => performance.now()) {this.ctx=ctx;this.clock=clock;}
   select(owner: string) { this.generation++; this.owner=owner; this.view=undefined; this.reason='NOT_CONNECTED'; this.#age=Infinity; this.#resync=false; }
-  close(reason: string) { this.reason=reason; this.#age=Infinity; }
-  accept(v: Account, generation: number, now: number, elapsed: number): boolean {
-    if (generation !== this.generation) return false;
+  // Every hold invalidates all queries already in flight, regardless of issue order.
+  close(reason: string) { this.#barrier++; this.reason=reason; this.#age=Infinity; }
+  beginObservation(): Observation {return {generation:this.generation,sequence:++this.#sequence,barrier:this.#barrier};}
+  accept(v: Account, generation: number, now: number, elapsed: number, observation=this.beginObservation()): boolean {
+    if (generation !== this.generation || observation.generation !== this.generation || observation.sequence <= this.#observedSequence || observation.barrier !== this.#barrier) return false;
+    this.#observedSequence=observation.sequence;
     try {
       context(v.context,this.ctx);
       if(v.owner!==this.owner)throw Error('ACCOUNT_MISMATCH');
@@ -52,6 +57,7 @@ export class Projection {
       }
       for(const f of v.fills)if(f.state==='COMMITTED'&&!v.batches.some(b=>b.state==='COMMITTED'&&b.batch.batch_id===f.batch?.batch_id))throw Error('COMMITTED_RECEIPT_REQUIRED');
       if(this.view) {
+        if(integer(v.received_at_unix_ms)<integer(this.view.received_at_unix_ms))throw Error('OBSERVATION_REGRESSION');
         if(revision<integer(this.view.revision)||height<integer(this.view.observed_height))throw Error('REVISION_REGRESSION');
         const economic=(a: Account)=>canonical([a.revision,a.observed_height,a.snapshot_id,a.ledger,a.orders,a.fills,a.batches,a.withdraw_frozen]);
         if(revision===integer(this.view.revision)&&economic(v)!==economic(this.view))throw Error('REVISION_CONFLICT');
@@ -60,7 +66,8 @@ export class Projection {
       }
       this.view=structuredClone(v);this.#resync=false;this.#received=this.clock();this.#wall=now;
       this.#age=Number(BigInt(now)-integer(v.received_at_unix_ms))+elapsed;
-      this.reason=v.fresh===true && v.gate==='OPEN'?'OPEN':'HELD';return true;
+      if(v.fresh===true && v.gate==='OPEN')this.reason='OPEN';else this.close('HELD');
+      return true;
     }catch(e){this.close((e as Error).message);return false;}
   }
   open(now=Date.now()) {
