@@ -13,7 +13,7 @@ try {
   assert.equal(await withdraw.isDisabled(),true);
   await login.click();await page.waitForFunction(()=>fixture.client.canWithdraw());
   assert.match(await page.locator('body').textContent(),/durable_ack=false/);
-  for(const fault of ['recovery','503','disconnect']) {
+  for(const fault of ['recovery','503','disconnect','late-recovery']) {
     await page.evaluate(fault=>fixture.reorder(fault),fault);
     assert.equal(await withdraw.isDisabled(),true);
     assert.match(await page.getByRole('status').textContent(),/보류/);
@@ -34,7 +34,7 @@ try {
   await page.evaluate(()=>fixture.held());await login.click();await page.waitForFunction(()=>fixture.client.projection.view!==undefined);
   assert.equal(await withdraw.isDisabled(),true);assert.match(await page.locator('body').textContent(),/제출 결과 불명/);
   await page.screenshot({path:out+'/component.png',fullPage:true});
-  await writeFile(out+'/browser.json',JSON.stringify({scope:'BROWSER_COMPONENT_SYNTHETIC_NO_SERVICE',browser:browser.version(),checks:['initial-disabled','guarantee-label','direct-click-one-TX','unknown-query-no-retry','account-switch-empty','DP-held','recovery-delayed-OPEN-disabled','503-delayed-OPEN-disabled','disconnect-delayed-OPEN-disabled'],pass:9,fail:0,DEV12:'NOT_RUN'},null,2)+'\n');
+  await writeFile(out+'/browser.json',JSON.stringify({scope:'BROWSER_COMPONENT_SYNTHETIC_NO_SERVICE',browser:browser.version(),checks:['initial-disabled','guarantee-label','direct-click-one-TX','unknown-query-no-retry','account-switch-empty','DP-held','recovery-delayed-OPEN-disabled','503-delayed-OPEN-disabled','disconnect-delayed-OPEN-disabled','earlier-request-latest-recovery-disabled'],pass:10,fail:0,DEV12:'NOT_RUN'},null,2)+'\n');
   await page.evaluate(()=>fixture.component.destroy());assert.equal(await page.locator('#app').textContent(),'');
-  console.log('browser component: 9 PASS / 0 FAIL; DEV12 NOT_RUN');
+  console.log('browser component: 10 PASS / 0 FAIL; DEV12 NOT_RUN');
 }finally{await browser.close();}

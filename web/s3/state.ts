@@ -29,12 +29,15 @@ export class Projection {
   readonly ctx: Context; readonly clock: () => number;
   constructor(ctx: Context, clock = () => performance.now()) {this.ctx=ctx;this.clock=clock;}
   select(owner: string) { this.generation++; this.owner=owner; this.view=undefined; this.reason='NOT_CONNECTED'; this.#age=Infinity; this.#resync=false; }
-  // Every hold invalidates all queries already in flight, regardless of issue order.
+  // Every hold prevents already in-flight queries from reopening, regardless of issue order.
   close(reason: string) { this.#barrier++; this.reason=reason; this.#age=Infinity; }
   beginObservation(): Observation {return {generation:this.generation,sequence:++this.#sequence,barrier:this.#barrier};}
   accept(v: Account, generation: number, now: number, elapsed: number, observation=this.beginObservation()): boolean {
-    if (generation !== this.generation || observation.generation !== this.generation || observation.sequence <= this.#observedSequence || observation.barrier !== this.#barrier) return false;
-    this.#observedSequence=observation.sequence;
+    if (generation !== this.generation || observation.generation !== this.generation) return false;
+    // Request start order is not server observation order. Only reopening may
+    // discard an old/in-flight query; a closing observation must still be checked.
+    if (v.fresh === true && v.gate === 'OPEN' && (observation.sequence <= this.#observedSequence || observation.barrier !== this.#barrier)) return false;
+    this.#observedSequence=Math.max(this.#observedSequence,observation.sequence);
     try {
       context(v.context,this.ctx);
       if(v.owner!==this.owner)throw Error('ACCOUNT_MISMATCH');
