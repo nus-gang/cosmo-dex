@@ -179,6 +179,93 @@ impl SubmitLane {
         self.closed = false;
         Ok(true)
     }
+    /// Prove the complete timeout window through trusted RPC, then ask C to
+    /// validate it against its own durable history. This never releases assets.
+    pub fn resolve_absence(
+        &mut self,
+        chain: &ChainRead,
+        s: &Snapshot,
+        history: &[&Snapshot],
+        hash: &str,
+        o: &Observation,
+    ) -> Result<()> {
+        self.resolve_absence_with(
+            s,
+            hash,
+            o,
+            |s, a| {
+                let owner = schema::bytes(&a["operator"])?;
+                let account = chain.account(s, &owner)?;
+                chain.absence_with_account(s, history, a, &account)
+            },
+            now,
+        )
+    }
+    fn resolve_absence_with(
+        &mut self,
+        s: &Snapshot,
+        hash: &str,
+        o: &Observation,
+        fetch: impl FnOnce(&Snapshot, &serde_json::Value) -> Result<(serde_json::Value, Objects)>,
+        clock: impl Fn() -> Result<u64>,
+    ) -> Result<()> {
+        if self.closed {
+            return Err(Error::Recovery("SUBMIT_LANE_CLOSED"));
+        }
+        self.closed = true;
+        self.bound(s, o, clock()?)?;
+        let mut attempt = self
+            .engine
+            .committed_attempt(hash)?
+            .ok_or(Error::Invalid("ATTEMPT_NOT_FOUND"))?;
+        if attempt["context"] != *s.context()
+            || s.height() <= schema::num(&attempt["timeout_height"])?
+            || !matches!(
+                attempt["state"].as_str(),
+                Some("PREPARED" | "SUBMISSION_UNKNOWN")
+            )
+        {
+            return Err(Error::Invalid("ABSENCE_POLICY"));
+        }
+        let (proof, objects) = fetch(s, &attempt)?;
+        self.bound(s, o, clock()?)?;
+        attempt["state"] = serde_json::json!("EXPIRED_ABSENT_PROVEN");
+        attempt["absence_proof"] = proof;
+        let evidence = objects
+            .entries()
+            .map(|(r, raw)| {
+                Ok((
+                    raw.to_vec(),
+                    r["media_type"].as_str().ok_or("EVIDENCE_TYPE")?.into(),
+                ))
+            })
+            .collect::<Result<Vec<_>>>()?;
+        self.worker
+            .reconcile(Command::Resolve(attempt), &evidence, o, clock()?)?;
+        self.closed = false;
+        Ok(())
+    }
+    /// Apply only C's already persisted observations and terminal evidence.
+    /// No RPC, signing, receipt synthesis or economic logic lives in this lane.
+    pub fn apply(&mut self, s: &Snapshot, o: &Observation) -> Result<()> {
+        self.apply_with(s, o, now)
+    }
+    fn apply_with(
+        &mut self,
+        s: &Snapshot,
+        o: &Observation,
+        clock: impl FnOnce() -> Result<u64>,
+    ) -> Result<()> {
+        if self.closed {
+            return Err(Error::Recovery("SUBMIT_LANE_CLOSED"));
+        }
+        self.closed = true;
+        let at = clock()?;
+        self.bound(s, o, at)?;
+        self.worker.reconcile(Command::Apply, &[], o, at)?;
+        self.closed = false;
+        Ok(())
+    }
     /// Only a persisted exact hash can be broadcast. C writes UNKNOWN/count
     /// before bounded IO under its writer gate. No signer or replacement here.
     pub fn broadcast_existing(
@@ -306,6 +393,79 @@ mod tests {
             .unwrap()
             .to_owned();
         (e, snapshot(&v, bps), id, inputs, home)
+    }
+    #[test]
+    fn apply_observation_preserves_unsettled_holds_and_replays() {
+        for bps in [0, 25] {
+            let (e, mut lane, s, hash, inputs, home) = prepared_at_next(bps);
+            let before = e.reader().get().unwrap().state.clone();
+            let attempt = e.committed_attempt(&hash).unwrap();
+            lane.apply_with(&s, &fixture::observation(s.value()), || Ok(fixture::NOW))
+                .unwrap();
+            let after = e.reader().get().unwrap();
+            assert_eq!(after.state["chain_snapshot"], *s.value());
+            assert_eq!(e.committed_attempt(&hash).unwrap(), attempt);
+            assert_eq!(
+                after.state["resolution_receipts"],
+                before["resolution_receipts"]
+            );
+            assert_eq!(after.state["corrections"], before["corrections"]);
+            for key in ["accounts", "fills", "batches"] {
+                assert!(!before[key].is_null(), "missing assertion field {key}");
+                assert_eq!(after.state[key], before[key], "{key}");
+            }
+            let state = after.state.clone();
+            let commit = after.commit.clone();
+            drop(lane);
+            drop(e);
+            for _ in 0..2 {
+                let reopened =
+                    Engine::open(&home, Validated::new(inputs.clone()).unwrap()).unwrap();
+                assert_eq!(reopened.reader().get().unwrap().state, state);
+                assert_eq!(reopened.reader().get().unwrap().commit, commit);
+            }
+        }
+    }
+    #[test]
+    fn apply_stale_closes_lane_without_commit() {
+        let (e, mut lane, s, _, _, _) = prepared_at_next(0);
+        let before = e.reader().get().unwrap().commit.clone();
+        assert!(
+            lane.apply_with(&s, &fixture::observation(s.value()), || Ok(
+                fixture::NOW + 100_000
+            ))
+            .is_err()
+        );
+        assert!(
+            lane.apply_with(&s, &fixture::observation(s.value()), || panic!(
+                "closed lane called clock"
+            ))
+            .is_err()
+        );
+        assert_eq!(e.reader().get().unwrap().commit, before);
+    }
+    #[test]
+    fn apply_wrong_anchor_and_clock_error_do_not_commit() {
+        for fail_clock in [false, true] {
+            let (e, mut lane, s, _, _, _) = prepared_at_next(0);
+            let before = e.reader().get().unwrap().commit.clone();
+            let mut v = s.value().clone();
+            v["height"] = serde_json::json!("102");
+            fixture::finish(&mut v);
+            let wrong = snapshot(&v, 0);
+            assert!(
+                lane.apply_with(&wrong, &fixture::observation(wrong.value()), || {
+                    if fail_clock {
+                        Err(Error::Invalid("CLOCK"))
+                    } else {
+                        Ok(fixture::NOW)
+                    }
+                })
+                .is_err()
+            );
+            assert!(lane.closed);
+            assert_eq!(e.reader().get().unwrap().commit, before);
+        }
     }
     #[test]
     fn fee_profiles_prepare_persists_exact_tx_and_two_replays() {
@@ -548,6 +708,33 @@ mod tests {
             }
         }
     }
+    /// Characterization of the approved API: a separate read-only recovery
+    /// API is required; do not relax the broadcast callback's terminal guard.
+    #[test]
+    fn replay_terminal_raw_and_unapplied_observation_need_recovery_api() {
+        for bps in [0, 25] {
+            let (e, mut lane, s, hash, inputs, home) = prepared_at_next(bps);
+            lane.resolve_inclusion_with(
+                &s, &hash, &fixture::observation(s.value()),
+                |s, tx| included(s, tx, 0), || Ok(fixture::NOW),
+            ).unwrap();
+            drop(lane);
+            drop(e);
+            for _ in 0..2 {
+                let e = Engine::open(&home, Validated::new(inputs.clone()).unwrap()).unwrap();
+                let view = e.reader().get().unwrap();
+                assert_ne!(view.state["chain_snapshot"], *s.value());
+                assert_eq!(view.state["latest_observation_ref"],
+                    reference(&canonical(s.value()).unwrap(), TYPED).unwrap());
+                assert_eq!(e.committed_attempt(&hash).unwrap().unwrap()["state"], "INCLUDED_SUCCESS");
+                let called = Cell::new(false);
+                let result = e.with_committed_attempt(&hash, |_, _| called.set(true));
+                assert!(matches!(result, Err(Error::Invalid("ATTEMPT_TERMINAL"))));
+                assert!(!called.get());
+                assert_eq!(e.reader().get().unwrap().commit, view.commit);
+            }
+        }
+    }
     #[test]
     fn inclusion_not_found_leaves_attempt_and_commit_unchanged() {
         let (e, mut lane, s, hash, _, _) = prepared_at_next(0);
@@ -615,6 +802,164 @@ mod tests {
                     calls.set(n + 1);
                     Ok(fixture::NOW + if n == 0 { 0 } else { 6000 })
                 }
+            )
+            .is_err()
+        );
+        assert_eq!(e.reader().get().unwrap().commit, before);
+    }
+    fn expired(
+        bps: u32,
+    ) -> (
+        Arc<Engine>,
+        SubmitLane,
+        Snapshot,
+        String,
+        nus_exchange_contract::s3::dev_local::Inputs,
+        std::path::PathBuf,
+        Vec<Snapshot>,
+    ) {
+        let (e, lane, first, hash, inputs, home) = prepared_at_next(bps);
+        let timeout =
+            schema::num(&e.committed_attempt(&hash).unwrap().unwrap()["timeout_height"]).unwrap();
+        let mut history = vec![first.clone()];
+        let mut current = first;
+        for h in current.height() + 1..=timeout + 1 {
+            let mut v = current.value().clone();
+            v["height"] = serde_json::json!(h.to_string());
+            fixture::finish(&mut v);
+            current = snapshot(&v, bps);
+            e.execute(
+                Command::Snapshot(canonical(&v).unwrap()),
+                &[],
+                &fixture::observation(&v),
+                fixture::NOW,
+            )
+            .unwrap();
+            if h <= timeout {
+                history.push(current.clone());
+            }
+        }
+        (e, lane, current, hash, inputs, home, history)
+    }
+    fn absent(
+        s: &Snapshot,
+        a: &serde_json::Value,
+        history: &[Snapshot],
+    ) -> Result<(serde_json::Value, Objects)> {
+        use base64::{Engine as _, engine::general_purpose::STANDARD};
+        let b = serde_json::json!({"context":s.context(),"observed_height":s.height().to_string(),
+            "snapshot_id":s.id(),"requested_seq":a["batch"]["batch_seq"],
+            "last_seq":s.value()["last_batch_seq"],"last_hash":s.value()["last_batch_hash"],
+            "status":"NOT_FOUND_AT_HEIGHT","receipt":null});
+        let raw = serde_json::to_vec(
+            &serde_json::json!({"jsonrpc":"2.0","id":1,"result":{"response":{"code":0,
+            "height":s.height().to_string(),"value":STANDARD.encode(canonical(&b)?)}}}),
+        )
+        .unwrap();
+        let auth = account(s, &schema::bytes(&a["operator"])?)?;
+        collect::collect_absence(
+            s,
+            &history.iter().collect::<Vec<_>>(),
+            a,
+            Some(&auth),
+            |_| Ok(raw),
+            |s| {
+                Ok(collect::inclusion_tests::input(
+                    s,
+                    vec![],
+                    serde_json::json!(0),
+                ))
+            },
+        )
+    }
+    #[test]
+    fn absence_persists_without_asset_release_and_replays_twice() {
+        for bps in [0, 25] {
+            let (e, mut lane, s, hash, inputs, home, history) = expired(bps);
+            let before = e.reader().get().unwrap().state.clone();
+            lane.resolve_absence_with(
+                &s,
+                &hash,
+                &fixture::observation(s.value()),
+                |s, a| absent(s, a, &history),
+                || Ok(fixture::NOW),
+            )
+            .unwrap();
+            let a = e.committed_attempt(&hash).unwrap().unwrap();
+            assert_eq!(a["state"], "EXPIRED_ABSENT_PROVEN");
+            let after = e.reader().get().unwrap().state.clone();
+            let mut left = before;
+            let mut right = after.clone();
+            for k in ["attempt_refs", "last_command_seq", "stream_seq"] {
+                left.as_object_mut().unwrap().remove(k);
+                right.as_object_mut().unwrap().remove(k);
+            }
+            assert!(left == right, "assets changed on absence");
+            drop(lane);
+            drop(e);
+            for _ in 0..2 {
+                let e = Engine::open(&home, Validated::new(inputs.clone()).unwrap()).unwrap();
+                assert_eq!(e.committed_attempt(&hash).unwrap(), Some(a.clone()));
+                assert_eq!(e.reader().get().unwrap().state, after);
+            }
+        }
+    }
+    #[test]
+    fn absence_incomplete_forged_stale_or_io_error_never_commits() {
+        for mode in 0..4 {
+            let (e, mut lane, s, hash, _, _, history) = expired(0);
+            let before = e.reader().get().unwrap().commit.clone();
+            let calls = Cell::new(0);
+            assert!(
+                lane.resolve_absence_with(
+                    &s,
+                    &hash,
+                    &fixture::observation(s.value()),
+                    |s, a| {
+                        if mode == 0 {
+                            return absent(s, a, &history[..7]);
+                        }
+                        if mode == 3 {
+                            return Err(Error::Invalid("RPC_IO"));
+                        }
+                        let (mut p, o) = absent(s, a, &history)?;
+                        if mode == 1 {
+                            p["tx_hash"] = serde_json::json!("00".repeat(32));
+                        }
+                        Ok((p, o))
+                    },
+                    || {
+                        let n = calls.get();
+                        calls.set(n + 1);
+                        Ok(fixture::NOW + if mode == 2 && n > 0 { 6000 } else { 0 })
+                    }
+                )
+                .is_err()
+            );
+            assert_eq!(e.reader().get().unwrap().commit, before);
+            assert!(
+                lane.resolve_absence_with(
+                    &s,
+                    &hash,
+                    &fixture::observation(s.value()),
+                    |_, _| panic!("retry IO"),
+                    || panic!("retry clock")
+                )
+                .is_err()
+            );
+        }
+    }
+    #[test]
+    fn absence_before_timeout_rejected_before_io() {
+        let (e, mut lane, s, hash, _, _) = prepared_at_next(0);
+        let before = e.reader().get().unwrap().commit.clone();
+        assert!(
+            lane.resolve_absence_with(
+                &s,
+                &hash,
+                &fixture::observation(s.value()),
+                |_, _| panic!("early IO"),
+                || Ok(fixture::NOW)
             )
             .is_err()
         );

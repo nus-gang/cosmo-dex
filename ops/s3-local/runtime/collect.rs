@@ -285,7 +285,7 @@ fn collect_void(
     proof::receipt(&receipt, batch, current, &[terminal], &objects)?;
     Ok((receipt, objects))
 }
-fn collect_absence(
+pub(super) fn collect_absence(
     current: &Snapshot,
     history: &[&Snapshot],
     attempt: &Value,
@@ -545,7 +545,7 @@ pub(crate) mod inclusion_tests {
     }
     pub(crate) fn input(s: &Snapshot, txs: Vec<&[u8]>, code: Value) -> (Value, Objects) {
         let b = json!({"result":{"block_id":{"hash":s.value()["block_hash"]},
-            "block":{"header":{"chain_id":s.context()["chain_id"],"height":s.height().to_string()},
+            "block":{"header":{"chain_id":s.context()["chain_id"],"height":s.height().to_string(),"last_block_id":{"hash":s.value()["block_hash"]}},
             "data":{"txs":txs.iter().map(|t|STANDARD.encode(t)).collect::<Vec<_>>()}}}});
         let r = json!({"result":{"height":s.height().to_string(),"txs_results":
             txs.iter().map(|_|json!({"code":code,"codespace":"","gas_wanted":"10000000","gas_used":1234})).collect::<Vec<_>>()}});

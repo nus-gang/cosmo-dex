@@ -133,3 +133,11 @@ Account 연결 검증: 기존 시험과 신규7개를 합쳐 **35 PASS/0 FAIL**.
 합성 순수시험은 fee0/25 × code0/1019의 실제 C store Resolve·원장/배치 보존·각각 두 번 replay, 미발견의 commit 불변, 위조 code 거절/오류 후 IO0, 조회 후 stale 저장0을 확인한다. 최초 시험은 정상적으로 갱신되는 attempt_refs/last_command_seq/stream_seq까지 불변으로 비교하여 실패했다. 비교 범위를 수정하고 실패 원문을 보존했다. 기존 fixture 공개 합성 키만 사용하며 RPC/listener/서비스0이다. `terminal-build.json`의 기존 offline/locked rlib와 Rust1.92.0 명령이 재현 근거다.
 
 남은 실행 배선은 재시작 history 순회·absence/receipt/Apply·worker scheduling, 웹 ChainPort/mount, fee0/25 실제 초기화·launcher/cleanup/fault driver, 최종 binary/manifest·독립 pin 출처·CTO→Security다. 현재 runtime pin 미발급·DEV NOT_RUN이며 원 G00/ACK·부모 blocker를 유지한다.
+
+## 저장된 관측의 Apply 배선
+
+`SubmitLane::apply`는 최신 저장 snapshot·Context·freshness를 확인한 뒤 승인 L-D `Worker::reconcile(Command::Apply)`를 호출한다. RPC·새 서명·영수증 합성은 없으며 경제 전이는 C만 수행한다. 시각 오류·stale·anchor 불일치·C 거절 뒤 lane은 닫히고 재시도하지 않는다. 이 메서드는 receipt 존재 여부를 대신 판단하거나 timeout을 확정 실패로 바꾸지 않는다.
+
+fee0/25의 미정산 PREPARED 배치가 있는 다음 높이를 적용하고 accounts/fills/batches·attempt·resolution/correction 보존과 두 번 replay를 검증한다. 이 시험은 잔고 확정 시연이 아니라 미정산 보류 보존 시험이다. stale·잘못된 anchor·시계 오류의 commit 불변도 확인한다. `apply-build-v2.json`과 `apply-tests-v2.log`가 exact 명령/결과이며 fixture는 공개 합성 데이터다. 최초 시험의 필드명 `balances`는 실제 schema의 `accounts`로 보정했다.
+
+잔여: terminal raw TX/history 재시작 복구·receipt 저장·전체 worker scheduling, 웹 ChainPort·초기화/launcher·cleanup/fault driver·최종 binary/manifest·독립 pin 승인. 서비스/RPC0·DEV NOT_RUN이며 CTO→Security 제출 전이다.
