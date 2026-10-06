@@ -141,3 +141,33 @@ Account 연결 검증: 기존 시험과 신규7개를 합쳐 **35 PASS/0 FAIL**.
 fee0/25의 미정산 PREPARED 배치가 있는 다음 높이를 적용하고 accounts/fills/batches·attempt·resolution/correction 보존과 두 번 replay를 검증한다. 이 시험은 잔고 확정 시연이 아니라 미정산 보류 보존 시험이다. stale·잘못된 anchor·시계 오류의 commit 불변도 확인한다. `apply-build-v2.json`과 `apply-tests-v2.log`가 exact 명령/결과이며 fixture는 공개 합성 데이터다. 최초 시험의 필드명 `balances`는 실제 schema의 `accounts`로 보정했다.
 
 잔여: terminal raw TX/history 재시작 복구·receipt 저장·전체 worker scheduling, 웹 ChainPort·초기화/launcher·cleanup/fault driver·최종 binary/manifest·독립 pin 승인. 서비스/RPC0·DEV NOT_RUN이며 CTO→Security 제출 전이다.
+
+## 승인된 trusted 복구 API 연결
+
+C 복구 API head `77a5e68b5685b1eba4a8f5fc0c03915e74c39d77`, tree
+`770d9883506d5edf34c4f6423fd2b37b0af4a51a`를 통합했다.
+[CTO 승인](/NUS/issues/NUS-70#document-trusted-recovery-api-cto-review)
+revision `00112aed-fde1-4cf1-ab87-0bd868363b0d`와
+[Security 승인](/NUS/issues/NUS-70#document-trusted-recovery-api-security-review)
+revision `c9298fb7-537d-4b24-b8a9-de6cc27166f7`의 동일 후보다.
+이 component 승인은 최종 runtime pin이 아니다.
+
+`recovery.rs::RecoveryCursor`는 C의 동일 View.commit에 history/attempt를 묶는다.
+시작 시 observation 한 행과 applied/latest 두 anchor만 읽고, history는 호출당1..64행,
+attempt는 순번 한 개씩 읽는다. 전체 history/attempt를 무제한으로 복사하지 않는다.
+오류 또는 unwind 뒤 cursor는 닫히며 기존 부분 결과를 새 commit과 섞어 재시도하지 않는다.
+새 commit의 복구는 전체 cursor를 버린 뒤 다시 시작해야 한다.
+anchors/view는 고정 당시 자료이므로 효과 허가나 현재 freshness로 사용하면 안 된다.
+
+`Observer::recover`는 마지막 저장 관측을 복원한다. 적용 C보다 앞선 관측도 유지하며,
+복구 자체는 새 Observation·시각·방송·commit·REST 응답을 만들지 않는다.
+다음 tick에서 신뢰 RPC를 읽고 기존 C freshness 및 effect gate를 통과해야 한다.
+terminal TxRaw는 evidence 조회만 허용하고 기존 `with_committed_attempt` 거절을 보존한다.
+이 모듈은 공개 route나 Serialize를 추가하지 않는다.
+
+재현은 recovery-submit-build.json / recovery-observe-build.json의 rustc argv와
+CARGO_MANIFEST_DIR, 현재 run scratch를 사용한다. 먼저 통합 checkout의 exchange에서
+`cargo build --offline --locked --features dev-local-settlement --lib`를 실행한다.
+Cargo.toml은 L-D 통합 설정이므로 C-only manifest와 구분한다.
+서비스 기동·완성 worker/receipt/scheduling·웹 ChainPort·초기화/launcher·최종 manifest는
+아직 완료되지 않았다. DEV NOT_RUN / runtime pin 미발급 / 원 G00·ACK 유지.

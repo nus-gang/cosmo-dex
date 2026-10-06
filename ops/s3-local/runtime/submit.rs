@@ -1,6 +1,8 @@
 //! Trusted submission wiring. Never exposed through REST. C owns all transitions.
 #[path = "collect.rs"]
 mod collect;
+#[path = "recovery.rs"]
+mod recovery;
 use collect::{Account, ChainRead};
 use nus_exchange_contract::s3::{
     dev_local::{Command, Engine, Error, Result},
@@ -708,10 +710,9 @@ mod tests {
             }
         }
     }
-    /// Characterization of the approved API: a separate read-only recovery
-    /// API is required; do not relax the broadcast callback's terminal guard.
+    /// Recover terminal raw and the unapplied anchor without broadcast authority.
     #[test]
-    fn replay_terminal_raw_and_unapplied_observation_need_recovery_api() {
+    fn replay_terminal_raw_and_unapplied_observation_recover_privately() {
         for bps in [0, 25] {
             let (e, mut lane, s, hash, inputs, home) = prepared_at_next(bps);
             lane.resolve_inclusion_with(
@@ -721,7 +722,7 @@ mod tests {
             drop(lane);
             drop(e);
             for _ in 0..2 {
-                let e = Engine::open(&home, Validated::new(inputs.clone()).unwrap()).unwrap();
+                let e = Arc::new(Engine::open(&home, Validated::new(inputs.clone()).unwrap()).unwrap());
                 let view = e.reader().get().unwrap();
                 assert_ne!(view.state["chain_snapshot"], *s.value());
                 assert_eq!(view.state["latest_observation_ref"],
@@ -731,9 +732,54 @@ mod tests {
                 let result = e.with_committed_attempt(&hash, |_, _| called.set(true));
                 assert!(matches!(result, Err(Error::Invalid("ATTEMPT_TERMINAL"))));
                 assert!(!called.get());
+                let mut cursor = recovery::RecoveryCursor::open(e.clone()).unwrap();
+                assert_eq!(cursor.view().unwrap().commit, view.commit);
+                assert_eq!(cursor.anchors().unwrap().latest.snapshot, s);
+                assert_ne!(cursor.anchors().unwrap().applied.snapshot, s);
+                let page = cursor.history(None, 64).unwrap();
+                assert_eq!(page.observations.last().unwrap().snapshot, s);
+                assert_eq!(page.next_height, None);
+                let recovered = cursor.attempt_at(0).unwrap().unwrap();
+                assert_eq!(recovered.commit, view.commit);
+                assert_eq!(recovered.attempt["state"], "INCLUDED_SUCCESS");
+                assert_eq!(recovered.attempt["tx_hash"], hash);
+                let raw = recovered.evidence.resolve(&recovered.attempt["raw_tx_ref"], nus_exchange_contract::s3::evidence::TX).unwrap();
+                assert!(!raw.is_empty());
+                assert!(cursor.attempt_at(1).unwrap().is_none());
+                assert_eq!(e.reader().get().unwrap().state, view.state);
                 assert_eq!(e.reader().get().unwrap().commit, view.commit);
             }
         }
+    }
+    #[test]
+    fn recovery_cursor_stale_commit_closes_without_retry() {
+        let (e, mut lane, s, hash, _, _) = prepared_at_next(0);
+        let mut cursor = recovery::RecoveryCursor::open(e.clone()).unwrap();
+        lane.resolve_inclusion_with(
+            &s, &hash, &fixture::observation(s.value()),
+            |s, tx| included(s, tx, 0), || Ok(fixture::NOW),
+        ).unwrap();
+        let before = e.reader().get().unwrap();
+        assert!(matches!(cursor.attempt_at(0), Err(Error::Invalid("STALE_COMMIT"))));
+        assert!(matches!(cursor.history(None, 1), Err(Error::Recovery("RECOVERY_CURSOR_CLOSED"))));
+        assert!(cursor.anchors().is_err());
+        assert!(cursor.view().is_err());
+        assert_eq!(e.reader().get().unwrap().commit, before.commit);
+        let mut fresh = recovery::RecoveryCursor::open(e.clone()).unwrap();
+        assert_eq!(fresh.attempt_at(0).unwrap().unwrap().attempt["state"], "INCLUDED_SUCCESS");
+    }
+    #[test]
+    fn recovery_cursor_invalid_page_closes_and_preserves_store() {
+        let (e, _, _, _, _, _) = prepared_at_next(25);
+        let before = e.reader().get().unwrap();
+        for limit in [0, 65, usize::MAX] {
+            let mut cursor = recovery::RecoveryCursor::open(e.clone()).unwrap();
+            assert!(cursor.history(None, limit).is_err());
+            assert!(cursor.attempt_at(0).is_err());
+            assert!(cursor.anchors().is_err());
+        }
+        assert_eq!(e.reader().get().unwrap().commit, before.commit);
+        assert_eq!(e.reader().get().unwrap().state, before.state);
     }
     #[test]
     fn inclusion_not_found_leaves_attempt_and_commit_unchanged() {
