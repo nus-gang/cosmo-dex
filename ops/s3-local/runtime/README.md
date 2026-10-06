@@ -66,3 +66,13 @@ Observation의 received_at은 전체 조회 뒤·저장 전 wall clock, query_la
 재현은 `observe-build.json`의 rustc argv와 `CARGO_MANIFEST_DIR=<checkout>/exchange`를 사용한다. `--test ops/s3-local/runtime/observe.rs`와 기존 `nus_exchange_contract/serde_json/base64/hex/fips204` rlib, `-L dependency=...`가 필요하다. 시험 실행에는 `PAPERCLIP_RUN_SCRATCH_DIR`을 지정한다. 시험 home/genesis/key/pin은 공개 합성 fixture이며 서비스에 사용할 수 없다.
 
 잔여: terminal attempt/receipt proof·signer·seal/submit/apply worker loop, 웹 ChainPort/mount, fee0/25 실제 초기화, launcher/cleanup/fault driver, 최종 binary·manifest·독립 승인 출처. 이 observer는 확정 실패/영수증/Apply를 임의로 만들지 않는다. 서비스0·pin 미발급·DEV NOT_RUN 및 원 G00/ACK 상태를 유지한다.
+
+## 확정 TX 포함 수집 (추가 진행)
+
+`ChainRead::confirmed(snapshot, persisted_tx)`는 검증된 단일 snapshot H의 block/results 두 응답을 가져와 exact TX bytes의 위치를 찾고, 원 RPC 두 개와 TX를 Objects에 보존한 뒤 승인 C `proof::confirmed`를 호출한다. snapshot H/hash·chain·TX index/hash·code/codespace/gas를 기존 검증기로 대조한다. code/gas의 RPC 정수/문자열 표현만 계약의 정수 문자열로 옮기며 음수·소수·비정규 정수·u32 code 초과는 거절한다. 동일 TX가 여러 위치에 있으면 모호한 위치를 선택하지 않고 거절한다.
+
+조회는 최대2회×기존2초 제한이며 빈/초과 TX를 IO 전에 거절한다. 미발견은 `None`이고 단일 블록에 없다는 뜻뿐이다. timeout 전체 부재 증명·terminal attempt 전이·VOID/정정·D/P 해제·receipt COMMITTED를 생성하지 않는다. nonzero ABCI code도 포함 증거의 메타데이터일 뿐이다. 반환 Objects는 메모리 evidence이며 worker가 C API로 저장해야 영속 증거가 된다. RPC 실패는 오류로 전파하며 재시도/추정은 하지 않는다.
+
+기존 offline/locked rlib와 Rust1.92.0으로 `--test ops/s3-local/runtime/collect.rs`를 빌드하여 **20 PASS / 0 FAIL**(신규 포함 시험7 + 기존 query/collect13)을 확인했다. exact 두 번째 TX/index·raw bytes 보존, 성공/실패 code, 빈 블록/미발견, 중복 TX, 잘못된 정수·범위, snapshot/hash/raw-ref 변조, TX 크기 거절을 메모리 fixture로 검증했다. 실제 socket/RPC/서비스0이며 기존 observer 시험20과 합산하지 않는다. 컴파일 명령은 `inclusion-build.json`, 원 결과는 `inclusion-tests.log`다.
+
+잔여 worker/receipt/absence/signer·ChainPort·초기화·launcher·최종 manifest·독립 승인 범위와 DEV NOT_RUN은 유지한다.
