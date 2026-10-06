@@ -247,6 +247,51 @@ impl SubmitLane {
         self.closed = false;
         Ok(())
     }
+    /// Recover a successful SETTLE's exact TX/history from one C commit, then
+    /// collect and persist its receipt. Applying balances remains a separate call.
+    pub fn committed_receipt(
+        &mut self, chain: &ChainRead, s: &Snapshot, index: usize, o: &Observation,
+    ) -> Result<()> {
+        self.committed_receipt_with(s, index, o,
+            |s, terminal, batch, tx| chain.committed_receipt(s, terminal, batch, tx), now)
+    }
+    fn committed_receipt_with(
+        &mut self, s: &Snapshot, index: usize, o: &Observation,
+        fetch: impl FnOnce(&Snapshot, &Snapshot, &serde_json::Value, &[u8])
+            -> Result<(serde_json::Value, Objects)>,
+        clock: impl Fn() -> Result<u64>,
+    ) -> Result<()> {
+        if self.closed { return Err(Error::Recovery("SUBMIT_LANE_CLOSED")); }
+        self.closed = true;
+        self.bound(s, o, clock()?)?;
+        let mut cursor = recovery::RecoveryCursor::open(self.engine.clone())?;
+        let recovered = cursor.attempt_at(index)?.ok_or(Error::Invalid("ATTEMPT_NOT_FOUND"))?;
+        let a = &recovered.attempt;
+        if a["context"] != *s.context() || a["kind"] != "SETTLE"
+            || a["state"] != "INCLUDED_SUCCESS" {
+            return Err(Error::Invalid("RECEIPT_ATTEMPT"));
+        }
+        let h = schema::num(&a["confirmed_tx"]["height"])?;
+        let page = cursor.history(Some(h), 1)?;
+        let terminal = &page.observations.first().ok_or(Error::Invalid("PROOF_HISTORY_GAP"))?.snapshot;
+        if terminal.height() != h || h > s.height() { return Err(Error::Invalid("RECEIPT_HISTORY")); }
+        let tx = recovered.evidence.resolve(&a["raw_tx_ref"], nus_exchange_contract::s3::evidence::TX)?;
+        let (receipt, objects) = fetch(s, terminal, &a["batch"], tx)?;
+        self.bound(s, o, clock()?)?;
+        if self.engine.reader().get()?.commit != recovered.commit {
+            return Err(Error::Invalid("STALE_COMMIT"));
+        }
+        if receipt["disposition"] != "COMMITTED" || receipt["batch"] != a["batch"]
+            || receipt["terminal_tx"] != a["confirmed_tx"] {
+            return Err(Error::Invalid("RECEIPT_INCONSISTENCY"));
+        }
+        let evidence = objects.entries().map(|(r, raw)| Ok((raw.to_vec(),
+            r["media_type"].as_str().ok_or("EVIDENCE_TYPE")?.into())))
+            .collect::<Result<Vec<_>>>()?;
+        self.worker.reconcile(Command::Receipt(receipt), &evidence, o, clock()?)?;
+        self.closed = false;
+        Ok(())
+    }
     /// Apply only C's already persisted observations and terminal evidence.
     /// No RPC, signing, receipt synthesis or economic logic lives in this lane.
     pub fn apply(&mut self, s: &Snapshot, o: &Observation) -> Result<()> {
@@ -395,6 +440,86 @@ mod tests {
             .unwrap()
             .to_owned();
         (e, snapshot(&v, bps), id, inputs, home)
+    }
+    fn receipt_input(s: &Snapshot, terminal: &Snapshot, b: &serde_json::Value, tx: &[u8])
+        -> Result<(serde_json::Value, Objects)> {
+        use base64::{Engine as _, engine::general_purpose::STANDARD};
+        let (confirmed, objects) = included(terminal, tx, 0)?.unwrap();
+        let wire = serde_json::json!({"protocol_version":"2","chain_id":s.context()["chain_id"],
+            "genesis_hash":s.context()["genesis_hash"],"market_id":s.context()["market_id"],
+            "batch_seq":b["batch_seq"],"batch_id":b["batch_id"],"batch_hash":b["batch_hash"],
+            "committed_height":terminal.height().to_string(),"tx_hash":confirmed["tx_hash"]});
+        let bytes = nus_exchange_contract::codec::Codec::default().encode("BatchReceiptV1", &wire)?;
+        Ok((serde_json::json!({"context":s.context(),"batch":b,"disposition":"COMMITTED",
+            "terminal_tx":confirmed,"batch_receipt_v2":STANDARD.encode(bytes),
+            "failed_tx_hash":null,"resolution_evidence_hash":null,"resolution_evidence_ref":null}), objects))
+    }
+    fn terminal_ready(bps: u32) -> (Arc<Engine>, SubmitLane, Snapshot,
+        nus_exchange_contract::s3::dev_local::Inputs, std::path::PathBuf) {
+        let (e, mut lane, s, hash, inputs, home) = prepared_at_next(bps);
+        let a = e.committed_attempt(&hash).unwrap().unwrap();
+        let mut v = s.value().clone();
+        v["height"] = serde_json::json!("102");
+        v["last_batch_seq"] = a["batch"]["batch_seq"].clone();
+        v["last_batch_hash"] = a["batch"]["batch_hash"].clone();
+        v["terminal_batch_seqs"] = serde_json::json!([a["batch"]["batch_seq"]]);
+        fixture::finish(&mut v);
+        let s = snapshot(&v, bps);
+        e.execute(Command::Snapshot(canonical(&v).unwrap()), &[], &fixture::observation(&v), fixture::NOW).unwrap();
+        lane.resolve_inclusion_with(&s, &hash, &fixture::observation(&v),
+            |s, tx| included(s, tx, 0), || Ok(fixture::NOW)).unwrap();
+        (e, lane, s, inputs, home)
+    }
+    #[test]
+    fn receipt_persists_from_recovered_terminal_without_apply_and_replays() {
+        for bps in [0, 25] {
+            let (e, lane, s, inputs, home) = terminal_ready(bps);
+            drop(lane); drop(e);
+            let e = Arc::new(Engine::open(&home, Validated::new(inputs.clone()).unwrap()).unwrap());
+            let before = e.reader().get().unwrap();
+            let mut lane = SubmitLane::new(e.clone());
+            lane.committed_receipt_with(&s, 0, &fixture::observation(s.value()), receipt_input,
+                || Ok(fixture::NOW)).unwrap();
+            let after = e.reader().get().unwrap();
+            assert_eq!(after.state["resolution_receipts"].as_array().unwrap().len(), 1);
+            for k in ["accounts", "fills", "chain_snapshot", "corrections"] {
+                assert!(!before.state[k].is_null());
+                assert_eq!(before.state[k], after.state[k], "{k}");
+            }
+            drop(lane); drop(e);
+            for _ in 0..2 {
+                let e = Engine::open(&home, Validated::new(inputs.clone()).unwrap()).unwrap();
+                assert_eq!(e.reader().get().unwrap().state, after.state);
+                assert_eq!(e.reader().get().unwrap().commit, after.commit);
+            }
+        }
+    }
+    #[test]
+    fn receipt_rejects_unresolved_attempt_before_io() {
+        let (e, mut lane, s, _, _, _) = prepared_at_next(0);
+        let before = e.reader().get().unwrap().commit.clone();
+        assert!(lane.committed_receipt_with(&s, 0, &fixture::observation(s.value()),
+            |_, _, _, _| panic!("unresolved IO"), || Ok(fixture::NOW)).is_err());
+        assert!(lane.closed);
+        assert_eq!(e.reader().get().unwrap().commit, before);
+    }
+    #[test]
+    fn receipt_forged_stale_or_io_failure_preserves_commit_and_closes() {
+        for mode in 0..3 {
+            let (e, mut lane, s, _, _) = terminal_ready(0);
+            let before = e.reader().get().unwrap().commit.clone();
+            let calls = Cell::new(0);
+            assert!(lane.committed_receipt_with(&s, 0, &fixture::observation(s.value()),
+                |s, t, b, tx| {
+                    if mode == 2 { return Err(Error::Invalid("RPC_IO")); }
+                    let (mut r, o) = receipt_input(s, t, b, tx)?;
+                    if mode == 0 { r["batch_receipt_v2"] = serde_json::json!("dHg="); }
+                    Ok((r, o))
+                }, || { let n = calls.get(); calls.set(n+1);
+                    Ok(fixture::NOW + if mode == 1 && n > 0 { 6000 } else { 0 }) }).is_err());
+            assert!(lane.closed);
+            assert_eq!(e.reader().get().unwrap().commit, before);
+        }
     }
     #[test]
     fn apply_observation_preserves_unsettled_holds_and_replays() {

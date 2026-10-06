@@ -171,3 +171,23 @@ CARGO_MANIFEST_DIR, 현재 run scratch를 사용한다. 먼저 통합 checkout�
 Cargo.toml은 L-D 통합 설정이므로 C-only manifest와 구분한다.
 서비스 기동·완성 worker/receipt/scheduling·웹 ChainPort·초기화/launcher·최종 manifest는
 아직 완료되지 않았다. DEV NOT_RUN / runtime pin 미발급 / 원 G00·ACK 유지.
+
+## 복구된 COMMITTED 영수증 저장 연결
+
+`SubmitLane::committed_receipt`는 동일 C commit의 attempt 순번·terminal TX 원문과
+해당 높이 history 1행을 읽는다. `SETTLE/INCLUDED_SUCCESS`만 받아 기존
+`ChainRead::committed_receipt`로 조회하고 승인 C `Command::Receipt`에 원 증거를
+전달한다. unresolved/실패/CLOSE attempt는 이 COMMITTED 경로에서 IO 전에 거절한다.
+조회 전후 최신 snapshot·freshness, 조회 후 commit 동일성, Batch·terminal TX
+동일성을 검사한다. 영수증 의미·wire·원 증거 검증은 C가 담당한다.
+오류 뒤 lane은 닫히며 자동 재시도·새 서명·방송·Apply를 하지 않는다.
+
+순수 fixture 시험은 fee0/25 각각 terminal 기록 후 재시작 → 영수증 저장 → 두 번
+재생을 확인한다. 저장 단계에서는 accounts/fills/chain_snapshot/corrections가
+변하지 않는다. 실제 확정 잔고의 Apply 시연은 포함하지 않는다.
+위조 receipt wire, stale, RPC 오류와 미종결 attempt의 commit 불변도 검사한다.
+명령과 결과는 receipt-store/build.json·compile.log·tests.log에 보존한다.
+
+남은 범위: VOID/실패 증거·전체 worker scheduling, 웹 ChainPort, 초기화/launcher/
+cleanup/fault driver, 최종 binary/manifest·독립 pin·CTO→Security. 서비스0·RPC0·
+DEV NOT_RUN·runtime pin 미발급이며 원 G00/ACK와 부모 blocker는 그대로다.
