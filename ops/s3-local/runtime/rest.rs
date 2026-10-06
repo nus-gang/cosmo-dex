@@ -58,3 +58,38 @@ pub fn serve_rest(
     })
     .map_err(|_| "TRANSPORT_CLOSED")
 }
+
+#[path = "lifecycle.rs"]
+pub mod lifecycle;
+
+/// Connect the bounded accept loop to the reviewed REST component. The trusted
+/// callback must perform reconciliation before returning its original observed
+/// timestamps. Errors end this loop without refreshing or exposing stale state.
+/// The callback must not swallow RECOVERY_REQUIRED as a successful observation.
+/// Startup, signal registration and independent approval are caller obligations.
+pub fn serve_service(
+    listener: std::net::TcpListener,
+    expected: std::net::SocketAddr,
+    stop: &std::sync::atomic::AtomicBool,
+    limits: lifecycle::Limits,
+    rest: &Rest,
+    mut trusted_tick: impl FnMut() -> Result<Observation, &'static str>,
+) -> Result<lifecycle::Report, &'static str> {
+    let observation = std::cell::RefCell::new(None);
+    lifecycle::serve(
+        listener,
+        expected,
+        stop,
+        limits,
+        || {
+            let next = trusted_tick()?;
+            *observation.borrow_mut() = Some(next);
+            Ok(())
+        },
+        |stream| {
+            let borrowed = observation.borrow();
+            let observed = borrowed.as_ref().ok_or("OBSERVATION_UNAVAILABLE")?;
+            serve_rest(stream, rest, observed)
+        },
+    )
+}

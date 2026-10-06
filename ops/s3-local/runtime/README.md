@@ -35,3 +35,20 @@ rustc --edition=2024 --test ops/s3-local/runtime/collect.rs \
 ```
 
 **13 PASS / 0 FAIL**, query10개를 포함한 총수이며 별도 실행 query10개와 합산하지 않는다. 메모리 fixture만 사용, socket/RPC0·서비스0. 블록 높이/hash/chain/count 불일치·중복 JSON·RPC 오류 거절과 원 증거 byte 보존을 확인했다. 합성 block fixture는 runtime pin이나 실제 체인 증거가 아니다. 최종 manifest·독립 승인·DEV 통합은 여전히 미완료다.
+
+## 연결 수락·종료 루프 (추가 진행)
+
+`lifecycle.rs`와 `rest.rs::serve_service`는 이미 검증·bind된 listener를 승인 REST에 연결한다. exact `127.0.0.1:1024..65535` 대조 후 nonblocking accept, accepted stream blocking 설정, 동시 연결1개·추가 thread/사용자 공간 queue0이다. 각 반복은25ms 쉬고 trusted tick을 먼저 실행한다. tick 오류는 즉시 루프를 종료하며 재시도·새 Observation 발급·자동 정정을 하지 않는다. `serve_service`는 성공한 trusted callback의 관측 시각을 변경 없이 보존한다.
+
+수명은1..3600초 범위(0초 초과의 Duration), 요청 상한은1..100000이며 거절된 요청도 포함한다. 정상 반환에는 종료 원인·성공/거절 요청 수·tick 수가 남고 오류는 상위 launcher의 실패 종료로 전달해야 한다. 정지 AtomicBool 또는 monotonic 수명 상한에서 신규 요청을 닫으며 accept 중 정지해도 연결을 처리하지 않는다. 종료 시 listener/연결을 drop하고 home·key·WAL·guard·lock inode는 삭제하지 않는다. Engine 소유자는 반환 후 drop하여 writer lock을 해제해야 한다.
+
+이는 프로세스 hard timeout이나 CPU/메모리 RLIMIT 구현이 아니다. 실행 중 callback은 강제로 중단하지 않으므로 종료 지연은 현재 callback 시간만큼 늘어날 수 있다. HTTP는 기존2초 deadline을 사용하지만 trusted tick의 전체 RPC 호출 수·deadline, OS signal 연결·관리 runtime의 강제 종료 grace는 최종 executable/launcher에서 추가로 고정해야 한다. 이 루프 자체는 bind·키 생성·서비스 시작을 하지 않는다. 실제 listener·신호·포트 해제는 L-T 검증이다.
+
+기존 `/Users/gangdongju/.rustup/toolchains/1.92.0-aarch64-apple-darwin/bin/rustc`로 다음을 실행했다. 주입 HOME의 rustup shim은 쓰기 거절됐으며 새 설치 없이 설치된 binary 절대 경로로 해결했다.
+
+```sh
+rustc --edition=2024 --test ops/s3-local/runtime/lifecycle.rs -o "$PAPERCLIP_RUN_SCRATCH_DIR/lifecycle-tests"
+"$PAPERCLIP_RUN_SCRATCH_DIR/lifecycle-tests" --test-threads=1
+```
+
+**9 PASS / 0 FAIL**: 잘못된 상한·endpoint, 시작 전 정지, worker 오류 뒤 accept/retry0, tick 선행·거절 요청 계수, idle 수명·catch-up 방지, listener 실패, accept 중 정지/drop, tick 후 수명 만료를 가상 시계/가짜 연결로 확인했다. Rust 표준 라이브러리만 사용하고 socket/RPC0이다. 승인 L-D feature의 기존 rlib와 `rest.rs` library 컴파일도 PASS. 전체 executable, 실제 worker/proof/signer, ChainPort, fee0/25 초기화·launcher·최종 manifest는 여전히 미완료다.
