@@ -52,3 +52,17 @@ rustc --edition=2024 --test ops/s3-local/runtime/lifecycle.rs -o "$PAPERCLIP_RUN
 ```
 
 **9 PASS / 0 FAIL**: 잘못된 상한·endpoint, 시작 전 정지, worker 오류 뒤 accept/retry0, tick 선행·거절 요청 계수, idle 수명·catch-up 방지, listener 실패, accept 중 정지/drop, tick 후 수명 만료를 가상 시계/가짜 연결로 확인했다. Rust 표준 라이브러리만 사용하고 socket/RPC0이다. 승인 L-D feature의 기존 rlib와 `rest.rs` library 컴파일도 PASS. 전체 executable, 실제 worker/proof/signer, ChainPort, fee0/25 초기화·launcher·최종 manifest는 여전히 미완료다.
+
+## 순차 관측과 C 저장 연결 (추가 진행)
+
+`observe.rs::Observer`는 승인 bootstrap binding으로 decode한 마지막 저장 관측과 C의 `latest_observation_ref`(없으면 `chain_snapshot`)·Context를 비교한다. 적용 원장보다 앞선 관측이 저장돼 있으면 bootstrap으로 되돌아가 시작하는 것을 거절한다. `tick`은 읽기 전용 `ChainRead`와 승인 `Worker::reconcile(Command::Snapshot)`만 호출한다. REST/browser가 snapshot·시각·높이를 지정하는 경로가 아니다.
+
+한 tick은 latest 조회1개, gap이면 exact next-height 조회1개, 저장 최대1개로 제한한다. `Snapshot::advance`의 연속 높이·epoch·계정·terminal slot 검증을 그대로 사용한다. gap을 한 번에 건너뛰거나 반복 조회하지 않는다. 원 ABCI 응답 bytes는 RPC evidence로 C에 전달하고 C 저장 성공 뒤에만 내부 anchor와 Observation을 공개한다. 어떤 조회/시각/검증/저장 오류나 unwind든 lane을 닫으며 다음 호출은 IO 전에 거절한다. 같은 높이의 동일 snapshot은 재저장하지 않는다.
+
+Observation의 received_at은 전체 조회 뒤·저장 전 wall clock, query_latency_ms는 tick 시작부터 조회가 끝날 때까지 monotonic elapsed다. 저장 후 시각을 덮어쓰지 않는다. gap은 catching_up=true이고 오래된 블록/느린 조회는 기존 C/REST freshness 검사에서 접수가 제한된다. 이미 저장할 수 있는 과거 관측은 대사를 위해 저장하되 freshness를 위조하지 않는다. 네트워크 예산은 최대2회×2초, C fsync의 OS 차단 시간은 별도이며 hard process timeout을 주장하지 않는다.
+
+설치 Rust1.92.0과 기존 offline/locked L-D rlib로 **20 PASS / 0 FAIL**(observer7+상속 query/collect13)을 확인했다. 새 observer7개 중 실제 C store 시험1개는 fee0/25 각각 Snapshot 저장→CATCHING_UP·미적용 C 보존→close→두 번 replay의 동일 state/commit 및 마지막 관측 anchor 복구를 검증했다. 나머지는 메모리 callback으로 저장 실패·영구 닫힘·조회 상한·원 bytes·시각 보존을 확인했다. RPC/listener/서비스0이다. 최초 store 시험은 시험 RPC를 정수 금지 canonical encoder에 넣어 NON_CANONICAL_VALUE로 실패했으며 RPC 원문 생성만 serde_json으로 수정한 뒤 통과했다. 경제/체인 구현 변경0이다.
+
+재현은 `observe-build.json`의 rustc argv와 `CARGO_MANIFEST_DIR=<checkout>/exchange`를 사용한다. `--test ops/s3-local/runtime/observe.rs`와 기존 `nus_exchange_contract/serde_json/base64/hex/fips204` rlib, `-L dependency=...`가 필요하다. 시험 실행에는 `PAPERCLIP_RUN_SCRATCH_DIR`을 지정한다. 시험 home/genesis/key/pin은 공개 합성 fixture이며 서비스에 사용할 수 없다.
+
+잔여: terminal attempt/receipt proof·signer·seal/submit/apply worker loop, 웹 ChainPort/mount, fee0/25 실제 초기화, launcher/cleanup/fault driver, 최종 binary·manifest·독립 승인 출처. 이 observer는 확정 실패/영수증/Apply를 임의로 만들지 않는다. 서비스0·pin 미발급·DEV NOT_RUN 및 원 G00/ACK 상태를 유지한다.
