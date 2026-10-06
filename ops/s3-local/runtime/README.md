@@ -123,3 +123,13 @@ Account 연결 검증: 기존 시험과 신규7개를 합쳐 **35 PASS/0 FAIL**.
 방송은 별도 `broadcast_existing`에서 저장된 exact TX hash만 받는다. 같은 Context/operator/epoch 및 timeout 이전인지 검사하고 L-D의 영속 UNKNOWN/count → writer gate 내 bounded IO 순서를 사용한다. 이 경로는 signer·새 TX·새 Batch를 만들지 않는다. 두 메서드는 오류/unwind 후 lane을 닫으며 restart는 C 저장 상태를 다시 읽어야 한다. 조회1회는 기존2초 한도, 방송은 L-D의 최대2초 지연+2초 IO 한도이며 OS fsync 차단시간은 별도다. 자동 seal/terminal proof/Apply·반복 scheduling은 후속 worker 조립에 남는다.
 
 검증 결과와 exact rustc 명령은 `submit-build.json`·`submit-tests.log`로 인계한다. 실제 C store의 fee0/25 준비·원 TX/횟수 보존·미해소 TX 재서명0·두 번 replay, 조회 실패 후 IO 재시도0, 조회 중 stale, 잘못된 Account/저장 snapshot의 서명0을 순수시험한다. 실제 방송·listener·서비스는 실행하지 않으며 해당 연결의 실제 검증은 L-T에 남는다. engine/Chain/경제/lock 변경0이다.
+
+## 포함 증거의 영속 Attempt 전이
+
+`SubmitLane::resolve_inclusion`은 신뢰 관측의 한 높이에 대해 최대 block/results 2회(각2초) 조회를 수행하고 승인 L-D `Worker::reconcile(Command::Resolve)`에 원 증거를 전달한다. C writer gate 안에서는 영속 Attempt/TX 원문을 복사만 하고, gate 밖에서 조회한다. 이 복사는 방송 허가가 아니며 새 서명/방송을 하지 않는다.
+
+조회 전후 동일 저장 snapshot·Context·freshness를 검사한다. Attempt의 first_possible_height..timeout_height 범위 밖·terminal Attempt·조회/증거/저장 오류는 lane을 닫고 재호출 IO를 거절한다. `None`은 그 한 블록의 미발견이며 저장·종결·정정을 하지 않는다. 포함 코드0/비0을 각각 INCLUDED_SUCCESS/INCLUDED_FAILURE 입력으로 옮기지만, C가 원 block/results/TX·history·hash·정수·불변 봉투를 다시 검증한 뒤에만 저장된다. 이 전이는 COMMITTED receipt나 잔고 확정이 아니다.
+
+합성 순수시험은 fee0/25 × code0/1019의 실제 C store Resolve·원장/배치 보존·각각 두 번 replay, 미발견의 commit 불변, 위조 code 거절/오류 후 IO0, 조회 후 stale 저장0을 확인한다. 최초 시험은 정상적으로 갱신되는 attempt_refs/last_command_seq/stream_seq까지 불변으로 비교하여 실패했다. 비교 범위를 수정하고 실패 원문을 보존했다. 기존 fixture 공개 합성 키만 사용하며 RPC/listener/서비스0이다. `terminal-build.json`의 기존 offline/locked rlib와 Rust1.92.0 명령이 재현 근거다.
+
+남은 실행 배선은 재시작 history 순회·absence/receipt/Apply·worker scheduling, 웹 ChainPort/mount, fee0/25 실제 초기화·launcher/cleanup/fault driver, 최종 binary/manifest·독립 pin 출처·CTO→Security다. 현재 runtime pin 미발급·DEV NOT_RUN이며 원 G00/ACK·부모 blocker를 유지한다.

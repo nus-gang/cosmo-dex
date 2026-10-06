@@ -423,7 +423,7 @@ fn checked_block(
     Ok((reference, objects))
 }
 /// Assemble only inclusion metadata, then delegate all binding checks to C.
-fn confirmed_in_block(
+pub(crate) fn confirmed_in_block(
     snapshot: &Snapshot,
     tx: &[u8],
     mut reference: Value,
@@ -522,7 +522,7 @@ mod tests {
 }
 
 #[cfg(test)]
-mod inclusion_tests {
+pub(crate) mod inclusion_tests {
     use super::*;
     use base64::{Engine as _, engine::general_purpose::STANDARD};
     use nus_exchange_contract::s3::snapshot::Binding;
@@ -543,7 +543,7 @@ mod inclusion_tests {
             .decode(&canonical(v).unwrap())
             .unwrap()
     }
-    pub(super) fn input(s: &Snapshot, txs: Vec<&[u8]>, code: Value) -> (Value, Objects) {
+    pub(crate) fn input(s: &Snapshot, txs: Vec<&[u8]>, code: Value) -> (Value, Objects) {
         let b = json!({"result":{"block_id":{"hash":s.value()["block_hash"]},
             "block":{"header":{"chain_id":s.context()["chain_id"],"height":s.height().to_string()},
             "data":{"txs":txs.iter().map(|t|STANDARD.encode(t)).collect::<Vec<_>>()}}}});

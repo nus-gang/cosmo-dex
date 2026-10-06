@@ -3,8 +3,8 @@
 mod collect;
 use collect::{Account, ChainRead};
 use nus_exchange_contract::s3::{
-    dev_local::{Engine, Error, Result},
-    evidence::{TYPED, reference},
+    dev_local::{Command, Engine, Error, Result},
+    evidence::{Objects, TYPED, reference},
     journal::canonical,
     schema,
     settlement_local::{LoopbackRpc, Worker, chain::OperatorSigner},
@@ -115,6 +115,69 @@ impl SubmitLane {
             tx_hash: hash,
             account_rpc: account.raw().to_vec(),
         })
+    }
+    /// Inspect one trusted observed height. Missing TX is not terminal evidence.
+    /// No signing, broadcasting, receipt/Apply or correction occurs here.
+    pub fn resolve_inclusion(
+        &mut self,
+        chain: &ChainRead,
+        s: &Snapshot,
+        hash: &str,
+        o: &Observation,
+    ) -> Result<bool> {
+        self.resolve_inclusion_with(s, hash, o, |s, tx| chain.confirmed(s, tx), now)
+    }
+    fn resolve_inclusion_with(
+        &mut self,
+        s: &Snapshot,
+        hash: &str,
+        o: &Observation,
+        fetch: impl FnOnce(&Snapshot, &[u8]) -> Result<Option<(serde_json::Value, Objects)>>,
+        clock: impl Fn() -> Result<u64>,
+    ) -> Result<bool> {
+        if self.closed {
+            return Err(Error::Recovery("SUBMIT_LANE_CLOSED"));
+        }
+        self.closed = true;
+        self.bound(s, o, clock()?)?;
+        // Copy only immutable TX bytes under C's writer guard. No RPC/reentry in
+        // this callback; this read must never be treated as broadcast permission.
+        let (mut attempt, tx) = self
+            .engine
+            .with_committed_attempt(hash, |a, raw| (a.clone(), raw.to_vec()))?
+            .ok_or(Error::Invalid("ATTEMPT_NOT_FOUND"))?;
+        if attempt["context"] != *s.context()
+            || s.height() < schema::num(&attempt["first_possible_height"])?
+            || s.height() > schema::num(&attempt["timeout_height"])?
+        {
+            return Err(Error::Invalid("INCLUSION_HEIGHT"));
+        }
+        let found = fetch(s, &tx)?;
+        self.bound(s, o, clock()?)?;
+        let Some((confirmed, objects)) = found else {
+            self.closed = false;
+            return Ok(false);
+        };
+        // C validates full raw evidence/history and the immutable envelope.
+        attempt["state"] = serde_json::json!(if confirmed["abci_code"] == "0" {
+            "INCLUDED_SUCCESS"
+        } else {
+            "INCLUDED_FAILURE"
+        });
+        attempt["confirmed_tx"] = confirmed;
+        let evidence = objects
+            .entries()
+            .map(|(r, raw)| {
+                Ok((
+                    raw.to_vec(),
+                    r["media_type"].as_str().ok_or("EVIDENCE_TYPE")?.into(),
+                ))
+            })
+            .collect::<Result<Vec<_>>>()?;
+        self.worker
+            .reconcile(Command::Resolve(attempt), &evidence, o, clock()?)?;
+        self.closed = false;
+        Ok(true)
     }
     /// Only a persisted exact hash can be broadcast. C writes UNKNOWN/count
     /// before bounded IO under its writer gate. No signer or replacement here.
@@ -393,5 +456,168 @@ mod tests {
             .is_err()
         );
         assert_eq!(sign.calls.get(), 0);
+    }
+    fn prepared_at_next(
+        bps: u32,
+    ) -> (
+        Arc<Engine>,
+        SubmitLane,
+        Snapshot,
+        String,
+        nus_exchange_contract::s3::dev_local::Inputs,
+        std::path::PathBuf,
+    ) {
+        let (e, s, id, inputs, home) = setup(bps);
+        let mut lane = SubmitLane::new(e.clone());
+        let p = lane
+            .prepare_with(
+                &s,
+                &id,
+                1,
+                &Sign::new(),
+                &fixture::observation(s.value()),
+                account,
+                || Ok(fixture::NOW),
+            )
+            .unwrap();
+        let mut v = s.value().clone();
+        v["height"] = serde_json::json!("101");
+        fixture::finish(&mut v);
+        let next = snapshot(&v, bps);
+        e.execute(
+            Command::Snapshot(canonical(&v).unwrap()),
+            &[],
+            &fixture::observation(&v),
+            fixture::NOW,
+        )
+        .unwrap();
+        (e, lane, next, p.tx_hash, inputs, home)
+    }
+    fn included(
+        s: &Snapshot,
+        tx: &[u8],
+        code: u32,
+    ) -> Result<Option<(serde_json::Value, Objects)>> {
+        let (r, objects) = collect::inclusion_tests::input(s, vec![tx], serde_json::json!(code));
+        collect::confirmed_in_block(s, tx, r, objects)
+    }
+    #[test]
+    fn inclusion_persists_success_and_failure_without_releasing_assets_and_replays() {
+        for bps in [0, 25] {
+            for code in [0, 1019] {
+                let (e, mut lane, s, hash, inputs, home) = prepared_at_next(bps);
+                let before = e.reader().get().unwrap().state.clone();
+                assert!(
+                    lane.resolve_inclusion_with(
+                        &s,
+                        &hash,
+                        &fixture::observation(s.value()),
+                        |s, tx| included(s, tx, code),
+                        || Ok(fixture::NOW)
+                    )
+                    .unwrap()
+                );
+                let a = e.committed_attempt(&hash).unwrap().unwrap();
+                assert_eq!(
+                    a["state"],
+                    if code == 0 {
+                        "INCLUDED_SUCCESS"
+                    } else {
+                        "INCLUDED_FAILURE"
+                    }
+                );
+                assert_eq!(a["broadcast_count"], "0");
+                let after = e.reader().get().unwrap().state.clone();
+                // An inclusion alone does not confirm balances, correct fills,
+                // apply a receipt, or replace the active batch.
+                let mut before_assets = before.clone();
+                let mut after_assets = after.clone();
+                for key in ["attempt_refs", "last_command_seq", "stream_seq"] {
+                    before_assets.as_object_mut().unwrap().remove(key);
+                    after_assets.as_object_mut().unwrap().remove(key);
+                }
+                assert!(before_assets == after_assets, "non-attempt state changed");
+                assert_ne!(before["attempt_refs"], after["attempt_refs"]);
+                drop(lane);
+                drop(e);
+                for _ in 0..2 {
+                    let e = Engine::open(&home, Validated::new(inputs.clone()).unwrap()).unwrap();
+                    assert_eq!(e.committed_attempt(&hash).unwrap(), Some(a.clone()));
+                    assert_eq!(e.reader().get().unwrap().state, after);
+                }
+            }
+        }
+    }
+    #[test]
+    fn inclusion_not_found_leaves_attempt_and_commit_unchanged() {
+        let (e, mut lane, s, hash, _, _) = prepared_at_next(0);
+        let a = e.committed_attempt(&hash).unwrap();
+        let before = e.reader().get().unwrap().commit.clone();
+        for _ in 0..2 {
+            assert!(
+                !lane
+                    .resolve_inclusion_with(
+                        &s,
+                        &hash,
+                        &fixture::observation(s.value()),
+                        |_, _| Ok(None),
+                        || Ok(fixture::NOW)
+                    )
+                    .unwrap()
+            );
+        }
+        assert_eq!(e.committed_attempt(&hash).unwrap(), a);
+        assert_eq!(e.reader().get().unwrap().commit, before);
+    }
+    #[test]
+    fn forged_inclusion_rejected_by_c_and_lane_stays_closed() {
+        let (e, mut lane, s, hash, _, _) = prepared_at_next(0);
+        let before = e.reader().get().unwrap().commit.clone();
+        assert!(
+            lane.resolve_inclusion_with(
+                &s,
+                &hash,
+                &fixture::observation(s.value()),
+                |s, tx| {
+                    let (mut v, o) = included(s, tx, 0)?.unwrap();
+                    v["abci_code"] = serde_json::json!("1019");
+                    Ok(Some((v, o)))
+                },
+                || Ok(fixture::NOW)
+            )
+            .is_err()
+        );
+        assert_eq!(e.reader().get().unwrap().commit, before);
+        assert!(
+            lane.resolve_inclusion_with(
+                &s,
+                &hash,
+                &fixture::observation(s.value()),
+                |_, _| panic!("retry IO"),
+                || panic!("retry clock")
+            )
+            .is_err()
+        );
+    }
+    #[test]
+    fn inclusion_stale_after_query_does_not_commit() {
+        let (e, mut lane, s, hash, _, _) = prepared_at_next(0);
+        let before = e.reader().get().unwrap().commit.clone();
+        let calls = Cell::new(0);
+        assert!(
+            lane.resolve_inclusion_with(
+                &s,
+                &hash,
+                &fixture::observation(s.value()),
+                |s, tx| included(s, tx, 0),
+                || {
+                    let n = calls.get();
+                    calls.set(n + 1);
+                    Ok(fixture::NOW + if n == 0 { 0 } else { 6000 })
+                }
+            )
+            .is_err()
+        );
+        assert_eq!(e.reader().get().unwrap().commit, before);
     }
 }
