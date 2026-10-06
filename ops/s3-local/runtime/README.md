@@ -115,3 +115,11 @@ Account 연결 검증: 기존 시험과 신규7개를 합쳐 **35 PASS/0 FAIL**.
 로드 시 pinned genesis/operator 구성에서 얻은 예상 공개키와 ML-DSA-65 파생 공개키가 일치해야 한다. 기대키를 REST/browser에서 받으면 안 된다. `OperatorSigner`를 구현하며 L-D가 조립한 bounded SignDoc에 빈 context와 FIPS 204 deterministic signing(rnd=0)을 사용한다. signer 자체가 SignDoc 경제 의미를 다시 구현하지 않는다. 승인 L-D는 결과 서명·operator address/key를 검증하며 영속 intent 뒤에만 방송한다. runtime 내부에서만 접근하고 HTTP API로 노출하지 않는다.
 
 기존 offline/locked cache의 fips204 0.4.6·libc·zeroize rlib를 사용했다. Cargo.toml/lock 수정0이며 최종 rustc build에서 이 세 rlib도 exact 명령·SHA 입력으로 기록해야 한다. 순수시험 **7 PASS / 0 FAIL**: 합성 키 실제 서명 검증·문서 상한, root/file 권한, 길이, 공개키 mismatch, symlink/hardlink, FIFO/디렉터리 거절. 시험 파일은 run scratch에서 생성·정리하며 공개 seed는 runtime용이 아니다. 최초 trait 오류 타입 컴파일 실패 후 C Error 타입으로 수정해 통과했다. 서비스/RPC0, DEV NOT_RUN. signer와 실제 worker의 통합은 후속 배선이다.
+
+## Account를 결합한 제출 lane
+
+`submit.rs::SubmitLane`은 동일 Engine으로 생성한 승인 L-D Worker에만 준비/방송을 위임한다. prepare는 C의 마지막 저장 관측·Context·freshness 확인 → 같은 H 운영자 Account 조회1회 → private Account binding 대조 → 원 Observation 시각으로 freshness 재검사 → `Worker::prepare_settle` 순서다. 조회 후 시각을 새 Observation으로 발급하지 않는다. 조회 중 stale·다른 snapshot·RPC 오류는 signer와 commit 전에 거절한다. L-D가 미해소 시도와 재시도 예산을 다시 검사한다. 반환 account_rpc는 audit 원문이며 C에 저장한 terminal proof를 뜻하지 않는다.
+
+방송은 별도 `broadcast_existing`에서 저장된 exact TX hash만 받는다. 같은 Context/operator/epoch 및 timeout 이전인지 검사하고 L-D의 영속 UNKNOWN/count → writer gate 내 bounded IO 순서를 사용한다. 이 경로는 signer·새 TX·새 Batch를 만들지 않는다. 두 메서드는 오류/unwind 후 lane을 닫으며 restart는 C 저장 상태를 다시 읽어야 한다. 조회1회는 기존2초 한도, 방송은 L-D의 최대2초 지연+2초 IO 한도이며 OS fsync 차단시간은 별도다. 자동 seal/terminal proof/Apply·반복 scheduling은 후속 worker 조립에 남는다.
+
+검증 결과와 exact rustc 명령은 `submit-build.json`·`submit-tests.log`로 인계한다. 실제 C store의 fee0/25 준비·원 TX/횟수 보존·미해소 TX 재서명0·두 번 replay, 조회 실패 후 IO 재시도0, 조회 중 stale, 잘못된 Account/저장 snapshot의 서명0을 순수시험한다. 실제 방송·listener·서비스는 실행하지 않으며 해당 연결의 실제 검증은 L-T에 남는다. engine/Chain/경제/lock 변경0이다.

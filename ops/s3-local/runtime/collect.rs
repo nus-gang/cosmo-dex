@@ -1,7 +1,7 @@
 //! Read-only collection through the reviewed L-D decoder and C proof verifier.
 //! No browser input, engine command, freshness reset or automatic retry.
 #[path = "account.rs"]
-mod account;
+pub(crate) mod account;
 #[path = "query.rs"]
 mod query;
 pub use account::Account;
