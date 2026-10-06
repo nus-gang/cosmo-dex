@@ -1,0 +1,29 @@
+import { build } from 'esbuild';
+import { chromium } from 'playwright-core';
+import { mkdir,writeFile } from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const out=process.argv[2];if(!out)throw Error('evidence directory required');await mkdir(out,{recursive:true});
+const code=await build({entryPoints:['s3/browser-fixture.ts'],bundle:true,write:false,platform:'browser',format:'iife',target:'es2022'});
+const browser=await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true,args:['--disable-background-networking']});
+try {
+  const page=await browser.newPage();await page.route('**/*',r=>r.abort());
+  await page.setContent('<html lang="ko"><meta charset="utf-8"><style>body{font:16px system-ui;background:#101522;color:#eef2ff;padding:24px}button,select,input{padding:10px;margin:8px}td,th{padding:12px;border-bottom:1px solid #667}</style><p>COMPONENT SYNTHETIC FIXTURE — 실제 서비스·자산 아님</p><main id="app"></main></html>');
+  await page.addScriptTag({content:code.outputFiles[0].text});
+  const withdraw=page.getByRole('button',{name:'직접 서명하여 출금'}),login=page.getByRole('button',{name:'인증·조회'});
+  assert.equal(await withdraw.isDisabled(),true);
+  await login.click();await page.waitForFunction(()=>fixture.client.canWithdraw());
+  assert.match(await page.locator('body').textContent(),/durable_ack=false/);
+  await withdraw.click();await page.waitForFunction(()=>fixture.posts()===1);
+  assert.equal(await withdraw.isDisabled(),true);
+  await page.getByRole('button',{name:'출금 결과 조회'}).click();
+  assert.equal(await page.evaluate(()=>fixture.posts()),1);
+  await page.getByLabel('계정',{exact:true}).selectOption('1');
+  assert.equal(await page.locator('tbody tr').count(),0);assert.equal(await withdraw.isDisabled(),true);
+  assert.doesNotMatch(await page.locator('body').textContent(),/SUBMISSION_UNKNOWN/);
+  await page.evaluate(()=>fixture.held());await login.click();await page.waitForFunction(()=>fixture.client.projection.view!==undefined);
+  assert.equal(await withdraw.isDisabled(),true);assert.match(await page.locator('body').textContent(),/제출 결과 불명/);
+  await page.screenshot({path:out+'/component.png',fullPage:true});
+  await writeFile(out+'/browser.json',JSON.stringify({scope:'BROWSER_COMPONENT_SYNTHETIC_NO_SERVICE',browser:browser.version(),checks:['initial-disabled','guarantee-label','direct-click-one-TX','unknown-query-no-retry','account-switch-empty','DP-held'],pass:6,fail:0,DEV12:'NOT_RUN'},null,2)+'\n');
+  await page.evaluate(()=>fixture.component.destroy());assert.equal(await page.locator('#app').textContent(),'');
+  console.log('browser component: 6 PASS / 0 FAIL; DEV12 NOT_RUN');
+}finally{await browser.close();}
