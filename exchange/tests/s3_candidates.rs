@@ -21,6 +21,9 @@ const NOW: u64 = 1791193000000;
 #[path = "support/dev_fixture.rs"]
 mod dev_fixture;
 #[cfg(feature = "dev-local-demo")]
+#[path = "support/trusted_recovery.rs"]
+mod trusted_recovery;
+#[cfg(feature = "dev-local-demo")]
 struct DevTrace {
     engine: Option<nus_exchange_contract::s3::dev_local::Engine>,
     config: nus_exchange_contract::s3::dev_local::Validated,
@@ -1275,6 +1278,9 @@ fn recovery_gate_preserves_store_and_signed_results_after_two_replays() {
                 assert!(matches!(e.with_committed_attempt(a["tx_hash"].as_str().unwrap(), |_, _| effects += 1), Err(Error::Recovery("RECOVERY_REQUIRED"))));
                 assert_eq!(effects, 0);
                 assert!(matches!(e.committed_attempt(a["tx_hash"].as_str().unwrap()), Err(Error::Recovery("RECOVERY_REQUIRED"))));
+                assert!(matches!(e.trusted_recovery_history(&baseline.commit, None, 64), Err(Error::Recovery("RECOVERY_REQUIRED"))));
+                assert!(matches!(e.trusted_recovery_attempt(&baseline.commit, a["tx_hash"].as_str().unwrap()), Err(Error::Recovery("RECOVERY_REQUIRED"))));
+                assert!(matches!(e.trusted_recovery_attempt_at(&baseline.commit, 0), Err(Error::Recovery("RECOVERY_REQUIRED"))));
                 // Authenticated historical results remain queryable without a
                 // new binding, even while all execute commands are refused.
                 assert_eq!(e.query_signed("ORDER", &original_raw, &original_sig, &owner(0), &observation(&c), NOW).unwrap(), Some(original.clone()));

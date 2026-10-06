@@ -4,18 +4,18 @@ use super::{
     with_hook,
 };
 use crate::s3::{
-    evidence::Objects,
+    evidence::{self, Objects},
     journal::{Commit, canonical, sha256},
     record::Prepared,
     schema,
     sequencer::Candidate,
-    snapshot::Observation,
+    snapshot::{Observation, Snapshot},
 };
 use serde_json::{Value, json};
 use std::{
     collections::BTreeMap,
     path::Path,
-    sync::{Arc, Mutex, RwLock},
+    sync::{Arc, Mutex, MutexGuard, RwLock},
 };
 /// All input is from the trusted, authenticated D adapter. Session identity must
 /// come from authentication, never from a request body. No network IO here.
@@ -46,6 +46,32 @@ pub struct View {
     pub state: Value,
     pub receipts: BTreeMap<u64, Value>,
 }
+/// Private trusted-runtime transport, never a public REST response or an effect
+/// permit. Raw bytes and decoded snapshot have been checked against this store.
+#[derive(Clone, Debug)]
+pub struct RecoveryObservation {
+    pub snapshot: Snapshot,
+    pub raw: Vec<u8>,
+}
+/// Inclusive height page plus applied/latest anchors from exactly one commit.
+#[derive(Clone, Debug)]
+pub struct RecoveryHistory {
+    pub commit: Commit,
+    pub first_height: u64,
+    pub applied: RecoveryObservation,
+    pub latest: RecoveryObservation,
+    pub observations: Vec<RecoveryObservation>,
+    pub next_height: Option<u64>,
+}
+/// One committed attempt and only its reachable evidence (including original
+/// TxRaw and terminal proof). No callback, path input, or broadcast authority.
+#[derive(Clone, Debug)]
+pub struct RecoveryAttempt {
+    pub commit: Commit,
+    pub attempt: Value,
+    pub evidence: Objects,
+}
+pub const RECOVERY_HISTORY_PAGE_MAX: usize = 64;
 /// Internal full state/result/book/FIFO/cursor projection in one immutable Arc.
 /// Never expose all owners or signed evidence directly through public REST.
 #[derive(Clone)]
@@ -89,6 +115,176 @@ fn ledger_entry(c: &Validated, result: Value, commit: &Commit) -> Value {
     json!({"receipt":receipt(c,result),"command_seq":commit.command_seq.to_string(),"record_hash":commit.record_hash,"end_offset":commit.end_offset.to_string()})
 }
 impl Engine {
+    fn recovery_writer(&self, expected: &Commit) -> Result<(MutexGuard<'_, Writer>, Vec<u8>)> {
+        let mut w = self
+            .writer
+            .lock()
+            .map_err(|_| Error::Recovery("WRITER_POISONED"))?;
+        w.ensure_open()?;
+        let bootstrap = match w.store.check() {
+            Ok(raw) => raw,
+            Err(e) => {
+                self.close(&mut w)?;
+                return Err(super::storage_error(e));
+            }
+        };
+        if w.candidate.sequence() != w.store.commit.command_seq
+            || self.reader.get()?.commit != w.store.commit
+        {
+            self.close(&mut w)?;
+            return Err(Error::Recovery("RECOVERY_COMMIT_MISMATCH"));
+        }
+        if *expected != w.store.commit {
+            return Err(Error::Invalid("STALE_COMMIT"));
+        }
+        Ok((w, bootstrap))
+    }
+    fn finish_recovery_read<T>(&self, w: &mut Writer, result: Result<T>) -> Result<T> {
+        // Recheck identity/marker after the bounded read, still under the writer
+        // lock. An integrity failure closes all later mutations and effects.
+        match result.and_then(|v| {
+            w.store.check()?;
+            Ok(v)
+        }) {
+            Ok(v) => Ok(v),
+            Err(e) => {
+                self.close(w)?;
+                Err(super::storage_error(e))
+            }
+        }
+    }
+    /// Trusted runtime only. Pin all pages and attempt reads to reader().commit;
+    /// STALE_COMMIT means discard the accumulated recovery view and start again.
+    /// None starts at bootstrap; the page includes from_height, at most 64 rows.
+    /// CATCHING_UP is readable; RECOVERY_REQUIRED and storage errors stay closed.
+    pub fn trusted_recovery_history(
+        &self,
+        expected: &Commit,
+        from_height: Option<u64>,
+        limit: usize,
+    ) -> Result<RecoveryHistory> {
+        let (mut w, bootstrap) = self.recovery_writer(expected)?;
+        if !(1..=RECOVERY_HISTORY_PAGE_MAX).contains(&limit) {
+            return Err(Error::Invalid("RECOVERY_PAGE_LIMIT"));
+        }
+        let first = w
+            .candidate
+            .history
+            .first()
+            .ok_or(Error::Recovery("RECOVERY_HISTORY_MISSING"))?
+            .height();
+        let from = from_height.unwrap_or(first);
+        let Ok(start) = w
+            .candidate
+            .history
+            .binary_search_by_key(&from, Snapshot::height)
+        else {
+            return Err(Error::Invalid("RECOVERY_HEIGHT_RANGE"));
+        };
+        let result = (|| {
+            let read = |s: &Snapshot| -> Result<RecoveryObservation> {
+                let raw = if s.height() == first {
+                    bootstrap.clone()
+                } else {
+                    let r = evidence::reference(&canonical(s.value())?, evidence::TYPED)?;
+                    w.store.read(&r)?
+                };
+                let snapshot = w.candidate.snapshot().decode_related(&raw)?;
+                if snapshot != *s {
+                    return Err(Error::Recovery("RECOVERY_SNAPSHOT_MISMATCH"));
+                }
+                Ok(RecoveryObservation { snapshot, raw })
+            };
+            let end = start.saturating_add(limit).min(w.candidate.history.len());
+            let mut observations = Vec::with_capacity(end - start);
+            let mut previous = if start > 0 {
+                Some(read(&w.candidate.history[start - 1])?.snapshot)
+            } else {
+                None
+            };
+            for s in &w.candidate.history[start..end] {
+                let observation = read(s)?;
+                if let Some(prev) = &previous {
+                    if !prev.advance(&observation.snapshot)? {
+                        return Err(Error::Recovery("RECOVERY_HISTORY_CONTINUITY"));
+                    }
+                }
+                previous = Some(observation.snapshot.clone());
+                observations.push(observation);
+            }
+            Ok(RecoveryHistory {
+                commit: w.store.commit.clone(),
+                first_height: first,
+                applied: read(w.candidate.snapshot())?,
+                latest: read(w.candidate.latest())?,
+                observations,
+                next_height: w.candidate.history.get(end).map(Snapshot::height),
+            })
+        })();
+        self.finish_recovery_read(&mut w, result)
+    }
+    /// Reads PREPARED/UNKNOWN/terminal attempts without entering the effect API.
+    /// Selection is a committed tx hash, never a caller-supplied path or ref.
+    pub fn trusted_recovery_attempt(
+        &self,
+        expected: &Commit,
+        tx_hash: &str,
+    ) -> Result<Option<RecoveryAttempt>> {
+        let (mut w, _) = self.recovery_writer(expected)?;
+        schema::validate("Hash", &json!(tx_hash))?;
+        let Some(attempt) = w
+            .candidate
+            .attempts()
+            .iter()
+            .find(|a| a["tx_hash"] == tx_hash)
+            .cloned()
+        else {
+            return Ok(None);
+        };
+        self.read_recovery_attempt(&mut w, attempt).map(Some)
+    }
+    /// Cold-start discovery without a sidecar or remembered TX hash. The index
+    /// is the position in this commit's View.state["attempt_refs"]. Each call
+    /// returns at most one attempt and its bounded graph; out of range is None.
+    pub fn trusted_recovery_attempt_at(
+        &self,
+        expected: &Commit,
+        index: usize,
+    ) -> Result<Option<RecoveryAttempt>> {
+        let (mut w, _) = self.recovery_writer(expected)?;
+        let Some(attempt) = w.candidate.attempts().get(index).cloned() else {
+            return Ok(None);
+        };
+        self.read_recovery_attempt(&mut w, attempt).map(Some)
+    }
+    fn read_recovery_attempt(&self, w: &mut Writer, attempt: Value) -> Result<RecoveryAttempt> {
+        let result = (|| {
+            let r = evidence::reference(&canonical(&attempt)?, evidence::TYPED)?;
+            let root = json!({"attempt_refs":[r]});
+            let refs = w.candidate.evidence_set()?.graph(&root)?;
+            // Existing Attempt schema: typed attempt + TxRaw + 2 inclusion
+            // responses + at most 8 pairs of absence responses. No cap change.
+            if refs.len() > 20 {
+                return Err(Error::Recovery("RECOVERY_EVIDENCE_BOUND"));
+            }
+            let refs = json!(refs);
+            let objects = w.store.load(&refs)?;
+            objects.verify_exact_refs(&root, &refs)?;
+            if objects.typed(&r, "Attempt")? != attempt
+                || attempt["context"] != *w.config.context()
+                || sha256(objects.resolve(&attempt["raw_tx_ref"], evidence::TX)?)
+                    != attempt["tx_hash"]
+            {
+                return Err(Error::Recovery("RECOVERY_ATTEMPT_MISMATCH"));
+            }
+            Ok(RecoveryAttempt {
+                commit: w.store.commit.clone(),
+                attempt,
+                evidence: objects,
+            })
+        })();
+        self.finish_recovery_read(w, result)
+    }
     #[cfg(feature = "fault-injection")]
     pub fn create_with_fault_hook(
         path: &Path,

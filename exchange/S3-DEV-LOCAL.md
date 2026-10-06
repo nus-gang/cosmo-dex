@@ -52,6 +52,37 @@ root 생성과 개방은 `/`부터 모든 조상을 `openat/O_NOFOLLOW`로 순�
 | `reconcile_receipt_ledger` | client의 독립 receipt/seq/hash/offset entry 전체를 복원 결과와 비교. 응답하지 못한 commit의 추가 존재는 허용, client receipt 누락/변조는 거절 |
 | `committed_attempt` | 열린 writer에서 commit된 attempt 조회. 저장 오류 또는 영속 RECOVERY_REQUIRED이면 거절. 반환 뒤 방송을 허가하는 token이 아님 |
 | `with_committed_attempt` | 단일 writer lock 아래 store와 원 TxRaw를 재검증하고 PREPARED/UNKNOWN에만 D callback을 실행. callback은 Engine에 재진입하지 않고 bounded IO만 수행. D가 방송 intent를 먼저 저장하고 결과불명·재시도를 기존 계약대로 대사해야 함 |
+| `trusted_recovery_history(&Commit, Option<u64>, usize)` | 같은 commit의 bootstrap부터 마지막 저장 관측까지 높이 순서로 최대 64개 원문/검증된 Snapshot을 반환. 적용된 C와 마지막 관측을 별도 anchor로 포함. 다음 페이지는 `next_height` 사용 |
+| `trusted_recovery_attempt(&Commit, &str)` | commit된 TX hash로 PREPARED/UNKNOWN 및 terminal attempt와 그 참조 집합의 원 TxRaw·확정/부재 증거 조회. 없는 TX는 `None`. 방송 callback을 실행하지 않음 |
+| `trusted_recovery_attempt_at(&Commit, usize)` | 같은 View의 `state["attempt_refs"]` 순번으로 최대 한 attempt와 증거를 읽음. 저장한 TX hash나 sidecar 없이 재시작 탐색 가능. 범위 밖 순번은 `None` |
+
+### Trusted runtime 재시작 조회
+
+NUS-73의 Snapshot 저장→Apply 전 및 terminal attempt 저장→receipt 수집 전 재시작 연결용 Rust API다. `dev-local-demo` 안의 `Engine`을 가진 신뢰 어댑터만 사용한다. 공개 transport schema·REST/browser·CLI route는 없으며 반환 타입은 `Serialize`를 구현하지 않는다. Rust caller의 인증과 Engine 소유권은 연결 어댑터의 책임이다.
+
+먼저 `reader().get()`의 `commit`을 고정한다. 모든 history 페이지와 attempt 조회에 그 commit의 **command_seq·record_hash·end_offset 전체**를 전달한다. 각 조회는 단일 writer lock 안에서 store identity·guard·marker·object descriptor/SHA/length/media와 candidate/공개 revision 일치를 확인하고, 반환 전 store를 다시 검사한다. 중간에 새 commit이 생기면 `Invalid("STALE_COMMIT")`가 반환된다. 이때 부분 수집 결과를 버리고 새 View로 처음부터 수집한다. 존재하지 않는 과거 commit의 조회나 자동 snapshot 재작성은 없다.
+
+```rust,ignore
+let view = engine.reader().get()?;
+let page = engine.trusted_recovery_history(&view.commit, None, 64)?;
+// page.applied: 엔진 C가 적용된 Snapshot, page.latest: 마지막 저장 관측
+// page.observations: raw 원문 + Context/해시/연속성 검증된 Snapshot
+// next_height가 Some이면 같은 view.commit으로 이어서 조회
+// 처음 재시작하면 state["attempt_refs"] 순번을 사용해 TX hash를 알아낸다.
+let terminal = engine.trusted_recovery_attempt_at(&view.commit, 0)?;
+if let Some(read) = terminal {
+    let tx = read.evidence.resolve(
+        &read.attempt["raw_tx_ref"], nus_exchange_contract::s3::evidence::TX,
+    )?;
+    // receipt/absence collector의 읽기 입력. 방송 허가로 사용하지 않음.
+}
+```
+
+history의 `None` 시작점은 bootstrap 높이이고 지정 높이는 포함된다. limit은 1~64이며 초과/0은 `RECOVERY_PAGE_LIMIT`, 저장 범위 밖 높이는 `RECOVERY_HEIGHT_RANGE`다. 각 page는 최대 64개 observation 및 applied/latest 두 anchor를 반환하며 모두 기존 262,144B snapshot 상한을 따른다. bootstrap raw는 원 파일 바이트, 이후 observation raw는 원 저장 typed object다. 이전 observation anchor를 검증해 페이지 사이에도 기존 `Snapshot::advance`의 Context·height·hash·계정/epoch 연속성 규칙을 유지한다. Query 범위 오류는 commit이나 gate를 변경하지 않는다.
+
+attempt 조회 입력은 기존 64자리 소문자 TX hash 또는 같은 commit의 attempt 순번이다. 임의 경로·EvidenceRef·object hash로 파일을 읽는 API는 없다. 현재 commit의 Attempt에서 도달하는 정확한 참조 집합만 store에서 읽고 typed Attempt와 원 TxRaw hash를 대조한다. 반환 `Objects`는 이 집합만 담은 메모리 사본이다. 기존 Attempt schema의 구조상 최대 20개 object(typed 1 + TX 1 + inclusion RPC 2 + absence RPC 16) 이내이며 각 media의 기존 byte 상한을 유지한다. 실제 semantic 유효 상태에서는 inclusion과 absence가 공존하지 않는다. 전체 store의 기존 검사는 계속 수행하므로 이 페이지 상한은 처리 지연/처리량 보장이 아니다.
+
+`CATCHING_UP`에서는 미적용 latest/history를 조회할 수 있다. 저장 오류·`RECOVERY_REQUIRED`·poisoned writer에서는 세 조회 API도 닫힌다. 저장/참조 불일치 감지는 reader gate를 `RECOVERY_REQUIRED`로 바꾸며 새로운 WAL·receipt·경제 상태를 만들지 않는다. 기존 `query_signed`의 읽기 전용 원 결과 복원은 유지한다. terminal 데이터를 조회한 뒤에도 `with_committed_attempt`는 `ATTEMPT_TERMINAL`을 반환하고 callback을 실행하지 않는다. 재방송은 언제나 현재 writer gate와 기존 effect API 규칙으로 별도 판정해야 한다.
 
 변경 응답은 승인된 7필드 envelope다. `development_receipt=LOCAL_WRITE_COMPLETED_UNPROVEN_SPACE`, `durable_ack=false`, `storage_assurance=UNPROVEN_HOST_SPACE`. 내부 rc3 `CommandResult`는 변경하지 않는다. receipt ledger의 `{receipt,command_seq,record_hash,end_offset}`는 독립 시험/인계 컨테이너이며 새 public schema가 아니다. 개발 접수와 chain `COMMITTED`는 별도다. D의 실제 HTTP는 `/dev-local/v1/`·loopback·기존 인증/origin·계정 격리와 묶어 후속 업무에서 검증해야 한다.
 
