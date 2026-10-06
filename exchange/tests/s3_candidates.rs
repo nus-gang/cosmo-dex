@@ -1308,3 +1308,483 @@ fn recovery_gate_preserves_store_and_signed_results_after_two_replays() {
         });
     }
 }
+
+#[cfg(all(feature = "dev-local-settlement", feature = "fault-injection"))]
+#[test]
+fn settlement_intent_failure_runs_zero_callbacks() {
+    use nus_exchange_contract::s3::{dev_local::Error, settlement_local::Worker};
+    use std::sync::Arc;
+    let mut c = order(setup(0, true), 0, "2", 1000, 10000, 221);
+    c = order(c, 1, "1", 1000, 10000, 222);
+    c = replay_check(
+        &c,
+        c.seal_batch("NORMAL", &observation(&c), NOW).unwrap(),
+        "SEAL_BATCH",
+    );
+    let a = attempt(&mut c, "SETTLE", None);
+    c = replay_check(&c, c.prepare_attempt(a.clone()).unwrap(), "ATTEMPT");
+    TRACE.with_borrow_mut(|trace| {
+        let t = trace.as_mut().unwrap();
+        let e = Arc::new(t.dev.engine.take().unwrap());
+        e.set_fault_hook(Some(Arc::new(|point| {
+            if point == "candidate_verified" {
+                Err(Error::Recovery("INJECTED_INTENT_FAILURE"))
+            } else {
+                Ok(())
+            }
+        })))
+        .unwrap();
+        let w = Worker::new(e.clone());
+        let mut calls = 0;
+        assert!(
+            w.test_broadcast(
+                a["tx_hash"].as_str().unwrap(),
+                &observation(&c),
+                NOW,
+                |_, _| {
+                    calls += 1;
+                }
+            )
+            .is_err()
+        );
+        assert_eq!(calls, 0);
+        assert_eq!(e.reader().get().unwrap().gate, "RECOVERY_REQUIRED");
+        assert_eq!(
+            e.reader().get().unwrap().state["accounts"],
+            c.full_state().unwrap()["accounts"]
+        );
+        dev_fixture::copy_home("settlement-intent-failure", &t.dev.home);
+        evidence("settlement-intent-failure", json!({"result":"PASS","callback_count":calls,"gate":e.reader().get().unwrap().gate,"account_diff":[]}));
+    });
+}
+
+#[cfg(all(feature = "dev-local-settlement", feature = "fault-injection"))]
+mod settlement_tests {
+    use super::*;
+    use nus_exchange_contract::s3::{
+        dev_local::{Engine as DevEngine, Error},
+        settlement_local::{Options, Request, Rest, Worker},
+    };
+    use std::sync::Arc;
+    const ORIGIN: &str = "http://127.0.0.1:5173";
+    fn call(
+        rest: &Rest,
+        c: &Candidate,
+        method: &str,
+        path: &str,
+        token: Option<&str>,
+        body: &Value,
+    ) -> (u16, Value) {
+        let authorization = token.map(|t| format!("Bearer {t}"));
+        let mut headers = vec![("origin", ORIGIN)];
+        if let Some(a) = &authorization {
+            headers.push(("authorization", a));
+        }
+        let bytes = if method == "GET" {
+            vec![]
+        } else {
+            canonical(body).unwrap()
+        };
+        rest.handle(
+            Request {
+                peer: "127.0.0.1".parse().unwrap(),
+                method,
+                path,
+                headers: &headers,
+                body: &bytes,
+            },
+            &observation(c),
+            NOW,
+        )
+    }
+    fn login(rest: &Rest, c: &Candidate, i: usize) -> String {
+        let (status, challenge) = call(
+            rest,
+            c,
+            "POST",
+            "/dev-local/v1/auth/challenge",
+            None,
+            &json!({"owner":owner(i),"origin":ORIGIN,"audience":"exchange-api"}),
+        );
+        assert_eq!(status, 200);
+        let raw = schema::bytes(&challenge["wire_base64"]).unwrap();
+        let sig = sign(i, &codec::frame("NUS/WALLET_AUTH/V1", &raw));
+        let (status, session) = call(
+            rest,
+            c,
+            "POST",
+            "/dev-local/v1/auth/session",
+            None,
+            &json!({"wire_base64":challenge["wire_base64"],"signature_base64":STANDARD.encode(sig)}),
+        );
+        assert_eq!(status, 200, "{session}");
+        session["token"].as_str().unwrap().into()
+    }
+    #[test]
+    fn settlement_rest_auth_projection_retry_recovery() {
+        let c = setup(0, true);
+        TRACE.with_borrow_mut(|trace| {
+            let t = trace.as_mut().unwrap();
+            let e = Arc::new(t.dev.engine.take().unwrap());
+            for (enabled,ack,bind) in [(false,true,"127.0.0.1"),(true,false,"127.0.0.1"),(true,true,"0.0.0.0")] {
+                assert!(Rest::new(e.clone(),c.snapshot().clone(),Options {enabled,acknowledge_unproven_space:ack,bind:bind.parse().unwrap()}).is_err());
+            }
+            let rest = Rest::new(e.clone(),c.snapshot().clone(),Options {enabled:true,acknowledge_unproven_space:true,bind:"127.0.0.1".parse().unwrap()}).unwrap();
+            assert_eq!(call(&rest,&c,"GET","/dev-local/v1/account",None,&Value::Null).0,401);
+            let token0 = login(&rest,&c,0);
+            let token1 = login(&rest,&c,1);
+            let (raw,sig)=sign_order(&c,0,"2",1000,10000,231);
+            let body=json!({"context":c.snapshot().context(),"wire_base64":STANDARD.encode(&raw),"signature_base64":STANDARD.encode(&sig)});
+            let own=call(&rest,&c,"POST","/dev-local/v1/orders",Some(&token0),&body);
+            assert_eq!(own.0,200,"{:?}",own);
+            assert_eq!(call(&rest,&c,"POST","/dev-local/v1/orders",Some(&token0),&body),own);
+            let committed=e.reader().get().unwrap().commit.clone();
+            assert_ne!(call(&rest,&c,"POST","/dev-local/v1/orders",Some(&token1),&body).0,200);
+            assert_ne!(call(&rest,&c,"POST","/dev-local/v1/receipts/orders",Some(&token1),&body).0,200);
+            let mut bad=body.clone(); bad["owner"]=json!(owner(0));
+            assert_ne!(call(&rest,&c,"POST","/dev-local/v1/orders",Some(&token1),&bad).0,200);
+            bad=body.clone(); bad["context"]["genesis_hash"]=json!(schema::ZERO);
+            assert_eq!(call(&rest,&c,"POST","/dev-local/v1/orders",Some(&token0),&bad).1["code"],"CONTEXT_MISMATCH");
+            bad=body.clone(); bad["signature_base64"]=json!(STANDARD.encode(vec![0;3309]));
+            assert_ne!(call(&rest,&c,"POST","/dev-local/v1/receipts/orders",Some(&token0),&bad).0,200);
+            let account=call(&rest,&c,"GET","/dev-local/v1/account",Some(&token0),&Value::Null).1;
+            let other=call(&rest,&c,"GET","/dev-local/v1/account",Some(&token1),&Value::Null).1;
+            assert_eq!(account["orders"].as_array().unwrap().len(),1);
+            assert!(other["orders"].as_array().unwrap().is_empty());
+            for forbidden in ["signature","order_wire","public_key","bindings","receipts","raw_tx_ref"] { assert!(!account.to_string().contains(forbidden)); }
+            assert!(!account.to_string().contains(&owner(1)));
+            let auth=format!("Bearer {token0}");
+            for (peer,path,headers) in [
+                ("10.0.0.1","/dev-local/v1/account",vec![("origin",ORIGIN),("authorization",auth.as_str())]),
+                ("127.0.0.1","/v1/account",vec![("origin",ORIGIN),("authorization",auth.as_str())]),
+                ("127.0.0.1","/dev-local/v1/account",vec![("origin","http://evil.example"),("authorization",auth.as_str())]),
+                ("127.0.0.1","/dev-local/v1/account",vec![("origin",ORIGIN),("Origin",ORIGIN),("authorization",auth.as_str())]),
+                ("127.0.0.1","/dev-local/v1/account",vec![("origin",ORIGIN),("authorization",auth.as_str()),("Authorization",auth.as_str())]),
+            ] { assert_ne!(rest.handle(Request{peer:peer.parse().unwrap(),method:"GET",path,headers:&headers,body:&[]},&observation(&c),NOW).0,200); }
+            assert_eq!(e.reader().get().unwrap().commit,committed);
+            let headers=[("origin",ORIGIN),("authorization",auth.as_str())];
+            let mut stale_observation=observation(&c); stale_observation.received_at=NOW-6000;
+            let stale=rest.handle(Request{peer:"127.0.0.1".parse().unwrap(),method:"GET",path:"/dev-local/v1/account",headers:&headers,body:&[]},&stale_observation,NOW).1;
+            assert_eq!(stale["fresh"],false); assert_eq!(stale["withdraw_ready"],false);
+            e.set_fault_hook(Some(Arc::new(|p| if p=="candidate_verified" {Err(Error::Recovery("TEST"))}else{Ok(())}))).unwrap();
+            let withdraw=json!({"context":c.snapshot().context(),"request_id":"ab".repeat(32)});
+            assert_eq!(call(&rest,&c,"POST","/dev-local/v1/withdraw/prepare",Some(&token0),&withdraw).0,503);
+            assert_eq!(call(&rest,&c,"POST","/dev-local/v1/orders",Some(&token0),&body).0,503);
+            assert_eq!(call(&rest,&c,"POST","/dev-local/v1/withdraw/prepare",Some(&token0),&withdraw).0,503);
+            assert_eq!(call(&rest,&c,"POST","/dev-local/v1/receipts/orders",Some(&token0),&body),own);
+            assert_eq!(call(&rest,&c,"GET","/dev-local/v1/account",Some(&token0),&Value::Null).1["gate"],"RECOVERY_REQUIRED");
+            dev_fixture::copy_home("settlement-rest-recovery", &t.dev.home);
+            evidence("settlement-rest",json!({"scope":"COMPONENT_SYNTHETIC","result":"PASS","owner_projection":account,"other_projection":other,"receipt":own.1,"checks":["auth","owner","signature","context","origin","loopback","duplicate_headers","two_opt_ins","retry","stale","recovery_query"]}));
+        });
+    }
+    #[test]
+    fn settlement_chain_bytes_and_snapshot_binding() {
+        use nus_exchange_contract::s3::settlement_local::{LoopbackRpc, chain};
+        struct Signer(Vec<u8>);
+        impl chain::OperatorSigner for Signer {
+            fn public_key(&self) -> &[u8] {
+                &self.0
+            }
+            fn sign(&self, doc: &[u8]) -> nus_exchange_contract::s3::dev_local::Result<Vec<u8>> {
+                Ok(super::sign(16, doc))
+            }
+        }
+        for bps in [0, 25] {
+            let mut c = order(setup(bps, true), 0, "2", 1000, 10000, 245);
+            c = order(c, 1, "1", 1000, 10000, 246);
+            c = replay_check(
+                &c,
+                c.seal_batch("NORMAL", &observation(&c), NOW).unwrap(),
+                "SEAL_BATCH",
+            );
+            let state = c.full_state().unwrap();
+            let id = c.batches().last().unwrap()["batch"]["batch_id"]
+                .as_str()
+                .unwrap()
+                .to_owned();
+            let raw = chain::sealed_batch(&state, &id).unwrap();
+            assert_eq!(raw, c.batch_wire(&id).unwrap());
+            let signer = Signer(hex::decode(key(16)["public_key_hex"].as_str().unwrap()).unwrap());
+            let (a, tx) = chain::settle_attempt(c.snapshot(), &raw, 1, 16, 0, &signer).unwrap();
+            let expected = attempt(&mut c, "SETTLE", None);
+            assert_eq!(a, expected);
+            assert_eq!(sha256(&tx), expected["tx_hash"]);
+            TRACE.with_borrow_mut(|trace| {
+                let t = trace.as_mut().unwrap();
+                let e = Arc::new(t.dev.engine.take().unwrap());
+                let worker = Worker::new(e.clone());
+                assert_eq!(
+                    worker
+                        .prepare_settle(c.snapshot(), &id, 1, 16, 0, &signer, &observation(&c), NOW)
+                        .unwrap(),
+                    a["tx_hash"]
+                );
+                struct NeverSigner;
+                impl chain::OperatorSigner for NeverSigner {
+                    fn public_key(&self) -> &[u8] {
+                        panic!("unresolved attempt reached signer")
+                    }
+                    fn sign(
+                        &self,
+                        _: &[u8],
+                    ) -> nus_exchange_contract::s3::dev_local::Result<Vec<u8>> {
+                        panic!("unresolved attempt reached signer")
+                    }
+                }
+                assert!(
+                    worker
+                        .prepare_settle(
+                            c.snapshot(),
+                            &id,
+                            2,
+                            16,
+                            1,
+                            &NeverSigner,
+                            &observation(&c),
+                            NOW
+                        )
+                        .is_err()
+                );
+                assert_eq!(
+                    e.committed_attempt(a["tx_hash"].as_str().unwrap()).unwrap(),
+                    Some(a)
+                );
+            });
+            let rpc = json!({"jsonrpc":"2.0","id":1,"result":{"response":{"code":0,"height":c.snapshot().height().to_string(),"value":STANDARD.encode(canonical(c.snapshot().value()).unwrap())}}});
+            assert_eq!(
+                chain::decode_snapshot(c.snapshot(), &serde_json::to_vec(&rpc).unwrap())
+                    .unwrap()
+                    .value(),
+                c.snapshot().value()
+            );
+            let mut bad = rpc.clone();
+            bad["result"]["response"]["height"] = json!("99");
+            assert!(
+                chain::decode_snapshot(c.snapshot(), &serde_json::to_vec(&bad).unwrap()).is_err()
+            );
+            let mut snapshot = c.snapshot().value().clone();
+            snapshot["context"]["genesis_hash"] = json!(schema::ZERO);
+            bad = rpc.clone();
+            bad["result"]["response"]["value"] =
+                json!(STANDARD.encode(canonical(&snapshot).unwrap()));
+            assert!(
+                chain::decode_snapshot(c.snapshot(), &serde_json::to_vec(&bad).unwrap()).is_err()
+            );
+            let mut badstate = state.clone();
+            badstate["fills"][0]["quantity_lots"] = json!("1");
+            assert!(chain::sealed_batch(&badstate, &id).is_err());
+        }
+        assert!(
+            LoopbackRpc::new(
+                "0.0.0.0:26657".parse().unwrap(),
+                std::time::Duration::from_secs(1)
+            )
+            .is_err()
+        );
+        assert!(
+            LoopbackRpc::new(
+                "127.0.0.1:26657".parse().unwrap(),
+                std::time::Duration::from_millis(2001)
+            )
+            .is_err()
+        );
+        evidence(
+            "settlement-chain",
+            json!({"scope":"COMPONENT_SYNTHETIC","result":"PASS","fee_profiles":["0","25"],"batch_bytes_diff":[],"tx_bytes_diff":[],"snapshot_context_height_rejection":true}),
+        );
+    }
+    #[test]
+    fn settlement_effect_holds_writer_and_rechecks_raw() {
+        let (c, a) = prepared();
+        TRACE.with_borrow_mut(|trace| {
+            let t = trace.as_mut().unwrap();
+            let e = Arc::new(t.dev.engine.take().unwrap());
+            let worker = Worker::new(e.clone());
+            let (start, go) = std::sync::mpsc::channel();
+            let (started, wait) = std::sync::mpsc::channel();
+            let (done, completed) = std::sync::mpsc::channel();
+            let writer = e.clone();
+            let o = observation(&c);
+            let thread = std::thread::spawn(move || {
+                go.recv().unwrap();
+                started.send(()).unwrap();
+                let result = writer.execute(
+                    nus_exchange_contract::s3::dev_local::Command::Local {
+                        kind: "WITHDRAW_PREPARE".into(),
+                        raw: canonical(&json!({"request_id":"ac".repeat(32)})).unwrap(),
+                        session_owner: owner(2),
+                    },
+                    &[],
+                    &o,
+                    NOW,
+                );
+                done.send(result.is_ok()).unwrap();
+            });
+            worker
+                .test_broadcast(
+                    a["tx_hash"].as_str().unwrap(),
+                    &observation(&c),
+                    NOW,
+                    |_, _| {
+                        start.send(()).unwrap();
+                        wait.recv().unwrap();
+                        assert!(
+                            completed
+                                .recv_timeout(std::time::Duration::from_millis(40))
+                                .is_err()
+                        );
+                    },
+                )
+                .unwrap();
+            assert!(completed.recv().unwrap());
+            thread.join().unwrap();
+            let raw_path = t
+                .dev
+                .home
+                .join("objects/sha256")
+                .join(a["raw_tx_ref"]["sha256"].as_str().unwrap());
+            let mut bytes = std::fs::read(&raw_path).unwrap();
+            bytes[0] ^= 1;
+            std::fs::write(&raw_path, bytes).unwrap();
+            let mut calls = 0;
+            assert!(
+                worker
+                    .test_broadcast(
+                        a["tx_hash"].as_str().unwrap(),
+                        &observation(&c),
+                        NOW,
+                        |_, _| calls += 1
+                    )
+                    .is_err()
+            );
+            assert_eq!(calls, 0);
+            assert_eq!(e.reader().get().unwrap().gate, "RECOVERY_REQUIRED");
+        });
+    }
+    #[test]
+    fn settlement_committed_receipt_projection() {
+        let (mut c, a) = prepared();
+        let v = terminal_snapshot(&c, &a, true);
+        c = observe(c, v);
+        let r = receipt(&mut c, &a, None);
+        c = replay_check(&c, c.record_receipt(r).unwrap(), "VOID_BATCH");
+        c = replay_check(&c, c.apply().unwrap(), "SETTLEMENT_APPLY");
+        TRACE.with_borrow_mut(|trace| {
+            let t=trace.as_mut().unwrap();let e=Arc::new(t.dev.engine.take().unwrap());
+            let rest=Rest::new(e,c.snapshot().clone(),Options{enabled:true,acknowledge_unproven_space:true,bind:"127.0.0.1".parse().unwrap()}).unwrap();
+            let token=login(&rest,&c,1);
+            let account=call(&rest,&c,"GET","/dev-local/v1/account",Some(&token),&Value::Null).1;
+            assert_eq!(account["batches"][0]["receipt"]["disposition"],"COMMITTED");
+            assert_eq!(account["batches"][0]["receipt"]["terminal_tx_hash"],a["tx_hash"]);
+            assert_eq!(account["batches"][0]["receipt"]["terminal_height"],c.snapshot().height().to_string());
+            for row in account["ledger"].as_array().unwrap() {assert_eq!(row["P"],"0");assert_eq!(row["D"],"0");}
+            let token2=login(&rest,&c,2);
+            let other=call(&rest,&c,"GET","/dev-local/v1/account",Some(&token2),&Value::Null).1;
+            assert!(other["batches"].as_array().unwrap().is_empty());
+            assert!(other["fills"].as_array().unwrap().is_empty());
+            evidence("settlement-public-receipt",json!({"scope":"COMPONENT_SYNTHETIC","result":"PASS","account":account,"other_account":other}));
+        });
+    }
+    fn prepared() -> (Candidate, Value) {
+        let mut c = order(setup(25, true), 0, "2", 1000, 10000, 241);
+        c = order(c, 1, "1", 1000, 10000, 242);
+        c = replay_check(
+            &c,
+            c.seal_batch("NORMAL", &observation(&c), NOW).unwrap(),
+            "SEAL_BATCH",
+        );
+        let a = attempt(&mut c, "SETTLE", None);
+        c = replay_check(&c, c.prepare_attempt(a.clone()).unwrap(), "ATTEMPT");
+        (c, a)
+    }
+    #[test]
+    fn settlement_unknown_budget_and_two_replays() {
+        let (c, a) = prepared();
+        TRACE.with_borrow_mut(|trace| {
+            let t=trace.as_mut().unwrap();
+            let hash=a["tx_hash"].as_str().unwrap();
+            let initial=t.dev.engine.as_ref().unwrap().reader().get().unwrap();
+            for n in 1..=3 {
+                let e=Arc::new(t.dev.engine.take().unwrap());
+                let w=Worker::new(e.clone());
+                w.test_broadcast(hash,&observation(&c),NOW,|stored,raw| {
+                    assert_eq!(sha256(raw),hash);
+                    assert_eq!(stored["broadcast_count"],n.to_string());
+                    assert_eq!(stored["state"],"SUBMISSION_UNKNOWN");
+                    // Concurrent writer must remain blocked until bounded effect ends.
+                    let marker:Value=serde_json::from_slice(&std::fs::read(t.dev.home.join("commit.dev.json")).unwrap()).unwrap();
+                    assert_eq!(marker["command_seq"],(initial.commit.command_seq+n).to_string());
+                }).unwrap();
+                assert_eq!(e.reader().get().unwrap().state["accounts"],initial.state["accounts"]);
+                drop(w); drop(e);
+                // Explicit same-home replay, no background automatic retransmission.
+                t.dev.engine=Some(DevEngine::open(&t.dev.home,t.dev.config.clone()).unwrap());
+            }
+            let e=Arc::new(t.dev.engine.take().unwrap());
+            let w=Worker::new(e.clone());
+            let mut calls=0;
+            assert!(w.test_broadcast(hash,&observation(&c),NOW,|_,_| calls+=1).is_err());
+            assert_eq!(calls,0);
+            assert!(w.reconcile(nus_exchange_contract::s3::dev_local::Command::RejectFinal,&[],&observation(&c),NOW).is_err());
+            assert_eq!(e.reader().get().unwrap().state["accounts"],initial.state["accounts"]);
+            dev_fixture::copy_home("settlement-unknown", &t.dev.home);
+            evidence("settlement-unknown",json!({"scope":"COMPONENT_SYNTHETIC","result":"PASS","attempt":e.committed_attempt(hash).unwrap(),"account_diff":[],"replays":3,"budget_rejection_callback_count":calls}));
+        });
+    }
+    #[test]
+    fn settlement_crash_child() {
+        let Ok(path) = std::env::var("NUS71_CRASH_PATH") else {
+            return;
+        };
+        let (c, a) = prepared();
+        TRACE.with_borrow_mut(|trace| {
+            let t=trace.as_mut().unwrap();
+            std::fs::write(&path,canonical(&json!({"home":t.dev.home,"hash":a["tx_hash"],"accounts":c.full_state().unwrap()["accounts"]})).unwrap()).unwrap();
+            let e=Arc::new(t.dev.engine.take().unwrap());
+            Worker::new(e).test_broadcast(a["tx_hash"].as_str().unwrap(),&observation(&c),NOW,|_,_|std::process::exit(73)).unwrap();
+        });
+    }
+    #[test]
+    fn settlement_process_crash_preserves_intent() {
+        let dir = std::path::PathBuf::from(
+            std::env::var_os("PAPERCLIP_RUN_SCRATCH_DIR")
+                .or_else(|| std::env::var_os("NUS_TEST_TMPDIR"))
+                .unwrap(),
+        );
+        let path = dir.join(format!("nus71-crash-{}.json", std::process::id()));
+        let status = std::process::Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "settlement_tests::settlement_crash_child",
+                "--nocapture",
+            ])
+            .env("NUS71_CRASH_PATH", &path)
+            .status()
+            .unwrap();
+        assert_eq!(status.code(), Some(73));
+        let v: Value = serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+        let (inputs, _) = dev_fixture::initial(25);
+        for _ in 0..2 {
+            let e = DevEngine::open(
+                std::path::Path::new(v["home"].as_str().unwrap()),
+                nus_exchange_contract::s3::dev_local::Validated::new(inputs.clone()).unwrap(),
+            )
+            .unwrap();
+            let a = e
+                .committed_attempt(v["hash"].as_str().unwrap())
+                .unwrap()
+                .unwrap();
+            assert_eq!(a["state"], "SUBMISSION_UNKNOWN");
+            assert_eq!(a["broadcast_count"], "1");
+            assert_eq!(e.reader().get().unwrap().state["accounts"], v["accounts"]);
+        }
+        dev_fixture::copy_home(
+            "settlement-process-crash",
+            std::path::Path::new(v["home"].as_str().unwrap()),
+        );
+        evidence(
+            "settlement-process-crash",
+            json!({"scope":"PROCESS_COMPONENT_SYNTHETIC","exit_code":73,"replays":2,"state_diff":[],"result":"PASS"}),
+        );
+    }
+}

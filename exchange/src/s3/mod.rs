@@ -21,3 +21,9 @@ pub mod record;
     any(target_os = "macos", target_os = "linux")
 ))]
 pub mod dev_local;
+
+#[cfg(all(
+    feature = "dev-local-settlement",
+    any(target_os = "macos", target_os = "linux")
+))]
+pub mod settlement_local;

@@ -10,6 +10,8 @@ publish = false
 default = []
 # Separate, explicitly selected development store; never a standard ACK path.
 dev-local-demo = []
+# Dormant Settlement component; no listener or automatic startup.
+dev-local-settlement = ["dev-local-demo"]
 # Only the subprocess fault harness enables this. Normal binaries do not read
 # fault environment variables or include injected storage errors.
 fault-injection = []
