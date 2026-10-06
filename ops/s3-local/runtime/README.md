@@ -93,3 +93,17 @@ Rust1.92.0·기존 offline/locked rlib로 **28 PASS/0 FAIL**(신규8+기존20), 
 
 
 Account 연결 검증: 기존 시험과 신규7개를 합쳐 **35 PASS/0 FAIL**. SDK v0.55.0 실제 Marshal 결과를 `testdata/account-sdk.go`로 offline 생성하고 Rust decoder와 대조했다. 이 generator는 합성 공개키만 쓰며 서비스/서명/방송을 실행하지 않는다. `account-build.json`·`account-sdk-build.json`과 로그가 명령 근거다. generator 첫 컴파일의 any 이름 충돌과 fixture 주소 hex 직렬화 오류는 수정했고 최초 실패 로그를 보존했다. 실제 RPC·worker·DEV 통합은 NOT_RUN이다.
+
+## COMMITTED receipt 수집
+
+`ChainRead::committed_receipt`는 신뢰하는 current/terminal Snapshot과 영속 BatchIdentity·TX 원문을 받는다. 같은 current H Batch 원문을 검증하고 terminal H의 exact TX/index/block/results를 기존 C `proof::receipt`로 결합한다. 원 Batch 응답도 Objects에 보존한다. Context/Batch/terminal H/hash 불일치는 block IO 전에 거절한다. nonzero code·TX 누락·위조 receipt wire·VOID·NOT_FOUND·조회 오류는 COMMITTED로 승격하지 않는다. 새 경제 로직/엔진 전이/서명/방송은 없다. VOID resolution evidence와 worker 영속 적용은 후속 배선이다.
+
+합성 순수시험 신규6개와 기존35개 총41 PASS. 실제 RPC/서비스0, DEV NOT_RUN, runtime pin 미발급. 원 G00/ACK·부모 blocker 유지.
+
+## VOID receipt 전송 연결
+
+`ChainRead::void_receipt`는 C가 영속화한 `ResolutionEvidence` reference와 Objects를 받는다. 매번 원 bytes·schema·Context·Batch를 대조하고 참조 closure만 복사한다(원 증거 closure 16MiB 상한). 같은 H Batch의 실패 TX hash·resolution domain hash·terminal H/TX를 대조한 뒤 실제 성공 CLOSE TX 포함 증거를 조립한다. 원 Batch RPC·block/results·TX·failure evidence를 함께 반환한다. hash만 있고 원 증거가 없거나 참조가 변조되면 IO 전에 거절한다.
+
+이 반환은 **전송 증거 조립**이며 실패 또는 정정 승인이 아니다. 승인 C `record_receipt`가 저장된 failure_evidence·CLOSE attempt·CLOSING·모든 settle attempt 종결과 정확한 증거를 다시 확인해야 한다. 수집기는 Command/Apply나 경제 전이를 실행하지 않는다. 그 연결은 worker 구현에 남는다. 기존 C/L-D 및 lock 변경0.
+
+기존 offline/locked rlib와 Rust1.92.0으로 `collect.rs` 순수시험 **46 PASS / 0 FAIL**(신규 VOID 5개 + 기존41개). VOID 양성 fixture는 전송 검증용 합성 schema이며 엔진이 승인한 실패 증거가 아니다. 원 bytes 보존·hash-only/변조 거절·lookup 불일치·실패/누락 CLOSE TX 거절을 확인했다. 실제 RPC/서비스0·DEV NOT_RUN·runtime pin 미발급. worker/signer·웹 ChainPort·초기화/launcher·최종 manifest 및 CTO→Security는 미완료다.

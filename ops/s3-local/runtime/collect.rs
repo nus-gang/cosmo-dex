@@ -68,6 +68,50 @@ impl ChainRead {
         })?;
         Ok((decode_batch(snapshot, seq, &raw)?, raw))
     }
+    /// Assemble a COMMITTED receipt from the raw same-H Batch lookup and the
+    /// exact persisted TX. The terminal snapshot must already be in C history.
+    /// VOID needs separate resolution evidence and is rejected here.
+    pub fn committed_receipt(
+        &self,
+        current: &Snapshot,
+        terminal: &Snapshot,
+        batch: &Value,
+        tx: &[u8],
+    ) -> Result<(Value, Objects)> {
+        schema::validate("BatchIdentity", batch)?;
+        nus_exchange_contract::s3::evidence::reference(tx, TX)?;
+        if current.context() != terminal.context() || terminal.height() > current.height() {
+            return Err(Error::Invalid("RECEIPT_HISTORY"));
+        }
+        let seq = schema::num(&batch["batch_seq"])?;
+        let (_, raw) = self.batch(current, seq)?;
+        collect_committed(current, terminal, batch, tx, &raw, || self.block(terminal))
+    }
+    /// Assemble VOID transport evidence using C's persisted failure evidence.
+    /// This does not authorize correction: C record_receipt still checks the
+    /// stored failure, CLOSE attempt, CLOSING state and all prior attempts.
+    pub fn void_receipt(
+        &self,
+        current: &Snapshot,
+        terminal: &Snapshot,
+        batch: &Value,
+        tx: &[u8],
+        evidence_ref: &Value,
+        persisted: &Objects,
+    ) -> Result<(Value, Objects)> {
+        validate_void_input(current, terminal, batch, tx, evidence_ref, persisted)?;
+        let (_, raw) = self.batch(current, schema::num(&batch["batch_seq"])?)?;
+        collect_void(
+            current,
+            terminal,
+            batch,
+            tx,
+            evidence_ref,
+            persisted,
+            &raw,
+            || self.block(terminal),
+        )
+    }
     /// Collect the whole eight-height timeout window, never infer absence from
     /// tx/NOT_FOUND. Inputs must be C's persisted attempt and snapshot history.
     /// At most 17 RPC calls; no mutation/broadcast/retry or freshness reset.
@@ -126,6 +170,120 @@ impl ChainRead {
             &results,
         )
     }
+}
+fn collect_committed(
+    current: &Snapshot,
+    terminal: &Snapshot,
+    batch: &Value,
+    tx: &[u8],
+    raw: &[u8],
+    fetch: impl FnOnce() -> Result<(Value, Objects)>,
+) -> Result<(Value, Objects)> {
+    schema::validate("BatchIdentity", batch)?;
+    nus_exchange_contract::s3::evidence::reference(tx, TX)?;
+    if current.context() != terminal.context() || terminal.height() > current.height() {
+        return Err(Error::Invalid("RECEIPT_HISTORY"));
+    }
+    let lookup = decode_batch(current, schema::num(&batch["batch_seq"])?, raw)?;
+    let stored = &lookup["receipt"];
+    if lookup["status"] != "FOUND"
+        || stored["disposition"] != "COMMITTED"
+        || stored["context"] != *current.context()
+        || stored["batch"] != *batch
+        || stored["terminal_height"] != terminal.height().to_string()
+        || stored["terminal_tx_hash"] != sha256(tx)
+        || !stored["failed_tx_hash"].is_null()
+        || !stored["resolution_evidence_hash"].is_null()
+    {
+        return Err(Error::Invalid("RECEIPT_INCONSISTENCY"));
+    }
+    // Check lookup binding before block IO, then use the reviewed C proof.
+    let (br, objects) = fetch()?;
+    let (confirmed, mut objects) = confirmed_in_block(terminal, tx, br, objects)?
+        .ok_or(Error::Invalid("RECEIPT_TX_MISSING"))?;
+    objects.insert(raw, RPC)?;
+    let receipt = json!({"context":current.context(),"batch":batch,
+        "disposition":"COMMITTED","terminal_tx":confirmed,
+        "batch_receipt_v2":stored["batch_receipt_v2"],
+        "failed_tx_hash":null,"resolution_evidence_hash":null,"resolution_evidence_ref":null});
+    proof::receipt(&receipt, batch, current, &[terminal], &objects)?;
+    Ok((receipt, objects))
+}
+fn validate_void_input(
+    current: &Snapshot,
+    terminal: &Snapshot,
+    batch: &Value,
+    tx: &[u8],
+    evidence_ref: &Value,
+    persisted: &Objects,
+) -> Result<(Value, Objects)> {
+    schema::validate("BatchIdentity", batch)?;
+    nus_exchange_contract::s3::evidence::reference(tx, TX)?;
+    if current.context() != terminal.context() || terminal.height() > current.height() {
+        return Err(Error::Invalid("RECEIPT_HISTORY"));
+    }
+    let evidence = persisted.typed(evidence_ref, "ResolutionEvidence")?;
+    if evidence["context"] != *current.context() || evidence["batch"] != *batch {
+        return Err(Error::Invalid("FAILURE_EVIDENCE_CONFLICT"));
+    }
+    // Copy only the referenced closure, not the entire runtime evidence store.
+    // Re-resolve every byte under its original role; audit hash alone is useless.
+    let mut objects = Objects::default();
+    let root = json!({"resolution_evidence_ref":evidence_ref});
+    let mut total = 0usize;
+    for r in persisted.graph(&root)? {
+        let media = r["media_type"].as_str().ok_or("EVIDENCE_TYPE")?;
+        let raw = persisted.resolve(&r, media)?;
+        total = total.checked_add(raw.len()).ok_or("EVIDENCE_SIZE")?;
+        if total > 16_777_216 {
+            return Err(Error::Invalid("EVIDENCE_SIZE"));
+        }
+        objects.insert(raw, media)?;
+    }
+    Ok((evidence, objects))
+}
+fn collect_void(
+    current: &Snapshot,
+    terminal: &Snapshot,
+    batch: &Value,
+    tx: &[u8],
+    evidence_ref: &Value,
+    persisted: &Objects,
+    raw: &[u8],
+    fetch: impl FnOnce() -> Result<(Value, Objects)>,
+) -> Result<(Value, Objects)> {
+    let (evidence, mut objects) =
+        validate_void_input(current, terminal, batch, tx, evidence_ref, persisted)?;
+    let lookup = decode_batch(current, schema::num(&batch["batch_seq"])?, raw)?;
+    let stored = &lookup["receipt"];
+    if lookup["status"] != "FOUND"
+        || stored["disposition"] != "VOID"
+        || stored["context"] != *current.context()
+        || stored["batch"] != *batch
+        || stored["terminal_height"] != terminal.height().to_string()
+        || stored["terminal_tx_hash"] != sha256(tx)
+        || !stored["batch_receipt_v2"].is_null()
+        || stored["failed_tx_hash"] != evidence["failed_tx_hash"]
+        || stored["resolution_evidence_hash"]
+            != schema::hash("NUS/S3/RESOLUTION_EVIDENCE/V1", &evidence)?
+    {
+        return Err(Error::Invalid("RECEIPT_INCONSISTENCY"));
+    }
+    let (br, block_objects) = fetch()?;
+    let (confirmed, block_objects) = confirmed_in_block(terminal, tx, br, block_objects)?
+        .ok_or(Error::Invalid("RECEIPT_TX_MISSING"))?;
+    for (r, bytes) in block_objects.entries() {
+        objects.insert(bytes, r["media_type"].as_str().ok_or("EVIDENCE_TYPE")?)?;
+    }
+    objects.insert(raw, RPC)?;
+    let receipt = json!({"context":current.context(),"batch":batch,"disposition":"VOID",
+        "terminal_tx":confirmed,"batch_receipt_v2":null,
+        "failed_tx_hash":evidence["failed_tx_hash"],
+        "resolution_evidence_hash":stored["resolution_evidence_hash"],
+        "resolution_evidence_ref":evidence_ref});
+    objects.graph(&receipt)?;
+    proof::receipt(&receipt, batch, current, &[terminal], &objects)?;
+    Ok((receipt, objects))
 }
 fn collect_absence(
     current: &Snapshot,
@@ -368,7 +526,7 @@ mod inclusion_tests {
     use super::*;
     use base64::{Engine as _, engine::general_purpose::STANDARD};
     use nus_exchange_contract::s3::snapshot::Binding;
-    fn snapshot() -> Snapshot {
+    pub(super) fn snapshot() -> Snapshot {
         let fixture: Value = serde_json::from_str(include_str!(
             "../../../protocol/s3/vectors/correction-state-hash.json"
         ))
@@ -385,7 +543,7 @@ mod inclusion_tests {
             .decode(&canonical(v).unwrap())
             .unwrap()
     }
-    fn input(s: &Snapshot, txs: Vec<&[u8]>, code: Value) -> (Value, Objects) {
+    pub(super) fn input(s: &Snapshot, txs: Vec<&[u8]>, code: Value) -> (Value, Objects) {
         let b = json!({"result":{"block_id":{"hash":s.value()["block_hash"]},
             "block":{"header":{"chain_id":s.context()["chain_id"],"height":s.height().to_string()},
             "data":{"txs":txs.iter().map(|t|STANDARD.encode(t)).collect::<Vec<_>>()}}}});
@@ -793,5 +951,264 @@ mod absence_tests {
         v["result"]["response"]["value"] =
             json!(STANDARD.encode(serde_json::to_vec_pretty(&lookup(&s)).unwrap()));
         assert!(decode_batch(&s, 1, &serde_json::to_vec(&v).unwrap()).is_err());
+    }
+}
+
+#[cfg(test)]
+mod receipt_tests {
+    use super::*;
+    use base64::{Engine as _, engine::general_purpose::STANDARD};
+    use nus_exchange_contract::{codec::Codec, s3::snapshot::Binding};
+    fn setup() -> (Snapshot, Value, Value) {
+        let old = super::inclusion_tests::snapshot();
+        let mut v = old.value().clone();
+        v["last_batch_seq"] = json!("1");
+        v["last_batch_hash"] = json!("22".repeat(32));
+        v["terminal_batch_seqs"] = json!(["1"]);
+        v.as_object_mut().unwrap().remove("snapshot_id");
+        v["snapshot_id"] = json!(schema::hash("NUS/S3/CHAIN_SNAPSHOT/V1", &v).unwrap());
+        let owners = v["accounts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|a| schema::bytes(&a["owner"]).unwrap())
+            .collect();
+        let s = Binding::new(v["context"].clone(), owners, [4_000_000_000_000; 2], 0)
+            .unwrap()
+            .decode(&canonical(&v).unwrap())
+            .unwrap();
+        let batch = json!({"batch_seq":"1","batch_id":"11".repeat(32),
+            "batch_hash":"22".repeat(32),"previous_batch_hash":schema::ZERO,
+            "operator_epoch":"1","fill_ids":["33".repeat(32)]});
+        let wire = json!({"protocol_version":"2","chain_id":s.context()["chain_id"],
+            "genesis_hash":s.context()["genesis_hash"],"market_id":s.context()["market_id"],
+            "batch_seq":"1","batch_id":batch["batch_id"],"batch_hash":batch["batch_hash"],
+            "committed_height":s.height().to_string(),"tx_hash":sha256(b"tx")});
+        let stored = json!({"context":s.context(),"batch":batch,"disposition":"COMMITTED",
+            "terminal_height":s.height().to_string(),"terminal_tx_hash":sha256(b"tx"),
+            "batch_receipt_v2":STANDARD.encode(Codec::default().encode("BatchReceiptV1", &wire).unwrap()),
+            "failed_tx_hash":null,"resolution_evidence_hash":null});
+        let lookup = json!({"context":s.context(),"observed_height":s.height().to_string(),
+            "snapshot_id":s.id(),"requested_seq":"1","last_seq":"1",
+            "last_hash":s.value()["last_batch_hash"],"status":"FOUND","receipt":stored});
+        (s, batch, lookup)
+    }
+    fn raw(s: &Snapshot, lookup: &Value) -> Vec<u8> {
+        serde_json::to_vec(&json!({"jsonrpc":"2.0","id":1,"result":{"response":{
+            "code":0,"height":s.height().to_string(),"value":STANDARD.encode(canonical(lookup).unwrap())}}})).unwrap()
+    }
+    // Transport-only synthetic evidence. Empty attempts are intentionally not
+    // an engine-authorized failure; successful collection cannot grant Apply.
+    fn void_setup() -> (Snapshot, Value, Value, Value, Objects) {
+        let (s, b, mut l) = setup();
+        let e = json!({"context":s.context(),"batch":b,"observed_snapshot":s.value(),
+            "settle_attempts":[],"batch_lookup":l,"failed_tx_hash":"44".repeat(32),
+            "rejection_code":"UNEXPECTED_FINAL_REJECTION"});
+        let mut o = Objects::default();
+        let r = o.insert_typed("ResolutionEvidence", &e).unwrap();
+        l["receipt"]["disposition"] = json!("VOID");
+        l["receipt"]["batch_receipt_v2"] = Value::Null;
+        l["receipt"]["failed_tx_hash"] = e["failed_tx_hash"].clone();
+        l["receipt"]["resolution_evidence_hash"] =
+            json!(schema::hash("NUS/S3/RESOLUTION_EVIDENCE/V1", &e).unwrap());
+        (s, b, l, r, o)
+    }
+    #[test]
+    fn void_transport_preserves_exact_evidence_without_authorizing_apply() {
+        let (s, b, l, r, o) = void_setup();
+        let (receipt, out) = collect_void(&s, &s, &b, b"tx", &r, &o, &raw(&s, &l), || {
+            Ok(super::inclusion_tests::input(&s, vec![b"tx"], json!(0)))
+        })
+        .unwrap();
+        assert_eq!(receipt["disposition"], "VOID");
+        assert_eq!(receipt["resolution_evidence_ref"], r);
+        assert_eq!(
+            out.typed(&r, "ResolutionEvidence").unwrap(),
+            o.typed(&r, "ResolutionEvidence").unwrap()
+        );
+        assert_eq!(out.entries().count(), 5);
+        out.graph(&receipt).unwrap();
+    }
+    #[test]
+    fn void_audit_hash_without_original_evidence_refused_before_io() {
+        let (s, b, l, r, _) = void_setup();
+        assert!(
+            collect_void(
+                &s,
+                &s,
+                &b,
+                b"tx",
+                &r,
+                &Objects::default(),
+                &raw(&s, &l),
+                || panic!("unexpected IO")
+            )
+            .is_err()
+        );
+    }
+    #[test]
+    fn void_lookup_mismatch_refused_before_block_io() {
+        let (s, b, l, r, o) = void_setup();
+        for (k, v) in [
+            ("resolution_evidence_hash", json!(schema::ZERO)),
+            ("failed_tx_hash", json!(schema::ZERO)),
+            ("terminal_tx_hash", json!(schema::ZERO)),
+            ("terminal_height", json!("999")),
+            ("disposition", json!("COMMITTED")),
+            ("batch_receipt_v2", json!("dHg=")),
+        ] {
+            let mut l = l.clone();
+            l["receipt"][k] = v;
+            assert!(
+                collect_void(&s, &s, &b, b"tx", &r, &o, &raw(&s, &l), || panic!(
+                    "unexpected IO"
+                ))
+                .is_err(),
+                "{k}"
+            );
+        }
+    }
+    #[test]
+    fn void_failed_or_missing_close_tx_is_not_receipt() {
+        let (s, b, l, r, o) = void_setup();
+        for (tx, code) in [
+            (b"tx".as_slice(), json!(9)),
+            (b"other".as_slice(), json!(0)),
+        ] {
+            assert!(
+                collect_void(&s, &s, &b, b"tx", &r, &o, &raw(&s, &l), || Ok(
+                    super::inclusion_tests::input(&s, vec![tx], code)
+                ))
+                .is_err()
+            );
+        }
+    }
+    #[test]
+    fn void_evidence_identity_and_reference_tamper_refused() {
+        let (s, b, l, r, o) = void_setup();
+        let mut wrong = b.clone();
+        wrong["batch_id"] = json!(schema::ZERO);
+        assert!(
+            collect_void(&s, &s, &wrong, b"tx", &r, &o, &raw(&s, &l), || panic!(
+                "unexpected IO"
+            ))
+            .is_err()
+        );
+        let mut r = r;
+        r["byte_length"] = json!("1");
+        assert!(
+            collect_void(&s, &s, &b, b"tx", &r, &o, &raw(&s, &l), || panic!(
+                "unexpected IO"
+            ))
+            .is_err()
+        );
+    }
+    #[test]
+    fn committed_receipt_retains_lookup_tx_and_block_bytes() {
+        let (s, b, l) = setup();
+        let raw = raw(&s, &l);
+        let (r, o) = collect_committed(&s, &s, &b, b"tx", &raw, || {
+            Ok(super::inclusion_tests::input(
+                &s,
+                vec![b"other", b"tx"],
+                json!(0),
+            ))
+        })
+        .unwrap();
+        proof::receipt(&r, &b, &s, &[&s], &o).unwrap();
+        assert_eq!(r["terminal_tx"]["tx_index"], "1");
+        assert_eq!(o.entries().count(), 4);
+        let reference = nus_exchange_contract::s3::evidence::reference(&raw, RPC).unwrap();
+        assert_eq!(o.resolve(&reference, RPC).unwrap(), raw);
+    }
+    #[test]
+    fn receipt_identity_mismatch_refused_before_block_io() {
+        let (s, b, l) = setup();
+        for (k, v) in [
+            ("terminal_height", json!("999")),
+            ("terminal_tx_hash", json!(schema::ZERO)),
+            ("batch", {
+                let mut wrong = b.clone();
+                wrong["batch_id"] = json!(schema::ZERO);
+                wrong
+            }),
+            ("context", {
+                let mut wrong = s.context().clone();
+                wrong["genesis_hash"] = json!(schema::ZERO);
+                wrong
+            }),
+        ] {
+            let mut l = l.clone();
+            l["receipt"][k] = v;
+            assert!(
+                collect_committed(&s, &s, &b, b"tx", &raw(&s, &l), || panic!("unexpected IO"))
+                    .is_err()
+            );
+        }
+    }
+    #[test]
+    fn void_and_missing_receipt_never_become_committed() {
+        let (s, b, l) = setup();
+        for void in [false, true] {
+            let mut l = l.clone();
+            if void {
+                l["receipt"]["disposition"] = json!("VOID");
+            } else {
+                l["receipt"] = Value::Null;
+                l["status"] = json!("NOT_FOUND_AT_HEIGHT");
+            }
+            assert!(
+                collect_committed(&s, &s, &b, b"tx", &raw(&s, &l), || panic!("unexpected IO"))
+                    .is_err()
+            );
+        }
+    }
+    #[test]
+    fn failed_or_missing_terminal_tx_refused() {
+        let (s, b, l) = setup();
+        let raw = raw(&s, &l);
+        for (tx, code) in [
+            (b"tx".as_slice(), json!(7)),
+            (b"other".as_slice(), json!(0)),
+        ] {
+            assert!(
+                collect_committed(&s, &s, &b, b"tx", &raw, || Ok(
+                    super::inclusion_tests::input(&s, vec![tx], code)
+                ))
+                .is_err()
+            );
+        }
+    }
+    #[test]
+    fn forged_receipt_wire_refused_by_c_verifier() {
+        let (s, b, mut l) = setup();
+        l["receipt"]["batch_receipt_v2"] = json!(STANDARD.encode(b"forged"));
+        assert!(
+            collect_committed(&s, &s, &b, b"tx", &raw(&s, &l), || Ok(
+                super::inclusion_tests::input(&s, vec![b"tx"], json!(0))
+            ))
+            .is_err()
+        );
+    }
+    #[test]
+    fn query_failure_or_block_failure_propagates() {
+        let (s, b, l) = setup();
+        assert!(
+            collect_committed(
+                &s,
+                &s,
+                &b,
+                b"tx",
+                br#"{"jsonrpc":"2.0","id":1,"error":{}}"#,
+                || panic!("unexpected IO")
+            )
+            .is_err()
+        );
+        assert!(
+            collect_committed(&s, &s, &b, b"tx", &raw(&s, &l), || Err(Error::Invalid(
+                "RPC_UNAVAILABLE"
+            )))
+            .is_err()
+        );
     }
 }
