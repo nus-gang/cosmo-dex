@@ -222,3 +222,27 @@ stale commit 거절 뒤 history/attempt/view 닫힘을 순수 fixture로 검증�
 `--offline --locked --features dev-local-settlement --lib`를 사용했다.
 순수 submit 시험은 동일 dependency rlib들과 bech32를 명시적으로 연결한다.
 최초 rustc 명령에서 bech32 누락으로 실패한 로그와 보정 argv를 증거에 포함한다.
+
+
+## 승인 CLOSE API와 Account 연결
+
+L-D 후보 `46546d317701b127da8196e9e6abdab7ce9a3d6e`를 fast-forward로 통합했다.
+[NUS-71 CTO 검토](/NUS/issues/NUS-71#document-close-api-cto-review)
+revision `b99ee8de-86dc-4a89-8695-ce69317aef9f`와
+[Security 검토](/NUS/issues/NUS-71#document-close-api-security-review)
+revision `d54094e3-73b7-47e3-87f9-56b030ce0bb7`에서 승인된 동일 후보다.
+
+`SubmitLane::prepare_close`는 Account IO 전에 C commit을 고정하고, 동일 H/owner/키의
+검증된 Account에서 number/sequence를 얻는다. 조회 후 freshness와 snapshot binding을
+다시 확인하고 승인 `Worker::prepare_close`에 commit을 전달한다. C 저장 실패 원문과
+closure 선택·서명·Attempt 전이는 L-D/C가 담당한다. SRE가 실패 원문을 재계산하지 않는다.
+실패 또는 unwind 뒤 lane은 닫히며 후속 IO/서명을 거절한다. 이 메서드는 방송하지 않는다.
+
+fee0/25의 실패 저장→재시작→CLOSE PREPARED/count0→두 번 replay, 원 실패 원문 보존과
+자산 불변을 순수 fixture로 확인한다. 미해소 CLOSE의 재서명, Account 조회 오류·다른 높이·
+조회 중 stale·동일 snapshot의 commit 경합은 서명 전에 거절되어야 한다. Account 원문은
+비공개 audit 반환값이며 REST 응답이나 확정 영수증이 아니다. 공개 fixture 키는 시험에서만 쓴다.
+
+잔여: VOID receipt 저장/worker scheduling, 웹 ChainPort, fee0/25 초기화·launcher·정리·
+fault driver, 최종 binary/web manifest와 독립 runtime pin 및 CTO→Security 검토.
+서비스/RPC0·DEV NOT_RUN·runtime pin 미발급·원 G00/ACK와 부모 blocker 유지.

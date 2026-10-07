@@ -118,6 +118,44 @@ impl SubmitLane {
             account_rpc: account.raw().to_vec(),
         })
     }
+    /// CLOSE uses C's original failure at the commit captured before Account IO.
+    /// Only L-D constructs/signs the envelope; this does not broadcast or Apply.
+    pub fn prepare_close(
+        &mut self,
+        chain: &ChainRead,
+        s: &Snapshot,
+        batch: &str,
+        attempt: u64,
+        signer: &impl OperatorSigner,
+        o: &Observation,
+    ) -> Result<Prepared> {
+        self.prepare_close_with(s, batch, attempt, signer, o,
+            |s, owner| chain.account(s, owner), now)
+    }
+    fn prepare_close_with(
+        &mut self,
+        s: &Snapshot,
+        batch: &str,
+        attempt: u64,
+        signer: &impl OperatorSigner,
+        o: &Observation,
+        fetch: impl FnOnce(&Snapshot, &[u8]) -> Result<Account>,
+        clock: impl Fn() -> Result<u64>,
+    ) -> Result<Prepared> {
+        if self.closed { return Err(Error::Recovery("SUBMIT_LANE_CLOSED")); }
+        self.closed = true;
+        self.bound(s, o, clock()?)?;
+        let expected = self.engine.reader().get()?.commit.clone();
+        let owner = schema::bytes(&s.value()["operator"])?;
+        let account = fetch(s, &owner)?;
+        let (number, sequence) = account.at(s, &owner)?;
+        let after_query = clock()?;
+        self.bound(s, o, after_query)?;
+        let hash = self.worker.prepare_close(&expected, s, batch, attempt,
+            number, sequence, signer, o, after_query)?;
+        self.closed = false;
+        Ok(Prepared { tx_hash: hash, account_rpc: account.raw().to_vec() })
+    }
     /// Inspect one trusted observed height. Missing TX is not terminal evidence.
     /// No signing, broadcasting, receipt/Apply or correction occurs here.
     pub fn resolve_inclusion(
@@ -495,6 +533,115 @@ mod tests {
         raw["result"]["txs_results"][0]["codespace"] = serde_json::json!("exchange_s3");
         r["raw_results_response_ref"] = objects.insert(&serde_json::to_vec(&raw).unwrap(), RPC)?;
         collect::confirmed_in_block(s, tx, r, objects)
+    }
+    #[test]
+    fn rejected_batch_has_no_settle_signing_fallback_for_missing_close_adapter() {
+        for bps in [0, 25] {
+            let (e, mut lane, s, hash, inputs, home) = prepared_at_next(bps);
+            lane.resolve_inclusion_with(&s, &hash, &fixture::observation(s.value()),
+                expected_failure, || Ok(fixture::NOW)).unwrap();
+            lane.reject_final_with(&s, &fixture::observation(s.value()), || Ok(fixture::NOW)).unwrap();
+            let before = e.reader().get().unwrap();
+            let batch = before.state["batches"][0]["batch"]["batch_id"].as_str().unwrap();
+            let signer = Sign::new();
+            assert!(matches!(lane.prepare_with(&s, batch, 2, &signer,
+                &fixture::observation(s.value()), account, || Ok(fixture::NOW)),
+                Err(Error::Invalid("BATCH_STATE"))));
+            assert_eq!(signer.calls.get(), 0);
+            assert_eq!(e.reader().get().unwrap().commit, before.commit);
+            assert_eq!(e.reader().get().unwrap().state, before.state);
+            assert!(matches!(lane.prepare_with(&s, batch, 2, &signer,
+                &fixture::observation(s.value()), |_, _| panic!("closed IO"),
+                || panic!("closed clock")), Err(Error::Recovery("SUBMIT_LANE_CLOSED"))));
+            drop(lane); drop(e);
+            for _ in 0..2 {
+                let reopened = Engine::open(&home, Validated::new(inputs.clone()).unwrap()).unwrap();
+                assert_eq!(reopened.reader().get().unwrap().commit, before.commit);
+                assert_eq!(reopened.reader().get().unwrap().state, before.state);
+                assert!(reopened.trusted_recovery_failure(&before.commit, batch).unwrap().is_some());
+            }
+        }
+    }
+    #[test]
+    fn close_from_recovered_failure_persists_without_release_and_replays() {
+        for bps in [0, 25] {
+            let (e, mut lane, s, hash, inputs, home) = prepared_at_next(bps);
+            let o = fixture::observation(s.value());
+            lane.resolve_inclusion_with(&s, &hash, &o, expected_failure, || Ok(fixture::NOW)).unwrap();
+            lane.reject_final_with(&s, &o, || Ok(fixture::NOW)).unwrap();
+            let before = e.reader().get().unwrap();
+            let batch = before.state["batches"][0]["batch"]["batch_id"].as_str().unwrap();
+            let original = e.trusted_recovery_failure(&before.commit, batch).unwrap().unwrap();
+            drop(lane); drop(e);
+            let e = Arc::new(Engine::open(&home, Validated::new(inputs.clone()).unwrap()).unwrap());
+            let mut lane = SubmitLane::new(e.clone());
+            let signer = Sign::new();
+            let p = lane.prepare_close_with(&s, batch, 1, &signer, &o, account, || Ok(fixture::NOW)).unwrap();
+            assert_eq!(signer.calls.get(), 1);
+            let owner = schema::bytes(&s.value()["operator"]).unwrap();
+            assert_eq!(p.account_rpc, account(&s, &owner).unwrap().raw());
+            let after = e.reader().get().unwrap();
+            let a = e.trusted_recovery_attempt(&after.commit, &p.tx_hash).unwrap().unwrap();
+            assert_eq!(a.attempt["kind"], "CLOSE");
+            assert_eq!(a.attempt["state"], "PREPARED");
+            assert_eq!(a.attempt["broadcast_count"], "0");
+            let failure = e.trusted_recovery_failure(&after.commit, batch).unwrap().unwrap();
+            assert_eq!(failure.raw, original.raw);
+            assert_eq!(failure.resolution_evidence_ref, original.resolution_evidence_ref);
+            for k in ["accounts", "fills", "corrections", "resolution_receipts", "chain_snapshot"] {
+                assert_eq!(before.state[k], after.state[k], "{k}");
+            }
+            assert!(lane.prepare_close_with(&s, batch, 2, &signer, &o, account, || Ok(fixture::NOW)).is_err());
+            assert_eq!(signer.calls.get(), 1);
+            assert_eq!(e.reader().get().unwrap().commit, after.commit);
+            drop(lane); drop(e);
+            for _ in 0..2 {
+                let e = Engine::open(&home, Validated::new(inputs.clone()).unwrap()).unwrap();
+                let v = e.reader().get().unwrap();
+                assert_eq!(v.commit, after.commit);
+                assert_eq!(v.state, after.state);
+                let r = e.trusted_recovery_attempt(&v.commit, &p.tx_hash).unwrap().unwrap();
+                assert_eq!(r.attempt, a.attempt);
+            }
+        }
+    }
+    #[test]
+    fn close_account_errors_stale_and_commit_race_never_sign() {
+        for mode in 0..4 {
+            let (e, mut lane, s, hash, _inputs, _home) = prepared_at_next(0);
+            let o = fixture::observation(s.value());
+            lane.resolve_inclusion_with(&s, &hash, &o, expected_failure, || Ok(fixture::NOW)).unwrap();
+            lane.reject_final_with(&s, &o, || Ok(fixture::NOW)).unwrap();
+            let before = e.reader().get().unwrap();
+            let batch = before.state["batches"][0]["batch"]["batch_id"].as_str().unwrap();
+            let signer = Sign::new();
+            let calls = Cell::new(0);
+            let result = lane.prepare_close_with(&s, batch, 1, &signer, &o, |s, owner| {
+                if mode == 0 { return Err(Error::Invalid("RPC_TEST")); }
+                if mode == 2 {
+                    // Same snapshot but another durable command must invalidate the pin.
+                    e.execute(Command::Apply, &[], &o, fixture::NOW)?;
+                }
+                if mode == 3 {
+                    let mut v = s.value().clone();
+                    v["height"] = serde_json::json!("103");
+                    fixture::finish(&mut v);
+                    return account(&snapshot(&v, 0), owner);
+                }
+                account(s, owner)
+            }, || { calls.set(calls.get()+1); Ok(fixture::NOW +
+                if mode == 1 && calls.get() > 1 { 10000 } else { 0 }) });
+            assert!(result.is_err(), "mode {mode}");
+            assert_eq!(signer.calls.get(), 0);
+            if mode == 2 {
+                assert_ne!(e.reader().get().unwrap().commit, before.commit);
+                assert!(matches!(result, Err(Error::Invalid("STALE_COMMIT"))));
+            } else { assert_eq!(e.reader().get().unwrap().commit, before.commit); }
+            assert_eq!(e.reader().get().unwrap().state["attempt_refs"], before.state["attempt_refs"]);
+            assert!(lane.closed);
+            assert!(lane.prepare_close_with(&s, batch, 1, &signer, &o,
+                |_, _| panic!("closed IO"), || panic!("closed clock")).is_err());
+        }
     }
     #[test]
     fn final_rejection_persists_c_evidence_without_asset_release_and_replays() {
