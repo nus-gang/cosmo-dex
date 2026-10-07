@@ -54,6 +54,30 @@ impl ChainRead {
         })?;
         account::decode(snapshot, owner, &raw)
     }
+    /// Read-only account projection for an authenticated caller's owner.
+    /// The caller must obtain owner from its session, not a request body.
+    pub fn direct_account(&self, anchor: &Snapshot, owner: &[u8], mut clock: impl FnMut() -> Result<u64>) -> Result<(Value, Objects)> {
+        direct_account_from(anchor, owner, &mut clock, || self.snapshot(anchor, 0),
+            |snapshot| self.account(snapshot, owner))
+    }
+    /// Browser ChainPort result bridge. `/tx` is only a location hint; final
+    /// output requires an exact-H trusted snapshot and C's raw inclusion proof.
+    /// This read-only path neither signs, broadcasts nor changes engine state.
+    pub fn direct_result(&self, anchor: &Snapshot, hash: &str) -> Result<(Value, Objects)> {
+        direct_hash(hash)?;
+        let hint = self.rpc.fetch(Query::Tx(hash))?;
+        direct_result_from(anchor, hash, &hint, |height| {
+            let (snapshot, raw) = self.snapshot(anchor, height)?;
+            let (reference, objects) = self.block(&snapshot)?;
+            Ok((snapshot, raw, reference, objects))
+        })
+    }
+    /// Authenticated user direct-TX bridge; the HTTP caller must enforce session
+    /// owner/origin and two opt-ins. No server signer or settlement attempt API.
+    /// Transport success/error both retain UNKNOWN; only direct_result resolves.
+    pub fn direct_broadcast(&self, tx_base64: &str) -> Result<Value> {
+        direct_broadcast_from(tx_base64, |raw| self.rpc.broadcast_direct(raw).map(|_| ()))
+    }
     /// Raw Batch lookup at exactly the validated observation height.
     pub fn batch(&self, snapshot: &Snapshot, seq: u64) -> Result<(Value, Vec<u8>)> {
         if seq == 0 {
@@ -170,6 +194,106 @@ impl ChainRead {
             &results,
         )
     }
+}
+// All values come from the same validated snapshot and exact-H auth query.
+// Preserve both original responses; no engine mutation, signing or retry.
+fn direct_broadcast_from(
+    encoded: &str, send: impl FnOnce(&[u8]) -> std::result::Result<(), &'static str>,
+) -> Result<Value> {
+    use base64::{Engine as _, engine::general_purpose::STANDARD};
+    // Bound allocation before decoding; canonical form binds browser TX/hash.
+    if encoded.is_empty() || encoded.len() > 139264_usize.div_ceil(3) * 4 {
+        return Err(Error::Invalid("DIRECT_TX_LIMIT"));
+    }
+    let raw = STANDARD.decode(encoded).map_err(|_| Error::Invalid("DIRECT_TX_ENCODING"))?;
+    if raw.is_empty() || raw.len() > 139264 || STANDARD.encode(&raw) != encoded {
+        return Err(Error::Invalid("DIRECT_TX_ENCODING"));
+    }
+    let hash = sha256(&raw);
+    // Exactly one call, including connect failure / partial write / lost reply.
+    // Do not forward RPC diagnostics (or call CheckTx rejection final).
+    let _ = send(&raw);
+    Ok(json!({"tx_hash":hash,"state":"SUBMISSION_UNKNOWN"}))
+}
+
+pub(super) fn direct_account_from(
+    anchor: &Snapshot, owner: &[u8], clock: &mut impl FnMut() -> Result<u64>,
+    snapshot_io: impl FnOnce() -> Result<(Snapshot, Vec<u8>)>,
+    account_io: impl FnOnce(&Snapshot) -> Result<Account>,
+) -> Result<(Value, Objects)> {
+    use bech32::ToBase32;
+    if owner.len() != 20 { return Err(Error::Invalid("DIRECT_ACCOUNT_OWNER")); }
+    let address = bech32::encode("nus", owner.to_base32(), bech32::Variant::Bech32).map_err(|_| "DIRECT_ACCOUNT_OWNER")?;
+    let started = clock()?;
+    let (snapshot, raw) = snapshot_io()?;
+    if snapshot.context() != anchor.context() || snapshot.height() < anchor.height() || snapshot.height() == 0 {
+        return Err(Error::Invalid("DIRECT_ACCOUNT_SNAPSHOT"));
+    }
+    let row = snapshot.value()["accounts"].as_array().unwrap().iter()
+        .find(|a| schema::bytes(&a["owner"]).is_ok_and(|o| o == owner))
+        .ok_or("DIRECT_ACCOUNT_UNREGISTERED")?;
+    let account = account_io(&snapshot)?;
+    let (number, sequence) = account.at(&snapshot, owner)?;
+    let finished = clock()?;
+    if finished < started || finished - started > 2000 {
+        return Err(Error::Invalid("DIRECT_ACCOUNT_STALE"));
+    }
+    let mut objects = Objects::default();
+    for bytes in [raw.as_slice(), account.raw()] {
+        objects.insert(bytes, RPC)?;
+    }
+    Ok((json!({"context":snapshot.context(),"owner":address,
+        "public_key_base64":row["public_key"],"account_number":number.to_string(),
+        "sequence":sequence.to_string(),"owner_epoch":row["epoch"],
+        "observed_height":snapshot.height().to_string(),
+        "received_at_unix_ms":started.to_string(),"gas_atoms":row["gas_atoms"]}), objects))
+}
+
+fn direct_hash(hash: &str) -> Result<()> {
+    if hash.len() != 64 || !hash.bytes().all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c)) {
+        return Err(Error::Invalid("DIRECT_HASH"));
+    }
+    Ok(())
+}
+fn direct_result_from(
+    anchor: &Snapshot,
+    hash: &str,
+    hint_raw: &[u8],
+    fetch: impl FnOnce(u64) -> Result<(Snapshot, Vec<u8>, Value, Objects)>,
+) -> Result<(Value, Objects)> {
+    direct_hash(hash)?;
+    nus_exchange_contract::s3::evidence::reference(hint_raw, RPC)?;
+    let hint = nus_exchange_contract::codec::unique_json(hint_raw)?;
+    if !hint["error"].is_null() { return Err(Error::Invalid("DIRECT_NOT_CONFIRMED")); }
+    let h = &hint["result"];
+    let height = schema::num(&h["height"])?;
+    if height == 0 || height > anchor.height() {
+        return Err(Error::Invalid("DIRECT_HEIGHT"));
+    }
+    let index = h["index"].as_u64().ok_or(Error::Invalid("DIRECT_INDEX"))?;
+    let tx = schema::bytes(&h["tx"])?;
+    nus_exchange_contract::s3::evidence::reference(&tx, TX)?;
+    if sha256(&tx) != hash || h["hash"].as_str().map(str::to_lowercase).as_deref() != Some(hash) {
+        return Err(Error::Invalid("DIRECT_TX"));
+    }
+    let (snapshot, raw_snapshot, reference, objects) = fetch(height)?;
+    if snapshot.height() != height || snapshot.context() != anchor.context() {
+        return Err(Error::Invalid("DIRECT_SNAPSHOT"));
+    }
+    let (confirmed, mut objects) = confirmed_in_block(&snapshot, &tx, reference, objects)?
+        .ok_or(Error::Invalid("DIRECT_NOT_CONFIRMED"))?;
+    if schema::num(&confirmed["tx_index"])? != index {
+        return Err(Error::Invalid("DIRECT_INDEX"));
+    }
+    // Ignore tx_result in /tx: only the validated block_results code is used.
+    let code = schema::num(&confirmed["abci_code"])?;
+    objects.insert(hint_raw, RPC)?;
+    objects.insert(&raw_snapshot, RPC)?;
+    use base64::{Engine as _, engine::general_purpose::STANDARD};
+    let view = json!({"context":snapshot.context(),"tx_bytes":STANDARD.encode(tx),
+        "tx_hash":hash,"height":height.to_string(),"code":code.to_string(),
+        "state":if code == 0 {"COMMITTED"} else {"REJECTED_FINAL"}});
+    Ok((view, objects))
 }
 fn collect_committed(
     current: &Snapshot,
@@ -526,7 +650,7 @@ pub(crate) mod inclusion_tests {
     use super::*;
     use base64::{Engine as _, engine::general_purpose::STANDARD};
     use nus_exchange_contract::s3::snapshot::Binding;
-    pub(super) fn snapshot() -> Snapshot {
+    pub(crate) fn snapshot() -> Snapshot {
         let fixture: Value = serde_json::from_str(include_str!(
             "../../../protocol/s3/vectors/correction-state-hash.json"
         ))
@@ -1210,5 +1334,156 @@ mod receipt_tests {
             )))
             .is_err()
         );
+    }
+}
+
+#[cfg(test)]
+mod direct_result_tests {
+    use super::*;
+    use base64::{Engine as _, engine::general_purpose::STANDARD};
+    fn hint(s: &Snapshot) -> Value {
+        json!({"result":{"hash":sha256(b"user tx").to_uppercase(),"height":s.height().to_string(),
+            "index":1,"tx":STANDARD.encode(b"user tx"),"tx_result":{"code":0}}})
+    }
+    fn run(h: Value, code: Value) -> Result<(Value, Objects)> {
+        let s = inclusion_tests::snapshot();
+        direct_result_from(&s, &sha256(b"user tx"), &serde_json::to_vec(&h).unwrap(), |height| {
+            assert_eq!(height, s.height());
+            let (r,o)=inclusion_tests::input(&s, vec![b"other",b"user tx"],code);
+            Ok((s.clone(),canonical(&json!({"snapshot":s.value()}))?,r,o))
+        })
+    }
+    #[test]
+    fn direct_result_uses_block_code_and_preserves_raw() {
+        let s=inclusion_tests::snapshot();
+        for code in [0,7] {
+            let h=hint(&s); let (v,o)=run(h.clone(),json!(code)).unwrap();
+            assert_eq!(v["state"],if code==0 {"COMMITTED"} else {"REJECTED_FINAL"});
+            assert_eq!(v["code"],code.to_string());
+            assert_eq!(v["tx_bytes"],STANDARD.encode(b"user tx"));
+            assert_eq!(v["context"],*s.context());
+            assert_eq!(o.entries().count(),5);
+            let r=nus_exchange_contract::s3::evidence::reference(&serde_json::to_vec(&h).unwrap(),RPC).unwrap();
+            assert_eq!(o.resolve(&r,RPC).unwrap(),serde_json::to_vec(&h).unwrap());
+        }
+    }
+    #[test]
+    fn direct_hint_rejection_happens_before_block_io() {
+        let s=inclusion_tests::snapshot();
+        for (field,value) in [("height",json!("0")),("height",json!((s.height()+1).to_string())),
+            ("height",json!("01")),("index",json!("1")),("index",json!(-1)),
+            ("tx",json!(STANDARD.encode(b"different"))),("hash",json!("00".repeat(32)))] {
+            let mut h=hint(&s);h["result"][field]=value;
+            assert!(direct_result_from(&s,&sha256(b"user tx"),&serde_json::to_vec(&h).unwrap(), |_|panic!("unexpected IO")).is_err());
+        }
+        for raw in [br#"{"error":{"code":-32603}}"#.as_slice(),br#"{"result":{},"result":{}}"#] {
+            assert!(direct_result_from(&s,&sha256(b"user tx"),raw,|_|panic!("unexpected IO")).is_err());
+        }
+    }
+    #[test]
+    fn direct_missing_duplicate_wrong_index_or_raw_proof_rejected() {
+        let s=inclusion_tests::snapshot();
+        let mut h=hint(&s);h["result"]["index"]=json!(0);
+        assert!(run(h,json!(0)).is_err());
+        for txs in [vec![b"other".as_slice()],vec![b"user tx".as_slice(),b"user tx"]] {
+            assert!(direct_result_from(&s,&sha256(b"user tx"),&serde_json::to_vec(&hint(&s)).unwrap(), |_|{
+                let(r,o)=inclusion_tests::input(&s,txs,json!(0));
+                Ok((s.clone(),b"{}".to_vec(),r,o))
+            }).is_err());
+        }
+        assert!(direct_result_from(&s,&sha256(b"user tx"),&serde_json::to_vec(&hint(&s)).unwrap(), |_|{
+            let(mut r,o)=inclusion_tests::input(&s,vec![b"other",b"user tx"],json!(0));
+            r["raw_results_response_ref"]["sha256"]=json!("00".repeat(32));
+            Ok((s.clone(),b"{}".to_vec(),r,o))
+        }).is_err());
+        assert!(run(hint(&s),json!("4294967296")).is_err());
+    }
+    #[test]
+    fn direct_transport_error_no_retry_and_hash_closed() {
+        let s=inclusion_tests::snapshot();let mut calls=0;
+        assert!(direct_result_from(&s,&sha256(b"user tx"),&serde_json::to_vec(&hint(&s)).unwrap(), |_|{
+            calls+=1;Err(Error::Invalid("TEST_IO"))
+        }).is_err());assert_eq!(calls,1);
+        for hash in ["", "00", &"A".repeat(64), &"g".repeat(64)] {
+            assert!(direct_result_from(&s,hash,b"{}",|_|panic!("unexpected IO")).is_err());
+        }
+    }
+}
+
+#[cfg(test)]
+mod direct_account_tests {
+    use super::*;
+    fn auth(s: &Snapshot, owner: &[u8]) -> Account {
+        let a=&s.value()["accounts"][0];
+        let raw=account::tests::rpc(s,&account::tests::base(owner,
+            &schema::bytes(&a["public_key"]).unwrap(),schema::num(&a["account_number"]).unwrap(),schema::num(&a["sequence"]).unwrap()));
+        account::decode(s,owner,&raw).unwrap()
+    }
+    #[test]
+    fn same_height_projection_keeps_started_time_and_raw() {
+        let s=inclusion_tests::snapshot();let owner=schema::bytes(&s.value()["accounts"][0]["owner"]).unwrap();
+        let raw=canonical(s.value()).unwrap(); let a=auth(&s,&owner); let ar=a.raw().to_vec();
+        let mut times=[1000,3000].into_iter();
+        let (v,o)=direct_account_from(&s,&owner,&mut ||Ok(times.next().unwrap()),||Ok((s.clone(),raw.clone())),|_|Ok(a)).unwrap();
+        assert_eq!(v["received_at_unix_ms"],"1000");assert_eq!(v["observed_height"],s.height().to_string());
+        assert_eq!(v["public_key_base64"],s.value()["accounts"][0]["public_key"]);
+        assert_eq!(v["gas_atoms"],s.value()["accounts"][0]["gas_atoms"]);
+        assert_eq!(v["owner_epoch"],s.value()["accounts"][0]["epoch"]);
+        assert_eq!(nus_exchange_contract::codec::decode_address(v["owner"].as_str().unwrap()).unwrap().as_slice(),owner);
+        for b in [raw,ar] {assert_eq!(o.resolve(&nus_exchange_contract::s3::evidence::reference(&b,RPC).unwrap(),RPC).unwrap(),b);}
+        assert_eq!(o.entries().count(),2);
+    }
+    #[test]
+    fn stale_clock_and_io_refused_without_retry() {
+        let s=inclusion_tests::snapshot();let owner=schema::bytes(&s.value()["accounts"][0]["owner"]).unwrap();
+        for end in [999,3001] {let mut times=[1000,end].into_iter();
+            assert!(direct_account_from(&s,&owner,&mut ||Ok(times.next().unwrap()),||Ok((s.clone(),b"raw".to_vec())),|_|Ok(auth(&s,&owner))).is_err());}
+        assert!(direct_account_from(&s,&owner,&mut ||Err(Error::Invalid("CLOCK")),||panic!("IO"),|_|panic!("IO")).is_err());
+        assert!(direct_account_from(&s,&owner,&mut ||Ok(1000),||Err(Error::Invalid("IO")),|_|panic!("retry")).is_err());
+        assert!(direct_account_from(&s,&owner,&mut ||Ok(1000),||Ok((s.clone(),b"raw".to_vec())),|_|Err(Error::Invalid("IO"))).is_err());
+    }
+    #[test]
+    fn invalid_or_unregistered_owner_no_auth_io() {
+        let s=inclusion_tests::snapshot();
+        assert!(direct_account_from(&s,&[0;19],&mut ||panic!("clock"),||panic!("IO"),|_|panic!("IO")).is_err());
+        assert!(direct_account_from(&s,&[0;20],&mut ||Ok(1000),||Ok((s.clone(),b"raw".to_vec())),|_|panic!("auth IO")).is_err());
+    }
+    #[test]
+    fn foreign_account_binding_refused() {
+        let s=inclusion_tests::snapshot();let owner=schema::bytes(&s.value()["accounts"][1]["owner"]).unwrap();
+        let other=schema::bytes(&s.value()["accounts"][0]["owner"]).unwrap();
+        assert!(direct_account_from(&s,&owner,&mut ||Ok(1000),||Ok((s.clone(),b"raw".to_vec())),|_|Ok(auth(&s,&other))).is_err());
+    }
+}
+
+#[cfg(test)]
+mod direct_broadcast_tests {
+    use super::*;
+    use base64::{Engine as _, engine::general_purpose::STANDARD};
+    #[test]
+    fn exact_tx_once_and_all_transport_outcomes_unknown() {
+        for outcome in [Ok(()),Err("CONNECT"),Err("PARTIAL_WRITE"),Err("CHECKTX_REJECT"),Err("LOST_REPLY")] {
+            let mut calls=0;
+            let v=direct_broadcast_from(&STANDARD.encode(b"signed user tx"),|raw| {
+                calls+=1; assert_eq!(raw,b"signed user tx");outcome
+            }).unwrap();
+            assert_eq!(calls,1);
+            assert_eq!(v,json!({"tx_hash":sha256(b"signed user tx"),"state":"SUBMISSION_UNKNOWN"}));
+        }
+    }
+    #[test]
+    fn malformed_or_oversized_tx_never_sends() {
+        for input in ["".to_owned(),"!!!!".into(),"YQ".into(),"YR==".into(),"YQ==\n".into(),STANDARD.encode(vec![0;139265])] {
+            assert!(direct_broadcast_from(&input,|_|panic!("IO")).is_err());
+        }
+        assert!(direct_broadcast_from(&STANDARD.encode(vec![1;139264]),|r|{assert_eq!(r.len(),139264);Ok(())}).is_ok());
+    }
+    #[test]
+    fn interrupt_is_not_retried_or_reported_as_success() {
+        let mut calls=0;
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _=direct_broadcast_from("YQ==",|_|{calls+=1;panic!("interrupted")});
+        })).is_err());
+        assert_eq!(calls,1);
     }
 }

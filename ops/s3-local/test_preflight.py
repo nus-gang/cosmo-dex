@@ -6,7 +6,8 @@ import unittest
 from manifest import COMPONENTS, CANDIDATE, aggregate, encode, inherited
 from preflight import verify, file_digest, bounded
 
-class PreflightTest(unittest.TestCase):
+class PreflightFixture:
+
     @classmethod
     def setUpClass(cls):
         cls.inherited = inherited(Path(__file__).resolve().parents[2])
@@ -44,6 +45,8 @@ class PreflightTest(unittest.TestCase):
         args = dict(bundle=self.bundle, artifacts=self.artifacts, pin=self.pin, profile='s3-dev-local/1', acknowledge=True)
         args.update(kw)
         return verify(**args)
+
+class PreflightTest(PreflightFixture, unittest.TestCase):
     def test_bytes_are_not_approval(self):
         r = self.check()
         self.assertTrue(r['byte_match'])
@@ -99,5 +102,74 @@ class PreflightTest(unittest.TestCase):
         alias = self.root / 'alias'
         alias.symlink_to(self.bundle, target_is_directory=True)
         with self.assertRaises(ValueError): self.check(bundle=alias)
+
+class InputSetTest(PreflightFixture, unittest.TestCase):
+    def transport(self):
+        import base64
+        enc = lambda raw: base64.b64encode(raw).decode()
+        return {'runtime_manifest':enc((self.bundle/'runtime-manifest.json').read_bytes()),
+                'files':{p:enc((self.bundle/'files'/p).read_bytes()) for p in self.hashes},
+                'guard':enc(b'TEST_ONLY_NOT_VALID_GUARD'),
+                'genesis':enc(b'TEST_ONLY_NOT_VALID_GENESIS')}
+    def bind(self, value=None, raw=None):
+        from preflight import verify_input_set
+        if raw is None: raw=encode(self.transport() if value is None else value)
+        (self.root/'input.json').write_bytes(raw)
+        return verify_input_set(self.bundle,self.artifacts,self.pin,'s3-dev-local/1',True,self.root,'input.json')
+    def test_input_capture_is_not_semantic_or_approval_gate(self):
+        raw, report=self.bind()
+        self.assertEqual(raw,(self.root/'input.json').read_bytes())
+        self.assertEqual(report['input_set_sha256'],hashlib.sha256(raw).hexdigest())
+        self.assertTrue(report['input_set_byte_match'])
+        self.assertFalse(report['semantic_validation'])
+        self.assertFalse(report['approval_verified'])
+        self.assertFalse(report['services_started'])
+    def test_transport_substitution_and_inventory(self):
+        for mode in range(6):
+            v=self.transport(); p=next(iter(v['files']))
+            if mode==0: v['runtime_manifest']='e30='
+            if mode==1: v['files'][p]='e30='
+            if mode==2: del v['files'][p]
+            if mode==3: v['files']['extra']='e30='
+            if mode==4: v['approved']=True
+            if mode==5: v['files']=[]
+            with self.assertRaises(ValueError): self.bind(v)
+    def test_transport_noncanonical_duplicate_and_empty(self):
+        for value in ('', '!!!', 'YQ==\n', 'YR==', 1, None):
+            v=self.transport(); v['guard']=value
+            with self.assertRaises(ValueError): self.bind(v)
+        with self.assertRaises(ValueError): self.bind(raw=b'{"files":{},"files":{}}')
+    def test_capture_cli_exact_bytes_and_rejection_output(self):
+        import subprocess, sys, json
+        raw, _=self.bind()
+        argv=[sys.executable,str(Path(__file__).with_name('preflight.py')),
+              '--bundle',str(self.bundle),'--artifacts',str(self.artifacts),
+              '--runtime-pin',self.pin,'--local-demo-profile','s3-dev-local/1',
+              '--acknowledge-unproven-space','--capture-input',str(self.root/'input.json')]
+        r=subprocess.run(argv,capture_output=True,timeout=10)
+        self.assertEqual(r.returncode,0,r.stderr)
+        self.assertEqual(r.stdout,raw)
+        report=json.loads(r.stderr)
+        self.assertEqual(report['input_set_sha256'],hashlib.sha256(r.stdout).hexdigest())
+        self.assertFalse(report['approval_verified'])
+        for mode in ('input','artifact','optin'):
+            self.binary.write_bytes(b'NOT_A_RUNTIME_BINARY')
+            self.bind()
+            cmd=argv.copy()
+            if mode=='input': (self.root/'input.json').write_bytes(b'{}')
+            if mode=='artifact': self.binary.write_bytes(b'CHANGED')
+            if mode=='optin': cmd.remove('--acknowledge-unproven-space')
+            r=subprocess.run(cmd,capture_output=True,timeout=10)
+            self.assertEqual(r.returncode,2,r.stderr)
+            self.assertEqual(r.stdout,b'')
+            self.assertIn(b'PREFLIGHT_REJECTED',r.stderr)
+
+    def test_capture_does_not_follow_later_input_replacement(self):
+        raw, report=self.bind()
+        (self.root/'input.json').write_bytes(b'CHANGED')
+        self.assertEqual(hashlib.sha256(raw).hexdigest(),report['input_set_sha256'])
+        with self.assertRaises(ValueError):
+            from preflight import verify_input_set
+            verify_input_set(self.bundle,self.artifacts,self.pin,'s3-dev-local/1',True,self.root,'input.json')
 
 if __name__ == '__main__': unittest.main()

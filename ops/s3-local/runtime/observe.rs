@@ -1,6 +1,6 @@
 //! Trusted sequential observation lane. No signing, submission, apply or repair.
 #[path = "collect.rs"]
-mod collect;
+pub(crate) mod collect;
 #[path = "recovery.rs"]
 mod recovery;
 #[path = "schedule.rs"]

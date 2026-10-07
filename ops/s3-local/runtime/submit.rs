@@ -1,8 +1,11 @@
 //! Trusted submission wiring. Never exposed through REST. C owns all transitions.
 #[path = "collect.rs"]
-mod collect;
+pub(crate) mod collect;
 #[path = "recovery.rs"]
 mod recovery;
+#[cfg(feature = "fault-injection")]
+#[path = "storage_fault.rs"]
+mod storage_fault;
 use collect::{Account, ChainRead};
 use nus_exchange_contract::s3::{
     dev_local::{ApplyReadiness, SealPurpose, SealReadiness, Command, Engine, Error, Result},
@@ -715,6 +718,144 @@ impl SubmitLane {
     pub fn seal(&mut self, s: &Snapshot, purpose: &str, o: &Observation) -> Result<()> {
         self.seal_with(s, purpose, o, now)
     }
+    /// Explicit one-shot fault driver; never selected by ordinary scheduling.
+    /// Exclusive access to this Engine is required. Always close this lane,
+    /// even if the requested point is not reached; drop it before recovery.
+    #[cfg(feature = "fault-injection")]
+    pub fn fault_seal(&mut self, s: &Snapshot, purpose: &str, o: &Observation,
+        point: &str, occurrence: u32, enable: bool, allow: bool)
+        -> Result<(Result<()>, storage_fault::Report)> {
+        self.fault_seal_with(s, purpose, o, point, occurrence, enable, allow, now)
+    }
+    /// Persist reservation before Seal and retain fault observations on errors.
+    /// The envelope is derived from the actual Seal inputs, never a caller digest.
+    #[cfg(feature = "fault-injection")]
+    pub fn fault_seal_recorded(&mut self, s: &Snapshot, purpose: &str, o: &Observation,
+        point: &str, occurrence: u32, enable: bool, allow: bool,
+        evidence_root: &std::path::Path)
+        -> Result<(Result<()>, storage_fault::Report)> {
+        self.fault_seal_scope(s,purpose,o,point,occurrence,enable,allow,
+            Some(evidence_root),now)
+    }
+    /// Explicit errno variant; never selected by the ordinary worker.
+    #[cfg(feature = "fault-injection")]
+    pub fn fault_seal_errno_recorded(&mut self, s: &Snapshot, purpose: &str, o: &Observation,
+        point: &str, occurrence: u32, errno: &str, enable: bool, allow: bool,
+        evidence_root: &std::path::Path) -> Result<(Result<()>, storage_fault::Report)> {
+        let selected=match errno {
+            "ENOSPC"=>storage_fault::IoFault::Enospc,
+            "EDQUOT"=>storage_fault::IoFault::Edquot,
+            "EIO"=>storage_fault::IoFault::Eio,
+            _=>{ self.closed=true; return Err(Error::Invalid("STORAGE_FAULT_OPTIONS")); }
+        };
+        self.fault_seal_io_scope(s,purpose,o,point,occurrence,selected,enable,allow,
+            Some(evidence_root),now)
+    }
+    #[cfg(feature = "fault-injection")]
+    fn fault_seal_with(&mut self, s: &Snapshot, purpose: &str, o: &Observation,
+        point: &str, occurrence: u32, enable: bool, allow: bool,
+        clock: impl FnOnce() -> Result<u64>) -> Result<(Result<()>, storage_fault::Report)> {
+        self.fault_seal_scope(s,purpose,o,point,occurrence,enable,allow,None,clock)
+    }
+    #[cfg(feature = "fault-injection")]
+    fn fault_seal_scope(&mut self, s: &Snapshot, purpose: &str, o: &Observation,
+        point: &str, occurrence: u32, enable: bool, allow: bool,
+        evidence: Option<&std::path::Path>,
+        clock: impl FnOnce() -> Result<u64>) -> Result<(Result<()>, storage_fault::Report)> {
+        self.fault_seal_io_scope(s,purpose,o,point,occurrence,storage_fault::IoFault::Generic,
+            enable,allow,evidence,clock)
+    }
+    #[cfg(feature = "fault-injection")]
+    fn fault_seal_io_scope(&mut self, s: &Snapshot, purpose: &str, o: &Observation,
+        point: &str, occurrence: u32, io_fault: storage_fault::IoFault,
+        enable: bool, allow: bool, evidence: Option<&std::path::Path>,
+        clock: impl FnOnce() -> Result<u64>) -> Result<(Result<()>, storage_fault::Report)> {
+        if self.closed { return Err(Error::Recovery("SUBMIT_LANE_CLOSED")); }
+        self.closed = true;
+        let fault = storage_fault::StorageFault::with_io_fault(point, occurrence, io_fault, enable, allow)?;
+        let at = clock()?;
+        self.bound(s, o, at)?;
+        let command = || {
+            self.worker.reconcile(Command::Seal(purpose.into()), &[], o, at)?;
+            Ok(())
+        };
+        match evidence {
+            Some(root)=>{
+                let commit=self.engine.reader().get()?.commit.clone();
+                let mut envelope=serde_json::json!({
+                    "schema":"s3-local-fault-seal-command/1", "command":"Seal",
+                    "purpose":purpose, "context":s.context(), "snapshot_id":s.id(),
+                    "snapshot_sha256":nus_exchange_contract::s3::journal::sha256(&canonical(s.value())?),
+                    "commit":{"command_seq":commit.command_seq.to_string(),
+                        "record_hash":commit.record_hash,"end_offset":commit.end_offset.to_string()},
+                    "observation":{"snapshot_id":o.snapshot_id,"cursor_height":o.cursor_height.to_string(),
+                        "received_at":o.received_at.to_string(),"query_latency_ms":o.query_latency_ms.to_string(),
+                        "catching_up":o.catching_up},
+                    "now_ms":at.to_string(), "point":point,"occurrence":occurrence.to_string(),
+                    "enable_dev_local_demo":enable,"allow_unproven_host_space":allow
+                });
+                if io_fault != storage_fault::IoFault::Generic {
+                    envelope["io_fault"]=io_fault.label().into();
+                }
+                let envelope=canonical(&envelope)?;
+                storage_fault::run_recorded_command(&self.engine,fault,root,&envelope,command)
+            },
+            None=>storage_fault::run_command(&self.engine,fault,command),
+        }
+    }
+    /// Explicit one-shot Apply fault; C alone owns settlement/correction.
+    /// Always closes the lane. Exclusive Engine ownership is required.
+    #[cfg(feature = "fault-injection")]
+    pub fn fault_apply_recorded(&mut self, s: &Snapshot, o: &Observation,
+        point: &str, occurrence: u32, errno: Option<&str>, enable: bool, allow: bool,
+        root: &std::path::Path) -> Result<(Result<()>, storage_fault::Report)> {
+        let selected=match errno {
+            None=>storage_fault::IoFault::Generic,
+            Some("ENOSPC")=>storage_fault::IoFault::Enospc,
+            Some("EDQUOT")=>storage_fault::IoFault::Edquot,
+            Some("EIO")=>storage_fault::IoFault::Eio,
+            _=>{self.closed=true;return Err(Error::Invalid("STORAGE_FAULT_OPTIONS"));}
+        };
+        self.fault_apply_io_scope(s,o,point,occurrence,selected,enable,allow,Some(root),now)
+    }
+    #[cfg(feature = "fault-injection")]
+    fn fault_apply_io_scope(&mut self, s: &Snapshot, o: &Observation,
+        point: &str, occurrence: u32, io_fault: storage_fault::IoFault,
+        enable: bool, allow: bool, evidence: Option<&std::path::Path>,
+        clock: impl FnOnce() -> Result<u64>) -> Result<(Result<()>, storage_fault::Report)> {
+        if self.closed { return Err(Error::Recovery("SUBMIT_LANE_CLOSED")); }
+        self.closed = true;
+        let fault = storage_fault::StorageFault::with_io_fault(point, occurrence, io_fault, enable, allow)?;
+        let at = clock()?;
+        self.bound(s, o, at)?;
+        let command = || {
+            self.worker.reconcile(Command::Apply, &[], o, at)?;
+            Ok(())
+        };
+        match evidence {
+            Some(root)=>{
+                let commit=self.engine.reader().get()?.commit.clone();
+                let mut envelope=serde_json::json!({
+                    "schema":"s3-local-fault-apply-command/1", "command":"Apply",
+                    "context":s.context(), "snapshot_id":s.id(),
+                    "snapshot_sha256":nus_exchange_contract::s3::journal::sha256(&canonical(s.value())?),
+                    "commit":{"command_seq":commit.command_seq.to_string(),
+                        "record_hash":commit.record_hash,"end_offset":commit.end_offset.to_string()},
+                    "observation":{"snapshot_id":o.snapshot_id,"cursor_height":o.cursor_height.to_string(),
+                        "received_at":o.received_at.to_string(),"query_latency_ms":o.query_latency_ms.to_string(),
+                        "catching_up":o.catching_up},
+                    "now_ms":at.to_string(), "point":point,"occurrence":occurrence.to_string(),
+                    "enable_dev_local_demo":enable,"allow_unproven_host_space":allow
+                });
+                if io_fault != storage_fault::IoFault::Generic {
+                    envelope["io_fault"]=io_fault.label().into();
+                }
+                let envelope=canonical(&envelope)?;
+                storage_fault::run_recorded_command(&self.engine,fault,root,&envelope,command)
+            },
+            None=>storage_fault::run_command(&self.engine,fault,command),
+        }
+    }
     fn seal_with(&mut self, s: &Snapshot, purpose: &str, o: &Observation,
         clock: impl FnOnce() -> Result<u64>) -> Result<()> {
         if self.closed { return Err(Error::Recovery("SUBMIT_LANE_CLOSED")); }
@@ -1040,6 +1181,161 @@ mod tests {
             assert_eq!(e.reader().get().unwrap().state,before.state);
             drop(lane); drop(e); std::fs::remove_dir_all(home).unwrap();
         }
+    }
+    #[cfg(feature = "fault-injection")]
+    #[test]
+    fn fault_seal_worker_closes_and_replays_committed_bytes() {
+        for io_fault in [storage_fault::IoFault::Generic, storage_fault::IoFault::Enospc,
+            storage_fault::IoFault::Edquot, storage_fault::IoFault::Eio] {
+            for fee in [0,25] {
+                for point in ["before_wal", "before_response", "publish_dir_sync"] {
+                    let (e,s,inputs,home) = unsealed(fee);
+                    let before=e.reader().get().unwrap();
+                    let mut lane=SubmitLane::new(e.clone());
+                    let evidence=home.with_extension("report");
+                    std::fs::create_dir(&evidence).unwrap();
+                    use std::os::unix::fs::PermissionsExt;
+                    std::fs::set_permissions(&evidence,std::fs::Permissions::from_mode(0o700)).unwrap();
+                    let (out,report)=lane.fault_seal_io_scope(&s,"NORMAL",&fixture::observation(s.value()),
+                        point,if point=="publish_dir_sync" {1024} else {1},io_fault,true,true,Some(&evidence),||Ok(fixture::NOW)).unwrap();
+                    let injected=point!="publish_dir_sync";
+                    assert_eq!(report.injected,injected);
+                    let raw=std::fs::read_to_string(evidence.join("storage-fault.jsonl")).unwrap();
+                    let records:Vec<serde_json::Value>=raw.lines().map(|l|serde_json::from_str(l).unwrap()).collect();
+                    assert_eq!(records.len(),2);assert_eq!(records[0]["phase"],"reserved");
+                    assert_eq!(records[1]["injected"],injected);assert_eq!(records[1]["point"],point);
+                    assert_eq!(records[1]["DEV"],"NOT_RUN");
+                    use base64::Engine as _;
+                    let bytes=base64::engine::general_purpose::STANDARD.decode(records[0]["command_base64"].as_str().unwrap()).unwrap();
+                    assert_eq!(records[0]["command_sha256"],nus_exchange_contract::s3::journal::sha256(&bytes));
+                    assert_eq!(records[0]["command_base64"],records[1]["command_base64"]);
+                    let cmd:serde_json::Value=serde_json::from_slice(&bytes).unwrap();
+                    if io_fault == storage_fault::IoFault::Generic {
+                        assert!(cmd.get("io_fault").is_none());
+                    } else {
+                        assert_eq!(cmd["io_fault"],io_fault.label());
+                        assert_eq!(records[0]["io_fault"],io_fault.label());
+                        assert_eq!(records[1]["io_fault"],io_fault.label());
+                    }
+                    assert_eq!(cmd["purpose"],"NORMAL");
+                    assert_eq!(cmd["context"],*s.context());
+                    assert_eq!(cmd["snapshot_id"],s.id());
+                    assert_eq!(cmd["snapshot_sha256"],nus_exchange_contract::s3::journal::sha256(&canonical(s.value()).unwrap()));
+                    assert_eq!(cmd["commit"]["record_hash"],before.commit.record_hash);
+                    assert_eq!(cmd["commit"]["command_seq"],before.commit.command_seq.to_string());
+                    assert_eq!(cmd["now_ms"],fixture::NOW.to_string());
+                    assert_eq!(cmd["point"],point);
+                    assert_eq!(out.is_err(),injected);
+                    assert!(lane.closed);
+                    assert!(lane.seal_with(&s,"NORMAL",&fixture::observation(s.value()),||panic!("closed")).is_err());
+                    let wal=std::fs::read(home.join("journal.dev.wal")).unwrap();
+                    let marker=std::fs::read(home.join("commit.dev.json")).unwrap();
+                    drop(lane); drop(e);
+                    for _ in 0..2 {
+                        let opened=Engine::open(&home,Validated::new(inputs.clone()).unwrap());
+                        assert_eq!(opened.is_ok(),point!="before_wal");
+                        if let Ok(e)=opened {
+                            let view=e.reader().get().unwrap();
+                            assert_eq!(view.state["accounts"],before.state["accounts"]);
+                            assert_eq!(view.state["batches"].as_array().unwrap().len(),1);
+                            assert_eq!(view.state["attempt_refs"].as_array().unwrap().len(),0);
+                            assert_eq!(view.commit.command_seq,before.commit.command_seq+1);
+                        }
+                        assert_eq!(wal,std::fs::read(home.join("journal.dev.wal")).unwrap());
+                        assert_eq!(marker,std::fs::read(home.join("commit.dev.json")).unwrap());
+                    }
+                    std::fs::remove_dir_all(home).unwrap();
+                    std::fs::remove_dir_all(evidence).unwrap();
+                }
+            }
+        }
+    }
+    #[cfg(feature = "fault-injection")]
+    #[test]
+    fn fault_apply_worker_closes_and_replays_committed_bytes() {
+        for io_fault in [storage_fault::IoFault::Generic, storage_fault::IoFault::Enospc,
+            storage_fault::IoFault::Edquot, storage_fault::IoFault::Eio] {
+            for fee in [0,25] {
+                for point in ["before_wal", "before_response", "publish_dir_sync"] {
+                    let (e,mut lane,s,hash,inputs,home) = prepared_at_next(fee);
+                    let attempt=e.committed_attempt(&hash).unwrap();
+                    let before=e.reader().get().unwrap();
+                    let evidence=home.with_extension("report");
+                    std::fs::create_dir(&evidence).unwrap();
+                    use std::os::unix::fs::PermissionsExt;
+                    std::fs::set_permissions(&evidence,std::fs::Permissions::from_mode(0o700)).unwrap();
+                    let (out,report)=lane.fault_apply_io_scope(&s,&fixture::observation(s.value()),
+                        point,if point=="publish_dir_sync" {1024} else {1},io_fault,true,true,Some(&evidence),||Ok(fixture::NOW)).unwrap();
+                    let injected=point!="publish_dir_sync";
+                    assert_eq!(report.injected,injected);
+                    let raw=std::fs::read_to_string(evidence.join("storage-fault.jsonl")).unwrap();
+                    let records:Vec<serde_json::Value>=raw.lines().map(|l|serde_json::from_str(l).unwrap()).collect();
+                    assert_eq!(records.len(),2);assert_eq!(records[0]["phase"],"reserved");
+                    assert_eq!(records[1]["injected"],injected);assert_eq!(records[1]["point"],point);
+                    assert_eq!(records[1]["DEV"],"NOT_RUN");
+                    use base64::Engine as _;
+                    let bytes=base64::engine::general_purpose::STANDARD.decode(records[0]["command_base64"].as_str().unwrap()).unwrap();
+                    assert_eq!(records[0]["command_sha256"],nus_exchange_contract::s3::journal::sha256(&bytes));
+                    assert_eq!(records[0]["command_base64"],records[1]["command_base64"]);
+                    let cmd:serde_json::Value=serde_json::from_slice(&bytes).unwrap();
+                    if io_fault == storage_fault::IoFault::Generic {
+                        assert!(cmd.get("io_fault").is_none());
+                    } else {
+                        assert_eq!(cmd["io_fault"],io_fault.label());
+                        assert_eq!(records[0]["io_fault"],io_fault.label());
+                        assert_eq!(records[1]["io_fault"],io_fault.label());
+                    }
+                    assert_eq!(cmd["command"],"Apply");
+                    assert_eq!(cmd["schema"],"s3-local-fault-apply-command/1");
+                    assert!(cmd.get("purpose").is_none());
+                    assert_eq!(cmd["context"],*s.context());
+                    assert_eq!(cmd["snapshot_id"],s.id());
+                    assert_eq!(cmd["snapshot_sha256"],nus_exchange_contract::s3::journal::sha256(&canonical(s.value()).unwrap()));
+                    assert_eq!(cmd["commit"]["record_hash"],before.commit.record_hash);
+                    assert_eq!(cmd["commit"]["command_seq"],before.commit.command_seq.to_string());
+                    assert_eq!(cmd["now_ms"],fixture::NOW.to_string());
+                    assert_eq!(cmd["point"],point);
+                    assert_eq!(out.is_err(),injected);
+                    assert!(lane.closed);
+                    assert!(lane.seal_with(&s,"NORMAL",&fixture::observation(s.value()),||panic!("closed")).is_err());
+                    let wal=std::fs::read(home.join("journal.dev.wal")).unwrap();
+                    let marker=std::fs::read(home.join("commit.dev.json")).unwrap();
+                    drop(lane); drop(e);
+                    for _ in 0..2 {
+                        let opened=Engine::open(&home,Validated::new(inputs.clone()).unwrap());
+                        assert_eq!(opened.is_ok(),point!="before_wal");
+                        if let Ok(e)=opened {
+                            let view=e.reader().get().unwrap();
+                            assert_eq!(view.state["accounts"],before.state["accounts"]);
+                            assert_eq!(view.state["chain_snapshot"],*s.value());
+                            assert_eq!(e.committed_attempt(&hash).unwrap(),attempt);
+                            for key in ["fills","batches","resolution_receipts","corrections"] {
+                                assert!(!before.state[key].is_null());
+                                assert_eq!(view.state[key],before.state[key],"{key}");
+                            }
+                            assert_eq!(view.commit.command_seq,before.commit.command_seq+1);
+                        }
+                        assert_eq!(wal,std::fs::read(home.join("journal.dev.wal")).unwrap());
+                        assert_eq!(marker,std::fs::read(home.join("commit.dev.json")).unwrap());
+                    }
+                    std::fs::remove_dir_all(home).unwrap();
+                    std::fs::remove_dir_all(evidence).unwrap();
+                }
+            }
+        }
+    }
+    #[cfg(feature = "fault-injection")]
+    #[test]
+    fn fault_seal_options_reject_before_clock_or_store() {
+        let (e,s,_,home)=unsealed(0);
+        let before=e.reader().get().unwrap();
+        let mut lane=SubmitLane::new(e.clone());
+        assert!(lane.fault_seal_with(&s,"NORMAL",&fixture::observation(s.value()),
+            "before_wal",1,false,true,||panic!("clock")).is_err());
+        assert!(lane.closed);
+        assert_eq!(e.reader().get().unwrap().commit,before.commit);
+        assert_eq!(e.reader().get().unwrap().state,before.state);
+        drop(lane); drop(e); std::fs::remove_dir_all(home).unwrap();
     }
     #[test]
     fn seal_lane_persists_only_batch_and_replays_twice() {
@@ -1672,6 +1968,31 @@ mod tests {
                     Ok(fixture::NOW + if mode == 1 && n > 0 { 6000 } else { 0 }) }).is_err());
             assert!(lane.closed);
             assert_eq!(e.reader().get().unwrap().commit, before);
+        }
+    }
+    #[cfg(feature = "fault-injection")]
+    #[test]
+    fn fault_apply_refuses_invalid_or_stale_before_evidence() {
+        for mode in 0..4 {
+            let (e,mut lane,s,_,_,home)=prepared_at_next(0);
+            let before=e.reader().get().unwrap();
+            let root=home.with_extension("absent-report");
+            let result=if mode==0 {
+                lane.fault_apply_recorded(&s,&fixture::observation(s.value()),"before_wal",1,
+                    Some("BAD"),true,true,&root)
+            } else {
+                lane.fault_apply_io_scope(&s,&fixture::observation(s.value()),"before_wal",1,
+                    storage_fault::IoFault::Eio,mode!=1,true,Some(&root),|| {
+                        assert_ne!(mode,1,"opt-in rejection before clock");
+                        if mode==3 {return Err(Error::Invalid("CLOCK"));}
+                        Ok(fixture::NOW+100_000)
+                    })
+            };
+            assert!(result.is_err()); assert!(lane.closed); assert!(!root.exists());
+            assert_eq!(e.reader().get().unwrap().state,before.state);
+            assert_eq!(e.reader().get().unwrap().commit,before.commit);
+            assert!(lane.apply_with(&s,&fixture::observation(s.value()),||panic!("closed")).is_err());
+            drop(lane);drop(e);std::fs::remove_dir_all(home).unwrap();
         }
     }
     #[test]

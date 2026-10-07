@@ -138,6 +138,50 @@ def verify(bundle, artifacts, pin, profile, acknowledge):
             'durable_ack': False, 'DEV': 'NOT_RUN'}
 
 
+
+def verify_input_set(bundle, artifacts, pin, profile, acknowledge, inputs, input_name):
+    """Bind the Rust transport to the exact byte-preflight inventory.
+
+    Returns captured bytes, never a path-based execution permit. B/C must still
+    validate guard/genesis/profile; independent organizational approval is not
+    derived from any caller-supplied JSON field.
+    """
+    report = verify(bundle, artifacts, pin, profile, acknowledge)
+    inputs = checked_root(inputs)
+    raw = bounded(inputs, input_name, 48 * 1024 * 1024)
+    value = decode(raw)
+    if not isinstance(value, dict) or set(value) != {'runtime_manifest', 'files', 'guard', 'genesis'}:
+        raise ValueError('INPUT_SET_FIELDS')
+    import base64
+    def unbase(value):
+        if not isinstance(value, str):
+            raise ValueError('INPUT_SET_BASE64')
+        try:
+            decoded = base64.b64decode(value, validate=True)
+        except (ValueError, UnicodeError) as e:
+            raise ValueError('INPUT_SET_BASE64') from e
+        if base64.b64encode(decoded).decode('ascii') != value:
+            raise ValueError('INPUT_SET_BASE64_CANONICAL')
+        return decoded
+    manifest_raw = unbase(value['runtime_manifest'])
+    if hashlib.sha256(manifest_raw).hexdigest() != pin:
+        raise ValueError('INPUT_SET_MANIFEST')
+    manifest = decode(manifest_raw)
+    files = value['files']
+    if not isinstance(files, dict) or set(files) != set(manifest['files_sha256']):
+        raise ValueError('INPUT_SET_INVENTORY')
+    for path, digest in manifest['files_sha256'].items():
+        if hashlib.sha256(unbase(files[path])).hexdigest() != digest:
+            raise ValueError('INPUT_SET_FILE')
+    for name in ('guard', 'genesis'):
+        item = unbase(value[name])
+        if not item or len(item) > 2 * 1024 * 1024:
+            raise ValueError('INPUT_SET_SIZE')
+    report = dict(report, input_set_sha256=hashlib.sha256(raw).hexdigest(),
+                  input_set_byte_match=True, semantic_validation=False)
+    return raw, report
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--bundle', type=Path, required=True)
@@ -145,9 +189,22 @@ def main():
     p.add_argument('--runtime-pin', required=True)
     p.add_argument('--local-demo-profile', required=True)
     p.add_argument('--acknowledge-unproven-space', action='store_true')
+    p.add_argument('--capture-input', type=Path, help='emit verified input bytes to stdout; report to stderr')
     a = p.parse_args()
     try:
-        print(json.dumps(verify(a.bundle, a.artifacts, a.runtime_pin, a.local_demo_profile, a.acknowledge_unproven_space), sort_keys=True))
+        if a.capture_input is None:
+            print(json.dumps(verify(a.bundle, a.artifacts, a.runtime_pin, a.local_demo_profile, a.acknowledge_unproven_space), sort_keys=True))
+        else:
+            import sys
+            if not a.capture_input.is_absolute():
+                raise ValueError('ABSOLUTE_INPUT_REQUIRED')
+            raw, report = verify_input_set(a.bundle, a.artifacts, a.runtime_pin,
+                a.local_demo_profile, a.acknowledge_unproven_space,
+                a.capture_input.parent, a.capture_input.name)
+            # No bytes leave stdout until all checks succeed. No path reread.
+            sys.stdout.buffer.write(raw)
+            sys.stdout.buffer.flush()
+            print(json.dumps(report, sort_keys=True), file=sys.stderr)
     except (ValueError, OSError, KeyError, TypeError) as e:
         p.exit(2, 'PREFLIGHT_REJECTED: ' + str(e) + '\n')
 

@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 SPEC = importlib.util.spec_from_file_location('manifest', Path(__file__).with_name('manifest.py'))
 m = importlib.util.module_from_spec(SPEC)
@@ -39,7 +40,8 @@ class Binding(unittest.TestCase):
                 m.write_new(root/'out', {'audit.json': b'replacement'})
             self.assertEqual((root/'out/audit.json').read_bytes(), b'original')
 
-    def test_binary_edit_changes_descriptor_aggregate_and_runtime_hash(self):
+    @patch.object(m, 'audit', side_effect=lambda root: (m.inherited(root), {'head': 'a'*40, 'tree': 'b'*40, 'locks': {}, 'runtime_approved': False}))
+    def test_binary_edit_changes_descriptor_aggregate_and_runtime_hash(self, _identity):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             (root/'synthetic-test-only').write_bytes(b'NOT_A_RUNTIME_BINARY_1')
@@ -58,6 +60,37 @@ class Binding(unittest.TestCase):
             (root/'synthetic-test-only').unlink()
             with self.assertRaisesRegex(ValueError, 'NOT_SINGLE_REGULAR_FILE'):
                 m.make_candidate(ROOT, root, spec)
+
+
+class SourceGate(unittest.TestCase):
+    def identity(self, report, dirty=False):
+        def git(_root, *args):
+            if args == ('status', '--porcelain'):
+                return b' M file' if dirty else b''
+            if args[0] == 'merge-base':
+                return b''
+            return (('b' if args[-1].endswith('^{tree}') else 'a')*40+'\n').encode()
+        with patch.object(m, 'contract_identity', return_value={'fixture': True}), patch.object(m, 'git', side_effect=git), patch.object(m.component_sources, 'audit', return_value=report) as audit:
+            result = m.source_identity(ROOT)
+            audit.assert_called_once_with(ROOT, 'a'*40)
+            return result
+
+    def test_changed_or_missing_source_blocks_even_with_all_ancestors(self):
+        for kind in ('changed', 'missing'):
+            with self.subTest(kind=kind), self.assertRaisesRegex(ValueError, 'COMPONENT_SOURCE_RECONCILIATION_REQUIRED'):
+                self.identity({'approved_files_preserved': False, kind: ['exchange/file']})
+
+    def test_clean_inclusion_is_evidence_not_runtime_approval(self):
+        report = {'approved_files_preserved': True, 'approval_verified': False,
+                  'runtime_approved': False, 'additions_require_review': True}
+        result = self.identity(report)
+        self.assertEqual(result['component_inclusion'], report)
+        self.assertEqual(m.HEADS['exchange'], m.component_sources.CANDIDATES['exchange'][0])
+        self.assertEqual(m.HEADS['wallet'], m.component_sources.CANDIDATES['wallet'][0])
+
+    def test_dirty_source_rejected_before_inclusion(self):
+        with self.assertRaisesRegex(ValueError, 'DIRTY_SOURCE'):
+            self.identity({}, dirty=True)
 
 
 if __name__ == '__main__':

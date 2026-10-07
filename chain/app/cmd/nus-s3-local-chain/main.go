@@ -6,6 +6,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -417,6 +418,9 @@ func lock(home string) (*os.File, error) {
 	return f, nil
 }
 func run(args []string) error {
+	if len(args) > 0 && args[0] == "topology" {
+		return runTopology(args[1:], os.Stdout)
+	}
 	o, e := parse(args)
 	if e != nil {
 		return e
@@ -445,6 +449,18 @@ func run(args []string) error {
 	if e = validateHome(o, in, c); e != nil {
 		return e
 	}
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+	if e = awaitStart(ctx, os.Stdin, os.Stdout, 30*time.Second); e != nil {
+		return e
+	}
+	// Recheck mutable home files after the parent approval round trip.
+	if e = validateHome(o, in, c); e != nil {
+		return e
+	}
+	if ctx.Err() != nil {
+		return errors.New("START_CANCELLED")
+	}
 	db, e := dbm.NewDB("application", dbm.GoLevelDBBackend, filepath.Join(o.home, "data"))
 	if e != nil {
 		return e
@@ -463,13 +479,11 @@ func run(args []string) error {
 	if e != nil {
 		return e
 	}
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
-	defer signal.Stop(ch)
+	if ctx.Err() != nil { return errors.New("START_CANCELLED") }
 	if e = n.Start(); e != nil {
 		return e
 	}
-	<-ch
+	<-ctx.Done()
 	if e = n.Stop(); e != nil {
 		return e
 	}

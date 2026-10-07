@@ -1,5 +1,5 @@
-//! SRE read-only Comet transport. Raw JSON remains evidence for C's validators.
-//! No broadcast/signing endpoint, engine mutation, retry, or finality inference.
+//! SRE bounded Comet transport. Query bytes remain evidence for C validators.
+//! Explicit direct-TX submission is separate from Query; no signing or retry.
 use serde_json::{Value, json};
 use std::{
     io::{Read, Write},
@@ -98,7 +98,14 @@ impl QueryRpc {
     /// Two seconds over connect + write + read. No DNS/proxy/redirect; returns
     /// unchanged JSON entity bytes, not canonicalized or reserialized evidence.
     pub fn fetch(&self, query: Query<'_>) -> Result<Vec<u8>> {
-        let body = query.body()?;
+        self.send_body(query.body()?)
+    }
+    /// Explicit user-TX transport. Caller owns authentication and UNKNOWN latch.
+    /// A returned body, including CheckTx success, is never finality evidence.
+    pub fn broadcast_direct(&self, raw: &[u8]) -> Result<Vec<u8>> {
+        self.send_body(direct_body(raw)?)
+    }
+    fn send_body(&self, body: Vec<u8>) -> Result<Vec<u8>> {
         let end = Instant::now() + Duration::from_secs(2);
         let mut socket =
             TcpStream::connect_timeout(&self.addr, remaining(end)?).map_err(|_| "QUERY_CONNECT")?;
@@ -140,6 +147,13 @@ impl QueryRpc {
         remaining(end)?;
         decode_http(&wire)
     }
+}
+fn direct_body(raw: &[u8]) -> Result<Vec<u8>> {
+    if raw.is_empty() || raw.len() > 139264 { return Err("TX_LIMIT"); }
+    use base64::Engine as _;
+    serde_json::to_vec(&json!({"jsonrpc":"2.0","id":1,"method":"broadcast_tx_sync",
+        "params":{"tx":base64::engine::general_purpose::STANDARD.encode(raw)}}))
+        .map_err(|_| "QUERY_ENCODING")
 }
 fn remaining(end: Instant) -> Result<Duration> {
     end.checked_duration_since(Instant::now())
@@ -394,5 +408,20 @@ mod tests {
             v["params"]["hash"],
             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
         );
+    }
+}
+
+#[cfg(test)]
+mod direct_transport_tests {
+    use super::*;
+    #[test]
+    fn exact_bytes_and_method_only() {
+        use base64::Engine as _;
+        let raw: Vec<u8> = (0..=255).cycle().take(139264).collect();
+        let v: Value = serde_json::from_slice(&direct_body(&raw).unwrap()).unwrap();
+        assert_eq!(v, json!({"jsonrpc":"2.0","id":1,"method":"broadcast_tx_sync",
+            "params":{"tx":base64::engine::general_purpose::STANDARD.encode(&raw)}}));
+        assert!(direct_body(&[]).is_err());
+        assert!(direct_body(&vec![0;139265]).is_err());
     }
 }

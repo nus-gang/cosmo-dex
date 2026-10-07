@@ -348,3 +348,204 @@ Seal 목적만 전달하고 Waiting이면 Idle이다. SRE는 FIFO·expiry·epoch
 실제 C 실행 검증을 유지한다. 준비 판단과 분기 결과는 방송 권한이나 영수증이
 아니다. 실제 worker 실행 파일·웹 ChainPort·초기화/launcher·fault/정리·최종
 manifest는 후속 작업이며 서비스/RPC0·DEV NOT_RUN·runtime pin 미발급이다.
+
+## worker process driver 배선
+
+`driver.rs::Driver::recover`는 승인 C의 Engine을 받아 Observer 복구·Worker·SubmitLane·같은 loopback endpoint의 읽기/방송 client를 묶는다. 생성은 socket 연결/bind/서비스 기동을 수행하지 않는다. 비공개 `OperatorSigner`는 driver가 소유하고 REST로 내보내지 않는다. `tick`은 순차 관측 저장 후 기존 `reconcile_tick` 한 번만 호출하며, catch-up이면 dispatcher 호출0이다. 반환 관측의 received_at/latency를 다시 찍지 않는다. 이 반환을 `rest::serve_service`의 trusted callback에 연결할 수 있다.
+
+driver는 수명1ns..3600초·tick1..3600 상한, 시계 역행, 관측 mismatch를 IO/작업 경계에서 거절한다. 오류/unwind/명시 stop 후 재호출은 닫히고 이전 관측을 반환하지 않는다. 수명 검사는 tick 시작 경계이며 실행 중 RPC/fsync의 hard timeout을 보장하지 않는다. cadence는 기존 lifecycle의1초 간격을 사용한다. REST executable의 입력/preflight/Engine·signer 구성·signal 등록은 아직 미완료다.
+
+기존 offline/locked rlib와 Rust1.92.0으로 driver와 모든 실제 호출을 컴파일하고 신규 순수시험3개를 수행한다. 최초 fixture snapshot 참조 오류 로그와 보정 결과를 Paperclip artifact에 보존한다. 시험은 메모리 callback이며 RPC/서비스0, 실제 driver tick 통합/DEV는 NOT_RUN이다. 중복 포함된 기존 모듈 시험은 합산하지 않는다.
+
+# 실행 준비 연결 — 기동 전 component 검증
+
+`startup.rs`는 두 opt-in과 모든 실행 인자를 명시적으로 받는다. 중복/미지정/알 수 없는 옵션, 상대·상위 경로, 비정규 정수, 공개/DNS/IPv6 주소, privileged port, REST/RPC 충돌, 수명·요청·tick 상한 초과를 IO 전에 거절한다. 입력은 canonical regular file·단일 link·bounded read·읽기 전후 metadata 일치를 요구하고 FIFO/link/directory를 거절한다.
+
+`prepare`는 정확한 입력 원문으로 승인 C `Validated::decode_bundle`을 호출하고 **기존 home만** 연다. C의 commit-pinned recovery에서 applied snapshot은 REST에, latest snapshot은 driver 복구에 연결한다. 동일 검증 genesis에 있는 운영자 공개키 중 최신 관측 operator와 일치하는 키만 private signer에 결합한다. 준비 실패/drop 후 C writer lock은 해제하고 home/guard/WAL은 보존한다. 생성·repair·network bind/RPC/tick/서비스 기동은 없다.
+
+검증: 기존 offline/locked dependency와 설치 Rust1.92.0으로 컴파일 PASS. 신규 순수시험 **3 PASS / 0 FAIL**, 기존 포함 모듈 180개는 미실행이며 합산하지 않는다. fee0/25 각각 두 번 준비/drop/replay의 commit 불변·writer2 거절, 잘못된 signer 이후 lock 해제, 없는 home 자동 생성0, 입력/파일 거절을 확인했다. 공개 합성 fixture 키/manifest는 순수시험에만 사용한다. 컴파일 명령은 build.json, 원 출력은 compile.log/tests.log다.
+
+이 준비 함수의 바이트 검증은 독립 승인이나 디스크 binary 검증이 아니다. 다음 SRE 작업은 기존 preflight의 실제 binary 대조와 승인 출처 gate를 launcher에 연결하고 executable/signal, 웹 ChainPort, 새 fee0/25 초기화, fault/정리, 최종 manifest를 완성하는 것이다. 전체 후보 CTO→Security 전이며 runtime pin 미발급·DEV NOT_RUN·서비스/RPC0·€0. 원 G00=FAIL_UNPROVEN / allowlist=[] / ACK=CLOSED와 표준 부모 blocker 유지.
+
+## 프로세스 종료 연결
+
+ eb935f7 위 SRE 변경. 이번 대상은 signals.rs 및 startup.rs의 Prepared::serve/run_with다. 이전 미커밋 driver/startup 변경도 첨부 patch에 포함한다.
+
+- Signals는 SIGINT/SIGTERM을 stop AtomicBool에 latch한다. handler는 할당/IO/로그/파일 삭제를 수행하지 않는다. 설치는 프로세스당 1회이며 기존 비기본 handler와 충돌하면 거절한다. 일부 설치 실패는 rollback 후 오류를 반환한다. 실행 파일은 이 오류에서 종료해야 한다.
+- Prepared::serve는 이미 검증되고 bind된 listener를 소비하여 REST→Driver 연결을 수행한다. 직접 bind하지 않는다. 정상/오류 반환과 unwind 때 Engine Arc·private signer가 drop된다. home/key/WAL/guard/lock inode를 삭제하거나 수리하지 않는다.
+- graceful stop은 진행 중 RPC/fsync를 중단하지 않는다. managed runtime의 강제 종료 grace·최종 executable gate 연결은 남아 있다. 같은 프로세스에서 별도 signal manager의 병행 설치는 지원하지 않는다.
+
+## 검증
+
+설치 Rust1.92.0 및 이전 offline/locked feature rlib 사용. build.json / signal-build.json에 argv가 있다. 새 설치·lock 변경0.
+
+startup 시험 3 PASS/0 FAIL: 기존 3개 중 실제 home 시험에 정상/오류/panic 자원 해제 경로를 보강했다. fee0/25에서 각 경로 후 C Engine 재개방 및 commit 불변. 나머지 포함 모듈 시험180은 이번 미실행이다.
+
+signal 감독 시험1 PASS/0 FAIL: 격리된 시험 subprocess3개(int/term/conflict). 실제 자기 프로세스 raise로 stop latch·중복 설치 거절·drop 후 원 handler 복원을 확인했다. 이 3개를 추가 독립 시험수로 합산하지 않는다. 서비스 종료/포트 해제 통합 검증은 아니다.
+
+
+실행 파일의 독립 승인 gate·signal guard 호출 및 최종 launcher 연결은 아직 남아 있다.
+
+## 기동 전 검증 executable
+
+`preflight_main.rs`는 `validate-captured --capture-sha256 <sha256> <startup 필수 인자>`만 제공한다. 닫힌 stdin의 캡처를 기존 C 의미 검증·기존 home·private signer·driver 준비에 전달하고, 모든 소유권을 drop한 뒤 성공 JSON을 출력한다. serve 명령·bind·tick·RPC 없음. stdout은 의미 검증 결과이며 approval_verified=false/service_started=false/durable_ack=false다. 거절은 exit2·stdout0·고정 오류 문구이며 키/입력/경로/error chain을 출력하지 않는다.
+
+기존 offline/locked rlib와 설치 Rust1.92.0으로 실행 파일 및 시험 build PASS. 기존 startup 시험1개를 process harness로 보강하여 fee0/25 각각 subprocess2회 검증·종료 뒤 writer 재개방·commit 불변을 확인했다(1 PASS/0 FAIL, 54.49초). 183개 나머지 포함 모듈시험 미실행. CLI 거절5개는 stdin을 열어 둔 상태에서3초 내 exit2·빈 stdout을 확인했다. 서로 다른 시험 층의 수를 합산하지 않는다. 합성 fixture만 사용하며 실제 Python CLI→실행 파일 전체 연결은 아직 미검증이다.
+
+실행 예: Python capture 명령의 성공/상한/시간제한 확인 후 저장한 원문을 stdin으로 전달한다. 이 실행 파일에는 자체 stdin wall-time 제한이 없으므로 살아 있는 producer를 직접 연결하지 말고 부모가 완전히 수집한 유한 입력을 사용한다. runtime pin은 전송 SHA와 다르며 조직 승인은 이 도구가 하지 않는다.
+
+현재 소스는 base eb935f7 위 누적 미커밋 SRE 변경이다. 이전 driver/startup/signal/capture와 이번 소스를 함께 보존한다. 최종 서비스 실행 파일·독립 승인 gate·웹 ChainPort·새 초기화/launcher/fault/정리·최종 manifest·CTO→Security 심사는 남아 있다. 서비스/RPC/listener0·runtime pin 미발급·DEV NOT_RUN·€0. 원 G00/ACK와 부모 blocker 유지.
+
+
+# 검증 프로세스 시간·출력 상한 연결
+
+[NUS-73](/NUS/issues/NUS-73), SRE L-R. base eb935f7 위 누적 미커밋 SRE 변경을 보존한다. 이번 변경은 `ops/s3-local/process_check.py`, 해당 시험, startup process harness다.
+
+- 유한 캡처 bytes(1..48MiB)를 받아 SHA256·고정 validate-captured 명령으로 자식을 실행한다. argv 배열만 사용하며 shell0, Paperclip/loader 환경 전달0이다.
+- nonblocking selector가 stdin과 stdout/stderr를 함께 처리한다. wall deadline 최대60초, stdout/stderr 각각4096 bytes 상한. EOF 뒤 종료하지 않는 자식도 deadline으로 거절한다.
+- exit0·stderr0·정확한 boolean JSON만 성공이다. 숫자1을 true로 인정하지 않으며 중복 키·추가 키·승인 true·실행 true를 거절한다. 원 자식 출력은 호출자에게 전달하지 않는다.
+- 성공/실패/unwind에서 프로세스 group 종료·직접 자식 wait/reap·pipe close. home/guard/WAL/key/lock inode 삭제0. 정상 동작하는 validator는 결과 출력 전에 Engine을 drop한다. timeout 종료는 자동 home 수리 근거가 아니다.
+- 실행 파일 경로의 승인·descriptor 결합은 이 감독 함수의 책임이 아니다. 실제 byte preflight/독립 승인 gate를 통과한 전용 검증 실행 파일을 최종 launcher가 지정해야 한다. 임의 프로그램을 안전하게 실행하는 sandbox가 아니다. 이번 source에는 서비스 실행 명령이 없다.
+
+## 검증
+
+Python 순수 프로세스 시험5 PASS/0 FAIL: 2MiB 전송·정확한 argv/SHA·환경 격리, 입력 미소비 timeout, stdout/stderr flood, EOF 후 미종료, descendant pipe 유지, 직접 자식 reap, 잘못된 성공 보고서·거절·상한·입력 거절. 반복 실행 수를 합산하지 않는다.
+
+기존 offline/locked dependency rlib와 설치 Rust1.92.0을 사용해 실제 validator/startup test 컴파일 PASS. `*-build.json`은 exact argv를 기록한다. 수정된 Rust startup 시험은 같은 fee0/25 fixture를 Python 감독 함수→실제 Rust validator에 전달하며 종료 후 writer 재개방·commit 불변을 확인한다. 기존 C/경제·proof·lock·공통 계약 변경0. 합성 fixture/test pin이며 조직 승인이 아니다.
+
+Rust process 시험1 PASS/0 FAIL(56.25초), 나머지 포함 모듈183개는 미실행이다. 로그의 panic2회는 의도적으로 주입하고 catch한 정상 시험 경로다. `startup-tests.log`와 `test-command.json`에 원문을 보존한다. Python 시험과 Rust 포함 모듈 수는 합산하지 않는다.
+
+## 남은 범위
+
+SRE가 Python byte capture와 최종 launcher·전용 service executable·독립 승인 gate·웹 ChainPort·fee0/25 초기화·fault/정리·최종 manifest를 계속한다. 이번에 전체 byte capture→semantic CLI가 완성됐다고 주장하지 않는다. 최종 동일 후보의 CTO→Security 심사와 독립 CEO/CTO pin 출처도 남아 있다.
+
+서비스/RPC/listener0·runtime pin 미발급·DEV NOT_RUN·€0. 원 G00=FAIL_UNPROVEN / allowlist=[] / ACK=CLOSED와 표준 부모 blocker 유지.
+
+### 실제 offline validator 연결 시험
+
+`startup.rs`의 `tests::offline_descriptor_capture_real_validator`는 실제 빌드한
+validator를 다섯 합성 descriptor의 artifact 목록에 고정하고 fee0/25별
+manifest·genesis·guard·초기 snapshot을 같은 합성 Context로 결합한다.
+`test_real_validator.py`가 byte preflight → capture → private 실행 사본 →
+Rust/C 의미 검증을 실행한다. 임시 실행 사본 제거와 기존 home 두 번 replay의
+commit 불변을 확인한다. `NUS73_PREFLIGHT_EXECUTABLE`,
+`NUS73_PROCESS_CHECK_PYTHON`, `NUS73_PROCESS_CHECK_MODULE`은 필수다.
+공개 fixture 키·합성 pin은 이 순수 시험 전용이며 runtime 승인이나 DEV PASS가 아니다.
+# worker 실행 파일과 시작 순서 — NUS-73
+
+base eb935f7 위 누적 SRE 미커밋 변경. 승인 C/L-D 경제·proof·lock·공통 계약 변경0.
+
+`runtime/worker_main.rs`를 기존 startup/Driver/REST/signals에 연결했다. 명시적인
+`serve-captured --start-gate-fd <fd> --capture-sha256 <sha256> <startup 필수 인자>`를
+받는다. 기본 Cargo feature/표준 실행 파일은 변경하지 않는다. FD는 3..1024의
+정규 정수이며 연결된 AF_UNIX stream만 받는다. 두 opt-in·모든 입력 gate 후
+기존 home/writer/private signer를 준비하고 inherited socketpair로 READY를
+보낸다. 최대5초 안에 정확한 START\n과 EOF를 받아야 loopback bind→REST/Driver를
+실행한다. SIGINT/SIGTERM stop, 거절, 오류, unwind는 고정 진단과 exit2로 끝난다.
+
+이 IPC는 부모/자식 순서 제어이며 조직 승인이나 재사용 permit이 아니다.
+최종 managed launcher가 동일 staged binary/capture, 독립 승인 최신 상태를
+READY 수신 후 재조회하고 시작 직전에 검사해야 한다. 해당 launcher 연결은
+미완료다. 직접 명령 실행은 승인된 서비스 시작 경로가 아니다. stdin은 부모가
+수집한 유한 capture를 전송해야 하며 준비 단계 전체 wall deadline과 reap은
+부모 감독 책임이다. stdin EOF 대기 자체의 자식 wall-time 제한은 없다.
+
+## 검증
+
+- 설치 Rust1.92.0·기존 cache·offline/locked dependency build, worker 및 startup test 컴파일 PASS. 새 설치/lock 변경0.
+- start_gate 순수시험3 PASS/0 FAIL: 정확한 신호+EOF, EOF 없는 신호 timeout, 빈/절단/추가/잘못된 신호·stop·상한 거절. anonymous socketpair만 사용.
+- 실제 worker 거절 harness를 추가한 startup 시험1 PASS/0 FAIL(52.98초). fee0/25 각각 준비 후 EOF/잘못된 신호/SIGTERM 거절, stdout0·고정 오류·exit2, 부모 reap. 후속 C home 두 번 replay·commit 불변. 기존184 포함 모듈은 미실행이며 중복 합산0.
+- CLI 거절6 PASS: 열린 stdin에서도3초 내 거절·stdout0·고정 오류. 서비스 진입 전 인자 거절 경계.
+- 최초 오래된 rlib API 불일치와 cargo rustc 경로 오류는 현재 소스 offline/locked 재빌드 및 명시적 RUSTC/CARGO_HOME 설정으로 수정했다. 실패/보정 로그 모두 보존.
+
+실제 worker에 START를 보낸 횟수0. chain RPC/listener/서비스0·DEV NOT_RUN·runtime pin 미발급·€0.
+worker SHA256은 worker-sha256.json에 기록하며 승인 pin으로 사용하지 않는다.
+소스·누적 patch·정확한 build argv·검증·컴파일된 worker를 ZIP에 함께 보존한다.
+
+## 다음 SRE 실행
+
+READY 뒤 최신 승인 재조회/실행 바이트 결합과 managed launcher 감독을 연결한다.
+웹 ChainPort·새 fee0/25 초기화·fault/정리·최종 다섯 descriptor/manifest·독립
+CEO/CTO 원문 승인과 CTO→Security 심사는 남아 있다. L-T 서비스 시작은 아직
+허용되지 않는다. 원 G00=FAIL_UNPROVEN / allowlist=[] / ACK=CLOSED와 부모 blocker 유지.
+
+ChainPort Account bridge (`ChainRead::direct_account`)는 인증 caller의 owner를
+받아 최신 검증 Snapshot과 같은 H의 auth Account를 대조한다. 웹 응답에는
+Context/owner/key/account number/sequence/epoch/gas/H를 투영하고 두 RPC 원문을
+보존한다. 전체 조회 2초 초과·시계 역행·미등록/다른 owner·IO는 재시도 없이
+거절한다. received_at은 시작 시각이므로 느린 조회가 freshness를 갱신하지 않는다.
+HTTP 인증 및 브라우저 연결은 아직 남아 있으며 이 API는 서명/방송하지 않는다.
+
+
+### ChainPort 계정 HTTP router 연결
+
+`chain_router.rs`는 기존 bounded HTTP Wire를 통해 정확한
+`GET /dev-local/v1/chain/account`만 기존 인증 adapter에 전달한다.
+peer·중복 header·body를 유지하며 기존 REST 경로는 승인 Rest로 전달한다.
+미구현 chain 경로는 404, 계정 경로의 POST/본문은 400이다.
+worker startup은 Driver::tick_snapshot의 동일 Snapshot/Observation을
+직렬 accept loop에 전달한다. 원 관측 freshness를 갱신하지 않는다.
+별도 인증 store나 브라우저 지정 owner/anchor를 만들지 않는다.
+
+검증: 메모리 HTTP 신규4 + adapter/조회 회귀62 = 66 PASS. worker와 startup
+컴파일 확인. 실제 로그인·RPC·listener·browser 시험은 L-T이며 NOT_RUN이다.
+방송 owner 결합/결과 HTTP와 브라우저 ChainPort, 초기화 및 최종 manifest는
+아직 남아 있다. 이번 연결만으로 runtime 승인이나 DEV PASS를 뜻하지 않는다.
+
+
+## 인증 ChainPort 결과 조회
+
+`POST /dev-local/v1/chain/result`는 `{"tx_hash":"<lowercase SHA256>"}`만 받는다. 기존 origin/session 인증을 조회 전후 검사하며 trusted ChainRead의 확정 block/results 증거로 검증한 결과만 반환한다. `409 CHAIN_RESULT_UNAVAILABLE`은 미확정/조회 실패이고 VOID나 확정 실패 증거가 아니다. 실제 서비스 및 브라우저 통합은 L-T에 남는다.
+
+## 저장 fault 명령 원문 결합
+
+fault-build 전용 `SubmitLane::fault_seal_recorded`는 외부 command SHA를 받지 않는다.
+실제 Seal 목적·Context·snapshot ID/SHA·현재 commit·Observation·평가 시각·fault 선택/두 opt-in을
+canonical JSON으로 만들어 기록 경계에 전달한다. 독점 Engine 전제는 그대로다.
+`s3-local-storage-fault/2` 보고서는 bounded(1..16384 bytes) 원문의 base64와
+직접 계산한 SHA256을 reserved/final 두 줄에 보존한다. 비밀 입력을 넣지 않는다.
+범용 `run_recorded_command` 호출자는 실제 closure와 같은 공개 명령 bytes를 전달할 책임이 있다.
+
+보고서는 인증/실행 허가·체인 확정이 아니다. scope_returned는 내부 명령 성공을 뜻하지 않으며
+final 누락/부분 기록은 UNKNOWN이다. 인증 fault CLI 및 최종 runtime manifest 연결은 아직 남아 있다.
+서비스/START/RPC0·runtime pin 미발급·DEV NOT_RUN·durable_ack=false를 유지한다.
+
+### 저장 fault 전용 child (인증 부모 연결 전)
+
+`fault_main.rs`는 `dev-local-demo` + `fault-injection` C build에만 연결하는
+별도 실행 파일이다. 일반 `worker_main.rs`에는 fault 옵션이 없다.
+부모는 descriptor에 기록된 실제 binary/capture를 대조하고 독립 승인을 확인한 뒤
+private 시작 채널을 전달해야 한다. 이 부모 경로는 아직 미연결이며 직접 기동하지 않는다.
+
+인자 순서:
+
+```text
+fault-seal-captured --start-gate-fd FD --capture-sha256 SHA256
+--enable-storage-fault --fault-point POINT --fault-occurrence N
+--fault-purpose NORMAL|RESOLVE_FAILURE --fault-evidence-root ABSOLUTE_PRIVATE_DIRECTORY
+<기존 Inputs의 모든 필수 인자 및 두 opt-in>
+```
+
+기존 capture/C store/private signer 준비 뒤 READY를 내고 START+EOF까지 기다린다.
+START 이후 신뢰 RPC 관측 1회를 기존 Observer에 저장하며, catching-up·stop·수명 초과는
+Seal 전에 거절한다. 명시적 목적의 Seal 한 번만 기존 보고서 scope로 실행하고 driver를
+소비한다. dispatcher·서명·방송·listener는 호출하지 않는다. 목적의 경제적 적합성은 C가
+판정한다. 보고서 예약/원문 fsync는 Seal 전에 수행하며 관측 저장보다 먼저라는 뜻은 아니다.
+
+결과 `s3-local-fault-seal-result/1`의 `command_succeeded`와 `injected`는 서로 다른 사실이다.
+프로세스 exit0은 보고서 반환을 뜻하며 fault 도달/DEV PASS를 보장하지 않는다.
+오류 또는 final 누락 시 원문·home을 보존하고 자동 재시도하지 않는다.
+이번 검증은 컴파일·인자/보고서 회귀·열린 stdin의 CLI 거절이다. 실제 child READY/START,
+인증 부모/descriptor 조합·정상 RPC·전체 장애 시연은 미실행이다.
+
+### Apply 저장 fault 내부 API
+
+`SubmitLane::fault_apply_recorded`는 fault-injection build에서만 제공한다.
+기존 `Worker.reconcile(Command::Apply)` 한 번을 저장 hook/보고서 scope로
+감싼다. `errno=None`은 Generic/v2, ENOSPC/EDQUOT/EIO는 v3이다.
+실제 Context/snapshot/commit/Observation/시각과 선택을
+`s3-local-fault-apply-command/1` 원문으로 결합한다. 결과·미도달과 무관하게
+lane은 닫히며 Engine을 drop한 뒤 복구한다. 일반 scheduler에는 연결하지 않는다.
+현재 fault child/인증 CLI의 명령은 여전히 Seal이다. Apply CLI와 COMMITTED/VOID
+적용·정정의 명령별 fault 배선, crash와 F10~16 판정은 별도 미완료다.
+미정산 attempt를 유지하는 Apply의 IO/replay 시험을 정산 확정 시험으로 합산하지 않는다.

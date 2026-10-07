@@ -4,7 +4,7 @@
 
 ## 실행 경계
 
-`LocalClient(context, transport, chainPort, enabled=false, acknowledge=false)`는 기본 비활성이다. 두 opt-in 없이는 인증 요청도 실행하지 않는다. `mount(root, client, tabKeys, origin)`가 정산·출금 화면을 만든다. 운영자 키를 받지 않는다. LocalKey는 탭 메모리의 합성 사용자 키만 생성하고 직접 ML-DSA 서명한다. pagehide/destroy 때 키를 지운다. 영속 키 복구·키 내보내기는 없다. caller는 이 키의 공개키만 별도 새 S3 genesis 계정 등록에 사용한다. 공개 fixture seed를 실제 서비스에 쓰지 않는다.
+`LocalClient.authenticated(context, transport, enabled=false, acknowledge=false)`가 L-R의 고정 Chain HTTP 경로와 같은 private 세션을 연결한다. 기존 constructor 주입 경로도 component 검증용으로 유지한다. 두 생성 경로 모두 기본 비활성이다. 두 opt-in 없이는 인증 요청도 실행하지 않는다. `mount(root, client, tabKeys, origin)`가 정산·출금 화면을 만든다. 운영자 키를 받지 않는다. LocalKey는 탭 메모리의 합성 사용자 키만 생성하고 직접 ML-DSA 서명한다. pagehide/destroy 때 키를 지운다. 영속 키 복구·키 내보내기는 없다. caller는 이 키의 공개키만 별도 새 S3 genesis 계정 등록에 사용한다. 공개 fixture seed를 실제 서비스에 쓰지 않는다.
 
 L-R은 승인 context와 두 opt-in을 공급하고 아래 transport를 배선한다. 이 업무의 build는 실행 가능한 browser ES modules이며 독립 서버/launcher는 L-R 범위다. build manifest는 runtime 승인 pin이 아니다.
 
@@ -12,7 +12,7 @@ L-R은 승인 context와 두 opt-in을 공급하고 아래 transport를 배선�
 - ChainPort는 새 REST schema가 아닌 L-R **신뢰 로컬 Chain adapter의 TypeScript 배선 interface**다. `account(address)`는 동일 Context/확정 H의 account_number/sequence/owner_epoch/등록 공개키/gas, 원 관측 시각을 제공한다. stale 응답의 시각을 새로 찍으면 안 된다. client는 계정 공개키·height 일치와 2초 freshness, C 금액을 재검증한다.
 - `broadcast(tx_bytes)`는 사용자 서명 원 TxRaw를 bounded loopback RPC에 한 번 전달한다. HTTP/CheckTx 성공도 UNKNOWN으로 유지한다. signer/private key를 adapter에 넘기지 않는다.
 - `result(tx_hash)`는 B의 trusted RPC block+block_results에서 해당 TX index, 원 TxRaw, Context/chain/genesis/확정 높이와 code를 검증한 **확정 결과만** 반환한다. NOT_FOUND/CheckTx/mempool/timeout은 throw한다. 임의 `/tx` 성공을 확정으로 매핑하지 않는다. client도 원 TX bytes/hash·code/state·서명 당시 H보다 큰 확정 H를 확인한다. 결과 조회는 생성/방송을 하지 않는다.
-- 직접 계정·방송·조회 HTTP route는 L-D가 제공하지 않는다. 기존 `/s1` 또는 `/s2` URL을 S3에 재사용하지 않았다. L-R에서 위 bridge를 실제 B adapter에 연결하고 기동 전 검토한다. ChainPort가 없으면 출금 버튼이 닫힌다. 실제 end-to-end API/브라우저·4검증인 DEV12는 L-T에서 검증한다.
+- 직접 계정·방송·조회 HTTP route는 L-D가 제공하지 않는다. 기존 `/s1` 또는 `/s2` URL을 S3에 재사용하지 않았다. 새 authenticated factory가 L-R의 고정 chain/account GET, chain/broadcast POST, chain/result POST를 같은 private bearer로 호출한다. L-R에서 이 세 route를 실제 B adapter에 연결하고 기동 전 검토한다. ChainPort가 없으면 출금 버튼이 닫힌다. 실제 end-to-end API/브라우저·4검증인 DEV12는 L-T에서 검증한다.
 
 ## 화면과 안전 조건
 
@@ -27,7 +27,7 @@ C/R/D/P/A는 하나의 account revision으로 교체한다. atoms는 canonical �
 기존 설치 dependency cache와 lock 사용. 새 설치 금지. checkout web에서:
 
 ```sh
-node --experimental-strip-types --test s3/component.test.ts
+node --experimental-strip-types --test s3/component.test.ts s3/auth-api.test.ts
 node_modules/.bin/tsc -p s3/tsconfig.json
 node s3/build.mjs
 node s3/browser.test.mjs <증거 디렉터리>
@@ -40,3 +40,9 @@ node s3/browser.test.mjs <증거 디렉터리>
 ## CTO-LE-R3-01 수정 검증
 
 Node component 50 PASS, Chrome 합성 DOM 12 PASS. CTO 원문 재현 R1/R2 및 R3 준비 해제·D/P 두 사례를 수정 없이 실행하여 보류·서명0·방송0을 확인했다. R3는 이전 후보에서 두 사례 FAIL을 먼저 재현했다. 출금 제한 8종의 요청 순서 양쪽, 기존 barrier를 지난 보류, 요청 순서 필터 앞 revision/gap/원장/시각 오류, 서비스 OPEN 중 준비·해제 가능을 검증했다. 실제 네트워크·체인·DEV12는 NOT_RUN이며 독립 심사는 기존 CTO→Security로 재제출한다.
+
+## ChainPort 인증 API 보완
+
+상세 API·변경 검증은 [AUTH-API.md](./AUTH-API.md)를 따른다. 세션을 밖으로 꺼내거나 별도 저장하지 않는다. select/destroy/revokeSession 및 재로그인은 generation을 증가시키고 pending 요청을 abort한다. 응답 헤더와 JSON 완료 뒤 모두 generation/2초 상한을 확인하며 현재 세션의 401/403은 인증·capability를 철회한다. 이전 generation의 오류는 새 세션을 철회하지 않는다. UNKNOWN history는 세션 철회로 삭제되지 않으며 결과 조회도 현재 owner/generation에 묶인다.
+
+이번 보완 검증: 기존 component 50 + 인증 API 21 = Node 71 PASS, Chrome 합성 DOM 13 PASS, typecheck/build PASS. 실제 인증 HTTP listener·B adapter·4검증인 DEV12는 L-T NOT_RUN이다. 기존 R3 승인과 별개로 새 exact 후보는 CTO→Security 재심사가 필요하다.
