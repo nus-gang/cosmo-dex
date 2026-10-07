@@ -3,6 +3,8 @@
 mod collect;
 #[path = "recovery.rs"]
 mod recovery;
+#[path = "schedule.rs"]
+pub mod schedule;
 use collect::ChainRead;
 use nus_exchange_contract::s3::{
     dev_local::{Command, Error, Result},
@@ -42,6 +44,21 @@ impl Observer {
             current,
             closed: false,
         })
+    }
+    /// Process-driver entry: monotonic cadence, sequential observation, then
+    /// one bounded reconciliation step using the original freshness evidence.
+    pub fn scheduled_tick(
+        &mut self,
+        schedule: &mut schedule::Schedule,
+        monotonic_ms: u64,
+        chain: &ChainRead,
+        worker: &Worker,
+        work: impl FnOnce(&Snapshot, &Observation) -> Result<()>,
+    ) -> Result<schedule::Progress> {
+        schedule.poll(monotonic_ms, || {
+            let observation = self.tick(chain, worker)?;
+            Ok((self.current.clone(), observation))
+        }, work)
     }
     pub fn snapshot(&self) -> &Snapshot {
         &self.current

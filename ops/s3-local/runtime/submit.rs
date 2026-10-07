@@ -22,9 +22,36 @@ pub struct Prepared {
     /// Audit bytes only; not a chain receipt or a C terminal proof.
     pub account_rpc: Vec<u8>,
 }
+/// Scan progress is scheduling information, never a terminal/absence proof.
+#[derive(Debug, PartialEq, Eq)]
+pub enum InclusionProgress {
+    Waiting,
+    Missing(u64),
+    Included(u64),
+    WindowScanned,
+}
+/// A single unresolved-attempt tick. These are control-flow results, not receipts.
+#[derive(Debug, PartialEq, Eq)]
+pub enum PendingProgress { Broadcast, Scan(InclusionProgress), AbsenceProven }
+#[derive(Debug, PartialEq, Eq)]
+enum PendingAction { Broadcast, Scan, Absence }
+/// Private scheduling result. Never a receipt or a broadcast permission.
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum BatchProgress {
+    Pending(String),
+    CommittedReceipt(usize),
+    VoidReceipt(usize),
+    RejectFinal,
+    PrepareSettle { batch: String, attempt: u64 },
+    PrepareClose { batch: String, attempt: u64 },
+}
+/// One outer reconciliation action. Idle is not a Seal permission or receipt.
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum ReconcileProgress { Active(BatchProgress), Apply, Idle }
 pub struct SubmitLane {
     engine: Arc<Engine>,
     worker: Worker,
+    inclusion_next: Option<(String, u64)>,
     closed: bool,
 }
 fn now() -> Result<u64> {
@@ -41,6 +68,7 @@ impl SubmitLane {
         Self {
             worker: Worker::new(engine.clone()),
             engine,
+            inclusion_next: None,
             closed: false,
         }
     }
@@ -60,6 +88,197 @@ impl SubmitLane {
         }
         s.freshness(o, now)?;
         Ok(())
+    }
+    /// Read durable state on every tick; RAM scan completion never authorizes
+    /// absence. UNKNOWN is never automatically rebroadcast or re-signed here.
+    fn pending_action(&self, s: &Snapshot, hash: &str, o: &Observation, at: u64)
+        -> Result<PendingAction> {
+        self.bound(s, o, at)?;
+        let view = self.engine.reader().get()?;
+        let saved = self.engine.trusted_recovery_attempt(&view.commit, hash)?
+            .ok_or(Error::Invalid("ATTEMPT_NOT_FOUND"))?;
+        let a = &saved.attempt;
+        if !matches!(a["state"].as_str(), Some("PREPARED" | "SUBMISSION_UNKNOWN")) {
+            return Err(Error::Invalid("ATTEMPT_TERMINAL"));
+        }
+        let timeout = schema::num(&a["timeout_height"])?;
+        if a["state"] == "PREPARED" && a["broadcast_count"] == "0"
+            && s.height() < timeout && a["operator"] == s.value()["operator"]
+            && a["operator_epoch"] == s.value()["operator_epoch"] {
+            return Ok(PendingAction::Broadcast);
+        }
+        if matches!(&self.inclusion_next, Some((old, next)) if old == hash && *next > timeout)
+            && s.height() > timeout {
+            return Ok(PendingAction::Absence);
+        }
+        Ok(PendingAction::Scan)
+    }
+    /// At most one existing lane action. Absence still fetches and validates the
+    /// complete timeout proof; a scan miss alone never changes durable state.
+    pub fn pending_tick(&mut self, chain: &ChainRead, rpc: &LoopbackRpc,
+        s: &Snapshot, hash: &str, o: &Observation) -> Result<PendingProgress> {
+        self.pending_tick_with(s, hash, o, now, |lane, action| match action {
+            PendingAction::Broadcast => {
+                lane.broadcast_existing(hash, rpc, s, o)?;
+                Ok(PendingProgress::Broadcast)
+            }
+            PendingAction::Scan => Ok(PendingProgress::Scan(lane.scan_inclusion(chain, s, hash, o)?)),
+            PendingAction::Absence => {
+                lane.resolve_absence(chain, s, hash, o)?;
+                Ok(PendingProgress::AbsenceProven)
+            }
+        })
+    }
+    fn pending_tick_with(&mut self, s: &Snapshot, hash: &str, o: &Observation,
+        clock: impl FnOnce() -> Result<u64>,
+        effect: impl FnOnce(&mut Self, PendingAction) -> Result<PendingProgress>) -> Result<PendingProgress> {
+        if self.closed { return Err(Error::Recovery("SUBMIT_LANE_CLOSED")); }
+        self.closed = true;
+        let action = self.pending_action(s, hash, o, clock()?)?;
+        // Existing action methods manage their own closed flag. Catch unwind so
+        // an unexpected panic between dispatch and the action also closes us.
+        self.closed = false;
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| effect(self, action)));
+        match result {
+            Ok(Ok(progress)) => Ok(progress),
+            Ok(Err(e)) => { self.closed = true; Err(e) }
+            Err(panic) => { self.closed = true; std::panic::resume_unwind(panic) }
+        }
+    }
+    /// Select only the unresolved batch from a single durable C revision.
+    /// No active batch means the outer driver must decide Seal/Apply separately.
+    fn active_action(&self, s: &Snapshot, o: &Observation, at: u64)
+        -> Result<(nus_exchange_contract::s3::journal::Commit, Option<BatchProgress>)> {
+        self.bound(s, o, at)?;
+        let view = self.engine.reader().get()?;
+        let batches = view.state["batches"].as_array().ok_or("BATCH_STATE")?;
+        let receipts = view.state["resolution_receipts"].as_array().ok_or("BATCH_STATE")?;
+        let active: Vec<_> = batches.iter().filter(|b| {
+            !matches!(b["state"].as_str(), Some("COMMITTED" | "CORRECTED"))
+                && !receipts.iter().any(|r| r["batch"] == b["batch"])
+        }).collect();
+        if active.len() > 1 { return Err(Error::Recovery("MULTIPLE_ACTIVE_BATCHES")); }
+        let Some(b) = active.first() else { return Ok((view.commit.clone(), None)); };
+        let state = b["state"].as_str().ok_or("BATCH_STATE")?;
+        if !matches!(state, "SEALED" | "SUBMISSION_UNKNOWN" | "REJECTED_FINAL" | "CLOSING") {
+            return Err(Error::Recovery("BATCH_STATE"));
+        }
+        let hashes = b["attempt_hashes"].as_array().ok_or("BATCH_STATE")?;
+        if hashes.len() > 5 { return Err(Error::Recovery("ATTEMPT_BUDGET")); }
+        let refs = view.state["attempt_refs"].as_array().ok_or("BATCH_STATE")?;
+        let mut pending = None;
+        let mut success = None;
+        let (mut settles, mut closes, mut failed_settle) = (0u64, 0u64, false);
+        for hash in hashes {
+            let hash = hash.as_str().ok_or("BATCH_STATE")?;
+            let saved = self.engine.trusted_recovery_attempt(&view.commit, hash)?
+                .ok_or(Error::Recovery("ATTEMPT_NOT_FOUND"))?;
+            let a = &saved.attempt;
+            if a["batch"] != b["batch"] || a["context"] != *s.context() {
+                return Err(Error::Recovery("ATTEMPT_CONFLICT"));
+            }
+            let close = match a["kind"].as_str() {
+                Some("SETTLE") => { settles += 1; false }
+                Some("CLOSE") => { closes += 1; true }
+                _ => return Err(Error::Recovery("ATTEMPT_KIND")),
+            };
+            match a["state"].as_str() {
+                Some("PREPARED" | "SUBMISSION_UNKNOWN") => {
+                    if pending.replace(BatchProgress::Pending(hash.into())).is_some() {
+                        return Err(Error::Recovery("MULTIPLE_PENDING_ATTEMPTS"));
+                    }
+                }
+                Some("INCLUDED_SUCCESS") => {
+                    let r = reference(&canonical(a)?, TYPED)?;
+                    let index = refs.iter().position(|v| *v == r).ok_or("ATTEMPT_NOT_FOUND")?;
+                    let action = if close { BatchProgress::VoidReceipt(index) }
+                        else { BatchProgress::CommittedReceipt(index) };
+                    if success.replace(action).is_some() { return Err(Error::Recovery("MULTIPLE_SUCCESS_ATTEMPTS")); }
+                }
+                Some("INCLUDED_FAILURE") => { if !close { failed_settle = true; } }
+                Some("EXPIRED_ABSENT_PROVEN") => {}
+                _ => return Err(Error::Recovery("ATTEMPT_STATE")),
+            }
+        }
+        let action = if let Some(pending) = pending { pending }
+        else if let Some(success) = success { success }
+        else if matches!(state, "REJECTED_FINAL" | "CLOSING") {
+            if closes >= 2 { return Err(Error::Invalid("RETRY_BUDGET_EXHAUSTED")); }
+            BatchProgress::PrepareClose { batch: b["batch"]["batch_id"].as_str().ok_or("BATCH_STATE")?.into(), attempt: closes + 1 }
+        } else if failed_settle { BatchProgress::RejectFinal }
+        else {
+            if settles >= 3 { return Err(Error::Invalid("RETRY_BUDGET_EXHAUSTED")); }
+            BatchProgress::PrepareSettle { batch: b["batch"]["batch_id"].as_str().ok_or("BATCH_STATE")?.into(), attempt: settles + 1 }
+        };
+        Ok((view.commit.clone(), Some(action)))
+    }
+    /// Exactly one existing action; no loop, Seal, Apply or receipt synthesis.
+    pub fn active_tick(&mut self, chain: &ChainRead, rpc: &LoopbackRpc,
+        s: &Snapshot, signer: &impl OperatorSigner, o: &Observation)
+        -> Result<Option<BatchProgress>> {
+        self.active_tick_with(s, o, now, |lane, action| {
+            match action {
+                BatchProgress::Pending(hash) => { lane.pending_tick(chain, rpc, s, hash, o)?; }
+                BatchProgress::CommittedReceipt(index) => lane.committed_receipt(chain, s, *index, o)?,
+                BatchProgress::VoidReceipt(index) => lane.void_receipt(chain, s, *index, o)?,
+                BatchProgress::RejectFinal => lane.reject_final(s, o)?,
+                BatchProgress::PrepareSettle { batch, attempt } => { lane.prepare(chain, s, batch, *attempt, signer, o)?; }
+                BatchProgress::PrepareClose { batch, attempt } => { lane.prepare_close(chain, s, batch, *attempt, signer, o)?; }
+            }
+            Ok(())
+        })
+    }
+    fn active_tick_with(&mut self, s: &Snapshot, o: &Observation,
+        clock: impl FnOnce() -> Result<u64>,
+        effect: impl FnOnce(&mut Self, &BatchProgress) -> Result<()>) -> Result<Option<BatchProgress>> {
+        if self.closed { return Err(Error::Recovery("SUBMIT_LANE_CLOSED")); }
+        self.closed = true;
+        let (commit, action) = self.active_action(s, o, clock()?)?;
+        if self.engine.reader().get()?.commit != commit { return Err(Error::Invalid("STALE_COMMIT")); }
+        self.closed = false;
+        let Some(action) = action else { return Ok(None); };
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| effect(self, &action)));
+        match result {
+            Ok(Ok(())) => Ok(Some(action)),
+            Ok(Err(e)) => { self.closed = true; Err(e) }
+            Err(panic) => { self.closed = true; std::panic::resume_unwind(panic) }
+        }
+    }
+    /// Resolve an active batch before applying a newer ledger observation.
+    /// Seal purpose selection remains a separate trusted-driver operation.
+    pub fn reconcile_tick(&mut self, chain: &ChainRead, rpc: &LoopbackRpc,
+        s: &Snapshot, signer: &impl OperatorSigner, o: &Observation)
+        -> Result<ReconcileProgress> {
+        self.reconcile_tick_with(s, o, now, |lane, action| match action {
+            ReconcileProgress::Active(expected) => {
+                if lane.active_tick(chain, rpc, s, signer, o)?.as_ref() != Some(expected) {
+                    return Err(Error::Invalid("DISPATCH_CONFLICT"));
+                }
+                Ok(())
+            }
+            ReconcileProgress::Apply => lane.apply(s, o),
+            ReconcileProgress::Idle => Err(Error::Invalid("IDLE_EFFECT")),
+        })
+    }
+    fn reconcile_tick_with(&mut self, s: &Snapshot, o: &Observation,
+        clock: impl FnOnce() -> Result<u64>,
+        effect: impl FnOnce(&mut Self, &ReconcileProgress) -> Result<()>) -> Result<ReconcileProgress> {
+        if self.closed { return Err(Error::Recovery("SUBMIT_LANE_CLOSED")); }
+        self.closed = true;
+        let (commit, active) = self.active_action(s, o, clock()?)?;
+        let view = self.engine.reader().get()?;
+        if view.commit != commit { return Err(Error::Invalid("STALE_COMMIT")); }
+        let action = if let Some(active) = active { ReconcileProgress::Active(active) }
+            else if view.state["chain_snapshot"] != *s.value() { ReconcileProgress::Apply }
+            else { ReconcileProgress::Idle };
+        if action == ReconcileProgress::Idle { self.closed = false; return Ok(action); }
+        self.closed = false;
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| effect(self, &action)));
+        match result {
+            Ok(Ok(())) => Ok(action),
+            Ok(Err(e)) => { self.closed = true; Err(e) }
+            Err(panic) => { self.closed = true; std::panic::resume_unwind(panic) }
+        }
     }
     /// Exactly one Account query and one prepare call; no broadcast or retry.
     /// Preserve the observer's timestamp, including time spent querying Account.
@@ -167,6 +386,69 @@ impl SubmitLane {
     ) -> Result<bool> {
         self.resolve_inclusion_with(s, hash, o, |s, tx| chain.confirmed(s, tx), now)
     }
+    /// Inspect one persisted historical height after restart/catch-up. Current
+    /// observation supplies freshness; history never becomes a fresh observation.
+    /// A miss is not absence proof. The dispatcher must scan the remaining window.
+    pub fn resolve_historical_inclusion(
+        &mut self, chain: &ChainRead, current: &Snapshot, hash: &str,
+        height: u64, o: &Observation,
+    ) -> Result<bool> {
+        self.resolve_at_with(current, hash, height, o,
+            |historical, tx| chain.confirmed(historical, tx), now)
+    }
+    /// One tick scans at most one persisted height. Restart or hash change
+    /// replays from first_possible_height; only successful misses advance RAM.
+    /// WindowScanned authorizes nothing: absence requires its separate full proof.
+    pub fn scan_inclusion(
+        &mut self, chain: &ChainRead, current: &Snapshot, hash: &str,
+        o: &Observation,
+    ) -> Result<InclusionProgress> {
+        self.scan_inclusion_with(current, hash, o,
+            |historical, tx| chain.confirmed(historical, tx), now)
+    }
+    fn scan_inclusion_with(
+        &mut self, s: &Snapshot, hash: &str, o: &Observation,
+        fetch: impl FnOnce(&Snapshot, &[u8]) -> Result<Option<(serde_json::Value, Objects)>>,
+        clock: impl Fn() -> Result<u64>,
+    ) -> Result<InclusionProgress> {
+        if self.closed { return Err(Error::Recovery("SUBMIT_LANE_CLOSED")); }
+        self.closed = true;
+        self.bound(s, o, clock()?)?;
+        let view = self.engine.reader().get()?;
+        let saved = self.engine.trusted_recovery_attempt(&view.commit, hash)?
+            .ok_or(Error::Invalid("ATTEMPT_NOT_FOUND"))?;
+        let a = &saved.attempt;
+        if !matches!(a["state"].as_str(), Some("PREPARED" | "SUBMISSION_UNKNOWN")) {
+            return Err(Error::Invalid("ATTEMPT_TERMINAL"));
+        }
+        let first = schema::num(&a["first_possible_height"])?;
+        let last = schema::num(&a["timeout_height"])?;
+        if a["context"] != *s.context() || last.checked_sub(first) != Some(7) {
+            return Err(Error::Invalid("INCLUSION_WINDOW"));
+        }
+        let next = match &self.inclusion_next {
+            Some((old, next)) if old == hash => *next,
+            _ => first,
+        };
+        let progress = if next > last {
+            InclusionProgress::WindowScanned
+        } else if next > s.height() {
+            InclusionProgress::Waiting
+        } else {
+            // resolve_at_with owns freshness, same-commit IO and C transition checks.
+            self.closed = false;
+            let found = self.resolve_at_with(s, hash, next, o, fetch, clock)?;
+            self.closed = true;
+            if found { InclusionProgress::Included(next) }
+            else {
+                self.inclusion_next = Some((hash.to_owned(),
+                    next.checked_add(1).ok_or(Error::Invalid("INCLUSION_WINDOW"))?));
+                InclusionProgress::Missing(next)
+            }
+        };
+        self.closed = false;
+        Ok(progress)
+    }
     fn resolve_inclusion_with(
         &mut self,
         s: &Snapshot,
@@ -175,25 +457,42 @@ impl SubmitLane {
         fetch: impl FnOnce(&Snapshot, &[u8]) -> Result<Option<(serde_json::Value, Objects)>>,
         clock: impl Fn() -> Result<u64>,
     ) -> Result<bool> {
-        if self.closed {
-            return Err(Error::Recovery("SUBMIT_LANE_CLOSED"));
-        }
+        self.resolve_at_with(s, hash, s.height(), o, fetch, clock)
+    }
+    fn resolve_at_with(
+        &mut self, s: &Snapshot, hash: &str, height: u64, o: &Observation,
+        fetch: impl FnOnce(&Snapshot, &[u8]) -> Result<Option<(serde_json::Value, Objects)>>,
+        clock: impl Fn() -> Result<u64>,
+    ) -> Result<bool> {
+        if self.closed { return Err(Error::Recovery("SUBMIT_LANE_CLOSED")); }
         self.closed = true;
         self.bound(s, o, clock()?)?;
-        // Copy only immutable TX bytes under C's writer guard. No RPC/reentry in
-        // this callback; this read must never be treated as broadcast permission.
-        let (mut attempt, tx) = self
-            .engine
-            .with_committed_attempt(hash, |a, raw| (a.clone(), raw.to_vec()))?
+        let expected = self.engine.reader().get()?.commit.clone();
+        let saved = self.engine.trusted_recovery_attempt(&expected, hash)?
             .ok_or(Error::Invalid("ATTEMPT_NOT_FOUND"))?;
-        if attempt["context"] != *s.context()
-            || s.height() < schema::num(&attempt["first_possible_height"])?
-            || s.height() > schema::num(&attempt["timeout_height"])?
-        {
+        let mut attempt = saved.attempt;
+        if !matches!(attempt["state"].as_str(), Some("PREPARED" | "SUBMISSION_UNKNOWN")) {
+            return Err(Error::Invalid("ATTEMPT_TERMINAL"));
+        }
+        if attempt["context"] != *s.context() || height > s.height()
+            || height < schema::num(&attempt["first_possible_height"])?
+            || height > schema::num(&attempt["timeout_height"])? {
             return Err(Error::Invalid("INCLUSION_HEIGHT"));
         }
-        let found = fetch(s, &tx)?;
+        let page = self.engine.trusted_recovery_history(&expected, Some(height), 1)?;
+        let historical = &page.observations.first()
+            .ok_or(Error::Recovery("INCLUSION_HISTORY_MISSING"))?.snapshot;
+        if historical.height() != height || historical.context() != s.context()
+            || page.latest.snapshot != *s {
+            return Err(Error::Recovery("INCLUSION_HISTORY_CONFLICT"));
+        }
+        let tx = saved.evidence.resolve(&attempt["raw_tx_ref"],
+            nus_exchange_contract::s3::evidence::TX)?;
+        let found = fetch(historical, tx)?;
         self.bound(s, o, clock()?)?;
+        if self.engine.reader().get()?.commit != expected {
+            return Err(Error::Invalid("STALE_COMMIT"));
+        }
         let Some((confirmed, objects)) = found else {
             self.closed = false;
             return Ok(false);
@@ -225,18 +524,24 @@ impl SubmitLane {
         &mut self,
         chain: &ChainRead,
         s: &Snapshot,
-        history: &[&Snapshot],
         hash: &str,
         o: &Observation,
     ) -> Result<()> {
+        let engine = self.engine.clone();
         self.resolve_absence_with(
             s,
             hash,
             o,
             |s, a| {
+                let mut cursor = recovery::RecoveryCursor::open(engine)?;
+                let page = cursor.timeout_history(hash)?;
+                if page.latest.snapshot != *s {
+                    return Err(Error::Invalid("SNAPSHOT_CONFLICT"));
+                }
+                let history = page.observations.iter().map(|row| &row.snapshot).collect::<Vec<_>>();
                 let owner = schema::bytes(&a["operator"])?;
                 let account = chain.account(s, &owner)?;
-                chain.absence_with_account(s, history, a, &account)
+                chain.absence_with_account(s, &history, a, &account)
             },
             now,
         )
@@ -330,6 +635,57 @@ impl SubmitLane {
         self.closed = false;
         Ok(())
     }
+    /// Persist VOID only from a successful CLOSE and C's exact saved failure.
+    /// Correction and balance release remain exclusively in C's Apply transition.
+    pub fn void_receipt(
+        &mut self, chain: &ChainRead, s: &Snapshot, index: usize, o: &Observation,
+    ) -> Result<()> {
+        self.void_receipt_with(s, index, o,
+            |s, terminal, batch, tx, failure| chain.void_receipt(s, terminal, batch,
+                tx, &failure.resolution_evidence_ref, &failure.evidence), now)
+    }
+    fn void_receipt_with(
+        &mut self, s: &Snapshot, index: usize, o: &Observation,
+        fetch: impl FnOnce(&Snapshot, &Snapshot, &serde_json::Value, &[u8],
+            &nus_exchange_contract::s3::dev_local::RecoveryFailure)
+            -> Result<(serde_json::Value, Objects)>,
+        clock: impl Fn() -> Result<u64>,
+    ) -> Result<()> {
+        if self.closed { return Err(Error::Recovery("SUBMIT_LANE_CLOSED")); }
+        self.closed = true;
+        self.bound(s, o, clock()?)?;
+        let mut cursor = recovery::RecoveryCursor::open(self.engine.clone())?;
+        let recovered = cursor.attempt_at(index)?.ok_or(Error::Invalid("ATTEMPT_NOT_FOUND"))?;
+        let a = &recovered.attempt;
+        if a["context"] != *s.context() || a["kind"] != "CLOSE"
+            || a["state"] != "INCLUDED_SUCCESS" {
+            return Err(Error::Invalid("VOID_ATTEMPT"));
+        }
+        let failure = cursor.failure(a["batch"]["batch_id"].as_str().ok_or("BATCH_ID")?)?
+            .ok_or(Error::Invalid("VOID_FAILURE_MISSING"))?;
+        if failure.commit != recovered.commit { return Err(Error::Invalid("STALE_COMMIT")); }
+        let h = schema::num(&a["confirmed_tx"]["height"])?;
+        let page = cursor.history(Some(h), 1)?;
+        let terminal = &page.observations.first().ok_or(Error::Invalid("PROOF_HISTORY_GAP"))?.snapshot;
+        if terminal.height() != h || h > s.height() { return Err(Error::Invalid("RECEIPT_HISTORY")); }
+        let tx = recovered.evidence.resolve(&a["raw_tx_ref"], nus_exchange_contract::s3::evidence::TX)?;
+        let (receipt, objects) = fetch(s, terminal, &a["batch"], tx, &failure)?;
+        self.bound(s, o, clock()?)?;
+        if self.engine.reader().get()?.commit != recovered.commit {
+            return Err(Error::Invalid("STALE_COMMIT"));
+        }
+        if receipt["disposition"] != "VOID" || receipt["batch"] != a["batch"]
+            || receipt["terminal_tx"] != a["confirmed_tx"]
+            || receipt["resolution_evidence_ref"] != failure.resolution_evidence_ref {
+            return Err(Error::Invalid("RECEIPT_INCONSISTENCY"));
+        }
+        let evidence = objects.entries().map(|(r, raw)| Ok((raw.to_vec(),
+            r["media_type"].as_str().ok_or("EVIDENCE_TYPE")?.into())))
+            .collect::<Result<Vec<_>>>()?;
+        self.worker.reconcile(Command::Receipt(receipt), &evidence, o, clock()?)?;
+        self.closed = false;
+        Ok(())
+    }
     /// Ask C to derive and validate final rejection from its persisted attempts
     /// and latest observation. This does not create CLOSE, VOID receipt or Apply.
     pub fn reject_final(&mut self, s: &Snapshot, o: &Observation) -> Result<()> {
@@ -344,6 +700,21 @@ impl SubmitLane {
         let at = clock()?;
         self.bound(s, o, at)?;
         self.worker.reconcile(Command::RejectFinal, &[], o, at)?;
+        self.closed = false;
+        Ok(())
+    }
+    /// Trusted driver supplies the purpose. C alone chooses FIFO fills and
+    /// validates expiry/epoch/failure conditions. No fallback on rejection.
+    pub fn seal(&mut self, s: &Snapshot, purpose: &str, o: &Observation) -> Result<()> {
+        self.seal_with(s, purpose, o, now)
+    }
+    fn seal_with(&mut self, s: &Snapshot, purpose: &str, o: &Observation,
+        clock: impl FnOnce() -> Result<u64>) -> Result<()> {
+        if self.closed { return Err(Error::Recovery("SUBMIT_LANE_CLOSED")); }
+        self.closed = true;
+        let at = clock()?;
+        self.bound(s, o, at)?;
+        self.worker.reconcile(Command::Seal(purpose.into()), &[], o, at)?;
         self.closed = false;
         Ok(())
     }
@@ -496,6 +867,406 @@ mod tests {
             .to_owned();
         (e, snapshot(&v, bps), id, inputs, home)
     }
+    fn unsealed(bps: u32) -> (Arc<Engine>, Snapshot,
+        nus_exchange_contract::s3::dev_local::Inputs, std::path::PathBuf) {
+        let (inputs, v) = fixture::initial(bps);
+        let home = fixture::home(bps);
+        let e = Arc::new(Engine::create(&home, Validated::new(inputs.clone()).unwrap(),
+            &canonical(&v).unwrap()).unwrap());
+        let o = fixture::observation(&v);
+        for (i, side, id) in [(0, "2", 241), (1, "1", 242)] {
+            let (raw, sig) = fixture::sign_order(&v, i, side, 1000, 10000, id);
+            e.execute(fixture::signed(&raw, &sig, i), &[], &o, fixture::NOW).unwrap();
+        }
+        (e, snapshot(&v,bps), inputs, home)
+    }
+    #[test]
+    fn seal_selection_gap_apply_before_invalid_fill_resolution_is_rejected() {
+        for bps in [0,25] {
+            let (e,s,inputs,home) = unsealed(bps);
+            let mut v = s.value().clone();
+            v["height"] = serde_json::json!("101");
+            v["operator_epoch"] = serde_json::json!("2");
+            fixture::finish(&mut v);
+            let o = fixture::observation(&v);
+            e.execute(Command::Snapshot(canonical(&v).unwrap()), &[], &o, fixture::NOW).unwrap();
+            let s = snapshot(&v,bps);
+            let before = e.reader().get().unwrap();
+            let mut lane = SubmitLane::new(e.clone());
+            let err = lane.reconcile_tick_with(&s,&o,|| Ok(fixture::NOW),|lane,a| {
+                assert_eq!(*a,ReconcileProgress::Apply);
+                lane.apply_with(&s,&o,|| Ok(fixture::NOW))
+            }).unwrap_err();
+            assert!(format!("{err:?}").contains("UNSETTLED_HOLD"),"{err:?}");
+            assert!(lane.closed);
+            assert_eq!(e.reader().get().unwrap().commit,before.commit);
+            assert_eq!(e.reader().get().unwrap().state,before.state);
+            drop(lane);
+            // C accepts the explicit purpose; SRE must not duplicate its private
+            // FIFO/expiry/revocation/epoch eligibility calculation to select it.
+            let mut lane = SubmitLane::new(e.clone());
+            lane.seal_with(&s,"RESOLVE_FAILURE",&o,|| Ok(fixture::NOW)).unwrap();
+            let after = e.reader().get().unwrap();
+            assert_eq!(after.state["accounts"],before.state["accounts"]);
+            assert_eq!(after.state["attempt_refs"],before.state["attempt_refs"]);
+            assert_eq!(after.state["batches"][0]["seal_purpose"],"RESOLVE_FAILURE");
+            drop(lane); drop(e);
+            for _ in 0..2 {
+                let e = Engine::open(&home,Validated::new(inputs.clone()).unwrap()).unwrap();
+                assert_eq!(e.reader().get().unwrap().state,after.state);
+                assert_eq!(e.reader().get().unwrap().commit,after.commit);
+            }
+            std::fs::remove_dir_all(home).unwrap();
+        }
+    }
+    #[test]
+    fn reconcile_dispatch_idle_does_not_seal_or_commit() {
+        for bps in [0,25] {
+            let (e,s,_,home) = unsealed(bps);
+            let before = e.reader().get().unwrap();
+            let mut lane = SubmitLane::new(e.clone());
+            for _ in 0..2 {
+                assert_eq!(lane.reconcile_tick_with(&s,&fixture::observation(s.value()),
+                    || Ok(fixture::NOW),|_,_| panic!("idle effect")).unwrap(),ReconcileProgress::Idle);
+                assert_eq!(e.reader().get().unwrap().commit,before.commit);
+                assert_eq!(e.reader().get().unwrap().state,before.state);
+            }
+            drop(lane); drop(e); std::fs::remove_dir_all(home).unwrap();
+        }
+    }
+    #[test]
+    fn reconcile_dispatch_receipt_then_apply_then_idle_and_replay() {
+        for bps in [0,25] { for void in [false,true] {
+            let (e,mut lane,s,inputs,home) = if void {void_ready(bps)} else {terminal_ready(bps)};
+            let o = fixture::observation(s.value());
+            let before = e.reader().get().unwrap();
+            let action = lane.reconcile_tick_with(&s,&o,|| Ok(fixture::NOW),|lane,a| {
+                match a {
+                    ReconcileProgress::Active(BatchProgress::VoidReceipt(i)) if void =>
+                        lane.void_receipt_with(&s,*i,&o,void_input,|| Ok(fixture::NOW)),
+                    ReconcileProgress::Active(BatchProgress::CommittedReceipt(i)) if !void =>
+                        lane.committed_receipt_with(&s,*i,&o,receipt_input,|| Ok(fixture::NOW)),
+                    _ => panic!("receipt must precede apply"),
+                }
+            }).unwrap();
+            assert!(matches!(action,ReconcileProgress::Active(_)));
+            assert_eq!(before.state["accounts"],e.reader().get().unwrap().state["accounts"]);
+            drop(lane); drop(e);
+            let e = Arc::new(Engine::open(&home,Validated::new(inputs.clone()).unwrap()).unwrap());
+            let mut lane = SubmitLane::new(e.clone());
+            assert_eq!(lane.reconcile_tick_with(&s,&o,|| Ok(fixture::NOW),|lane,a| {
+                assert_eq!(*a,ReconcileProgress::Apply);
+                lane.apply_with(&s,&o,|| Ok(fixture::NOW))
+            }).unwrap(),ReconcileProgress::Apply);
+            let after = e.reader().get().unwrap();
+            assert_eq!(after.state["chain_snapshot"],*s.value());
+            assert_eq!(after.state["batches"][0]["state"],if void {"CORRECTED"} else {"COMMITTED"});
+            drop(lane); drop(e);
+            for _ in 0..2 {
+                let e = Arc::new(Engine::open(&home,Validated::new(inputs.clone()).unwrap()).unwrap());
+                let mut lane = SubmitLane::new(e.clone());
+                assert_eq!(lane.reconcile_tick_with(&s,&o,|| Ok(fixture::NOW),|_,_| panic!("repeat effect")).unwrap(),ReconcileProgress::Idle);
+                assert_eq!(e.reader().get().unwrap().state,after.state);
+                assert_eq!(e.reader().get().unwrap().commit,after.commit);
+            }
+            std::fs::remove_dir_all(home).unwrap();
+        }}
+    }
+    #[test]
+    fn reconcile_dispatch_error_panic_and_stale_close_lane() {
+        for mode in 0..3 {
+            let (e,s,_,_,home) = setup(0);
+            let before = e.reader().get().unwrap();
+            let mut lane = SubmitLane::new(e.clone());
+            let calls = Cell::new(0);
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(||
+                lane.reconcile_tick_with(&s,&fixture::observation(s.value()),
+                    || Ok(fixture::NOW+if mode == 0 {6000} else {0}),|_,_| {
+                    calls.set(calls.get()+1);
+                    if mode == 2 {panic!("injected");}
+                    Err(Error::Invalid("IO"))
+                })));
+            assert!(matches!(result,Err(_) | Ok(Err(_))));
+            assert_eq!(calls.get(),if mode == 0 {0} else {1});
+            assert!(lane.reconcile_tick_with(&s,&fixture::observation(s.value()),
+                || panic!("closed clock"),|_,_| panic!("closed effect")).is_err());
+            assert_eq!(e.reader().get().unwrap().commit,before.commit);
+            assert_eq!(e.reader().get().unwrap().state,before.state);
+            drop(lane); drop(e); std::fs::remove_dir_all(home).unwrap();
+        }
+    }
+    #[test]
+    fn seal_lane_persists_only_batch_and_replays_twice() {
+        for bps in [0,25] {
+            let (e,s,inputs,home) = unsealed(bps);
+            let before = e.reader().get().unwrap();
+            let mut lane = SubmitLane::new(e.clone());
+            lane.seal_with(&s,"NORMAL",&fixture::observation(s.value()),|| Ok(fixture::NOW)).unwrap();
+            let after = e.reader().get().unwrap();
+            assert_eq!(before.state["accounts"],after.state["accounts"]);
+            assert_eq!(after.state["batches"].as_array().unwrap().len(),1);
+            assert_eq!(after.state["attempt_refs"].as_array().unwrap().len(),0);
+            assert!(lane.seal_with(&s,"NORMAL",&fixture::observation(s.value()),|| Ok(fixture::NOW)).is_err());
+            assert!(lane.closed);
+            assert_eq!(e.reader().get().unwrap().commit,after.commit);
+            drop(lane); drop(e);
+            for _ in 0..2 {
+                let e = Engine::open(&home,Validated::new(inputs.clone()).unwrap()).unwrap();
+                assert_eq!(e.reader().get().unwrap().state,after.state);
+                assert_eq!(e.reader().get().unwrap().commit,after.commit);
+            }
+            std::fs::remove_dir_all(home).unwrap();
+        }
+    }
+    #[test]
+    fn seal_lane_rejection_never_falls_back_or_changes_commit() {
+        for bps in [0,25] { for purpose in ["RESOLVE_FAILURE","unknown"] {
+            let (e,s,_,home) = unsealed(bps);
+            let before = e.reader().get().unwrap();
+            let mut lane = SubmitLane::new(e.clone());
+            assert!(lane.seal_with(&s,purpose,&fixture::observation(s.value()),|| Ok(fixture::NOW)).is_err());
+            assert!(lane.closed);
+            assert!(lane.seal_with(&s,"NORMAL",&fixture::observation(s.value()),|| panic!("closed lane clock")).is_err());
+            assert_eq!(e.reader().get().unwrap().commit,before.commit);
+            assert_eq!(e.reader().get().unwrap().state,before.state);
+            drop(lane); drop(e); std::fs::remove_dir_all(home).unwrap();
+        }}
+    }
+    #[test]
+    fn seal_lane_stale_or_clock_failure_preserves_store() {
+        for bps in [0,25] { for stale in [false,true] {
+            let (e,s,_,home) = unsealed(bps);
+            let before = e.reader().get().unwrap();
+            let mut lane = SubmitLane::new(e.clone());
+            assert!(lane.seal_with(&s,"NORMAL",&fixture::observation(s.value()),||
+                if stale { Ok(fixture::NOW+60_000) } else { Err(Error::Invalid("CLOCK")) }).is_err());
+            assert!(lane.closed);
+            assert_eq!(e.reader().get().unwrap().commit,before.commit);
+            assert_eq!(e.reader().get().unwrap().state,before.state);
+            drop(lane); drop(e); std::fs::remove_dir_all(home).unwrap();
+        }}
+    }
+    #[test]
+    fn active_dispatch_prepares_once_then_recovers_pending() {
+        for bps in [0,25] {
+            let (e, s, id, inputs, home) = setup(bps);
+            let o = fixture::observation(s.value());
+            let mut lane = SubmitLane::new(e.clone());
+            let before = e.reader().get().unwrap();
+            let sign = Sign::new();
+            let action = lane.active_tick_with(&s, &o, || Ok(fixture::NOW), |lane,a| {
+                assert_eq!(*a, BatchProgress::PrepareSettle { batch: id.clone(), attempt: 1 });
+                lane.prepare_with(&s, &id, 1, &sign, &o, account, || Ok(fixture::NOW))?;
+                Ok(())
+            }).unwrap();
+            assert!(matches!(action, Some(BatchProgress::PrepareSettle { attempt: 1, .. })));
+            assert_eq!(sign.calls.get(), 1);
+            let after = e.reader().get().unwrap();
+            assert_eq!(before.state["accounts"], after.state["accounts"]);
+            let hash = after.state["batches"][0]["attempt_hashes"][0].as_str().unwrap().to_owned();
+            let a = e.trusted_recovery_attempt(&after.commit, &hash).unwrap().unwrap();
+            assert_eq!(a.attempt["broadcast_count"], "0");
+            drop(lane); drop(e);
+            for _ in 0..2 {
+                let e = Arc::new(Engine::open(&home, Validated::new(inputs.clone()).unwrap()).unwrap());
+                let mut lane = SubmitLane::new(e.clone());
+                let calls = Cell::new(0);
+                assert_eq!(lane.active_tick_with(&s, &o, || Ok(fixture::NOW), |_,a| {
+                    calls.set(calls.get()+1); assert_eq!(*a, BatchProgress::Pending(hash.clone())); Ok(())
+                }).unwrap(), Some(BatchProgress::Pending(hash.clone())));
+                assert_eq!(calls.get(), 1);
+                assert_eq!(e.reader().get().unwrap().state, after.state);
+                assert_eq!(e.reader().get().unwrap().commit, after.commit);
+            }
+            std::fs::remove_dir_all(home).unwrap();
+        }
+    }
+    #[test]
+    fn active_dispatch_terminal_receipts_stop_before_apply() {
+        for bps in [0,25] { for void in [false,true] {
+            let (e, mut lane, s, inputs, home) = if void { void_ready(bps) } else { terminal_ready(bps) };
+            let o = fixture::observation(s.value());
+            let before = e.reader().get().unwrap();
+            let action = lane.active_tick_with(&s, &o, || Ok(fixture::NOW), |lane,a| {
+                match a {
+                    BatchProgress::VoidReceipt(i) if void => lane.void_receipt_with(&s,*i,&o,void_input,|| Ok(fixture::NOW)),
+                    BatchProgress::CommittedReceipt(i) if !void => lane.committed_receipt_with(&s,*i,&o,receipt_input,|| Ok(fixture::NOW)),
+                    _ => panic!("wrong receipt branch"),
+                }
+            }).unwrap();
+            assert!(action.is_some());
+            let after = e.reader().get().unwrap();
+            assert_ne!(before.commit, after.commit);
+            assert_eq!(before.state["accounts"], after.state["accounts"]);
+            assert_eq!(before.state["chain_snapshot"], after.state["chain_snapshot"]);
+            assert_eq!(after.state["resolution_receipts"].as_array().unwrap().len(),1);
+            drop(lane); drop(e);
+            for _ in 0..2 {
+                let e = Arc::new(Engine::open(&home, Validated::new(inputs.clone()).unwrap()).unwrap());
+                let mut lane = SubmitLane::new(e.clone());
+                assert_eq!(lane.active_tick_with(&s,&o,|| Ok(fixture::NOW),|_,_| panic!("resolved effect")).unwrap(),None);
+                assert_eq!(e.reader().get().unwrap().state,after.state);
+                assert_eq!(e.reader().get().unwrap().commit,after.commit);
+            }
+            std::fs::remove_dir_all(home).unwrap();
+        }}
+    }
+    #[test]
+    fn active_dispatch_failure_then_close_uses_separate_ticks() {
+        for bps in [0,25] {
+            let (e, mut lane, s, hash, _, home) = prepared_at_next(bps);
+            let o = fixture::observation(s.value());
+            lane.resolve_inclusion_with(&s,&hash,&o,expected_failure,|| Ok(fixture::NOW)).unwrap();
+            let before = e.reader().get().unwrap();
+            assert_eq!(lane.active_tick_with(&s,&o,|| Ok(fixture::NOW),|lane,a| {
+                assert_eq!(*a,BatchProgress::RejectFinal);
+                lane.reject_final_with(&s,&o,|| Ok(fixture::NOW))
+            }).unwrap(),Some(BatchProgress::RejectFinal));
+            let rejected = e.reader().get().unwrap();
+            assert_eq!(rejected.state["batches"][0]["state"],"REJECTED_FINAL");
+            assert_eq!(rejected.state["attempt_refs"],before.state["attempt_refs"]);
+            let sign = Sign::new();
+            lane.active_tick_with(&s,&o,|| Ok(fixture::NOW),|lane,a| {
+                let BatchProgress::PrepareClose {batch,attempt} = a else { panic!("expected CLOSE"); };
+                assert_eq!(*attempt,1);
+                lane.prepare_close_with(&s,batch,*attempt,&sign,&o,account,|| Ok(fixture::NOW))?;
+                Ok(())
+            }).unwrap();
+            assert_eq!(sign.calls.get(),1);
+            let after = e.reader().get().unwrap();
+            assert_eq!(before.state["accounts"],after.state["accounts"]);
+            assert_eq!(after.state["attempt_refs"].as_array().unwrap().len(),2);
+            drop(lane); drop(e); std::fs::remove_dir_all(home).unwrap();
+        }
+    }
+    #[test]
+    fn active_dispatch_absence_retries_same_batch_without_rejection() {
+        for bps in [0,25] {
+            let (e, mut lane, s, hash, inputs, home, history) = expired(bps);
+            let o = fixture::observation(s.value());
+            lane.resolve_absence_with(&s,&hash,&o,|s,a| absent(s,a,&history),|| Ok(fixture::NOW)).unwrap();
+            let before = e.reader().get().unwrap();
+            let batch = before.state["batches"][0]["batch"].clone();
+            let sign = Sign::new();
+            let action = lane.active_tick_with(&s,&o,|| Ok(fixture::NOW),|lane,a| {
+                let BatchProgress::PrepareSettle {batch:id,attempt} = a else { panic!("absence is not rejection"); };
+                assert_eq!(*attempt,2);
+                assert_eq!(id,batch["batch_id"].as_str().unwrap());
+                lane.prepare_with(&s,id,*attempt,&sign,&o,account,|| Ok(fixture::NOW))?;
+                Ok(())
+            }).unwrap();
+            assert!(matches!(action,Some(BatchProgress::PrepareSettle {attempt:2,..})));
+            assert_eq!(sign.calls.get(),1);
+            let after = e.reader().get().unwrap();
+            assert_eq!(after.state["batches"][0]["batch"],batch);
+            assert_eq!(before.state["accounts"],after.state["accounts"]);
+            assert_eq!(after.state["resolution_receipts"],before.state["resolution_receipts"]);
+            assert_eq!(after.state["attempt_refs"].as_array().unwrap().len(),2);
+            drop(lane); drop(e);
+            for _ in 0..2 {
+                let e = Arc::new(Engine::open(&home,Validated::new(inputs.clone()).unwrap()).unwrap());
+                let lane = SubmitLane::new(e.clone());
+                assert!(matches!(lane.active_action(&s,&o,fixture::NOW).unwrap().1,Some(BatchProgress::Pending(_))));
+                assert_eq!(e.reader().get().unwrap().state,after.state);
+            }
+            std::fs::remove_dir_all(home).unwrap();
+        }
+    }
+    #[test]
+    fn active_dispatch_errors_and_panics_close_without_second_effect() {
+        for mode in 0..3 {
+            let (e,s,_,_,home) = setup(0);
+            let mut lane = SubmitLane::new(e.clone());
+            let before = e.reader().get().unwrap();
+            let o = fixture::observation(s.value());
+            let calls = Cell::new(0);
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                lane.active_tick_with(&s,&o,|| if mode == 0 { Err(Error::Invalid("CLOCK")) } else { Ok(fixture::NOW) },
+                    |_,_| { calls.set(calls.get()+1); if mode == 2 { panic!("injected"); } Err(Error::Invalid("IO")) })
+            }));
+            assert!(matches!(result,Err(_) | Ok(Err(_))));
+            assert_eq!(calls.get(),if mode == 0 {0} else {1});
+            assert!(lane.active_tick_with(&s,&o,|| panic!("closed clock"),|_,_| panic!("closed effect")).is_err());
+            assert_eq!(before.commit,e.reader().get().unwrap().commit);
+            drop(lane); drop(e); std::fs::remove_dir_all(home).unwrap();
+        }
+    }
+    #[test]
+    fn pending_dispatch_reads_durable_state_and_runs_one_action() {
+        for bps in [0,25] {
+            let (e, mut lane, s, hash, inputs, home) = prepared_at_next(bps);
+            let o = fixture::observation(s.value());
+            let before = e.reader().get().unwrap();
+            assert_eq!(lane.pending_tick_with(&s, &hash, &o, || Ok(fixture::NOW),
+                |_, action| { assert_eq!(action, PendingAction::Broadcast); Ok(PendingProgress::Broadcast) }).unwrap(), PendingProgress::Broadcast);
+            // Callback is deliberately effect-free: action selection is not a broadcast.
+            assert_eq!(before.commit, e.reader().get().unwrap().commit);
+            let mut a = e.committed_attempt(&hash).unwrap().unwrap();
+            a["state"] = serde_json::json!("SUBMISSION_UNKNOWN");
+            a["broadcast_count"] = serde_json::json!("1");
+            e.execute(Command::Resolve(a), &[], &o, fixture::NOW).unwrap();
+            assert_eq!(lane.pending_action(&s, &hash, &o, fixture::NOW).unwrap(), PendingAction::Scan);
+            lane.inclusion_next = Some((hash.clone(), 999));
+            // Even a completed RAM scan cannot authorize absence before timeout.
+            assert_eq!(lane.pending_action(&s, &hash, &o, fixture::NOW).unwrap(), PendingAction::Scan);
+            let expected = e.reader().get().unwrap();
+            drop(lane); drop(e);
+            for _ in 0..2 {
+                let reopened = Arc::new(Engine::open(&home, Validated::new(inputs.clone()).unwrap()).unwrap());
+                assert_eq!(expected.state, reopened.reader().get().unwrap().state);
+                let lane = SubmitLane::new(reopened);
+                assert_eq!(lane.pending_action(&s, &hash, &o, fixture::NOW).unwrap(), PendingAction::Scan);
+            }
+            std::fs::remove_dir_all(home).unwrap();
+        }
+    }
+    #[test]
+    fn pending_dispatch_timeout_requires_full_absence_proof() {
+        for bps in [0,25] {
+            let (e, mut lane, s, hash, _, home, history) = expired(bps);
+            let o = fixture::observation(s.value());
+            assert_eq!(lane.pending_action(&s, &hash, &o, fixture::NOW).unwrap(), PendingAction::Scan);
+            for old in &history {
+                lane.scan_inclusion_with(&s, &hash, &o, |actual, _| {
+                    assert_eq!(actual, old); Ok(None)
+                }, || Ok(fixture::NOW)).unwrap();
+            }
+            let before = e.reader().get().unwrap();
+            let progress = lane.pending_tick_with(&s, &hash, &o, || Ok(fixture::NOW), |lane, action| {
+                assert_eq!(action, PendingAction::Absence);
+                lane.resolve_absence_with(&s, &hash, &o, |s,a| absent(s,a,&history), || Ok(fixture::NOW))?;
+                Ok(PendingProgress::AbsenceProven)
+            }).unwrap();
+            assert_eq!(progress, PendingProgress::AbsenceProven);
+            let after = e.reader().get().unwrap();
+            assert_ne!(before.commit, after.commit);
+            assert_eq!(before.state["balances"], after.state["balances"]);
+            assert!(lane.pending_tick_with(&s, &hash, &o, || Ok(fixture::NOW),
+                |_, _| panic!("terminal effect")).is_err());
+            drop(lane); drop(e); std::fs::remove_dir_all(home).unwrap();
+        }
+    }
+    #[test]
+    fn pending_dispatch_failure_and_unwind_close_before_reentry() {
+        for mode in 0..3 {
+            let (e, mut lane, s, hash, _, home) = prepared_at_next(0);
+            let o = fixture::observation(s.value());
+            let before = e.reader().get().unwrap();
+            let calls = Cell::new(0);
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                lane.pending_tick_with(&s, &hash, &o,
+                    || if mode == 0 { Err(Error::Invalid("CLOCK")) } else { Ok(fixture::NOW) },
+                    |_, _| { calls.set(calls.get()+1); if mode == 2 { panic!("injected"); }
+                        Err(Error::Invalid("IO")) })
+            }));
+            assert!(matches!(result, Err(_) | Ok(Err(_))));
+            assert!(lane.pending_tick_with(&s, &hash, &o, || panic!("clock after close"),
+                |_, _| panic!("effect after close")).is_err());
+            assert_eq!(calls.get(), if mode == 0 { 0 } else { 1 });
+            assert_eq!(before.commit, e.reader().get().unwrap().commit);
+            drop(lane); drop(e); std::fs::remove_dir_all(home).unwrap();
+        }
+    }
     fn receipt_input(s: &Snapshot, terminal: &Snapshot, b: &serde_json::Value, tx: &[u8])
         -> Result<(serde_json::Value, Objects)> {
         use base64::{Engine as _, engine::general_purpose::STANDARD};
@@ -603,6 +1374,99 @@ mod tests {
                 let r = e.trusted_recovery_attempt(&v.commit, &p.tx_hash).unwrap().unwrap();
                 assert_eq!(r.attempt, a.attempt);
             }
+        }
+    }
+    fn void_ready(bps: u32) -> (Arc<Engine>, SubmitLane, Snapshot,
+        nus_exchange_contract::s3::dev_local::Inputs, std::path::PathBuf) {
+        let (e, mut lane, s, hash, inputs, home) = prepared_at_next(bps);
+        let o = fixture::observation(s.value());
+        lane.resolve_inclusion_with(&s, &hash, &o, expected_failure, || Ok(fixture::NOW)).unwrap();
+        lane.reject_final_with(&s, &o, || Ok(fixture::NOW)).unwrap();
+        let batch = e.reader().get().unwrap().state["batches"][0]["batch"]["batch_id"].as_str().unwrap().to_owned();
+        let p = lane.prepare_close_with(&s, &batch, 1, &Sign::new(), &o, account, || Ok(fixture::NOW)).unwrap();
+        let a = e.committed_attempt(&p.tx_hash).unwrap().unwrap();
+        let mut v = s.value().clone();
+        v["height"] = serde_json::json!("102");
+        v["last_batch_seq"] = a["batch"]["batch_seq"].clone();
+        v["last_batch_hash"] = a["batch"]["batch_hash"].clone();
+        v["terminal_batch_seqs"] = serde_json::json!([a["batch"]["batch_seq"]]);
+        fixture::finish(&mut v);
+        let s = snapshot(&v, bps);
+        let o = fixture::observation(&v);
+        e.execute(Command::Snapshot(canonical(&v).unwrap()), &[], &o, fixture::NOW).unwrap();
+        lane.resolve_inclusion_with(&s, &p.tx_hash, &o, |s, tx| included(s, tx, 0), || Ok(fixture::NOW)).unwrap();
+        (e, lane, s, inputs, home)
+    }
+    fn void_input(s: &Snapshot, terminal: &Snapshot, b: &serde_json::Value, tx: &[u8],
+        f: &nus_exchange_contract::s3::dev_local::RecoveryFailure) -> Result<(serde_json::Value, Objects)> {
+        let (confirmed, mut objects) = included(terminal, tx, 0)?.unwrap();
+        for (r, raw) in f.evidence.entries() {
+            objects.insert(raw, r["media_type"].as_str().unwrap())?;
+        }
+        Ok((serde_json::json!({"context":s.context(),"batch":b,"disposition":"VOID",
+            "terminal_tx":confirmed,"batch_receipt_v2":null,
+            "failed_tx_hash":f.resolution_evidence["failed_tx_hash"],
+            "resolution_evidence_hash":schema::hash("NUS/S3/RESOLUTION_EVIDENCE/V1", &f.resolution_evidence)?,
+            "resolution_evidence_ref":f.resolution_evidence_ref}), objects))
+    }
+    #[test]
+    fn void_persist_after_restart_preserves_assets_and_replays_twice() {
+        for bps in [0, 25] {
+            let (e, lane, s, inputs, home) = void_ready(bps);
+            let before = e.reader().get().unwrap();
+            drop(lane); drop(e);
+            let e = Arc::new(Engine::open(&home, Validated::new(inputs.clone()).unwrap()).unwrap());
+            let mut lane = SubmitLane::new(e.clone());
+            lane.void_receipt_with(&s, 1, &fixture::observation(s.value()), void_input, || Ok(fixture::NOW)).unwrap();
+            let after = e.reader().get().unwrap();
+            assert_eq!(after.state["resolution_receipts"][0]["disposition"], "VOID");
+            for k in ["accounts", "fills", "corrections", "chain_snapshot"] {
+                assert_eq!(after.state[k], before.state[k], "{k}");
+            }
+            drop(lane); drop(e);
+            for _ in 0..2 {
+                let e = Engine::open(&home, Validated::new(inputs.clone()).unwrap()).unwrap();
+                let replay = e.reader().get().unwrap();
+                assert_eq!(replay.commit, after.commit);
+                assert_eq!(replay.state, after.state);
+            }
+        }
+    }
+    #[test]
+    fn void_wrong_attempt_refused_before_io() {
+        let (e, mut lane, s, _, _) = terminal_ready(0);
+        let before = e.reader().get().unwrap();
+        assert!(lane.void_receipt_with(&s, 0, &fixture::observation(s.value()),
+            |_, _, _, _, _| panic!("wrong kind IO"), || Ok(fixture::NOW)).is_err());
+        assert!(lane.closed);
+        assert_eq!(e.reader().get().unwrap().commit, before.commit);
+    }
+    #[test]
+    fn void_tamper_stale_io_and_commit_race_preserve_commit() {
+        for mode in 0..5 {
+            let (e, mut lane, s, _, _) = void_ready(25);
+            let before = e.reader().get().unwrap();
+            assert!(lane.void_receipt_with(&s, 1, &fixture::observation(s.value()),
+                |s, t, b, tx, f| {
+                    if mode == 2 { return Err(Error::Invalid("RPC_UNAVAILABLE")); }
+                    let (mut r, objects) = void_input(s, t, b, tx, f)?;
+                    if mode == 0 { r["resolution_evidence_ref"] = serde_json::Value::Null; }
+                    if mode == 1 { r["resolution_evidence_hash"] = serde_json::json!("00".repeat(32)); }
+                    if mode == 4 {
+                        let mut next = s.value().clone();
+                        next["height"] = serde_json::json!("103");
+                        next["terminal_batch_seqs"] = serde_json::json!([]);
+                        fixture::finish(&mut next);
+                        e.execute(Command::Snapshot(canonical(&next)?), &[], &fixture::observation(&next), fixture::NOW)?;
+                    }
+                    Ok((r, objects))
+                }, || Ok(if mode == 3 { fixture::NOW + 60_000 } else { fixture::NOW })).is_err());
+            assert!(lane.closed);
+            let after = e.reader().get().unwrap();
+            if mode != 4 { assert_eq!(after.commit, before.commit); }
+            else { assert_ne!(after.commit, before.commit, "race must actually commit"); }
+            assert_eq!(after.state["resolution_receipts"], before.state["resolution_receipts"]);
+            assert_eq!(after.state["accounts"], before.state["accounts"]);
         }
     }
     #[test]
@@ -1271,6 +2135,149 @@ mod tests {
         }
         (e, lane, current, hash, inputs, home, history)
     }
+    #[test]
+    fn historical_inclusion_after_restart_uses_saved_height_and_replays() {
+        for bps in [0, 25] {
+            for code in [0, 1019] {
+                let (e, lane, s, hash, inputs, home, history) = expired(bps);
+                drop(lane); drop(e);
+                let e = Arc::new(Engine::open(&home, Validated::new(inputs.clone()).unwrap()).unwrap());
+                let before = e.reader().get().unwrap();
+                let mut lane = SubmitLane::new(e.clone());
+                let calls = Cell::new(0);
+                assert!(lane.resolve_at_with(&s, &hash, history[0].height(),
+                    &fixture::observation(s.value()), |old, tx| {
+                        calls.set(calls.get()+1);
+                        assert_eq!(*old, history[0]);
+                        assert!(old.height() < s.height());
+                        included(old, tx, code)
+                    }, || Ok(fixture::NOW)).unwrap());
+                assert_eq!(calls.get(), 1);
+                let after = e.reader().get().unwrap();
+                for k in ["balances", "batches", "chain_snapshot", "latest_observation_ref"] {
+                    assert_eq!(before.state[k], after.state[k]);
+                }
+                let a = e.committed_attempt(&hash).unwrap().unwrap();
+                assert_eq!(a["state"], if code == 0 { "INCLUDED_SUCCESS" } else { "INCLUDED_FAILURE" });
+                assert_eq!(a["broadcast_count"], "0");
+                drop(lane); drop(e);
+                for _ in 0..2 {
+                    let e = Engine::open(&home, Validated::new(inputs.clone()).unwrap()).unwrap();
+                    assert_eq!(e.reader().get().unwrap().state, after.state);
+                    assert_eq!(e.committed_attempt(&hash).unwrap().unwrap(), a);
+                }
+            }
+        }
+    }
+    #[test]
+    fn historical_miss_does_not_resolve_and_invalid_height_has_no_io() {
+        let (e, mut lane, s, hash, _, _, history) = expired(0);
+        let before = e.reader().get().unwrap();
+        for old in &history {
+            assert!(!lane.resolve_at_with(&s, &hash, old.height(),
+                &fixture::observation(s.value()), |_, _| Ok(None), || Ok(fixture::NOW)).unwrap());
+        }
+        assert_eq!(e.reader().get().unwrap().commit, before.commit);
+        assert_eq!(e.reader().get().unwrap().state, before.state);
+        for h in [history[0].height()-1, s.height(), s.height()+1] {
+            let mut lane = SubmitLane::new(e.clone());
+            assert!(lane.resolve_at_with(&s, &hash, h, &fixture::observation(s.value()),
+                |_, _| panic!("out of range IO"), || Ok(fixture::NOW)).is_err());
+            assert!(lane.resolve_at_with(&s, &hash, history[0].height(), &fixture::observation(s.value()),
+                |_, _| panic!("closed IO"), || panic!("closed clock")).is_err());
+        }
+    }
+    #[test]
+    fn historical_stale_io_error_and_commit_race_close_lane() {
+        for case in 0..3 {
+            let (e, mut lane, s, hash, _, _, history) = expired(25);
+            let before = e.reader().get().unwrap();
+            let clocks = Cell::new(0);
+            assert!(lane.resolve_at_with(&s, &hash, history[0].height(),
+                &fixture::observation(s.value()), |old, tx| {
+                    if case == 0 { return Err(Error::Invalid("IO")); }
+                    if case == 2 {
+                        let mut other = SubmitLane::new(e.clone());
+                        other.resolve_at_with(&s, &hash, old.height(), &fixture::observation(s.value()),
+                            |old, tx| included(old, tx, 0), || Ok(fixture::NOW))?;
+                    }
+                    included(old, tx, 0)
+                }, || { let n = clocks.get(); clocks.set(n+1);
+                    Ok(fixture::NOW + if case == 1 && n > 0 {6000} else {0}) }).is_err());
+            if case < 2 { assert_eq!(e.reader().get().unwrap().commit, before.commit); }
+            else { assert_ne!(e.reader().get().unwrap().commit, before.commit); }
+            let after = e.reader().get().unwrap();
+            assert!(lane.resolve_at_with(&s, &hash, history[0].height(), &fixture::observation(s.value()),
+                |_, _| panic!("closed IO"), || panic!("closed clock")).is_err());
+            assert_eq!(e.reader().get().unwrap().commit, after.commit);
+        }
+    }
+    #[test]
+    fn inclusion_scan_one_height_per_tick_restart_and_no_absence_promotion() {
+        for bps in [0, 25] {
+            let (e, mut lane, s, hash, inputs, home, history) = expired(bps);
+            let before = e.reader().get().unwrap();
+            let o = fixture::observation(s.value());
+            for old in &history {
+                assert_eq!(lane.scan_inclusion_with(&s, &hash, &o, |actual, _| {
+                    assert_eq!(actual, old); Ok(None)
+                }, || Ok(fixture::NOW)).unwrap(), InclusionProgress::Missing(old.height()));
+            }
+            assert_eq!(lane.scan_inclusion_with(&s, &hash, &o,
+                |_, _| panic!("exhausted IO"), || Ok(fixture::NOW)).unwrap(),
+                InclusionProgress::WindowScanned);
+            assert_eq!(e.reader().get().unwrap().commit, before.commit);
+            assert_eq!(e.reader().get().unwrap().state, before.state);
+            drop(lane); drop(e);
+            for _ in 0..2 {
+                let e = Arc::new(Engine::open(&home, Validated::new(inputs.clone()).unwrap()).unwrap());
+                let mut lane = SubmitLane::new(e.clone());
+                assert_eq!(lane.scan_inclusion_with(&s, &hash, &o, |actual, _| {
+                    assert_eq!(actual, &history[0]); Ok(None)
+                }, || Ok(fixture::NOW)).unwrap(), InclusionProgress::Missing(history[0].height()));
+                assert_eq!(e.reader().get().unwrap().state, before.state);
+            }
+        }
+    }
+    #[test]
+    fn inclusion_scan_waits_for_height_then_resolves_and_refuses_terminal() {
+        for bps in [0, 25] {
+            let (e, mut lane, s, hash, _, _) = prepared_at_next(bps);
+            let o = fixture::observation(s.value());
+            assert_eq!(lane.scan_inclusion_with(&s, &hash, &o, |_, _| Ok(None),
+                || Ok(fixture::NOW)).unwrap(), InclusionProgress::Missing(s.height()));
+            assert_eq!(lane.scan_inclusion_with(&s, &hash, &o, |_, _| panic!("future IO"),
+                || Ok(fixture::NOW)).unwrap(), InclusionProgress::Waiting);
+            let mut v = s.value().clone(); v["height"] = serde_json::json!((s.height()+1).to_string());
+            fixture::finish(&mut v);
+            let s = snapshot(&v, bps); let o = fixture::observation(&v);
+            e.execute(Command::Snapshot(canonical(&v).unwrap()), &[], &o, fixture::NOW).unwrap();
+            assert_eq!(lane.scan_inclusion_with(&s, &hash, &o, |old, tx| included(old, tx, 1019),
+                || Ok(fixture::NOW)).unwrap(), InclusionProgress::Included(s.height()));
+            assert!(lane.scan_inclusion_with(&s, &hash, &o, |_, _| panic!("terminal IO"),
+                || Ok(fixture::NOW)).is_err());
+            assert!(lane.closed);
+        }
+    }
+    #[test]
+    fn inclusion_scan_error_or_panic_closes_without_advancing() {
+        for case in 0..3 {
+            let (e, mut lane, s, hash, _, _, _) = expired(0);
+            let before = e.reader().get().unwrap();
+            let o = fixture::observation(s.value());
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                lane.scan_inclusion_with(&s, &hash, &o, |_, _| {
+                    if case == 0 { panic!("injected"); }
+                    Err(Error::Invalid("IO"))
+                }, || Ok(fixture::NOW + if case == 2 {6000} else {0}))
+            }));
+            assert!(result.is_err() || result.unwrap().is_err());
+            assert!(lane.closed); assert!(lane.inclusion_next.is_none());
+            assert!(lane.scan_inclusion_with(&s, &hash, &o, |_, _| panic!("closed IO"),
+                || panic!("closed clock")).is_err());
+            assert_eq!(e.reader().get().unwrap().commit, before.commit);
+        }
+    }
     fn absent(
         s: &Snapshot,
         a: &serde_json::Value,
@@ -1301,6 +2308,57 @@ mod tests {
                 ))
             },
         )
+    }
+    #[test]
+    fn timeout_history_recovers_exact_window_twice_after_restart() {
+        for bps in [0, 25] {
+            let (e, lane, s, hash, inputs, home, history) = expired(bps);
+            let before = e.reader().get().unwrap();
+            drop(lane); drop(e);
+            for _ in 0..2 {
+                let e = Arc::new(Engine::open(&home, Validated::new(inputs.clone()).unwrap()).unwrap());
+                let mut cursor = recovery::RecoveryCursor::open(e.clone()).unwrap();
+                let page = cursor.timeout_history(&hash).unwrap();
+                assert_eq!(page.latest.snapshot, s);
+                assert_eq!(page.observations.len(), 8);
+                assert_eq!(page.observations.iter().map(|r| r.snapshot.clone()).collect::<Vec<_>>(), history);
+                for row in &page.observations {
+                    assert_eq!(s.decode_related(&row.raw).unwrap(), row.snapshot);
+                }
+                assert_eq!(e.reader().get().unwrap().commit, before.commit);
+                assert_eq!(e.reader().get().unwrap().state, before.state);
+            }
+        }
+    }
+    #[test]
+    fn timeout_history_early_unknown_or_terminal_closes_cursor() {
+        let (e, mut lane, s, hash, _, _) = prepared_at_next(0);
+        let before = e.reader().get().unwrap().commit.clone();
+        for h in [&hash, &"f".repeat(64)] {
+            let mut cursor = recovery::RecoveryCursor::open(e.clone()).unwrap();
+            assert!(cursor.timeout_history(h).is_err());
+            assert!(cursor.history(None, 1).is_err());
+            assert!(cursor.view().is_err());
+        }
+        assert_eq!(e.reader().get().unwrap().commit, before);
+        lane.resolve_inclusion_with(&s, &hash, &fixture::observation(s.value()),
+            |s, tx| included(s, tx, 0), || Ok(fixture::NOW)).unwrap();
+        let mut cursor = recovery::RecoveryCursor::open(e.clone()).unwrap();
+        assert!(matches!(cursor.timeout_history(&hash), Err(Error::Invalid("ATTEMPT_TERMINAL"))));
+        assert!(cursor.anchors().is_err());
+    }
+    #[test]
+    fn timeout_history_commit_race_never_returns_mixed_history() {
+        let (e, mut lane, s, hash, _, _, history) = expired(25);
+        let mut cursor = recovery::RecoveryCursor::open(e.clone()).unwrap();
+        lane.resolve_absence_with(&s, &hash, &fixture::observation(s.value()),
+            |s, a| absent(s, a, &history), || Ok(fixture::NOW)).unwrap();
+        let before = e.reader().get().unwrap();
+        assert!(matches!(cursor.timeout_history(&hash), Err(Error::Invalid("STALE_COMMIT"))));
+        assert!(cursor.attempt_at(0).is_err());
+        assert!(cursor.view().is_err());
+        assert_eq!(e.reader().get().unwrap().commit, before.commit);
+        assert_eq!(e.reader().get().unwrap().state, before.state);
     }
     #[test]
     fn absence_persists_without_asset_release_and_replays_twice() {

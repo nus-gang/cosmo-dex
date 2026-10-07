@@ -246,3 +246,93 @@ fee0/25의 실패 저장→재시작→CLOSE PREPARED/count0→두 번 replay, �
 잔여: VOID receipt 저장/worker scheduling, 웹 ChainPort, fee0/25 초기화·launcher·정리·
 fault driver, 최종 binary/web manifest와 독립 runtime pin 및 CTO→Security 검토.
 서비스/RPC0·DEV NOT_RUN·runtime pin 미발급·원 G00/ACK와 부모 blocker 유지.
+
+### VOID 영수증 영속 연결
+
+`SubmitLane::void_receipt`는 동일 C commit에서 성공 CLOSE TxRaw·terminal history·저장된 실패 원문 closure를 복구한다. `ChainRead::void_receipt` 결과의 VOID/batch/terminal TX/실패 참조를 대조하고 C `Command::Receipt`에 저장을 위임한다. 조회 뒤 commit 경합·stale·오류는 lane을 닫는다. 자산 해제/정정은 별도 승인 C Apply에 남는다. 순수시험은 fee0/25 재시작·두 번 replay 및 위조/조회 오류를 검증하며 실제 RPC/DEV 통합 결과가 아니다.
+
+### timeout 관측 복구 연결
+
+`RecoveryCursor::timeout_history`는 같은 commit의 미해소 Attempt에서 높이 범위를 얻어 정확히 8개 연속 저장 snapshot/원문을 반환한다. 종결 TX·timeout 전·없는 TX·commit 경합·불완전 범위는 cursor를 닫는다. 저장 관측은 freshness나 부재 증명이 아니다. `SubmitLane::resolve_absence`는 이 API로 history를 직접 복구하고 현재 snapshot과 대조한 뒤 Account·block/results·Batch 원 RPC 및 C의 기존 proof 검증에 위임한다. 호출자가 임의 history를 전달하는 실행 경로를 제거했다.
+
+fee0/25 두 번 재시작에서 원문과 높이·commit/state 불변을 확인하는 신규 순수시험 3개를 추가했다. 실제 RPC/서비스 기동0, runtime pin 미발급, DEV NOT_RUN이다. worker scheduling·웹 ChainPort·초기화/launcher·정리/fault driver·최종 manifest/독립 승인 출처는 계속 남아 있다.
+
+### bounded scheduler (기동 전 순수 검증)
+
+`schedule.rs`와 `Observer::scheduled_tick`은 monotonic 주기·수명·총 tick
+상한을 적용한다. tick마다 순차 관측을 먼저 저장하고 원 Observation을
+작업 callback에 그대로 전달한다. catch-up 중 callback0이며 지연 뒤
+몰아서 실행하지 않는다. 오류/panic/clock 역행 뒤 해당 scheduler는 닫힌다.
+정산 상태별 action dispatcher와 process driver 연결은 아직 남아 있다.
+서비스 실행·DEV 통합·runtime 승인을 의미하지 않는다.
+
+## 재시작 후 과거 포함 높이 조회
+
+`SubmitLane::resolve_historical_inclusion`은 현재 fresh Snapshot/Observation과 저장 TX hash, 조회할 높이를 받는다. C의 동일 commit에 고정한 trusted attempt/history 원문으로 해당 높이를 복원하고 신뢰 RPC block/results 최대2회(각2초)로 포함을 확인한다. 과거 snapshot에 새 Observation을 발급하지 않는다. 현재 관측 freshness·commit을 IO 전후 확인하며 C의 Resolve 검증에 최종 판정을 위임한다.
+
+한 호출은 한 높이만 조회한다. 미발견은 저장 변경 없는 false이며 timeout 부재·VOID·정정 근거가 아니다. 높이는 attempt의 first..timeout 및 현재 높이 이하로 제한한다. terminal/범위 오류·IO 실패·stale·commit 경합 뒤 lane은 닫힌다. 기존 현재 높이 resolve도 동일 복구 경로를 사용한다. dispatcher는 후속 단계에서 미조회 높이를 순회해야 하며 현재 이 함수만으로 완성된 자동 복구 worker를 뜻하지 않는다.
+
+## 포함 높이 순회 연결
+
+`SubmitLane::scan_inclusion`은 C에서 복구한 unresolved Attempt의 정확한 8높이
+범위를 한 호출당 한 높이씩 조회한다. 같은 hash의 성공한 미발견만 RAM cursor를
+진행시키며 미래 높이는 IO 없이 기다린다. 재시작/hash 변경은 첫 가능 높이부터
+다시 확인한다. 포함 결과는 기존 `resolve_at_with`의 원문·freshness·동일 commit
+검증과 C Resolve를 통과해야 한다. IO/stale/terminal/오류/unwind 후 lane은 닫힌다.
+
+`WindowScanned`는 scheduling 결과일 뿐 부재 증명이 아니다. 저장 상태/자산은
+변하지 않으며 timeout 종결은 별도 전체 absence 원문 검증을 요구한다. cursor는
+영속 증거로 저장하거나 REST에 노출하지 않는다. fee0/25 순수시험에서 한 tick 한
+높이, 8높이 미발견 무변경, 두 번 재시작, 미래 높이 대기, 이후 포함과 종결 거절,
+오류/panic 뒤 재호출0을 검증한다. 상태별 전체 dispatcher와 실행 파일 연결은
+남아 있으며 실제 서비스0·DEV NOT_RUN·runtime pin 미발급이다.
+
+## 미해소 Attempt 분기 연결
+
+`SubmitLane::pending_tick`은 매 tick C의 영속 Attempt를 다시 읽어 한 action만
+실행한다. PREPARED/count0·유효 operator/epoch·timeout 전에는 기존 영속 방송
+API를 호출한다. UNKNOWN은 재서명/자동 재방송하지 않고 한 높이 포함 조회를
+진행한다. 전체 범위 조회 후 timeout을 지난 경우에도 별도 전체 absence 원문을
+다시 수집·검증한 뒤 C Resolve만 호출한다. 분기 결과는 영수증이 아니다.
+오류와 unwind 뒤 lane을 닫으며 새 effect를 실행하지 않는다.
+
+fee0/25 순수시험은 UNKNOWN 두 번 replay·한 action·오류/panic 재호출0과
+scan 완료 뒤 전체 부재 proof 저장·자산 불변을 확인한다. 실제 RPC/서비스0,
+DEV NOT_RUN·pin 미발급. 전체 batch dispatcher(Seal/terminal/receipt/Apply),
+worker executable·웹 ChainPort·초기화/launcher·fault/정리·manifest는 남아 있다.
+
+## 활성 batch dispatcher
+
+`SubmitLane::active_tick`은 C의 동일 commit에서 미해소 batch 하나와 최대5개
+Attempt 원문을 복구한다. 이미 영수증을 저장한 batch는 제외한다. 미해소
+Attempt는 기존 pending dispatcher, 성공 SETTLE/CLOSE는 각각 원 COMMITTED/VOID
+수집·저장, 종결 실패 SETTLE은 C RejectFinal, 저장된 실패 뒤에는 승인 CLOSE
+준비로 연결한다. 전부 부재 입증된 SETTLE만 같은 batch로 다음 봉투를 준비한다.
+상속 SETTLE3/CLOSE2 상한을 넘으면 오류로 닫히며 임의 실패/VOID로 바꾸지 않는다.
+
+각 tick은 한 action만 실행한다. 준비와 방송, 실패 판정과 CLOSE 준비, 영수증
+저장과 Apply를 같은 tick에 연쇄 실행하지 않는다. active batch가 없으면
+`None`이며 이는 idle/Apply/Seal 중 어느 것도 승인하지 않는다. 바깥 driver의
+Seal 목적 선택과 Apply 연결은 아직 남아 있다. 원문 recovery·C/L-D의 최종
+검증이 권위이며 dispatcher 자체는 경제/정정 알고리즘을 구현하지 않는다.
+
+선택 전 freshness, effect 전 동일 commit, 오류/panic 후 lane 닫힘을 적용한다.
+시험은 fee0/25 실제 C store에서 최초 준비(count0), 두 번 replay 후 pending,
+COMMITTED/VOID 원문 저장 뒤 자산 적용0·두 번 replay, 실패 판정 뒤 별도 CLOSE,
+전체 부재 입증 후 동일 batch 재시도와 오류/panic 뒤 재호출0을 검증한다.
+메모리 RPC·공개 합성 키를 사용하는 순수 component 시험이다.
+실제 RPC/서비스0·DEV NOT_RUN·runtime pin 미발급. 전체 driver·실행 파일·웹
+ChainPort·초기화/launcher·fault/정리·최종 manifest와 CTO→Security는 미완료다.
+
+## 명시적 Seal 진입점
+
+`SubmitLane::seal`은 trusted driver의 목적 문자열을 승인 `Worker::reconcile(Command::Seal)`에 전달한다. C가 FIFO·만료 여유·epoch·실패 목적을 검증하며 SRE가 재계산하거나 실패 시 다른 목적으로 재시도하지 않는다. browser 라우트 없음. stale/clock/C 거절 뒤 lane은 닫힌다. Seal은 attempt 생성·서명·방송·Apply를 수행하지 않는다. 목적 선택과 Apply/Seal 전체 dispatcher는 아직 후속 배선이다.
+
+순수시험 `seal_lane_`는 fee0/25 정상 Seal의 accounts 불변·attempt0·동일 home 두 번 replay, 중복 Seal·잘못된 목적·근거 없는 RESOLVE_FAILURE·stale·clock 오류의 commit/state 보존과 lane 닫힘을 검증한다. 최종 결과와 rustc argv는 seal-lane artifact에 기록한다. 서비스/RPC0·runtime pin 미발급·DEV NOT_RUN.
+
+
+## 관측 대사 바깥 dispatcher — 2026-10-07
+
+`SubmitLane::reconcile_tick`은 저장된 같은 commit의 활성 batch를 먼저 처리하고, 활성 batch가 없고 최신 snapshot이 적용 anchor와 다를 때만 `Apply`를 위임한다. 두 anchor가 같으면 `Idle`이며 IO·Seal·서명·commit을 실행하지 않는다. 영수증 저장과 Apply는 별도 tick이다. stale/clock/기존 action 오류·panic 후 lane을 닫고 재호출하지 않는다. C의 경제·proof·정정·lock은 변경하지 않았다. 자동 Seal 목적 선택은 아직 별도 trusted driver 연결점이며 Idle을 Seal 승인으로 사용하지 않는다.
+
+신규 순수시험3 PASS/0 FAIL: fee0/25 × COMMITTED/VOID 영수증 저장→재시작→C Apply→두 번 replay/Idle, 대기 fill의 자동 Seal0·commit 불변, stale/IO/panic 뒤 effect 재호출0. 시험은 메모리 RPC 원문과 공개 합성 키를 사용하며 실제 RPC·서비스0이다. 전체100개 중 기존97개는 이번 재실행하지 않았다. `reconcile-dispatch/build.json`, `compile.log`, `tests.log`에 실제 명령·결과를 보존한다. runtime pin 미발급·DEV NOT_RUN.
