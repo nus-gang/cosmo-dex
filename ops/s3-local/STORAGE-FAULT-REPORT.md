@@ -9,3 +9,11 @@
 `scope_returned`는 scope 함수의 반환이다. 내부 명령 성공/체인 확정/DEV PASS를 의미하지 않는다. hook 오류 발생 여부는 `injected`이며 미도달과 구분한다. SIGKILL/전원 손실·최종 fsync 오류로 final이 없거나 불완전할 수 있다. UNKNOWN으로 남기고 명령 미실행/내구성 보장으로 해석하지 않는다. 파일을 자동 삭제하거나 같은 명령을 자동 재시도하지 않는다.
 
 이번 검증: 기록 경계 신규3 + 기존 scope/selector8 + 실제 C 명령 기록 연결1, Worker Seal 기록 연결/옵션2. fee0/25 실제 C/L-D/filesystem, 합성 descriptor/pin/키/명령 식별자. 실제 서비스·RPC·방송0. CLI/인증 실행 인계와 final manifest는 아직 미완료다. 기존 G00/ACK와 durable_ack=false 유지.
+
+## F14 Apply 전용 기록 연결
+
+`SubmitLane::correction_apply_recorded`는 실제 Apply 입력의 Context, snapshot ID/SHA,
+현재 commit, Observation, 시각, Prepare occurrence와 두 opt-in으로 canonical 명령 원문을 만든다.
+`correction-fault.jsonl` 예약을 no-replace/file·root fsync한 뒤 승인 C의 Prepare hook scope를 호출한다.
+결과와 관계없이 lane은 닫힌다. `scope_returned`는 내부 Apply 성공이 아니다.
+보고서의 주입/phase 방문과 Apply 결과를 따로 확인해야 한다. reader/인증 CLI 연결은 미완료다.

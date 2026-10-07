@@ -36,6 +36,18 @@ def main():
     if fault:
         from storage_fault_stage import FAULT
         shutil.copyfile(fault, artifacts / FAULT)
+    crash = os.environ.get('NUS73_STORAGE_CRASH_EXECUTABLE')
+    if crash:
+        from storage_crash_stage import CRASH
+        shutil.copyfile(crash, artifacts / CRASH)
+    correction = os.environ.get('NUS73_CORRECTION_EXECUTABLE')
+    if correction:
+        from correction_stage import CORRECTION
+        shutil.copyfile(correction, artifacts / CORRECTION)
+    before_send = os.environ.get('NUS73_BEFORE_SEND_EXECUTABLE')
+    if before_send:
+        from before_send_stage import BEFORE_SEND
+        shutil.copyfile(before_send, artifacts / BEFORE_SEND)
     result = check(bundle, artifacts, hashlib.sha256(manifest).hexdigest(),
                    's3-dev-local/1', True, root, 'input.json', sys.argv[3:], scratch)
     assert list(scratch.iterdir()) == []
@@ -70,6 +82,18 @@ def main():
         from test_real_storage_fault import verify
         verify(root, bundle, artifacts, scratch, manifest, sys.argv[3:])
         result['real_storage_fault_ready'] = True
+    if crash:
+        from test_real_storage_crash import verify
+        verify(root, bundle, artifacts, scratch, manifest, sys.argv[3:])
+        result['real_storage_crash_ready'] = True
+    if correction:
+        from test_real_correction import verify
+        verify(root, bundle, artifacts, scratch, manifest, sys.argv[3:])
+        result['real_correction_ready'] = True
+    if before_send:
+        from test_real_before_send import verify
+        verify(root, bundle, artifacts, scratch, manifest, sys.argv[3:])
+        result['real_before_send_ready'] = True
     from writer_release import check as check_writer
     from preflight import verify_input_set
     raw, _ = verify_input_set(bundle, artifacts, hashlib.sha256(manifest).hexdigest(),

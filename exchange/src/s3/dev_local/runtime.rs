@@ -1,3 +1,5 @@
+#[cfg(feature = "fault-injection")]
+use super::{CorrectionHook, CorrectionPhase, correction_fault};
 use super::{
     Error, Hook, Result, Validated, fault,
     store::{Store, frame},
@@ -118,6 +120,8 @@ struct Writer {
     candidate: Candidate,
     config: Validated,
     hook: Option<Hook>,
+    #[cfg(feature = "fault-injection")]
+    correction_hook: Option<CorrectionHook>,
     closed: bool,
 }
 impl Writer {
@@ -505,6 +509,8 @@ impl Engine {
                 candidate,
                 config,
                 hook: None,
+                #[cfg(feature = "fault-injection")]
+                correction_hook: None,
                 closed: false,
             }),
             reader: ReadView(Arc::new(RwLock::new(Arc::new(view)))),
@@ -512,6 +518,17 @@ impl Engine {
     }
     pub fn reader(&self) -> ReadView {
         self.reader.clone()
+    }
+    /// F14 callback runs under the writer lock: Prepare once, then
+    /// SemanticReplay once if preparation succeeds. Use ReadView for a barrier;
+    /// calling writer APIs from the callback would deadlock. No hook on open.
+    #[cfg(feature = "fault-injection")]
+    pub fn set_correction_hook(&self, hook: Option<CorrectionHook>) -> Result<()> {
+        self.writer
+            .lock()
+            .map_err(|_| Error::Recovery("WRITER_POISONED"))?
+            .correction_hook = hook;
+        Ok(())
     }
     #[cfg(feature = "fault-injection")]
     pub fn set_fault_hook(
@@ -604,6 +621,20 @@ impl Engine {
                 None,
             ),
             Command::Apply => {
+                #[cfg(feature = "fault-injection")]
+                let n = match correction_fault::scoped(
+                    &w.correction_hook,
+                    CorrectionPhase::Prepare,
+                    || input.apply(),
+                ) {
+                    Ok(n) => n,
+                    Err(e @ Error::Invalid(_)) => return Err(e),
+                    Err(e) => {
+                        self.close(&mut w)?;
+                        return Err(e);
+                    }
+                };
+                #[cfg(not(feature = "fault-injection"))]
                 let n = input.apply()?;
                 let k = if n.full_state()?["corrections"] != input.full_state()?["corrections"] {
                     "CORRECTION"
@@ -658,6 +689,17 @@ impl Engine {
         let outcome = with_hook(&hook, || {
             w.store.begin(&objects)?;
             let stored = w.store.load(&p.record["evidence_refs"])?;
+            #[cfg(feature = "fault-injection")]
+            let (replayed, verified) = correction_fault::scoped(
+                &w.correction_hook,
+                CorrectionPhase::SemanticReplay,
+                || Prepared::replay(&w.candidate, &p.record, &stored, &w.store.commit),
+            )
+            .map_err(|e| match e {
+                Error::Invalid(_) => Error::Recovery("SEMANTIC_PREPARE"),
+                other => other,
+            })?;
+            #[cfg(not(feature = "fault-injection"))]
             let (replayed, verified) =
                 Prepared::replay(&w.candidate, &p.record, &stored, &w.store.commit)
                     .map_err(|_| Error::Recovery("SEMANTIC_PREPARE"))?;

@@ -23,9 +23,14 @@ pub struct Observer {
 impl Observer {
     /// Restore latest stored observation through C, independently of applied C.
     /// This does not issue freshness: the next tick must perform a trusted read.
-    pub fn recover(engine: std::sync::Arc<nus_exchange_contract::s3::dev_local::Engine>) -> Result<Self> {
+    pub fn recover(
+        engine: std::sync::Arc<nus_exchange_contract::s3::dev_local::Engine>,
+    ) -> Result<Self> {
         let cursor = recovery::RecoveryCursor::open(engine)?;
-        Self::new(cursor.anchors()?.latest.snapshot.clone(), &cursor.view()?.state)
+        Self::new(
+            cursor.anchors()?.latest.snapshot.clone(),
+            &cursor.view()?.state,
+        )
     }
 
     /// Anchor must be decoded using the approved bootstrap binding. On restart
@@ -55,10 +60,14 @@ impl Observer {
         worker: &Worker,
         work: impl FnOnce(&Snapshot, &Observation) -> Result<()>,
     ) -> Result<schedule::Progress> {
-        schedule.poll(monotonic_ms, || {
-            let observation = self.tick(chain, worker)?;
-            Ok((self.current.clone(), observation))
-        }, work)
+        schedule.poll(
+            monotonic_ms,
+            || {
+                let observation = self.tick(chain, worker)?;
+                Ok((self.current.clone(), observation))
+            },
+            work,
+        )
     }
     pub fn snapshot(&self) -> &Snapshot {
         &self.current
@@ -351,12 +360,16 @@ mod tests {
             drop(worker);
             drop(engine);
             for _ in 0..2 {
-                let reopened = Arc::new(Engine::open(&h, Validated::new(inputs.clone()).unwrap()).unwrap());
+                let reopened =
+                    Arc::new(Engine::open(&h, Validated::new(inputs.clone()).unwrap()).unwrap());
                 let replay = reopened.reader().get().unwrap();
                 assert_eq!(replay.state, saved.state);
                 assert_eq!(replay.commit, saved.commit);
                 assert!(Observer::new(next.clone(), &replay.state).is_ok());
-                assert_eq!(Observer::recover(reopened.clone()).unwrap().snapshot(), &next);
+                assert_eq!(
+                    Observer::recover(reopened.clone()).unwrap().snapshot(),
+                    &next
+                );
                 assert_eq!(reopened.reader().get().unwrap().commit, replay.commit);
             }
         }

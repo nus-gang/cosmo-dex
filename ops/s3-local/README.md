@@ -239,3 +239,72 @@ errno를 선택한 실제 child의 START/RPC/Seal 종단은 L-T에서 수행해�
 읽기 중 변경은 후보 반환 전에 거절한다. 이 검사는 지속 잠금이나 전체
 상위 경로의 불변 보장이 아니며 마지막 source/artifact 재검사와 실행 capture,
 CEO/CTO 독립 승인·CTO→Security gate를 대체하지 않는다.
+
+### 별도 crash child 준비
+
+`runtime/crash_main.rs`는 fault-injection build 전용입니다. 인자는
+`crash-seal-captured --start-gate-fd FD --capture-sha256 SHA
+--enable-storage-crash --fault-point POINT --fault-occurrence N
+--fault-purpose NORMAL|RESOLVE_FAILURE --fault-evidence-root ABS
+--worker-inputs ...` 순서입니다. worker 입력의 두 개발 opt-in도 필수입니다.
+기존 writer/private signer 준비 후 READY, 인증 부모의 START 이후에만
+관측 1회와 기록된 Seal crash API를 호출합니다. 관측 저장은 crash 예약보다
+앞섭니다. hook 도달 시 exit86으로 Drop 없이 종료하며 예약만으로 crash 성공을
+판정하지 않습니다. 정상 반환은 hook 미도달이며 명령 성공 여부를 별도로 표시합니다.
+현재 컴파일/잘못된 CLI 거절만 검증했습니다. descriptor/private 사본·인증 부모의
+실제 READY 연결은 남아 있으며 L-R에서 START/RPC/서비스를 실행하지 않습니다.
+
+### Crash private 실행 사본 준비
+
+`storage_crash_stage.stage`는 SRE descriptor의 전용 `bin/s3-local-storage-crash` SHA만 사용한다.
+일반 worker나 IO fault binary로 fallback하지 않는다. 초기 승인 검사 뒤 같은 capture를 C validator에 전달하고,
+root0700/binary0500 사본의 inode·권한·SHA와 새 승인 조회를 확인한다.
+반환 객체는 재사용 허가가 아니며 READY/시작 직전 인증 부모 연결은 아직 남아 있다.
+정상/오류/interrupt 종료 시 임시 실행 사본만 제거하며 home·fault 증거는 보존한다.
+이번 검증은 합성 reader/validator/바이트의 준비 경계 시험으로 실제 crash child 실행0이다.
+
+### Crash READY 감독
+
+`storage_crash_ready.ready`는 `storage_crash_stage.stage` 안에서 동일 worker 인자와 인증 audit를 받아 사용한다. 전용 crash opt-in과 `--worker-inputs`를 생성하고 IO/errno 옵션 혼합을 거절한다. READY 뒤 승인/bytes를 다시 확인하며 START 없이 child를 kill/reap한다. 합성 subprocess 검증과 실제 Rust/C READY 연결을 검증했다. fee0/25에서 실제 descriptor SHA→capture→C validator→private crash child READY 뒤 승인 철회/stop/interrupt를 거절하고, START0·증거 root 생성0·private 사본 정리·writer 재개방·두 번 replay/commit 불변을 확인했다. 조직 승인 reader/descriptor/pin/키는 합성이며 실제 crash 실행/서비스/DEV 승인이 아니다. 근거: NUS-73 crash-ready-real 시험 기록.
+
+### Crash 인증 READY 검사 CLI
+
+`python3 -B storage_crash_cli.py check-ready-reviewed`에 `offline_cli`의 reviewed 입력
+(bundle/artifacts/input-set/scratch/runtime-pin, CEO/CTO revision, native decision,
+worker 인자와 두 개발 opt-in) 및 `--enable-storage-crash --fault-point POINT
+--fault-occurrence N --fault-purpose NORMAL|RESOLVE_FAILURE --fault-evidence-root ABS`를 전달한다.
+현재 run의 인증 reader→전용 private 사본/C validator→READY 뒤 새 audit를 연결한다.
+START를 보내지 않으며 `run-reviewed`, errno/Apply 옵션, 중복/축약 인자는 거절한다.
+child reap과 사본 정리·signal 복원이 끝난 뒤에만 JSON을 출력한다.
+오류는 exit2/고정 진단/stdout0이며 READY 성공은 crash 또는 runtime 승인이 아니다.
+CLI mock 5시험과 기존 READY4/stage5 회귀14 PASS. 실제 Rust/C 재시험은 이번에 하지 않았다.
+
+crash 실행 부모의 실제 child 최종 gate 시험은 `test_real_storage_crash.py`를 사용한다. 세 번째 audit에서 승인 철회/capture 변경/stop/interrupt를 주입하며 START 없이 거절·원 입력 보존·증거 root 미생성·사본 정리를 검사한다. 상위 Rust fixture는 fee0/25 writer 재개방·두 번 replay/commit 불변을 검사한다. 승인 reader/descriptor/pin/키는 합성이며 실제 crash 실행 또는 DEV 판정이 아니다.
+
+### Apply crash 명령 선택
+
+`storage_crash_cli.py check-ready-reviewed` 또는 `run-reviewed`의 기존 Seal 인자에
+`--fault-command Apply`를 명시하면 `crash-apply-captured` child와
+`s3-local-crash-apply-result/1` 응답을 사용한다. 생략하면 Seal이다.
+Apply는 `--fault-purpose NORMAL`만 허용하며 errno와 혼합하지 않는다.
+READY 검사는 START를 보내지 않는다. 실행 명령은 승인 pin 이후 L-T 범위다.
+exit86은 UNKNOWN이며 보고서/replay 검증을 대신하지 않는다.
+이번 배선 검증은 mock CLI·합성 subprocess 및 실제 binary 입력 거절이다.
+유효 Apply crash child의 READY/START/RPC 종단은 아직 NOT_RUN이다.
+
+### F05 인증 READY 검사
+
+`python3 -B ops/s3-local/before_send_cli.py check-ready-reviewed`에 기존
+`offline_cli`의 bundle/artifacts/runtime-pin/input-set/scratch 및 worker 입력,
+`--native-decision-id`, `--ceo-revision`, `--cto-revision`을 전달한다.
+추가 필수 인자는 `--enable-f05-before-send --tx-hash <64자리 소문자 hex>
+--fault-evidence-root <새 절대 경로>`다. 기존 두 opt-in도 모두 필요하다.
+전용 descriptor/private binary와 C 의미 검증 뒤 READY를 확인하고 승인을
+재조회한다. child reap과 private 사본 정리 뒤에만 결과를 출력한다.
+READY 검사 자체는 START/방송/증거 root 생성을 수행하지 않는다.
+READY 성공은 F05 주입 또는 재사용 실행 허가가 아니다.
+`before_send_run.run`/`before_send_cli.py run-reviewed`는 READY 뒤 세 번째
+승인·실행 바이트·stop/기한을 재확인하고 정확한 START+EOF를 한 번만 보낸다.
+exit86·부분/누락 보고는 UNKNOWN이며 transport 호출, F05 충족, crash/replay
+검증으로 승격하지 않는다. 시작 전 철회/변조/중단은 START0, 시작 뒤
+오류/출력/시간 초과는 결과 불명으로 child를 정리한다.

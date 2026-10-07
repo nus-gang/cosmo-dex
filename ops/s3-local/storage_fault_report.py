@@ -86,7 +86,7 @@ def inspect_bytes(raw, expected_command_sha256):
         raise ValueError(ERROR) from None
 
 
-def inspect(root, expected_command_sha256):
+def _inspect_file(root, expected_command_sha256, filename, decode):
     root_fd = fd = None
     try:
         root = Path(root)
@@ -96,7 +96,7 @@ def inspect(root, expected_command_sha256):
         rm = os.fstat(root_fd)
         if stat.S_IMODE(rm.st_mode) != 0o700 or rm.st_uid != os.getuid():
             raise ValueError()
-        fd = os.open('storage-fault.jsonl', os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=root_fd)
+        fd = os.open(filename, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=root_fd)
         before = os.fstat(fd)
         if not stat.S_ISREG(before.st_mode) or stat.S_IMODE(before.st_mode) != 0o600 or before.st_uid != os.getuid() or before.st_nlink != 1 or before.st_size > CAP:
             raise ValueError()
@@ -107,9 +107,9 @@ def inspect(root, expected_command_sha256):
                 break
             raw += part
         identity = lambda s: (s.st_dev, s.st_ino, s.st_mode, s.st_uid, s.st_nlink, s.st_size, s.st_mtime_ns, s.st_ctime_ns)
-        if identity(before) != identity(os.fstat(fd)) or identity(before) != identity(os.stat('storage-fault.jsonl', dir_fd=root_fd, follow_symlinks=False)) or identity(rm) != identity(os.stat(root, follow_symlinks=False)) or root.resolve(strict=True) != root:
+        if identity(before) != identity(os.fstat(fd)) or identity(before) != identity(os.stat(filename, dir_fd=root_fd, follow_symlinks=False)) or identity(rm) != identity(os.stat(root, follow_symlinks=False)) or root.resolve(strict=True) != root:
             raise ValueError()
-        return inspect_bytes(raw, expected_command_sha256)
+        return decode(raw, expected_command_sha256)
     except Exception:
         raise ValueError(ERROR) from None
     finally:
@@ -119,6 +119,10 @@ def inspect(root, expected_command_sha256):
         finally:
             if root_fd is not None:
                 os.close(root_fd)
+
+
+def inspect(root, expected_command_sha256):
+    return _inspect_file(root, expected_command_sha256, 'storage-fault.jsonl', inspect_bytes)
 
 
 def main(argv=None):

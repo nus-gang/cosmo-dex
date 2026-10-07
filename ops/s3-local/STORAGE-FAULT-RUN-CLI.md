@@ -41,4 +41,4 @@ Generic/v2 및 ENOSPC/EDQUOT/EIO/v3 보고서 규칙은 유지한다.
 재시도/증거 삭제를 하지 않는다. 실제 실행은 승인 후보의 L-T 범위다.
 
 이번 검증: Python 배선/합성 child, 컴파일, 실제 child 잘못된 입력 거절.
-유효 Apply child READY 및 실제 RPC/START/Apply 종단은 NOT_RUN.
+유효 Apply child READY·START 직전 철회/변조/중단의 거절 연결은 실제 Rust/C와 합성 승인 입력으로 검증했다. 실제 RPC/START/Apply 종단은 NOT_RUN.

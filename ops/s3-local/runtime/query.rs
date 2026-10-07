@@ -149,11 +149,13 @@ impl QueryRpc {
     }
 }
 fn direct_body(raw: &[u8]) -> Result<Vec<u8>> {
-    if raw.is_empty() || raw.len() > 139264 { return Err("TX_LIMIT"); }
+    if raw.is_empty() || raw.len() > 139264 {
+        return Err("TX_LIMIT");
+    }
     use base64::Engine as _;
     serde_json::to_vec(&json!({"jsonrpc":"2.0","id":1,"method":"broadcast_tx_sync",
         "params":{"tx":base64::engine::general_purpose::STANDARD.encode(raw)}}))
-        .map_err(|_| "QUERY_ENCODING")
+    .map_err(|_| "QUERY_ENCODING")
 }
 fn remaining(end: Instant) -> Result<Duration> {
     end.checked_duration_since(Instant::now())
@@ -419,9 +421,12 @@ mod direct_transport_tests {
         use base64::Engine as _;
         let raw: Vec<u8> = (0..=255).cycle().take(139264).collect();
         let v: Value = serde_json::from_slice(&direct_body(&raw).unwrap()).unwrap();
-        assert_eq!(v, json!({"jsonrpc":"2.0","id":1,"method":"broadcast_tx_sync",
-            "params":{"tx":base64::engine::general_purpose::STANDARD.encode(&raw)}}));
+        assert_eq!(
+            v,
+            json!({"jsonrpc":"2.0","id":1,"method":"broadcast_tx_sync",
+            "params":{"tx":base64::engine::general_purpose::STANDARD.encode(&raw)}})
+        );
         assert!(direct_body(&[]).is_err());
-        assert!(direct_body(&vec![0;139265]).is_err());
+        assert!(direct_body(&vec![0; 139265]).is_err());
     }
 }

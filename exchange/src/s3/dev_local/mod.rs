@@ -1,6 +1,10 @@
 //! Dormant, single-writer development engine. No networking, standard ACK,
 //! physical reservation or automatic recovery. See S3-DEV-LOCAL.md.
 mod binding;
+#[cfg(feature = "fault-injection")]
+pub(crate) mod correction_fault;
+#[cfg(feature = "fault-injection")]
+pub use correction_fault::{CorrectionBoundary, CorrectionHook, CorrectionPhase};
 mod fs;
 mod runtime;
 mod store;

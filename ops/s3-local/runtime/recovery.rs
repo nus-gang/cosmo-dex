@@ -61,7 +61,9 @@ impl RecoveryCursor {
             return Err(Error::Recovery("RECOVERY_CURSOR_CLOSED"));
         }
         self.closed = true;
-        let saved = self.engine.trusted_recovery_attempt(&self.view.commit, hash)?
+        let saved = self
+            .engine
+            .trusted_recovery_attempt(&self.view.commit, hash)?
             .ok_or(Error::Invalid("ATTEMPT_NOT_FOUND"))?;
         let a = &saved.attempt;
         if !matches!(a["state"].as_str(), Some("PREPARED" | "SUBMISSION_UNKNOWN")) {
@@ -70,17 +72,22 @@ impl RecoveryCursor {
         let first = nus_exchange_contract::s3::schema::num(&a["first_possible_height"])?;
         let last = nus_exchange_contract::s3::schema::num(&a["timeout_height"])?;
         if last.checked_sub(first).and_then(|n| n.checked_add(1)) != Some(8)
-            || self.anchors.latest.snapshot.height() <= last {
+            || self.anchors.latest.snapshot.height() <= last
+        {
             return Err(Error::Invalid("TIMEOUT_HISTORY_RANGE"));
         }
-        let page = self.engine.trusted_recovery_history(&self.view.commit, Some(first), 8)?;
-        if page.commit != saved.commit || page.observations.len() != 8
-            || page.latest.snapshot != self.anchors.latest.snapshot {
+        let page = self
+            .engine
+            .trusted_recovery_history(&self.view.commit, Some(first), 8)?;
+        if page.commit != saved.commit
+            || page.observations.len() != 8
+            || page.latest.snapshot != self.anchors.latest.snapshot
+        {
             return Err(Error::Recovery("TIMEOUT_HISTORY_INCOMPLETE"));
         }
         for (i, row) in page.observations.iter().enumerate() {
-            if row.snapshot.height() != first + i as u64
-                || row.snapshot.context() != &a["context"] {
+            if row.snapshot.height() != first + i as u64 || row.snapshot.context() != &a["context"]
+            {
                 return Err(Error::Recovery("TIMEOUT_HISTORY_CONFLICT"));
             }
         }
@@ -93,7 +100,9 @@ impl RecoveryCursor {
             return Err(Error::Recovery("RECOVERY_CURSOR_CLOSED"));
         }
         self.closed = true;
-        let saved = self.engine.trusted_recovery_failure(&self.view.commit, batch_id)?;
+        let saved = self
+            .engine
+            .trusted_recovery_failure(&self.view.commit, batch_id)?;
         self.closed = false;
         Ok(saved)
     }

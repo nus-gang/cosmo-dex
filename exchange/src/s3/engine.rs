@@ -746,6 +746,20 @@ impl Candidate {
             return Err("UNSETTLED_HOLD");
         }
         let closure = n.graph.closure(&roots)?;
+        // F14: the existing VOID closure is complete; affected/cancel,
+        // corrected graph, ledger, book and CorrectionRecord are not built yet.
+        #[cfg(all(
+            feature = "dev-local-demo",
+            feature = "fault-injection",
+            any(target_os = "macos", target_os = "linux")
+        ))]
+        if !voids.is_empty() {
+            super::dev_local::correction_fault::reached(
+                &roots,
+                &closure.corrected,
+                &closure.surviving_pending,
+            )?;
+        }
         // An unresolved sealed candidate cannot be changed by another closure.
         for id in &closure.corrected {
             let f = &self.outbox[id];

@@ -9,7 +9,7 @@ import subprocess
 
 CANDIDATES = {
     'chain': ('497ecba3008de9168c431facc4ff9fc8a4fc329b', 'chain/'),
-    'exchange': ('20c0cd9af0eb305341ee5c7e058350389f03a2b3', 'exchange/'),
+    'exchange': ('3802bf0cd3dabd36ee495a60ac38cfa9a9cec9c7', 'exchange/'),
     'settlement': ('46546d317701b127da8196e9e6abdab7ce9a3d6e', 'settlement/'),
     'wallet': ('720163e80cf239279d49ce58304fd3865e6bd684', 'web/'),
 }

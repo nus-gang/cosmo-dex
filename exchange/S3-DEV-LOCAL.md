@@ -161,3 +161,8 @@ Seal 판단은 기존 mutation과 **동일한 private `seal_prefix`**를 사용�
 `STALE_COMMIT`이면 예전 결과와 부분 복구를 버리고 최신 View/관측으로 다시 조회한다. 이 반환은 읽은 순간의 판단이며 실행권을 예약하거나 방송을 허가하지 않는다. 판단 이후 다른 command가 commit되거나 시간이 지나면 결과를 폐기한다. 실행은 기존 `execute` 검증을 다시 거치고 오류를 catch해 다른 purpose로 우회하지 않는다. `RECOVERY_REQUIRED`, 저장 오류, writer poison에는 준비 판단도 실패한다. 기존 history/attempt/failure 복구·terminal 방송 거절·signed 원 결과 조회는 유지한다.
 
 WAL prefix와 원문 집합을 두 번 읽으며 처리 비용은 보존된 기록량에 따라 증가한다. 페이지 응답, 일정 지연, 처리량을 보장하는 API가 아니다. 큰 원장을 위한 별도 인덱스/성능 변경은 이번 범위에 포함하지 않는다. API 반환에는 새 Batch/TxRaw ID·서명·receipt가 없고 메모리 사본의 수정은 엔진에 영향을 주지 않는다. 시험의 합성 snapshot/test pin을 실제 체인 실행이나 승인 runtime으로 표시하지 않는다.
+
+
+## F14 correction closure 시험 경계
+
+`dev-local-demo,fault-injection` 전용 `Engine::set_correction_hook`의 정확한 위치, Prepare/SemanticReplay 방문 수와 오류·재시작 의미는 [S3-F14-FAULT-API.md](S3-F14-FAULT-API.md)에 명세했다. 기존 IO hook·경제 규칙·개발 receipt 의미를 유지한다.

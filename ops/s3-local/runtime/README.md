@@ -549,3 +549,13 @@ lane은 닫히며 Engine을 drop한 뒤 복구한다. 일반 scheduler에는 연
 현재 fault child/인증 CLI의 명령은 여전히 Seal이다. Apply CLI와 COMMITTED/VOID
 적용·정정의 명령별 fault 배선, crash와 F10~16 판정은 별도 미완료다.
 미정산 attempt를 유지하는 Apply의 IO/replay 시험을 정산 확정 시험으로 합산하지 않는다.
+
+### F05 전용 crash child (기동 전 준비)
+
+`before_send_main.rs`는 fault-injection 전용 `f05-crash-captured` 진입점이다.
+`--start-gate-fd FD --capture-sha256 SHA` 다음에 before_send_options의
+`--enable-f05-before-send true --tx-hash HASH --fault-evidence-root ABS --worker-inputs`와 기존 worker 입력을 받는다.
+기존 C/private signer 준비 → READY/START → 관측1회 → exact TX의 승인 Worker intent 저장 → writer lock callback의 예약/file·root fsync → exit86 순서다.
+증거 디렉터리는 사전에 private 0700으로 준비해야 한다. 관측/intent는 예약보다 먼저 저장되며 오류 후 자동 재시도하지 않는다.
+새 서명/dispatcher/전송/receipt/Apply/listener는 호출하지 않는다. exit86이나 예약 파일만으로 F05/DEV 성공을 판정하지 않는다.
+현재 컴파일/잘못된 입력 거절만 검증하며 유효 child READY·인증 부모/descriptor/CLI 최종 연결은 NOT_RUN이다.
