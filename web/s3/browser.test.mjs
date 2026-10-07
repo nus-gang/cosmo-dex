@@ -29,13 +29,14 @@ try {
   assert.equal(await withdraw.isDisabled(),true);
   await page.getByRole('button',{name:'출금 결과 조회'}).click();
   assert.equal(await page.evaluate(()=>fixture.posts()),1);
+  assert.deepEqual(await page.evaluate(()=>fixture.chainRoutes),['/dev-local/v1/chain/account','/dev-local/v1/chain/broadcast','/dev-local/v1/chain/result']);
   await page.getByLabel('계정',{exact:true}).selectOption('1');
   assert.equal(await page.locator('tbody tr').count(),0);assert.equal(await withdraw.isDisabled(),true);
   assert.doesNotMatch(await page.locator('body').textContent(),/SUBMISSION_UNKNOWN/);
   await page.evaluate(()=>fixture.held());await login.click();await page.waitForFunction(()=>fixture.client.projection.view!==undefined);
   assert.equal(await withdraw.isDisabled(),true);assert.match(await page.locator('body').textContent(),/제출 결과 불명/);
   await page.screenshot({path:out+'/component.png',fullPage:true});
-  await writeFile(out+'/browser.json',JSON.stringify({scope:'BROWSER_COMPONENT_SYNTHETIC_NO_SERVICE',browser:browser.version(),checks:['initial-disabled','guarantee-label','direct-click-one-TX','unknown-query-no-retry','account-switch-empty','DP-held','recovery-delayed-OPEN-disabled','503-delayed-OPEN-disabled','disconnect-delayed-OPEN-disabled','earlier-request-latest-recovery-disabled','OPEN-abort-held','OPEN-DP-held'],pass:12,fail:0,DEV12:'NOT_RUN'},null,2)+'\n');
+  await writeFile(out+'/browser.json',JSON.stringify({scope:'BROWSER_COMPONENT_SYNTHETIC_NO_SERVICE',browser:browser.version(),checks:['initial-disabled','guarantee-label','direct-click-one-TX','unknown-query-no-retry','account-switch-empty','DP-held','recovery-delayed-OPEN-disabled','503-delayed-OPEN-disabled','disconnect-delayed-OPEN-disabled','earlier-request-latest-recovery-disabled','OPEN-abort-held','OPEN-DP-held','authenticated-chain-three-routes'],pass:13,fail:0,DEV12:'NOT_RUN'},null,2)+'\n');
   await page.evaluate(()=>fixture.component.destroy());assert.equal(await page.locator('#app').textContent(),'');
-  console.log('browser component: 12 PASS / 0 FAIL; DEV12 NOT_RUN');
+  console.log('browser component: 13 PASS / 0 FAIL; DEV12 NOT_RUN');
 }finally{await browser.close();}

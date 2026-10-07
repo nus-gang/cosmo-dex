@@ -6,8 +6,8 @@ export interface DirectAccount {
   context: Context; owner: string; public_key_base64: string; account_number: string; sequence: string; owner_epoch: string;
   observed_height: string; received_at_unix_ms: string; gas_atoms: string;
 }
-// In-process L-R bridge over the trusted local Chain adapter. No server signer.
-// These are adapter methods, not new public REST routes.
+// Trusted local Chain adapter boundary. No server signer.
+// Injection remains available for component tests; authenticated() uses fixed L-R HTTP routes.
 export interface ChainPort {
   account(address: string): Promise<DirectAccount>;
   broadcast(tx_bytes: string): Promise<unknown>;
@@ -18,22 +18,59 @@ const id=()=>hex(crypto.getRandomValues(new Uint8Array(32)));
 export class LocalClient {
   readonly projection: Projection; readonly history: Entry[]=[];
   #token=''; #key?: LocalKey; #busy=new Set<string>(); #capable=false;
+  #chain?: ChainPort; #requests=new Set<AbortController>();
   receipt='';
-  readonly ctx: Context; readonly transport: typeof fetch; readonly chain?: ChainPort; readonly enabled: boolean; readonly acknowledge: boolean;
+  readonly ctx: Context; readonly transport: typeof fetch; readonly enabled: boolean; readonly acknowledge: boolean;
   constructor(ctx: Context, transport: typeof fetch, chain?: ChainPort, enabled=false, acknowledge=false) {
-    this.ctx=ctx;this.transport=transport;this.chain=chain;this.enabled=enabled;this.acknowledge=acknowledge;
+    this.ctx=ctx;this.transport=transport;this.#chain=chain;this.enabled=enabled;this.acknowledge=acknowledge;
     this.projection=new Projection(ctx);
   }
-  select(key?: LocalKey) {this.#key=key;this.#token='';this.#capable=false;this.receipt='';this.projection.select(key?.owner??'');}
+  // Fixed same-origin routes; the adapter and bearer never leave this client.
+  static authenticated(ctx: Context, transport: typeof fetch, enabled=false, acknowledge=false) {
+    const client=new LocalClient(ctx,transport,undefined,enabled,acknowledge);
+    client.#chain={
+      account:async(address)=>{
+        if(address!==client.#key?.address)throw Error('ACCOUNT_CHANGED');
+        return client.#chainRequest('chain/account');
+      },
+      broadcast:async(tx_bytes)=>client.#chainRequest('chain/broadcast',{tx_bytes}),
+      result:async(tx_hash)=>client.#chainRequest('chain/result',{tx_hash}),
+    };
+    return client;
+  }
+  async #chainRequest(path: 'chain/account'|'chain/broadcast'|'chain/result', body?: unknown) {
+    if(!this.#key||!this.#token||!this.#capable)throw Error('SESSION_REQUIRED');
+    const g=this.projection.generation;
+    try{return await this.#request(path,body);}
+    catch(e){if(g===this.projection.generation)this.projection.close('CHAIN_REQUEST_FAILED');throw e;}
+  }
+  revokeSession(){this.select(this.#key);}
+  select(key?: LocalKey) {for(const pending of this.#requests)pending.abort();this.#requests.clear();this.#key=key;this.#token='';this.#capable=false;this.receipt='';this.projection.select(key?.owner??'');}
   destroy(){this.#key?.destroy();this.select();}
   async #request(path: string, body?: unknown, token=this.#token) {
     if(!this.enabled||!this.acknowledge)throw Error('TWO_OPT_INS_REQUIRED');
-    const r=await this.transport(PREFIX+path,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},...(body===undefined?{}:{body:JSON.stringify(body)}),cache:'no-store',redirect:'error',signal:AbortSignal.timeout(2000)});
-    if(!r.ok)throw Error(r.status===503?'RECOVERY_REQUIRED':`HTTP_${r.status}`);
-    return r.json();
+    const generation=this.projection.generation,controller=new AbortController(),started=performance.now();
+    this.#requests.add(controller);
+    const signal=AbortSignal.any([controller.signal,AbortSignal.timeout(2000)]);
+    const current=()=>{
+      if(generation!==this.projection.generation)throw Error('ACCOUNT_CHANGED');
+      if(signal.aborted||performance.now()-started>2000)throw Error('REQUEST_EXPIRED');
+    };
+    try {
+      const r=await this.transport(PREFIX+path,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},...(body===undefined?{}:{body:JSON.stringify(body)}),cache:'no-store',redirect:'error',signal});
+      current();
+      if(!r.ok){
+        if(r.status===401||r.status===403)this.revokeSession();
+        throw Error(r.status===503?'RECOVERY_REQUIRED':`HTTP_${r.status}`);
+      }
+      const value=await r.json();current();return value;
+    }finally{this.#requests.delete(controller);}
   }
   async login(origin: string) {
-    const key=this.#key,g=this.projection.generation;if(!key)throw Error('KEY_REQUIRED');
+    const key=this.#key;if(!key)throw Error('KEY_REQUIRED');
+    this.revokeSession();
+    const g=this.projection.generation;
+    if(!['http://127.0.0.1:5173','http://localhost:5173'].includes(origin))throw Error('ORIGIN_REJECTED');
     try {
       const challenge=await this.#request('auth/challenge',{owner:key.owner,origin,audience:'exchange-api'});
       if(g!==this.projection.generation)return;
@@ -62,14 +99,14 @@ export class LocalClient {
     }catch(e){if(g===this.projection.generation)this.projection.close('PREPARE_RESULT_UNKNOWN');throw e;}
     finally{this.#busy.delete(key.owner);}
   }
-  canWithdraw() {const k=this.#key;return !!k&&!!this.chain&&this.#capable&&this.projection.ready()&&this.history.filter(e=>e.owner===k.owner&&e.height).every(e=>integer(this.projection.view!.observed_height)>=integer(e.height!))&&!this.#busy.has(k.owner)&&!this.history.some(e=>e.owner===k.owner&&e.state==='SUBMISSION_UNKNOWN');}
+  canWithdraw() {const k=this.#key;return !!k&&!!this.#chain&&this.#capable&&this.projection.ready()&&this.history.filter(e=>e.owner===k.owner&&e.height).every(e=>integer(this.projection.view!.observed_height)>=integer(e.height!))&&!this.#busy.has(k.owner)&&!this.history.some(e=>e.owner===k.owner&&e.state==='SUBMISSION_UNKNOWN');}
   async withdraw(denom: Input['denom'], amount: string) {
     const key=this.#key,g=this.projection.generation;
     if(!key||!this.canWithdraw())throw Error('WITHDRAW_HELD');
     this.#busy.add(key.owner);
     try {
       const started=performance.now();
-      const a=await this.chain!.account(key.address);
+      const a=await this.#chain!.account(key.address);
       if(performance.now()-started>2000)throw Error('DIRECT_ACCOUNT_STALE');
       if(g!==this.projection.generation||!this.projection.ready())throw Error('ACCOUNT_CHANGED_OR_STALE');
       context(a.context,this.ctx);
@@ -83,14 +120,17 @@ export class LocalClient {
       const entry: Entry={owner:key.owner,input,...key.direct(input),state:'SUBMISSION_UNKNOWN'};
       this.history.push(entry); // Latch UNKNOWN before any network effect.
       this.projection.close('SUBMISSION_UNKNOWN');
-      try {await this.chain!.broadcast(entry.tx_bytes);}catch{/* Query only. Never generate another TX. */}
+      try {await this.#chain!.broadcast(entry.tx_bytes);}catch{/* Query only. Never generate another TX. */}
       return entry;
     }finally{this.#busy.delete(key.owner);}
   }
   async resolve(entry: Entry) {
-    if(!this.history.includes(entry)||entry.state!=='SUBMISSION_UNKNOWN'||!this.chain)return;
+    const g=this.projection.generation,owner=this.#key?.owner;
+    if(!owner||entry.owner!==owner||!this.history.includes(entry)||entry.state!=='SUBMISSION_UNKNOWN'||!this.#chain)return;
     try {
-      const r=await this.chain.result(entry.tx_hash);context(r.context,this.ctx);
+      const r=await this.#chain.result(entry.tx_hash);
+      if(g!==this.projection.generation||owner!==this.#key?.owner)return;
+      context(r.context,this.ctx);
       if(r.tx_hash.toLowerCase()!==entry.tx_hash||r.tx_bytes!==entry.tx_bytes||hex(sha256(base64.decode(r.tx_bytes)))!==entry.tx_hash||integer(r.height)<=integer(entry.input.expiry_height)-100n||!['COMMITTED','REJECTED_FINAL'].includes(r.state)||(r.state==='COMMITTED')!==(integer(r.code)===0n))return;
       entry.state=r.state as Entry['state'];entry.height=r.height;
       // No local debit or unfreeze. Only a fresh, same-revision account can reopen.
