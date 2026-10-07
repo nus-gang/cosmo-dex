@@ -26,6 +26,9 @@ mod trusted_recovery;
 #[cfg(feature = "dev-local-demo")]
 #[path = "support/failure_recovery.rs"]
 mod failure_recovery;
+#[cfg(all(feature = "dev-local-settlement", feature = "fault-injection"))]
+#[path = "support/settlement_close.rs"]
+mod settlement_close;
 #[cfg(feature = "dev-local-demo")]
 struct DevTrace {
     engine: Option<nus_exchange_contract::s3::dev_local::Engine>,

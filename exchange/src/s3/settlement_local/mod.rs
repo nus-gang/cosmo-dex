@@ -101,6 +101,109 @@ impl Worker {
         )?;
         Ok(hash)
     }
+    /// Prepare CLOSE from C's original committed failure graph, never from a
+    /// newly selected failure or a browser payload. `expected` pins the view
+    /// used by the trusted adapter for its same-height B Account query. Account
+    /// number/sequence must come from that query (as for prepare_settle).
+    /// This method signs and commits only; use broadcast for durable intent/IO.
+    pub fn prepare_close(
+        &self,
+        expected: &super::journal::Commit,
+        snapshot: &super::snapshot::Snapshot,
+        batch_id: &str,
+        attempt_no: u64,
+        account_number: u64,
+        account_sequence: u64,
+        signer: &impl chain::OperatorSigner,
+        o: &Observation,
+        now: u64,
+    ) -> Result<String> {
+        let _lane = self
+            .lane
+            .lock()
+            .map_err(|_| Error::Recovery("WORKER_POISONED"))?;
+        let view = self.engine.reader().get()?;
+        if view.gate == "RECOVERY_REQUIRED" {
+            return Err(Error::Recovery("RECOVERY_REQUIRED"));
+        }
+        if view.commit != *expected {
+            return Err(Error::Invalid("STALE_COMMIT"));
+        }
+        let latest = &view.state["latest_observation_ref"];
+        let matches_latest = if latest.is_null() {
+            view.state["chain_snapshot"] == *snapshot.value()
+        } else {
+            *latest
+                == super::evidence::reference(
+                    &super::journal::canonical(snapshot.value())?,
+                    super::evidence::TYPED,
+                )?
+        };
+        if !matches_latest || view.state["context"] != *snapshot.context() {
+            return Err(Error::Invalid("SNAPSHOT_CONFLICT"));
+        }
+        snapshot.freshness(o, now)?;
+        let batch = view.state["batches"]
+            .as_array()
+            .ok_or("BATCH_NOT_FOUND")?
+            .iter()
+            .find(|b| b["batch"]["batch_id"] == batch_id)
+            .ok_or("BATCH_NOT_FOUND")?;
+        if !["REJECTED_FINAL", "CLOSING"].contains(&batch["state"].as_str().unwrap_or("")) {
+            return Err(Error::Invalid("BATCH_STATE"));
+        }
+        let mut prior_closes = 0u64;
+        for hash in batch["attempt_hashes"].as_array().ok_or("BATCH_STATE")? {
+            let recovered = self
+                .engine
+                .trusted_recovery_attempt(expected, hash.as_str().ok_or("BATCH_STATE")?)?
+                .ok_or(Error::Recovery("ATTEMPT_NOT_FOUND"))?;
+            let a = &recovered.attempt;
+            if a["batch"] != batch["batch"] || a["context"] != *snapshot.context() {
+                return Err(Error::Recovery("RECOVERY_ATTEMPT_MISMATCH"));
+            }
+            if ["PREPARED", "SUBMISSION_UNKNOWN"].contains(&a["state"].as_str().unwrap_or("")) {
+                return Err(Error::Invalid("ATTEMPT_UNRESOLVED"));
+            }
+            if a["kind"] == "CLOSE" {
+                prior_closes += 1;
+            }
+        }
+        if prior_closes >= 2 || attempt_no != prior_closes + 1 {
+            return Err(Error::Invalid("RETRY_BUDGET_EXHAUSTED"));
+        }
+        let raw = chain::sealed_batch(&view.state, batch_id)?;
+        // The final pinned store read also checks original root/descriptor/raw
+        // integrity; missing originals close C before signer access.
+        let failure = self
+            .engine
+            .trusted_recovery_failure(expected, batch_id)?
+            .ok_or(Error::Invalid("FAILURE_EVIDENCE_REQUIRED"))?;
+        let (a, tx) = chain::close_attempt(
+            snapshot,
+            &raw,
+            attempt_no,
+            account_number,
+            account_sequence,
+            signer,
+            &failure.resolution_evidence,
+        )?;
+        // Signer is outside C's writer lock. Discard bytes if it raced a commit;
+        // C still revalidates authoritative state/policy under its writer lock.
+        if self.engine.reader().get()?.commit != *expected {
+            return Err(Error::Invalid("STALE_COMMIT"));
+        }
+        let hash = a["tx_hash"].as_str().ok_or("INVALID_ENVELOPE")?.to_owned();
+        self.engine
+            .execute(
+                Command::Attempt(a),
+                &[(tx, super::evidence::TX.into())],
+                o,
+                now,
+            )?
+            .ok_or(Error::Recovery("ATTEMPT_NOT_COMMITTED"))?;
+        Ok(hash)
+    }
     pub fn prepare(
         &self,
         attempt: Value,

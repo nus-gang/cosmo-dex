@@ -90,6 +90,50 @@ pub fn settle_attempt(
     sequence: u64,
     signer: &impl OperatorSigner,
 ) -> Result<(Value, Vec<u8>)> {
+    signed_attempt(
+        snapshot,
+        batch,
+        attempt_no,
+        account_number,
+        sequence,
+        signer,
+        None,
+    )
+}
+// Only Worker calls this with the original failure selected by C at its pinned
+// commit. No REST or caller-supplied ResolutionEvidence enters this path.
+pub(super) fn close_attempt(
+    snapshot: &Snapshot,
+    batch: &[u8],
+    attempt_no: u64,
+    account_number: u64,
+    sequence: u64,
+    signer: &impl OperatorSigner,
+    failure: &Value,
+) -> Result<(Value, Vec<u8>)> {
+    schema::validate("ResolutionEvidence", failure)?;
+    if failure["context"] != *snapshot.context() || failure["batch"] != wire::identity(batch)? {
+        return Err(Error::Invalid("FAILURE_EVIDENCE_REQUIRED"));
+    }
+    signed_attempt(
+        snapshot,
+        batch,
+        attempt_no,
+        account_number,
+        sequence,
+        signer,
+        Some(failure),
+    )
+}
+fn signed_attempt(
+    snapshot: &Snapshot,
+    batch: &[u8],
+    attempt_no: u64,
+    account_number: u64,
+    sequence: u64,
+    signer: &impl OperatorSigner,
+    failure: Option<&Value>,
+) -> Result<(Value, Vec<u8>)> {
     let identity = wire::identity(batch)?;
     let pk = signer.public_key();
     if pk.len() != 1952 {
@@ -102,16 +146,40 @@ pub fn settle_attempt(
     let op = bech32::encode("nus", owner.to_base32(), bech32::Variant::Bech32)
         .map_err(|_| "ADDRESS_MISMATCH")?;
     let timeout = snapshot.height().checked_add(8).ok_or("INTEGER_OVERFLOW")?;
-    let msg = [blob(1, op.as_bytes()), blob(2, batch)].concat();
+    let (kind, url, gas, fee) = if failure.is_some() {
+        (
+            "CLOSE",
+            b"/nus.exchange.s3.v1.MsgCloseBatch".as_slice(),
+            3_000_000,
+            "6000",
+        )
+    } else {
+        (
+            "SETTLE",
+            b"/nus.exchange.s3.v1.MsgSettleBatch".as_slice(),
+            10_000_000,
+            "20000",
+        )
+    };
+    let mut msg = [blob(1, op.as_bytes()), blob(2, batch)].concat();
+    if let Some(failure) = failure {
+        msg.extend(blob(
+            3,
+            &hex::decode(
+                failure["failed_tx_hash"]
+                    .as_str()
+                    .ok_or("FAILURE_EVIDENCE_REQUIRED")?,
+            )
+            .map_err(|_| "FAILURE_EVIDENCE_REQUIRED")?,
+        ));
+        msg.extend(blob(
+            4,
+            &hex::decode(schema::hash("NUS/S3/RESOLUTION_EVIDENCE/V1", failure)?)
+                .map_err(|_| "FAILURE_EVIDENCE_REQUIRED")?,
+        ));
+    }
     let body = [
-        blob(
-            1,
-            &[
-                blob(1, b"/nus.exchange.s3.v1.MsgSettleBatch"),
-                blob(2, &msg),
-            ]
-            .concat(),
-        ),
+        blob(1, &[blob(1, url), blob(2, &msg)].concat()),
         uint(3, timeout),
     ]
     .concat();
@@ -124,12 +192,12 @@ pub fn settle_attempt(
     if sequence != 0 {
         si.extend(uint(3, sequence));
     }
-    let fee = [
-        blob(1, &[blob(1, b"DEVGAS"), blob(2, b"20000")].concat()),
-        uint(2, 10_000_000),
+    let fee_wire = [
+        blob(1, &[blob(1, b"DEVGAS"), blob(2, fee.as_bytes())].concat()),
+        uint(2, gas),
     ]
     .concat();
-    let auth = [blob(1, &si), blob(2, &fee)].concat();
+    let auth = [blob(1, &si), blob(2, &fee_wire)].concat();
     let mut doc = [
         blob(1, &body),
         blob(2, &auth),
@@ -145,12 +213,17 @@ pub fn settle_attempt(
     if account_number != 0 {
         doc.extend(uint(4, account_number));
     }
+    // Bound the final TxRaw before accessing the private signing operation.
+    let unsigned_size = blob(1, &body).len() + blob(2, &auth).len() + blob(3, &[0; 3309]).len();
+    if unsigned_size > evidence::limit(evidence::TX)? {
+        return Err(Error::Invalid("INVALID_ENVELOPE"));
+    }
     let signature = signer.sign(&doc)?;
     if !codec::verify_raw(pk, &doc, &signature, &[]) {
         return Err(Error::Invalid("INVALID_SIGNATURE"));
     }
     let tx = [blob(1, &body), blob(2, &auth), blob(3, &signature)].concat();
-    let a = json!({"context":snapshot.context(),"batch":identity,"attempt_no":attempt_no.to_string(),"kind":"SETTLE","state":"PREPARED","operator":snapshot.value()["operator"],"operator_epoch":snapshot.value()["operator_epoch"],"account_number":account_number.to_string(),"account_sequence":sequence.to_string(),"timeout_height":timeout.to_string(),"first_possible_height":(snapshot.height()+1).to_string(),"gas_limit":"10000000","fee_atoms":"20000","raw_tx_ref":evidence::reference(&tx,evidence::TX)?,"tx_hash":sha256(&tx),"broadcast_count":"0","confirmed_tx":null,"absence_proof":null});
+    let a = json!({"context":snapshot.context(),"batch":identity,"attempt_no":attempt_no.to_string(),"kind":kind,"state":"PREPARED","operator":snapshot.value()["operator"],"operator_epoch":snapshot.value()["operator_epoch"],"account_number":account_number.to_string(),"account_sequence":sequence.to_string(),"timeout_height":timeout.to_string(),"first_possible_height":(snapshot.height()+1).to_string(),"gas_limit":gas.to_string(),"fee_atoms":fee,"raw_tx_ref":evidence::reference(&tx,evidence::TX)?,"tx_hash":sha256(&tx),"broadcast_count":"0","confirmed_tx":null,"absence_proof":null});
     schema::validate("Attempt", &a)?;
     Ok((a, tx))
 }

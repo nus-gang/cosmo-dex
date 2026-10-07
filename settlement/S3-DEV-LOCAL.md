@@ -20,7 +20,7 @@ L-R의 실제 binary/웹 build·manifest와 CTO→Security 승인이 완료된 �
 ## worker와 방송 intent
 
 1. `Worker::reconcile(Command::Seal("NORMAL"), …)`이 기존 C FIFO·8 fills/16 proofs·131072B·만료 여유를 적용해 배치를 commit한다. `chain::sealed_batch`는 내부 immutable revision의 원 order/signature/fill에서 그 배치만 재구성하고 **C가 이미 정한 identity와 바이트를 대조**한다. 새 batch ID/seq를 임의로 만들지 않는다.
-2. `Worker::prepare_settle`은 기존 미해소 시도와 Snapshot 신선도를 서명 전에 확인한다. 내부 `chain::settle_attempt`는 검증 Snapshot, 같은 체인의 operator Account 조회 결과(account number/sequence), 원 Batch, 로컬 signer로 Cosmos `SIGN_MODE_DIRECT` TxRaw를 만든다. operator 공개키/address 및 ML-DSA 서명을 다시 확인한다. SETTLE gas10M/fee20000 DEVGAS/timeout H+8이다. B type URL·protobuf tag 및 기본값 생략을 지킨다. CLOSE는 C의 확정 실패 해소 검증 후 B의 원 envelope를 `prepare`로 제공할 수 있다. 자동 CLOSE/VOID는 없다.
+2. `Worker::prepare_settle`은 기존 미해소 시도와 Snapshot 신선도를 서명 전에 확인한다. 내부 `chain::settle_attempt`는 검증 Snapshot, 같은 체인의 operator Account 조회 결과(account number/sequence), 원 Batch, 로컬 signer로 Cosmos `SIGN_MODE_DIRECT` TxRaw를 만든다. operator 공개키/address 및 ML-DSA 서명을 다시 확인한다. SETTLE gas10M/fee20000 DEVGAS/timeout H+8이다. B type URL·protobuf tag 및 기본값 생략을 지킨다. CLOSE는 아래 `prepare_close`가 C에 commit된 원 실패 증거에서 서명·영속 준비한다. 자동 CLOSE/VOID는 없다.
 3. `Worker::prepare` → C `Command::Attempt`가 원 Batch/TxRaw/attempt를 먼저 저장한다. 미해소 시도가 있으면 새 봉투는 C가 거절한다. 원문은 C의 검증된 object store에 있고 별도 약한 D journal은 없다.
 4. `broadcast`는 단일 lane에서 기존 attempt를 읽고 `SUBMISSION_UNKNOWN`, `broadcast_count+1`을 **C Resolve commit으로 먼저 저장**한다. 이 전이가 D의 방송 intent다. 전송 전에 죽어도 시도 횟수는 소비하며, 상속 지연0/1000/2000ms를 writer lock 밖에서 적용하고 최대3회 원 TxRaw 전송 이후 자동 재시도하지 않는다. 재시작에도 영속 counter에 해당하는 전체 지연을 다시 기다린다. `broadcast_count`는 socket 성공 횟수/체인 성공 횟수가 아니라 보수적인 전송 시작 의도 횟수다. 실제 effect 시작 이전에도 불명으로 보류하는 것은 기존 PREPARED crash 의미와 같다.
 5. commit 응답이 완료된 뒤에만 `with_committed_attempt`에 들어간다. writer lock 안에서 stored attempt가 방금 commit한 intent와 같은지 확인하고 C가 검증한 원 TxRaw만 `LoopbackRpc`에 준다. `committed_attempt` 조회 반환을 방송 token으로 쓰지 않는다.
@@ -72,3 +72,49 @@ cargo check --offline --locked --manifest-path exchange/Cargo.toml \
 ```
 
 `PAPERCLIP_RUN_SCRATCH_DIR` 또는 `NUS_TEST_TMPDIR`에 쓰기 가능한 임시 경로가 필요하다. 새 component 원시 증거는 `S3_CANDIDATE_EVIDENCE_DIR`로 수집한다. 남은 실제 DEV05/DEV12/DEV01~14 통합 판정은 L-T, 기동 전 runtime pin은 L-R에 남는다. 전문 검토가 끝나기 전 본 업무도 done으로 인수하지 않는다.
+
+## CLOSE 후속 API — C `8bbacf9` 실패 복구 연결
+
+`Worker::prepare_close(expected_commit, snapshot, batch_id, attempt_no,
+account_number, account_sequence, signer, observation, now)`는 신뢰하는 로컬
+runtime 전용이다. REST route나 요청 body를 추가하지 않는다. 성공 반환은
+TxRaw hash이며 방송이나 VOID/정정/잔고 해제를 의미하지 않는다.
+
+호출 순서:
+
+1. 같은 C view의 commit과 최신 Snapshot을 고정한다. 기존 B Account adapter로
+   그 Snapshot 높이의 현재 operator Account를 조회하고 `Account::at(snapshot,
+   operator)` 검증 후 number/sequence를 전달한다. **이 API의 정수 인자는 신뢰
+   adapter 입력이며 Account RPC 원문의 인증·높이 검증을 대신하지 않는다.**
+   account 조회에 걸린 시간을 포함한 원 Observation으로 now를 계산한다.
+2. `prepare_close`는 expected commit, latest snapshot/Context, 원 freshness,
+   REJECTED_FINAL/CLOSING, batch의 모든 attempt를 확인한다. PREPARED/UNKNOWN은
+   서명 전에 거절하고 CLOSE는 최대2개, 다음 attempt_no만 허용한다.
+3. `trusted_recovery_attempt`와 `trusted_recovery_failure`는 동일 expected commit으로
+   호출한다. C가 저장된 원 ResolutionEvidence 원문·참조·closure를 재검증한다.
+   누락·손상은 C recovery로 닫힌다. D는 실패를 재선택하거나 closure를 재계산하지
+   않고 저장된 원 실패의 failed_tx_hash와 NUS/S3/RESOLUTION_EVIDENCE/V1 hash를 쓴다.
+4. 이미 sealed된 Batch의 identity를 재검증하여 B `MsgCloseBatch` tag1 operator,
+   tag2 exact BatchV2, tag3 failed TX hash32B, tag4 resolution hash32B를 만든다.
+   SIGN_MODE_DIRECT, ML-DSA65, gas3000000, fee6000 DEVGAS, timeout H+8,
+   first_possible H+1 및 기존 TxRaw cap을 유지한다. 공개키/operator·반환 서명을
+   검증하며, signer는 writer effect lock 밖에 있다. signer 중 다른 commit이
+   생겼으면 바이트를 버리고 STALE_COMMIT으로 거절한다.
+5. C `Command::Attempt`가 원 TxRaw와 Attempt를 commit하고 authoritative 상태·원문·
+   실패 audit binding을 writer lock 아래 다시 검증한 뒤 hash를 돌려준다. 다른
+   worker와의 최종 경합도 C가 판정한다. 다음 방송은 기존 `broadcast`의 영속 intent,
+   원문 재확인, writer lock 안 bounded RPC를 사용한다. 서명 성공 자체는 방송 허가가 아니다.
+
+응답 유실 후에는 commit된 CLOSE를 C trusted recovery API에서 찾아 기존 hash로
+재개한다. PREPARED도 미해소이므로 새 봉투 생성은 거절한다. 확정 종결 후에만
+두 번째 CLOSE가 허용되고 원 실패 증거는 최신 snapshot으로 다시 만들지 않는다.
+저장 도중 불완전 객체가 남으면 자동 수리 없이 recovery로 닫힌다. commit 후 응답
+유실이면 같은 home 재생으로 정확한 Attempt가 복원된다. CLOSE 체인 영수증/VOID
+Apply의 실제 배선과 기동은 L-R/L-T에 남는다.
+
+후속 시험 `settlement_close`는 fee0/25, 재시작 뒤 실제 합성 ML-DSA 서명, exact TX,
+원 실패 hash 결합, stale/다른 batch/원문 손상/미해소/2회 예산/다른 signer 거절,
+현재 Account number·nonzero sequence의 두 번째 CLOSE, signer 중 commit 경합,
+저장 실패 callback0 및 두 번 재생을 다룬다. 원시 JSON/store는
+`NUS70_EVIDENCE_DIR`, 기존 후보 trace는 `S3_CANDIDATE_EVIDENCE_DIR`로 수집한다.
+실제 HTTP/4검증인/DEV 통합은 여전히 NOT_RUN이며 새 runtime pin을 발급하지 않는다.
