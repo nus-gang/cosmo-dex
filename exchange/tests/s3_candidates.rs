@@ -20,6 +20,9 @@ const NOW: u64 = 1791193000000;
 #[cfg(feature = "dev-local-demo")]
 #[path = "support/dev_fixture.rs"]
 mod dev_fixture;
+#[cfg(all(feature = "dev-local-demo", feature = "fault-injection"))]
+#[path = "support/f14_correction.rs"]
+mod f14_correction;
 #[cfg(feature = "dev-local-demo")]
 #[path = "support/failure_recovery.rs"]
 mod failure_recovery;
