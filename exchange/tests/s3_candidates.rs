@@ -21,14 +21,17 @@ const NOW: u64 = 1791193000000;
 #[path = "support/dev_fixture.rs"]
 mod dev_fixture;
 #[cfg(feature = "dev-local-demo")]
-#[path = "support/trusted_recovery.rs"]
-mod trusted_recovery;
-#[cfg(feature = "dev-local-demo")]
 #[path = "support/failure_recovery.rs"]
 mod failure_recovery;
 #[cfg(all(feature = "dev-local-settlement", feature = "fault-injection"))]
 #[path = "support/settlement_close.rs"]
 mod settlement_close;
+#[cfg(feature = "dev-local-demo")]
+#[path = "support/seal_selection.rs"]
+mod seal_selection;
+#[cfg(feature = "dev-local-demo")]
+#[path = "support/trusted_recovery.rs"]
+mod trusted_recovery;
 #[cfg(feature = "dev-local-demo")]
 struct DevTrace {
     engine: Option<nus_exchange_contract::s3::dev_local::Engine>,
@@ -1288,6 +1291,7 @@ fn recovery_gate_preserves_store_and_signed_results_after_two_replays() {
                 assert!(matches!(e.trusted_recovery_attempt(&baseline.commit, a["tx_hash"].as_str().unwrap()), Err(Error::Recovery("RECOVERY_REQUIRED"))));
                 assert!(matches!(e.trusted_recovery_attempt_at(&baseline.commit, 0), Err(Error::Recovery("RECOVERY_REQUIRED"))));
                 assert!(matches!(e.trusted_recovery_failure(&baseline.commit, a["batch"]["batch_id"].as_str().unwrap()), Err(Error::Recovery("RECOVERY_REQUIRED"))));
+                assert!(matches!(e.trusted_reconcile_readiness(&baseline.commit, &observation(&c), NOW), Err(Error::Recovery("RECOVERY_REQUIRED"))));
                 // Authenticated historical results remain queryable without a
                 // new binding, even while all execute commands are refused.
                 assert_eq!(e.query_signed("ORDER", &original_raw, &original_sig, &owner(0), &observation(&c), NOW).unwrap(), Some(original.clone()));

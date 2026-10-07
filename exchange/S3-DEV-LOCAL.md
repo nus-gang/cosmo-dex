@@ -135,3 +135,29 @@ cargo check --offline --locked --manifest-path exchange/Cargo.toml \
 binary 입력은 `validate|create|open --local-demo-profile <파일> --acknowledge-unproven-space --runtime-pin <독립 인계 hash> --input-set <bundle>`이며 create/open에 `--home`, create에만 `--bootstrap`이 추가된다. bundle은 `runtime_manifest/files/guard/genesis` exact bytes의 base64 JSON이고 private transport 형식이다. binary는 listener·worker를 시작하지 않는다.
 
 성능, 전원 상실, 실제 host ENOSPC/EDQUOT, 물리·metadata 예약/drain은 측정하지 않았다. 오류 주입과 process exit는 각각 모의 IO/component 결과다. 실제 DEV01~14 통합과 D/E/F·보호 main·CI·독립 QA는 NOT_RUN이며 동일 최종 후보의 CTO→Security 승인 후에만 NUS-70을 done으로 인수한다.
+
+## Trusted Seal/Apply 준비 판단
+
+`Engine::trusted_reconcile_readiness(&Commit, &Observation, now)`는 현재 writer와 동일 commit에서 `ReconcileReadiness { commit, seal, apply, applied_height, latest_height }`를 반환한다. `dev-local-demo` 안에서만 사용하는 Rust transport이며 Serialize·REST·CLI route·callback이 없다. 입력 `Observation`은 미적용 관측을 포함한 **latest** snapshot의 id/height와 실제 조회 시각이다. 기존 freshness 상한을 그대로 적용한다.
+
+| 반환 | 의미 / 소비자 행동 |
+|---|---|
+| `apply = Ready` | 기존 Apply를 비공개 candidate에 실행하고 cap을 확인했다. 먼저 `Command::Apply`를 실행하고 새 commit으로 다시 조회한다. |
+| `apply = NoPendingObservation` | Apply할 새 관측이 없다. 불필요한 Apply를 반복하지 않는다. |
+| `apply = Held { reason }` | 기존 Apply의 `UNSETTLED_HOLD` 또는 `ATTEMPT_UNRESOLVED`. 자산 해제나 확정 실패를 뜻하지 않는다. |
+| `seal = Ready(Normal)` | 기존 FIFO prefix와 12블록 Seal 여유를 통과했다. `Command::Seal(purpose.as_str().into())`로 실행한다. |
+| `seal = Ready(ResolveFailure)` | FIFO prefix에 실제 만료·owner epoch/revoke·origin operator epoch 불일치가 있다. 불변 배치를 Seal할 준비일 뿐, 실패/VOID 확정이나 자산 해제 허가는 아니다. |
+| `seal = Waiting(EmptyQueue)` | graph에서 pending이며 아직 배정되지 않은 fill이 없다. |
+| `seal = Waiting(ExpiryMargin)` | 유효 prefix지만 Seal 여유가 12블록 미만이다. 새 관측까지 기다린다. 오류 후 RESOLVE_FAILURE로 재시도하지 않는다. |
+| `seal = Waiting(ApplyPending)` | 유효 prefix와 미적용 관측이 있다. Apply 결과를 먼저 처리한다. |
+| `seal = ActiveBatch { batch, state }` | 기존 `active()`에 해당하는 미해소 batch의 사본이다. 새 Seal 대신 기존 attempt/receipt 복구 경로를 사용한다. |
+
+`apply`와 `seal`은 같은 commit의 독립 판단이다. 소비자는 Ready Apply → Ready Seal → ActiveBatch 대사/새 관측 대기 순서를 사용한다. 실제 만료만 관측한 경우 기존 Apply도 가능하다. Apply 후 다시 조회하면 만료된 pending fill에 대해 RESOLVE_FAILURE가 유지된다. 반대로 queued fill의 epoch/revoke 변경에서는 Apply가 Held이고 Seal은 ResolveFailure다. 경제 판단은 C 내부에 남으며 SRE가 FIFO나 만료/epoch 규칙을 복제할 필요가 없다.
+
+Seal 판단은 기존 mutation과 **동일한 private `seal_prefix`**를 사용한다. 최대8 FIFO pending fill, 첫 fill의 origin epoch로 묶는 규칙, owner epoch/revoke/만료·12블록 여유가 그대로다. 선택한 목적만 기존 `seal_batch`에 비공개로 적용해 wire/proof/cap을 검증한다. 한 purpose가 실패한 뒤 다른 purpose를 시도하지 않는다. Apply는 기존 `Candidate::apply`를 그대로 실행한 사본을 버린다. `RECEIPT_INCONSISTENCY` 등 두 보류 코드 이외의 오류는 정상 Wait나 다른 목적이 되지 않고 오류로 반환한다.
+
+조회는 writer lock → 기존 recovery/store gate → expected Commit의 seq/hash/offset 대조 → committed prefix·참조 원문 검증 → freshness·private 판단 → prefix·store 재검사 순서다. prefix 검증은 `Store::open`과 동일한 `scan_committed/read_frame`를 사용한다. 별도 WAL parser가 아니며 marker나 writer의 파일 offset을 변경하지 않는다. 같은 길이의 WAL 내부 변조, 과거/최신 참조 object와 descriptor의 동시 삭제도 감지한다. 감지 시 writer와 reader gate를 RECOVERY_REQUIRED로 닫고 새 WAL/경제 상태/receipt를 생성하지 않는다. `open`의 동일 parser·재생·누락 실패 원문 거절 의미는 유지한다.
+
+`STALE_COMMIT`이면 예전 결과와 부분 복구를 버리고 최신 View/관측으로 다시 조회한다. 이 반환은 읽은 순간의 판단이며 실행권을 예약하거나 방송을 허가하지 않는다. 판단 이후 다른 command가 commit되거나 시간이 지나면 결과를 폐기한다. 실행은 기존 `execute` 검증을 다시 거치고 오류를 catch해 다른 purpose로 우회하지 않는다. `RECOVERY_REQUIRED`, 저장 오류, writer poison에는 준비 판단도 실패한다. 기존 history/attempt/failure 복구·terminal 방송 거절·signed 원 결과 조회는 유지한다.
+
+WAL prefix와 원문 집합을 두 번 읽으며 처리 비용은 보존된 기록량에 따라 증가한다. 페이지 응답, 일정 지연, 처리량을 보장하는 API가 아니다. 큰 원장을 위한 별도 인덱스/성능 변경은 이번 범위에 포함하지 않는다. API 반환에는 새 Batch/TxRaw ID·서명·receipt가 없고 메모리 사본의 수정은 엔진에 영향을 주지 않는다. 시험의 합성 snapshot/test pin을 실제 체인 실행이나 승인 runtime으로 표시하지 않는다.

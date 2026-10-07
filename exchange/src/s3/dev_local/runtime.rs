@@ -81,6 +81,24 @@ pub struct RecoveryFailure {
     pub raw: Vec<u8>,
     pub evidence: Objects,
 }
+/// Apply is tested on a private clone using the same implementation as execute.
+/// Held is a reconciliation condition, never authorization to discard a fill.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ApplyReadiness {
+    NoPendingObservation,
+    Ready,
+    Held { reason: &'static str },
+}
+/// Trusted runtime transport only. Valid for this commit, observation and time;
+/// no receipt, reservation, callback or permission to bypass execute validation.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ReconcileReadiness {
+    pub commit: Commit,
+    pub seal: super::SealReadiness,
+    pub apply: ApplyReadiness,
+    pub applied_height: u64,
+    pub latest_height: u64,
+}
 pub const RECOVERY_HISTORY_PAGE_MAX: usize = 64;
 /// Internal full state/result/book/FIFO/cursor projection in one immutable Arc.
 /// Never expose all owners or signed evidence directly through public REST.
@@ -214,6 +232,58 @@ impl Engine {
                 Err(super::storage_error(e))
             }
         }
+    }
+    /// Select Seal purpose/wait and assess Apply under the same store/writer
+    /// lock. The caller supplies the latest observation, not the applied one.
+    /// Prefer Ready Apply, otherwise Ready Seal, otherwise reconcile ActiveBatch
+    /// or await a fresh observation. Never retry with another purpose on error.
+    pub fn trusted_reconcile_readiness(
+        &self,
+        expected: &Commit,
+        observation: &Observation,
+        now: u64,
+    ) -> Result<ReconcileReadiness> {
+        let (mut w, _) = self.recovery_writer(expected)?;
+        // Inventory alone cannot detect both halves of an object disappearing,
+        // or an in-place WAL edit of unchanged length. Validate this committed
+        // prefix and every referenced object with the store's existing parser.
+        let integrity = w.store.verify_committed();
+        self.finish_recovery_read(&mut w, integrity)?;
+        w.candidate.latest().freshness(observation, now)?;
+        let apply = if w.candidate.observations.is_empty() {
+            ApplyReadiness::NoPendingObservation
+        } else {
+            match w.candidate.apply() {
+                Ok(next) => {
+                    if !next.capacity()?.admissible() {
+                        return Err(Error::Invalid("STORAGE_CAPACITY"));
+                    }
+                    ApplyReadiness::Ready
+                }
+                Err(reason @ ("UNSETTLED_HOLD" | "ATTEMPT_UNRESOLVED")) => {
+                    ApplyReadiness::Held { reason }
+                }
+                Err(reason) => return Err(Error::Invalid(reason)),
+            }
+        };
+        let seal = w.candidate.seal_readiness()?;
+        if let super::SealReadiness::Ready(purpose) = &seal {
+            // Validate exactly the selected purpose, including wire/proof/cap
+            // checks. Discard the candidate; no identity is published or stored.
+            let next = w.candidate.seal_batch(purpose.as_str(), observation, now)?;
+            if !next.capacity()?.admissible() {
+                return Err(Error::Invalid("STORAGE_CAPACITY"));
+            }
+        }
+        let result = ReconcileReadiness {
+            commit: w.store.commit.clone(),
+            seal,
+            apply,
+            applied_height: w.candidate.snapshot().height(),
+            latest_height: w.candidate.latest().height(),
+        };
+        let result = w.store.verify_committed().map(|()| result);
+        self.finish_recovery_read(&mut w, result)
     }
     /// Trusted runtime only. Pin all pages and attempt reads to reader().commit;
     /// STALE_COMMIT means discard the accumulated recovery view and start again.

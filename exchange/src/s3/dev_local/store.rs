@@ -170,19 +170,32 @@ impl Store {
             return Err(Error::Recovery("MARKER_FIELDS"));
         }
         let mut records = vec![];
-        while let Some((r, h, n)) = read_frame(&mut s.wal)? {
-            if r["context"] != *s.config.context()
+        s.scan_committed(&expected, |r| records.push(r))?;
+        s.commit = expected;
+        s.check()?;
+        Ok((s, bootstrap, records))
+    }
+    /// Reuse open's parser/hash chain and referenced-object validation without
+    /// moving the writer file offset or collecting a second record log.
+    pub fn verify_committed(&self) -> Result<()> {
+        self.scan_committed(&self.commit, |_| {})
+    }
+    fn scan_committed(&self, expected: &Commit, mut record: impl FnMut(Value)) -> Result<()> {
+        let mut wal = self.root.dir.file("journal.dev.wal", false)?;
+        self.root.dir.check_file("journal.dev.wal", &self.wal)?;
+        let mut commit = Commit::zero();
+        while let Some((r, h, n)) = read_frame(&mut wal)? {
+            if r["context"] != *self.config.context()
                 || schema::num(&r["command_seq"])?
-                    != s.commit
+                    != commit
                         .command_seq
                         .checked_add(1)
                         .ok_or(Error::Recovery("SEQUENCE_OVERFLOW"))?
-                || r["previous_commit_hash"] != s.commit.record_hash
+                || r["previous_commit_hash"] != commit.record_hash
             {
                 return Err(Error::Recovery("CHAIN_MISMATCH"));
             }
-            let end = s
-                .commit
+            let end = commit
                 .end_offset
                 .checked_add(n)
                 .ok_or(Error::Recovery("OFFSET_OVERFLOW"))?;
@@ -190,19 +203,18 @@ impl Store {
                 return Err(Error::Recovery("UNKNOWN_TAIL"));
             }
             schema::validate("JournalRecord", &r)?;
-            s.load(&r["evidence_refs"])?;
-            s.commit = Commit {
+            self.load(&r["evidence_refs"])?;
+            commit = Commit {
                 command_seq: schema::num(&r["command_seq"])?,
                 record_hash: h,
                 end_offset: end,
             };
-            records.push(r);
+            record(r);
         }
-        if s.commit != expected {
+        if commit != *expected {
             return Err(Error::Recovery("COMMITTED_FRAME_MISSING"));
         }
-        s.check()?;
-        Ok((s, bootstrap, records))
+        Ok(())
     }
     pub fn check(&self) -> Result<Vec<u8>> {
         let bootstrap = self.check_files()?;
