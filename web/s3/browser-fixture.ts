@@ -7,15 +7,23 @@ import { base64 } from './direct-codec.ts';
 import raw from './fixtures/ld-rest.json' with {type:'json'};
 const keys=[new LocalKey(),new LocalKey()],ctx=raw.owner_projection.context;
 let selected=0,posts=0,mode='ready',revision=1;
+const chainRoutes:string[]=[];
 let accountReply: (()=>Promise<Response>)|undefined;
 const transport: typeof fetch=async(path,init)=>{
   let data:any;
+  if(String(path).includes('/chain/')) {
+    if(new Headers(init?.headers).get('Authorization')!=='Bearer fixture')throw Error('HTTP_401');
+    chainRoutes.push(String(path));
+  }
   if(String(path).endsWith('auth/challenge')) {
     selected=keys.findIndex(k=>k.owner===JSON.parse(init!.body as string).owner);
     const now=Math.floor(Date.now()/1000);
     data={wire_base64:base64.encode(encode('WalletChallengeV1',{protocol_version:'1',chain_id:ctx.chain_id,genesis_hash:ctx.genesis_hash,owner:keys[selected].owner,server_origin:'http://127.0.0.1:5173',audience:'exchange-api',challenge_nonce:'aa'.repeat(32),issued_at:String(now),expiry_time:String(now+100)}))};
   }else if(String(path).endsWith('auth/session')) data={token:'fixture'};
   else if(String(path).endsWith('capabilities'))data={...raw.receipt,api_prefix:'/dev-local/v1/',signed_result_query:true,automatic_withdraw:false,ws:false};
+  else if(String(path).endsWith('chain/account'))data={context:ctx,owner:keys[selected].address,public_key_base64:base64.encode(keys[selected].publicKey),account_number:'1',sequence:'0',owner_epoch:'0',observed_height:'100',received_at_unix_ms:String(Date.now()),gas_atoms:'1000'};
+  else if(String(path).endsWith('chain/broadcast')){posts++;throw Error('lost');}
+  else if(String(path).endsWith('chain/result'))throw Error('NOT_FOUND');
   else if(String(path).endsWith('account')) {
     if(accountReply)return accountReply();
     data={...structuredClone(raw.other_projection),revision:String(revision),owner:keys[selected].owner,received_at_unix_ms:String(Date.now()),withdraw_frozen:true,withdraw_ready:true};
@@ -23,10 +31,7 @@ const transport: typeof fetch=async(path,init)=>{
   }else data=raw.receipt;
   return new Response(JSON.stringify(data));
 };
-const client=new LocalClient(ctx,transport,{
-  account:async()=>({context:ctx,owner:keys[selected].address,public_key_base64:base64.encode(keys[selected].publicKey),account_number:'1',sequence:'0',owner_epoch:'0',observed_height:'100',received_at_unix_ms:String(Date.now()),gas_atoms:'1000'}),
-  broadcast:async()=>{posts++;throw Error('lost');},result:async()=>{throw Error('NOT_FOUND');},
-},true,true);
+const client=LocalClient.authenticated(ctx,transport,true,true);
 const component=mount(document.querySelector('#app')!,client,keys,'http://127.0.0.1:5173');
 async function reorder(fault: string) {
   const open=structuredClone(client.projection.view!);let release!:(r:Response)=>void;
@@ -50,4 +55,4 @@ async function reorder(fault: string) {
   if(fault==='late-abort'||fault==='late-DP')revision++;
   accountReply=undefined;component.render();
 }
-Object.assign(globalThis,{fixture:{client,component,reorder,posts:()=>posts,held:()=>{mode='held';selected=keys.findIndex(k=>k.owner===client.projection.owner);client.select(keys[selected]);},owners:keys.map(k=>k.owner)}});
+Object.assign(globalThis,{fixture:{client,component,reorder,chainRoutes,posts:()=>posts,held:()=>{mode='held';selected=keys.findIndex(k=>k.owner===client.projection.owner);client.select(keys[selected]);},owners:keys.map(k=>k.owner)}});
