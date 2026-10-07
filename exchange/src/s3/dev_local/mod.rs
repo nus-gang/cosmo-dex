@@ -4,10 +4,11 @@ mod binding;
 mod fs;
 mod runtime;
 mod store;
+pub use super::engine::{SealPurpose, SealReadiness, SealWait};
 pub use binding::{Inputs, Validated};
 pub use runtime::{
-    Command, Engine, RECOVERY_HISTORY_PAGE_MAX, ReadView, RecoveryAttempt, RecoveryFailure,
-    RecoveryHistory, RecoveryObservation, View,
+    ApplyReadiness, Command, Engine, RECOVERY_HISTORY_PAGE_MAX, ReadView, ReconcileReadiness,
+    RecoveryAttempt, RecoveryFailure, RecoveryHistory, RecoveryObservation, View,
 };
 #[cfg(feature = "fault-injection")]
 use std::sync::Arc;

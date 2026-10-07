@@ -19,6 +19,44 @@ use super::{
 use crate::codec::Codec;
 use base64::{Engine, engine::general_purpose::STANDARD};
 use std::collections::BTreeSet;
+// The exact FIFO prefix and eligibility inputs shared by mutation and trusted
+// read-only selection. This is not a wire schema or an alternative validator.
+struct SealPrefix {
+    ids: Vec<String>,
+    epoch: u64,
+    order_hashes: BTreeSet<String>,
+    invalid: bool,
+    expiry_margin: bool,
+}
+#[cfg(feature = "dev-local-demo")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SealPurpose {
+    Normal,
+    ResolveFailure,
+}
+#[cfg(feature = "dev-local-demo")]
+impl SealPurpose {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Normal => "NORMAL",
+            Self::ResolveFailure => "RESOLVE_FAILURE",
+        }
+    }
+}
+#[cfg(feature = "dev-local-demo")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SealWait {
+    EmptyQueue,
+    ExpiryMargin,
+    ApplyPending,
+}
+#[cfg(feature = "dev-local-demo")]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SealReadiness {
+    Ready(SealPurpose),
+    Waiting(SealWait),
+    ActiveBatch { batch: Value, state: String },
+}
 fn bump(v: &mut Value) -> Result<()> {
     v["revision"] = json!(
         num(&v["revision"])?
@@ -126,19 +164,7 @@ impl Candidate {
                     .any(|e| e["kind"] == "REVOKE_ORDER" && e["order_hash"] == hash)
             })
     }
-    /// Seal only the oldest unassigned FIFO prefix. No seq/identity allocation
-    /// happens for the rest of the queue while this immutable batch is pending.
-    pub fn seal_batch(&self, purpose: &str, o: &Observation, now: u64) -> Result<Self> {
-        if self.active().is_ok() {
-            return Err("BATCH_INFLIGHT");
-        }
-        if !["NORMAL", "RESOLVE_FAILURE"].contains(&purpose) {
-            return Err("SEAL_PURPOSE");
-        }
-        self.latest().freshness(o, now)?;
-        if purpose == "NORMAL" && self.mode() != "OPEN" {
-            return Err("CATCHING_UP");
-        }
+    fn seal_prefix(&self) -> Result<Option<SealPrefix>> {
         let ids: Vec<_> = self
             .fill_order
             .iter()
@@ -150,7 +176,7 @@ impl Candidate {
             .cloned()
             .collect();
         if ids.is_empty() {
-            return Err("EMPTY_BATCH");
+            return Ok(None);
         }
         let epoch = num(&self.outbox[&ids[0]]["origin_operator_epoch"])?;
         let ids: Vec<_> = ids
@@ -167,19 +193,69 @@ impl Candidate {
         let invalid = order_hashes.iter().any(|h| {
             self.invalid_order(h) || self.orders[h].live.expiry_height <= self.latest().height()
         }) || epoch != self.latest().operator_epoch();
+        let expiry_margin = order_hashes.iter().any(|h| {
+            self.orders[h]
+                .live
+                .expiry_height
+                .saturating_sub(self.latest().height())
+                < 12
+        });
+        Ok(Some(SealPrefix {
+            ids,
+            epoch,
+            order_hashes,
+            invalid,
+            expiry_margin,
+        }))
+    }
+    /// Classification shares the mutation's prefix/validity calculation; it
+    /// never probes a failed purpose then retries a different purpose.
+    #[cfg(feature = "dev-local-demo")]
+    pub(super) fn seal_readiness(&self) -> Result<SealReadiness> {
+        if let Ok(ix) = self.active() {
+            let b = &self.batches[ix];
+            return Ok(SealReadiness::ActiveBatch {
+                batch: b["batch"].clone(),
+                state: b["state"].as_str().unwrap().into(),
+            });
+        }
+        let Some(prefix) = self.seal_prefix()? else {
+            return Ok(SealReadiness::Waiting(SealWait::EmptyQueue));
+        };
+        Ok(if prefix.invalid {
+            SealReadiness::Ready(SealPurpose::ResolveFailure)
+        } else if self.mode() != "OPEN" {
+            SealReadiness::Waiting(SealWait::ApplyPending)
+        } else if prefix.expiry_margin {
+            SealReadiness::Waiting(SealWait::ExpiryMargin)
+        } else {
+            SealReadiness::Ready(SealPurpose::Normal)
+        })
+    }
+    /// Seal only the oldest unassigned FIFO prefix. No seq/identity allocation
+    /// happens for the rest of the queue while this immutable batch is pending.
+    pub fn seal_batch(&self, purpose: &str, o: &Observation, now: u64) -> Result<Self> {
+        if self.active().is_ok() {
+            return Err("BATCH_INFLIGHT");
+        }
+        if !["NORMAL", "RESOLVE_FAILURE"].contains(&purpose) {
+            return Err("SEAL_PURPOSE");
+        }
+        self.latest().freshness(o, now)?;
+        if purpose == "NORMAL" && self.mode() != "OPEN" {
+            return Err("CATCHING_UP");
+        }
+        let SealPrefix {
+            ids,
+            epoch,
+            order_hashes,
+            invalid,
+            expiry_margin,
+        } = self.seal_prefix()?.ok_or("EMPTY_BATCH")?;
         if purpose == "RESOLVE_FAILURE" && !invalid {
             return Err("SEAL_PURPOSE");
         }
-        if purpose == "NORMAL"
-            && (invalid
-                || order_hashes.iter().any(|h| {
-                    self.orders[h]
-                        .live
-                        .expiry_height
-                        .saturating_sub(self.latest().height())
-                        < 12
-                }))
-        {
+        if purpose == "NORMAL" && (invalid || expiry_margin) {
             return Err("EXPIRY_MARGIN");
         }
         let proofs=order_hashes.iter().map(|h| {

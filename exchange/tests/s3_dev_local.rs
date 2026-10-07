@@ -277,9 +277,16 @@ fn io_errors_close_admission_and_preserve_unknown() {
         assert!(e.execute(signed(&raw, &sig, 0), &[], &o, NOW).is_err());
         assert!(e.committed_attempt("x").is_err());
         let commit = e.reader().get().unwrap().commit.clone();
+        assert!(
+            e.trusted_reconcile_readiness(&commit, &observation(&v), NOW)
+                .is_err()
+        );
         assert!(e.trusted_recovery_history(&commit, None, 64).is_err());
         assert!(e.trusted_recovery_attempt_at(&commit, 0).is_err());
-        assert!(e.trusted_recovery_failure(&commit, nus_exchange_contract::s3::schema::ZERO).is_err());
+        assert!(
+            e.trusted_recovery_failure(&commit, nus_exchange_contract::s3::schema::ZERO)
+                .is_err()
+        );
         assert!(
             e.trusted_recovery_attempt(&commit, nus_exchange_contract::s3::schema::ZERO)
                 .is_err()
@@ -819,6 +826,20 @@ fn trusted_recovery_rejects_poisoned_writer() {
         e.trusted_recovery_failure(&before.commit, schema::ZERO),
         Err(Error::Recovery("WRITER_POISONED"))
     ));
+    assert!(matches!(
+        e.trusted_reconcile_readiness(
+            &before.commit,
+            &nus_exchange_contract::s3::snapshot::Observation {
+                snapshot_id: String::new(),
+                cursor_height: 0,
+                received_at: NOW,
+                query_latency_ms: 0,
+                catching_up: false
+            },
+            NOW
+        ),
+        Err(Error::Recovery("WRITER_POISONED"))
+    ));
     let mut callbacks = 0;
     assert!(
         e.with_committed_attempt(schema::ZERO, |_, _| callbacks += 1)
@@ -879,5 +900,78 @@ fn trusted_recovery_history_page_ceiling_and_bootstrap_bytes() {
     evidence(
         "trusted-history-ceiling",
         &json!({"result":"PASS","replays":rows,"bootstrap_sha256":sha256(&bootstrap)}),
+    );
+}
+
+#[test]
+#[cfg(feature = "fault-injection")]
+fn reconcile_readiness_waits_for_publication_and_rejects_old_commit() {
+    use nus_exchange_contract::s3::dev_local::{ApplyReadiness, Error, SealReadiness, SealWait};
+    let (h, _, v, e) = new(0);
+    let e = Arc::new(e);
+    let old = e.reader().get().unwrap();
+    let observation = observation(&v);
+    let (entered, at_barrier) = mpsc::channel();
+    let (resume, wait) = mpsc::channel();
+    let wait = std::sync::Mutex::new(wait);
+    e.set_fault_hook(Some(Arc::new(move |point| {
+        if point == "before_publish" {
+            entered.send(()).unwrap();
+            wait.lock()
+                .unwrap()
+                .recv_timeout(std::time::Duration::from_secs(10))
+                .unwrap();
+        }
+        Ok(())
+    })))
+    .unwrap();
+    let writer = e.clone();
+    let obs = observation.clone();
+    let (raw, sig) = sign_order(&v, 0, "2", 1000, 10000, 246);
+    let writing = std::thread::spawn(move || writer.execute(signed(&raw, &sig, 0), &[], &obs, NOW));
+    at_barrier
+        .recv_timeout(std::time::Duration::from_secs(10))
+        .unwrap();
+    assert_eq!(e.reader().get().unwrap().commit, old.commit);
+    let reader = e.clone();
+    let expected = old.commit.clone();
+    let obs = observation.clone();
+    let (started, reading) = mpsc::channel();
+    let (finished, done) = mpsc::channel();
+    let read = std::thread::spawn(move || {
+        started.send(()).unwrap();
+        let r = reader.trusted_reconcile_readiness(&expected, &obs, NOW);
+        finished.send(()).unwrap();
+        r
+    });
+    reading
+        .recv_timeout(std::time::Duration::from_secs(10))
+        .unwrap();
+    assert!(matches!(
+        done.recv_timeout(std::time::Duration::from_millis(100)),
+        Err(mpsc::RecvTimeoutError::Timeout)
+    ));
+    resume.send(()).unwrap();
+    assert!(writing.join().unwrap().unwrap().is_some());
+    assert!(matches!(
+        read.join().unwrap(),
+        Err(Error::Invalid("STALE_COMMIT"))
+    ));
+    let current = e.reader().get().unwrap();
+    let wal = fs::read(h.join("journal.dev.wal")).unwrap();
+    let marker = fs::read(h.join("commit.dev.json")).unwrap();
+    let r = e
+        .trusted_reconcile_readiness(&current.commit, &observation, NOW)
+        .unwrap();
+    assert_eq!(r.commit, current.commit);
+    assert_eq!(r.seal, SealReadiness::Waiting(SealWait::EmptyQueue));
+    assert_eq!(r.apply, ApplyReadiness::NoPendingObservation);
+    assert_eq!(e.reader().get().unwrap().state, current.state);
+    assert_eq!(e.reader().get().unwrap().receipts, current.receipts);
+    assert_eq!(fs::read(h.join("journal.dev.wal")).unwrap(), wal);
+    assert_eq!(fs::read(h.join("commit.dev.json")).unwrap(), marker);
+    evidence(
+        "selection-publisher-barrier",
+        &json!({"result":"PASS","barrier":"before_publish","intermediate_returns":0,"old_query":"STALE_COMMIT","new_seq":1,"store_diff":[],"state_diff":[],"receipt_diff":[]}),
     );
 }
