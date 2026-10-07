@@ -7,7 +7,7 @@ use nus_exchange_contract::s3::{
 };
 use std::{collections::BTreeMap, fs, path::Path};
 
-fn prepared(bps: u32) -> (Candidate, Value) {
+pub(super) fn prepared(bps: u32) -> (Candidate, Value) {
     let mut c = order(
         order(setup(bps, false), 0, "2", 2000, 10000, 241),
         1,
@@ -25,7 +25,7 @@ fn prepared(bps: u32) -> (Candidate, Value) {
     c = replay_check(&c, c.prepare_attempt(a.clone()).unwrap(), "ATTEMPT");
     (c, a)
 }
-fn failed(bps: u32) -> (Candidate, Value) {
+pub(super) fn failed(bps: u32) -> (Candidate, Value) {
     let (c, a) = prepared(bps);
     finish_failure(c, a)
 }
@@ -43,7 +43,7 @@ fn finish_failure(mut c: Candidate, a: Value) -> (Candidate, Value) {
     (c, terminal)
 }
 
-fn files(root: &Path) -> BTreeMap<String, String> {
+pub(super) fn files(root: &Path) -> BTreeMap<String, String> {
     fn visit(root: &Path, at: &Path, out: &mut BTreeMap<String, String>) {
         for entry in fs::read_dir(at).unwrap() {
             let path = entry.unwrap().path();
