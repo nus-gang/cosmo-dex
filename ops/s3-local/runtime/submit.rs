@@ -5,7 +5,7 @@ mod collect;
 mod recovery;
 use collect::{Account, ChainRead};
 use nus_exchange_contract::s3::{
-    dev_local::{Command, Engine, Error, Result},
+    dev_local::{ApplyReadiness, SealPurpose, SealReadiness, Command, Engine, Error, Result},
     evidence::{Objects, TYPED, reference},
     journal::canonical,
     schema,
@@ -47,7 +47,7 @@ pub enum BatchProgress {
 }
 /// One outer reconciliation action. Idle is not a Seal permission or receipt.
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub enum ReconcileProgress { Active(BatchProgress), Apply, Idle }
+pub enum ReconcileProgress { Active(BatchProgress), Apply, Seal(SealPurpose), Idle }
 pub struct SubmitLane {
     engine: Arc<Engine>,
     worker: Worker,
@@ -245,7 +245,7 @@ impl SubmitLane {
         }
     }
     /// Resolve an active batch before applying a newer ledger observation.
-    /// Seal purpose selection remains a separate trusted-driver operation.
+    /// C selects Apply/Seal readiness at the same committed revision.
     pub fn reconcile_tick(&mut self, chain: &ChainRead, rpc: &LoopbackRpc,
         s: &Snapshot, signer: &impl OperatorSigner, o: &Observation)
         -> Result<ReconcileProgress> {
@@ -257,6 +257,7 @@ impl SubmitLane {
                 Ok(())
             }
             ReconcileProgress::Apply => lane.apply(s, o),
+            ReconcileProgress::Seal(purpose) => lane.seal(s, purpose.as_str(), o),
             ReconcileProgress::Idle => Err(Error::Invalid("IDLE_EFFECT")),
         })
     }
@@ -265,12 +266,18 @@ impl SubmitLane {
         effect: impl FnOnce(&mut Self, &ReconcileProgress) -> Result<()>) -> Result<ReconcileProgress> {
         if self.closed { return Err(Error::Recovery("SUBMIT_LANE_CLOSED")); }
         self.closed = true;
-        let (commit, active) = self.active_action(s, o, clock()?)?;
+        let at = clock()?;
+        let (commit, active) = self.active_action(s, o, at)?;
+        let ready = self.engine.trusted_reconcile_readiness(&commit, o, at)?;
         let view = self.engine.reader().get()?;
         if view.commit != commit { return Err(Error::Invalid("STALE_COMMIT")); }
         let action = if let Some(active) = active { ReconcileProgress::Active(active) }
-            else if view.state["chain_snapshot"] != *s.value() { ReconcileProgress::Apply }
-            else { ReconcileProgress::Idle };
+            else if ready.apply == ApplyReadiness::Ready { ReconcileProgress::Apply }
+            else { match ready.seal {
+                SealReadiness::Ready(purpose) => ReconcileProgress::Seal(purpose),
+                SealReadiness::Waiting(_) => ReconcileProgress::Idle,
+                SealReadiness::ActiveBatch { .. } => return Err(Error::Invalid("DISPATCH_CONFLICT")),
+            } };
         if action == ReconcileProgress::Idle { self.closed = false; return Ok(action); }
         self.closed = false;
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| effect(self, &action)));
@@ -881,7 +888,7 @@ mod tests {
         (e, snapshot(&v,bps), inputs, home)
     }
     #[test]
-    fn seal_selection_gap_apply_before_invalid_fill_resolution_is_rejected() {
+    fn readiness_dispatch_epoch_change_selects_resolve_and_replays() {
         for bps in [0,25] {
             let (e,s,inputs,home) = unsealed(bps);
             let mut v = s.value().clone();
@@ -893,19 +900,11 @@ mod tests {
             let s = snapshot(&v,bps);
             let before = e.reader().get().unwrap();
             let mut lane = SubmitLane::new(e.clone());
-            let err = lane.reconcile_tick_with(&s,&o,|| Ok(fixture::NOW),|lane,a| {
-                assert_eq!(*a,ReconcileProgress::Apply);
-                lane.apply_with(&s,&o,|| Ok(fixture::NOW))
-            }).unwrap_err();
-            assert!(format!("{err:?}").contains("UNSETTLED_HOLD"),"{err:?}");
-            assert!(lane.closed);
-            assert_eq!(e.reader().get().unwrap().commit,before.commit);
-            assert_eq!(e.reader().get().unwrap().state,before.state);
-            drop(lane);
-            // C accepts the explicit purpose; SRE must not duplicate its private
-            // FIFO/expiry/revocation/epoch eligibility calculation to select it.
-            let mut lane = SubmitLane::new(e.clone());
-            lane.seal_with(&s,"RESOLVE_FAILURE",&o,|| Ok(fixture::NOW)).unwrap();
+            assert_eq!(lane.reconcile_tick_with(&s,&o,|| Ok(fixture::NOW),|lane,a| {
+                assert_eq!(*a,ReconcileProgress::Seal(SealPurpose::ResolveFailure));
+                lane.seal_with(&s,"RESOLVE_FAILURE",&o,|| Ok(fixture::NOW))
+            }).unwrap(),ReconcileProgress::Seal(SealPurpose::ResolveFailure));
+            assert!(!lane.closed);
             let after = e.reader().get().unwrap();
             assert_eq!(after.state["accounts"],before.state["accounts"]);
             assert_eq!(after.state["attempt_refs"],before.state["attempt_refs"]);
@@ -920,18 +919,65 @@ mod tests {
         }
     }
     #[test]
-    fn reconcile_dispatch_idle_does_not_seal_or_commit() {
+    fn readiness_dispatch_normal_seal_is_one_action_and_replays() {
         for bps in [0,25] {
-            let (e,s,_,home) = unsealed(bps);
+            let (e,s,inputs,home) = unsealed(bps);
             let before = e.reader().get().unwrap();
             let mut lane = SubmitLane::new(e.clone());
+            let o = fixture::observation(s.value());
+            assert_eq!(lane.reconcile_tick_with(&s,&o,|| Ok(fixture::NOW),|lane,a| {
+                assert_eq!(*a,ReconcileProgress::Seal(SealPurpose::Normal));
+                lane.seal_with(&s,"NORMAL",&o,|| Ok(fixture::NOW))
+            }).unwrap(),ReconcileProgress::Seal(SealPurpose::Normal));
+            let after = e.reader().get().unwrap();
+            assert_eq!(after.commit.command_seq,before.commit.command_seq+1);
+            assert_eq!(after.state["accounts"],before.state["accounts"]);
+            assert_eq!(after.state["attempt_refs"],before.state["attempt_refs"]);
+            drop(lane); drop(e);
             for _ in 0..2 {
-                assert_eq!(lane.reconcile_tick_with(&s,&fixture::observation(s.value()),
-                    || Ok(fixture::NOW),|_,_| panic!("idle effect")).unwrap(),ReconcileProgress::Idle);
-                assert_eq!(e.reader().get().unwrap().commit,before.commit);
-                assert_eq!(e.reader().get().unwrap().state,before.state);
+                let e = Engine::open(&home,Validated::new(inputs.clone()).unwrap()).unwrap();
+                assert_eq!(e.reader().get().unwrap().state,after.state);
+                assert_eq!(e.reader().get().unwrap().commit,after.commit);
             }
-            drop(lane); drop(e); std::fs::remove_dir_all(home).unwrap();
+            std::fs::remove_dir_all(home).unwrap();
+        }
+    }
+    #[test]
+    fn readiness_dispatch_applies_then_requeries_before_seal() {
+        for bps in [0,25] {
+            let (e,s,inputs,home) = unsealed(bps);
+            let mut v = s.value().clone();
+            v["height"] = serde_json::json!("101");
+            fixture::finish(&mut v);
+            let o = fixture::observation(&v);
+            e.execute(Command::Snapshot(canonical(&v).unwrap()), &[], &o, fixture::NOW).unwrap();
+            let s = snapshot(&v,bps);
+            let before = e.reader().get().unwrap();
+            let mut lane = SubmitLane::new(e.clone());
+            assert_eq!(lane.reconcile_tick_with(&s,&o,|| Ok(fixture::NOW),|lane,a| {
+                assert_eq!(*a,ReconcileProgress::Apply);
+                lane.apply_with(&s,&o,|| Ok(fixture::NOW))
+            }).unwrap(),ReconcileProgress::Apply);
+            let applied = e.reader().get().unwrap();
+            assert_eq!(applied.commit.command_seq,before.commit.command_seq+1);
+            assert_eq!(applied.state["batches"],before.state["batches"]);
+            assert!(e.trusted_reconcile_readiness(&before.commit,&o,fixture::NOW).is_err());
+            drop(lane); drop(e);
+            let e = Arc::new(Engine::open(&home,Validated::new(inputs.clone()).unwrap()).unwrap());
+            let mut lane = SubmitLane::new(e.clone());
+            assert_eq!(lane.reconcile_tick_with(&s,&o,|| Ok(fixture::NOW),|lane,a| {
+                assert_eq!(*a,ReconcileProgress::Seal(SealPurpose::Normal));
+                lane.seal_with(&s,"NORMAL",&o,|| Ok(fixture::NOW))
+            }).unwrap(),ReconcileProgress::Seal(SealPurpose::Normal));
+            let after = e.reader().get().unwrap();
+            assert_eq!(after.commit.command_seq,applied.commit.command_seq+1);
+            assert_eq!(after.state["accounts"],applied.state["accounts"]);
+            drop(lane); drop(e);
+            for _ in 0..2 {
+                let e = Engine::open(&home,Validated::new(inputs.clone()).unwrap()).unwrap();
+                assert_eq!(e.reader().get().unwrap().state,after.state);
+            }
+            std::fs::remove_dir_all(home).unwrap();
         }
     }
     #[test]

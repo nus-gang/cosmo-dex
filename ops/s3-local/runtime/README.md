@@ -336,3 +336,15 @@ ChainPort·초기화/launcher·fault/정리·최종 manifest와 CTO→Security�
 `SubmitLane::reconcile_tick`은 저장된 같은 commit의 활성 batch를 먼저 처리하고, 활성 batch가 없고 최신 snapshot이 적용 anchor와 다를 때만 `Apply`를 위임한다. 두 anchor가 같으면 `Idle`이며 IO·Seal·서명·commit을 실행하지 않는다. 영수증 저장과 Apply는 별도 tick이다. stale/clock/기존 action 오류·panic 후 lane을 닫고 재호출하지 않는다. C의 경제·proof·정정·lock은 변경하지 않았다. 자동 Seal 목적 선택은 아직 별도 trusted driver 연결점이며 Idle을 Seal 승인으로 사용하지 않는다.
 
 신규 순수시험3 PASS/0 FAIL: fee0/25 × COMMITTED/VOID 영수증 저장→재시작→C Apply→두 번 replay/Idle, 대기 fill의 자동 Seal0·commit 불변, stale/IO/panic 뒤 effect 재호출0. 시험은 메모리 RPC 원문과 공개 합성 키를 사용하며 실제 RPC·서비스0이다. 전체100개 중 기존97개는 이번 재실행하지 않았다. `reconcile-dispatch/build.json`, `compile.log`, `tests.log`에 실제 명령·결과를 보존한다. runtime pin 미발급·DEV NOT_RUN.
+
+## 승인 C 준비 판단 연결 — 2026-10-07
+
+위의 자동 Seal 미연결 기록을 이번 변경으로 갱신한다. C `20c0cd9`의
+`trusted_reconcile_readiness`를 동일 commit·관측·시각으로 호출한다. 활성
+batch 처리 후, Apply Ready이면 한 tick에 Apply만 실행한다. 다음 tick은 새
+commit을 다시 조회한다. Apply가 보류되거나 관측이 없으면 C가 반환한 Ready
+Seal 목적만 전달하고 Waiting이면 Idle이다. SRE는 FIFO·expiry·epoch 규칙을
+복제하지 않으며 다른 목적으로 재시도하지 않는다. 오류/panic 뒤 lane 닫힘과
+실제 C 실행 검증을 유지한다. 준비 판단과 분기 결과는 방송 권한이나 영수증이
+아니다. 실제 worker 실행 파일·웹 ChainPort·초기화/launcher·fault/정리·최종
+manifest는 후속 작업이며 서비스/RPC0·DEV NOT_RUN·runtime pin 미발급이다.
