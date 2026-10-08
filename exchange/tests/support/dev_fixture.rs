@@ -61,15 +61,15 @@ pub fn inputs(bps: u32, users: &[Value]) -> Inputs {
         );
     }
     files.insert(format!("{prefix}MANIFEST.json"), raw);
-    let overlay: Value = serde_json::from_slice(
-        &std::fs::read(root.join("proposals/s3-local-account-receipt-v1/MANIFEST.json")).unwrap(),
-    )
-    .unwrap();
+    let public_prefix = "proposals/s3-local-account-receipt-v1/";
+    let public_raw = std::fs::read(root.join(format!("{public_prefix}MANIFEST.json"))).unwrap();
+    let overlay: Value = serde_json::from_slice(&public_raw).unwrap();
     for (p, digest) in overlay["files_sha256"].as_object().unwrap() {
         let raw = std::fs::read(root.join(p)).unwrap();
         assert_eq!(sha256(&raw), digest.as_str().unwrap());
         files.insert(p.clone(), raw);
     }
+    files.insert(format!("{public_prefix}MANIFEST.json"), public_raw.clone());
     let mut components = BTreeMap::new();
     for name in ["chain", "exchange", "settlement", "wallet", "sre"] {
         let p = format!("chain/local-demo/components/{name}.json");
@@ -77,7 +77,7 @@ pub fn inputs(bps: u32, users: &[Value]) -> Inputs {
         components.insert(name, p);
     }
     let contract = aggregate(&files);
-    let m = json!({"format":"s3-dev-local-runtime/1","scope":"REVIEWED_RUNTIME","candidate_manifest_sha256":"90169d322336a0c0de9bc6c48725d528d42fe74c78ea5b596fc7e059d747dda2","contract_sha256":contract,"files_sha256":files.iter().map(|(p,b)|(p.clone(),sha256(b))).collect::<BTreeMap<_,_>>(),"components":components});
+    let m = json!({"format":"s3-dev-local-runtime/1","scope":"REVIEWED_RUNTIME","candidate_manifest_sha256":"90169d322336a0c0de9bc6c48725d528d42fe74c78ea5b596fc7e059d747dda2","public_receipt_manifest_sha256":sha256(&public_raw),"public_receipt_schema_sha256":sha256(&files[&format!("{public_prefix}schema.json")]),"public_receipt_version":"s3-dev-local-account/1","contract_sha256":contract,"files_sha256":files.iter().map(|(p,b)|(p.clone(),sha256(b))).collect::<BTreeMap<_,_>>(),"components":components});
     let runtime_manifest = canonical(&m).unwrap();
     let pin = sha256(&runtime_manifest);
     let profile = files[&format!("{prefix}effective-profile-fee{bps}.json")].clone();

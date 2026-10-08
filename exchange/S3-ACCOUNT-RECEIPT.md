@@ -2,7 +2,25 @@
 
 승인 A `ed4cf278cff78312ac606d6834901e0b8b265725`의 [계약](../proposals/s3-local-account-receipt-v1/CONTRACT.md)·[API](../proposals/s3-local-account-receipt-v1/API.md)를 구현한다. 이 C 후보는 CTO→Security 재심사가 필요하며 runtime pin·서비스 기동 승인이 아니다. `G00=FAIL_UNPROVEN / allowlist=[] / ACK=CLOSED / durable_ack=false`를 유지한다.
 
-**호환성 변경:** 개발 runtime의 계약 파일 집합에 승인 overlay MANIFEST의 `files_sha256` 60개를 추가해야 한다. overlay MANIFEST 자체는 빌드에서 고정하고 runtime 집계에서는 제외한다. 기존 rc3+A manifest 입력과 5 component descriptor 규칙은 보존한다. 이전 runtime 파일 집합을 수락하는 fallback이 없으며 새 Context/genesis/빈 home/시험 키가 필요하다. 기존 guard·receipt·WAL을 자동 이관하거나 다시 봉인하지 않는다. 시험 pin은 합성 fixture이고 최종 runtime 승인이 아니다.
+**호환성 변경:** 승인 B `fb4addfe1bcf9a8c39837b8a8dc199eed9481f27` 및 SEC-70-04 인계에 따라 개발 runtime의 계약 파일 집합에 overlay MANIFEST의 `files_sha256` 60개와 **MANIFEST 원문 자체**를 포함한다. self-excluded는 MANIFEST 자신의 candidate 집계에 대한 규칙이며 runtime 집계의 제외 규칙이 아니다. 기존 rc3+A manifest 입력과 5 component descriptor 규칙은 보존한다. 이전 6필드 또는 MANIFEST를 제외한 runtime 입력을 수락하는 fallback은 없다. 새 contract hash의 Context/genesis/빈 home/시험 키가 필요하며 기존 guard·receipt·WAL을 자동 이관하거나 다시 봉인하지 않는다. 시험 pin은 합성 fixture이고 최종 runtime 승인이 아니다.
+
+## Runtime 입력과 B→C 연결
+
+`Validated::new`와 `Validated::decode_bundle`은 runtime manifest에 다음 **정확한 9필드**만 허용한다: `format`, `scope`, `candidate_manifest_sha256`, `public_receipt_manifest_sha256`, `public_receipt_schema_sha256`, `public_receipt_version`, `contract_sha256`, `files_sha256`, `components`. 누락·추가·null·중복 key와 대소문자 별칭은 거절한다.
+
+| public pin | 고정값 |
+|---|---|
+| `public_receipt_manifest_sha256` | `5e911b9a5fc750c702c9c8cde09dcfc2c56106a7e0757f1d7ad2e839019b50fa` |
+| `public_receipt_schema_sha256` | `2bbb848b836c8d15f2732b481f78be2e28b0cbc2b7c783971bc593747d120b6b` |
+| `public_receipt_version` | `s3-dev-local-account/1` |
+
+`files`에는 `proposals/s3-local-account-receipt-v1/MANIFEST.json`과 그 manifest가 열거한 schema/version 원문을 포함한다. 모든 원문의 SHA256, overlay 원문의 고정 SHA256, `candidate_files_sha256`, `public_schema_sha256`, 상속 파일 집합의 동일성, 경로 중복의 hash 일치와 전체 runtime 파일 집합을 검사한다. runtime `contract_sha256`은 경로순 `sha256 + 두 공백 + 경로 + LF` 전체의 SHA256이다. 호출자가 바뀐 원문과 바깥 hash를 함께 다시 계산해도 승인 원문을 교체할 수 없다.
+
+새 aggregate는 genesis app_state.contract_hash·guard Context와 같아야 한다. guard는 독립 입력 pin과 runtime 원문 hash를 연결한다. bootstrap은 이 전체 Context로 검증하고, `Engine::open`은 다시 검증한 입력과 저장된 runtime/genesis/guard/bootstrap bytes를 대조한다. WAL semantic replay·trusted source·공개 영수증은 이 Context를 그대로 사용한다. live runtime 파일을 바꾸면 source 조회·새 명령이 닫히며 자동 수리하지 않는다. 입력 또는 bootstrap 검증 실패는 `Engine::create`의 root 생성 이전이고, 기존 root는 no-replace로 거절한다.
+
+pin 오류는 `PUBLIC_RECEIPT_PIN_MISMATCH`, 공개 MANIFEST 누락/재봉인은 `PUBLIC_RECEIPT_MANIFEST_MISMATCH`다. raw hash·집계·Context 불일치는 해당 기존 입력 오류로 거절한다. `validate` CLI의 성공은 여전히 `VALIDATED_INPUT_BYTES_ONLY; RUNTIME_APPROVAL_NOT_ESTABLISHED; durable_ack=false`이며 승인·기동 권한이 아니다. B의 `InputBundle` bytes를 수정하거나 세 pin을 삭제하지 않고 그대로 전달한다.
+
+검증은 `s3_runtime_manifest`의 strict 입력·fresh key/Context·원 결과·두 번 재시작·변조·CLI no-replace 시험과 B의 실제 validator 교차시험으로 나눈다. `actual_b_bundle_bootstrap_context_queries_and_two_restarts`는 B initializer가 내보낸 `NUS_BUNDLE_EXPORT` 원문을 요구하는 명시적 ignored 시험이며, `--ignored --exact`로 실행해야 한다. 그 bootstrap 잔고 snapshot은 합성이고 실제 체인/RPC 결과가 아니다. 최종 5 descriptor/aggregate/runtime 봉인과 서비스 통합은 SRE의 후속 인수다.
 
 ## C의 읽기 API
 
@@ -37,4 +55,5 @@ D는 원 trusted receipt를 worker 입력으로 사용하고 공개 타입을 �
 
 - Added: 인증 seq 조회와 immutable source/projection·trusted 검증 API를 추가했다.
 - Fixed: 공개 계정 projection에 원 글로벌 CommandResult 버전을 붙이던 CTO-70-03 결함을 승인 overlay로 교체했다.
+- Fixed: SEC-70-04의 B 9필드/C 6필드 불일치와 공개 MANIFEST의 runtime 집계 누락을 수정했다. 이전 후보의 승인·시험 기록은 새 후보의 승인으로 재사용하지 않는다.
 - **Breaking:** overlay 없는 개발 runtime/home 입력은 거절하며 새 Context/genesis/home/모의 키로 시작해야 한다.

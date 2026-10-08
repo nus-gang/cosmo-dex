@@ -8,6 +8,7 @@
 
 - 독립 심사 인계에서 받은 `approved_runtime_sha256`와 runtime manifest 원문. manifest에서 계산한 값을 승인으로 자가 발급하면 안 된다.
 - A 후보 manifest `90169d322336a0c0de9bc6c48725d528d42fe74c78ea5b596fc7e059d747dda2`, rc3 manifest `3ff69e73057a2bb6dcff64820123d520b9ad3e5637abbd1ad7d38b8c1a49eb97` 및 상속 파일 전체. B의 `LocalDemoInputs`와 같은 5개 component descriptor 경로·집계 규칙을 사용한다. `COMPONENT_FIXTURE` scope는 공개 생성자가 거절한다.
+- 승인 B와 동일한 runtime exact 9필드와 public MANIFEST/schema/version 세 pin. 공개 MANIFEST 원문 자체와 열거된 60파일을 runtime aggregate에 포함한다. 구형 6필드·원문 제외 fallback은 없으며 [공개 영수증 입력/API](S3-ACCOUNT-RECEIPT.md)의 새 Context·빈 home 규칙을 따른다.
 - 정확한 fee0/25 effective profile, canonical guard의 8개 필드, 전체 Context, 새 genesis bytes 및 공개 사용자 roster. Chain의 InitChain/SDK 검증은 승인 B의 책임이다. C의 초기 snapshot은 인증된 로컬 chain adapter의 동일 높이 원문이어야 한다. 이 API는 light client가 아니다.
 - 기존 rc3 `exchange/Cargo.toml` 원문은 시험용 `tests/support/rc3-exchange-Cargo.toml`로 보존한다. 현재 feature 설정을 상속 manifest에 다시 봉인하지 않는다. 실제 C 설정/lock/source는 component descriptor와 심사 증거에서 별도로 고정한다.
 

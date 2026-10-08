@@ -1,6 +1,9 @@
 //! Exact source bytes and an independently supplied runtime pin. A SHA proves
 //! byte identity, never organizational approval. No component bypass exists.
-use super::{Error, Result};
+use super::{
+    Error, Result,
+    account_receipt::{PUBLIC_RECEIPT_SCHEMA_SHA256, PUBLIC_RECEIPT_VERSION},
+};
 use crate::{
     codec,
     s3::{
@@ -16,6 +19,9 @@ use std::collections::{BTreeMap, BTreeSet};
 pub const CANDIDATE: &str = "90169d322336a0c0de9bc6c48725d528d42fe74c78ea5b596fc7e059d747dda2";
 const BASELINE: &str = "3ff69e73057a2bb6dcff64820123d520b9ad3e5637abbd1ad7d38b8c1a49eb97";
 const PREFIX: &str = "proposals/s3-local-dev-v1/";
+const PUBLIC_PREFIX: &str = "proposals/s3-local-account-receipt-v1/";
+const PUBLIC_MANIFEST_SHA256: &str =
+    "5e911b9a5fc750c702c9c8cde09dcfc2c56106a7e0757f1d7ad2e839019b50fa";
 pub const PROFILE: &str = "s3-dev-local-v1";
 #[derive(Clone)]
 pub struct Inputs {
@@ -87,6 +93,9 @@ impl Validated {
                 "format",
                 "scope",
                 "candidate_manifest_sha256",
+                "public_receipt_manifest_sha256",
+                "public_receipt_schema_sha256",
+                "public_receipt_version",
                 "contract_sha256",
                 "files_sha256",
                 "components",
@@ -97,6 +106,12 @@ impl Validated {
             || m["candidate_manifest_sha256"] != CANDIDATE
         {
             return Err(Error::Invalid("RUNTIME_MANIFEST_SCOPE"));
+        }
+        if m["public_receipt_manifest_sha256"] != PUBLIC_MANIFEST_SHA256
+            || m["public_receipt_schema_sha256"] != PUBLIC_RECEIPT_SCHEMA_SHA256
+            || m["public_receipt_version"] != PUBLIC_RECEIPT_VERSION
+        {
+            return Err(Error::Invalid("PUBLIC_RECEIPT_PIN_MISMATCH"));
         }
         let files = hashes(&m["files_sha256"])?;
         let components = hashes(&m["components"])?;
@@ -150,16 +165,37 @@ impl Validated {
         }
         expected.insert(format!("{PREFIX}MANIFEST.json"), CANDIDATE.into());
         expected.insert("protocol/s3/manifest.json".into(), BASELINE.into());
-        // Approved public overlay is mandatory: old runtime/home inputs do not
-        // silently acquire the new receipt decoder. The overlay manifest is a
-        // pinned build input, excluded from its own runtime aggregate.
-        let overlay: Value = serde_json::from_str(include_str!(
-            "../../../../proposals/s3-local-account-receipt-v1/MANIFEST.json"
-        ))
-        .map_err(|_| Error::Invalid("ACCOUNT_CONTRACT_MANIFEST"))?;
-        for (path, digest) in hashes(&overlay["files_sha256"])? {
+        // Match B's approved nine-field runtime input exactly. The overlay
+        // manifest excludes itself from its own candidate aggregate, but the
+        // runtime aggregate includes these immutable manifest bytes as well.
+        let public_manifest_path = format!("{PUBLIC_PREFIX}MANIFEST.json");
+        let public_schema_path = format!("{PUBLIC_PREFIX}schema.json");
+        let public_raw = i
+            .files
+            .get(&public_manifest_path)
+            .ok_or(Error::Invalid("PUBLIC_RECEIPT_MANIFEST_MISMATCH"))?;
+        if sha256(public_raw) != PUBLIC_MANIFEST_SHA256 {
+            return Err(Error::Invalid("PUBLIC_RECEIPT_MANIFEST_MISMATCH"));
+        }
+        let overlay = codec::unique_json(public_raw)?;
+        let public_files = hashes(&overlay["files_sha256"])?;
+        if overlay["self_excluded"] != true
+            || overlay["public_schema_sha256"] != PUBLIC_RECEIPT_SCHEMA_SHA256
+            || public_files.get(&public_schema_path).map(String::as_str)
+                != Some(PUBLIC_RECEIPT_SCHEMA_SHA256)
+            || public_files.contains_key(&public_manifest_path)
+            || overlay["candidate_files_sha256"] != aggregate(&public_files)
+            || hashes(&overlay["inherited_files_sha256"])? != expected
+        {
+            return Err(Error::Invalid("PUBLIC_CONTRACT_AGGREGATE_MISMATCH"));
+        }
+        for (path, digest) in public_files {
+            if expected.get(&path).is_some_and(|old| old != &digest) {
+                return Err(Error::Invalid("PUBLIC_CONTRACT_OVERLAP"));
+            }
             expected.insert(path, digest);
         }
+        expected.insert(public_manifest_path, PUBLIC_MANIFEST_SHA256.into());
         for name in ["chain", "exchange", "settlement", "wallet", "sre"] {
             let path = format!("chain/local-demo/components/{name}.json");
             if components.get(name) != Some(&path) {
