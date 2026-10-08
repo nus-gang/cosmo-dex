@@ -45,7 +45,8 @@ print(json.dumps(report),flush=True)
         with target.stage(self.args,lambda:{}) as (root,check,baseline):
             self.args.user_public_keys.write_bytes(b'replaced')
             self.assertEqual((root/'users.json').read_bytes(),b'public-only')
-            result=target.run(self.args,root,check,baseline,lambda:{})
+            with patch.object(target.os,'killpg',side_effect=AssertionError('reaped child must not be signalled')):
+                result=target.run(self.args,root,check,baseline,lambda:{})
             self.assertFalse(result['service_started'])
             self.assertTrue(self.args.output.is_dir())
         self.assertEqual(list(self.scratch.iterdir()),[])

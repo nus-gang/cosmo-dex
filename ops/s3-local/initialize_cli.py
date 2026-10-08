@@ -161,9 +161,15 @@ def run(a, root, check, baseline, audit, stopped=lambda: False):
     finally:
         child.stdin.close()
         try:
-            os.killpg(child.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
+            # EOF closes the reviewed child's publication gate. Reap its
+            # normal rejection before considering a signal; never signal a
+            # group identified by an already reaped child PID.
+            child.wait(timeout=.25)
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(child.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
         finally:
             child.wait(timeout=5)
             child.stdout.close()
