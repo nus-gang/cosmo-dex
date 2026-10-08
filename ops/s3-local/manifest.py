@@ -25,7 +25,7 @@ HEADS = {
 # C is still a required approved ancestor even though D is the later reviewed
 # byte source for exchange/. This records both provenance and final bytes.
 ANCESTORS = {
-    'exchange_contract': '6c0acdaa5ee9ea24fd0a2c83d15dbcf7f359de52',
+    'exchange_contract': component_sources.EXCHANGE_CORRECTION,
 }
 COMPONENTS = ('chain', 'exchange', 'settlement', 'wallet', 'sre')
 LOCKS = ('chain/app/go.mod', 'chain/app/go.sum', 'chain/go.mod', 'chain/go.sum',

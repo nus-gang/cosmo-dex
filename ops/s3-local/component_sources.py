@@ -8,7 +8,7 @@ import re
 import subprocess
 
 CANDIDATES = {
-    'chain': ('497ecba3008de9168c431facc4ff9fc8a4fc329b', 'chain/'),
+    'chain': ('fb4addfe1bcf9a8c39837b8a8dc199eed9481f27', 'chain/'),
     # D is the latest independently approved byte source for exchange/: its
     # reviewed REST adapter intentionally changes two C-owned files. C remains
     # a mandatory ancestor in manifest.py and is never replaced as provenance.
@@ -16,6 +16,15 @@ CANDIDATES = {
     'settlement': ('ccabc5ae15b4a5246a85d568a22910d3e17b4851', 'settlement/'),
     'wallet': ('4062facbb0039ff2d2a6e6d126dcba2836c63ded', 'web/'),
 }
+
+# C's later five-file public-manifest correction is independent of the three
+# reviewed D REST/test paths. Require exact approved blobs, never text merges.
+EXCHANGE_CORRECTION = '2bb2f6d29da23e1479be85bc16cb175cdb525367'
+EXCHANGE_CORRECTION_FILES = (
+    'exchange/S3-ACCOUNT-RECEIPT.md', 'exchange/S3-DEV-LOCAL.md',
+    'exchange/src/s3/dev_local/binding.rs', 'exchange/tests/s3_runtime_manifest.rs',
+    'exchange/tests/support/dev_fixture.rs',
+)
 
 
 def git(root, *args):
@@ -80,6 +89,23 @@ def compare(root, source_commit, candidate_commit, prefix):
 def audit(root, candidate_commit):
     components = {name: compare(root, head, candidate_commit, prefix)
                   for name, (head, prefix) in CANDIDATES.items()}
+    correction = entries(root, EXCHANGE_CORRECTION, 'exchange/')
+    actual = entries(root, candidate_commit, 'exchange/')
+    exchange = components['exchange']
+    # Preserve D's entire approved snapshot except the enumerated C correction.
+    # Every replacement must exactly equal its approved C blob and mode.
+    for path in EXCHANGE_CORRECTION_FILES:
+        expected = correction[path]
+        if actual.get(path) != expected:
+            raise ValueError('APPROVED_C_CORRECTION_CHANGED: '+path)
+        exchange['changed'].pop(path, None)
+        exchange['added'].pop(path, None)
+        if path in exchange['missing']:
+            exchange['missing'].remove(path)
+    exchange['approved_c_correction'] = dict(head=EXCHANGE_CORRECTION,
+        files={p:correction[p] for p in EXCHANGE_CORRECTION_FILES})
+    exchange['approved_files_preserved'] = not exchange['missing'] and not exchange['changed']
+    exchange['additions_require_review'] = bool(exchange['added'])
     return dict(schema='s3-local-component-inclusion/1', candidate_head=candidate_commit,
                 candidate_tree=git(root, 'rev-parse', candidate_commit+'^{tree}').decode().strip(),
                 components=components, approved_files_preserved=all(c['approved_files_preserved'] for c in components.values()),

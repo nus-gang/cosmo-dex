@@ -10,7 +10,7 @@ func validArgs() []string {
 		"--user-public-keys", "/private/users.json", "--output", "/private/fee0", "--scratch", "/private/scratch",
 		"--run-uuid", "11111111-2222-4333-8444-555555555555", "--genesis-time", "2027-01-15T08:00:00Z",
 		"--fee-bps", "0", "--c-validator", "/private/bin/nus-s3-local-demo",
-		"--local-demo-profile", "s3-dev-local/1", "--acknowledge-unproven-space"}
+		"--publication-gate", "stdin", "--local-demo-profile", "s3-dev-local/1", "--acknowledge-unproven-space"}
 }
 
 func TestParseExactInitializerEnvelope(t *testing.T) {

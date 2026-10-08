@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -48,8 +49,9 @@ func parse(args []string) (options, error) {
 	f.StringVar(&o.genesisTime, "genesis-time", "", "")
 	f.StringVar(&o.fee, "fee-bps", "", "")
 	f.StringVar(&o.validator, "c-validator", "", "")
-	var localProfile string
+	var localProfile, publicationGate string
 	f.StringVar(&localProfile, "local-demo-profile", "", "")
+	f.StringVar(&publicationGate, "publication-gate", "", "")
 	f.BoolVar(&o.ack, "acknowledge-unproven-space", false, "")
 	seen := map[string]bool{}
 	for i := 1; i < len(args); i++ {
@@ -65,7 +67,7 @@ func parse(args []string) (options, error) {
 			}
 		}
 	}
-	if f.Parse(args[1:]) != nil || f.NArg() != 0 || !o.ack || localProfile != "s3-dev-local/1" ||
+	if f.Parse(args[1:]) != nil || f.NArg() != 0 || !o.ack || localProfile != "s3-dev-local/1" || publicationGate != "stdin" ||
 		(o.fee != "0" && o.fee != "25") || !regexp.MustCompile(`^[0-9a-f]{64}$`).MatchString(o.pin) {
 		return o, errors.New("INPUT")
 	}
@@ -195,7 +197,7 @@ func sourceInput(o options) (app.LocalDemoInputs, [][]byte, time.Time, error) {
 	return in, users, at, nil
 }
 
-func run(args []string) ([]byte, error) {
+func run(args []string, gate io.ReadCloser, ready io.Writer) ([]byte, error) {
 	o, err := parse(args)
 	if err != nil {
 		return nil, err
@@ -214,9 +216,16 @@ func run(args []string) ([]byte, error) {
 		return nil, err
 	}
 	defer prepared.Destroy()
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	signalContext, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	ctx, cancel := context.WithTimeout(signalContext, 60*time.Second)
 	defer cancel()
 	if err = prepared.ValidateC(ctx, o.validator, o.scratch); err != nil {
+		return nil, err
+	}
+	// Sequencing only: the reviewed parent authenticates fresh independent
+	// approvals and checks its staged bytes after READY, before sending PUBLISH.
+	if err = awaitPublication(ctx, gate, ready, 30*time.Second); err != nil {
 		return nil, err
 	}
 	report, err := prepared.Publish(o.output)
@@ -227,7 +236,7 @@ func run(args []string) ([]byte, error) {
 }
 
 func main() {
-	report, err := run(os.Args[1:])
+	report, err := run(os.Args[1:], os.Stdin, os.Stdout)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, failure)
 		os.Exit(2)

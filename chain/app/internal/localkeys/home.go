@@ -33,7 +33,11 @@ func mkdirPrivate(parent int, name string) (int, error) {
 }
 
 func writeAt(dir int, name string, raw []byte) error {
-	if name == "" || filepath.Base(name) != name || len(raw) == 0 || len(raw) > 1<<20 {
+	return writeBoundedAt(dir, name, raw, 1<<20)
+}
+
+func writeBoundedAt(dir int, name string, raw []byte, limit int) error {
+	if name == "" || filepath.Base(name) != name || len(raw) == 0 || len(raw) > limit {
 		return errors.New("OUTPUT_REJECTED")
 	}
 	fd, err := unix.Openat(dir, name, unix.O_WRONLY|unix.O_CREAT|unix.O_EXCL|unix.O_NOFOLLOW|unix.O_CLOEXEC, 0600)
@@ -149,6 +153,15 @@ func (p *Initialization) Publish(root string) (PublicInitialization, error) {
 		if err = publishHome(rootFD, "validator-"+strconv.Itoa(i), p.in.Guard, p.in.Genesis, p.nodes[i]); err != nil {
 			return PublicInitialization{}, err
 		}
+	}
+	// Preserve the exact B/C-validated transport and effective profile for the
+	// later Chain startup and authoritative-snapshot C bootstrap. No C store or
+	// synthetic observation is created here. Both files contain public data only.
+	if err = writeBoundedAt(rootFD, "input.json", p.bundle, 48<<20); err != nil {
+		return PublicInitialization{}, err
+	}
+	if err = writeAt(rootFD, "effective-profile.json", p.in.EffectiveProfile); err != nil {
+		return PublicInitialization{}, err
 	}
 	report, err := json.Marshal(result)
 	if err != nil {

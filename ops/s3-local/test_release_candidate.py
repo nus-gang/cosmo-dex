@@ -26,7 +26,7 @@ class ReleaseSpec(unittest.TestCase):
             'artifacts': ['fixture/' + name], 'approval_sources': ['fixture'],
             'settings': dict(settings),
         } for name in r.COMPONENTS}
-        self.spec['chain']['artifacts'].append('bin/nus-s3-local-chain')
+        self.spec['chain']['artifacts'].extend(['bin/nus-s3-local-chain','bin/nus-s3-local-initialize'])
         self.spec['sre']['artifacts'].extend(r.SRE_NATIVE)
         self.spec['sre']['artifacts'].extend(r.ASSETS)
         for name in ('chain', 'exchange', 'settlement', 'wallet'):
@@ -49,6 +49,7 @@ class ReleaseSpec(unittest.TestCase):
 
     def test_prior_submission_shapes_are_rejected(self):
         cases = {
+            'initializer': lambda: self.spec['chain']['artifacts'].remove('bin/nus-s3-local-initialize'),
             'native': lambda: self.spec['sre']['artifacts'].remove(r.SRE_NATIVE[0]),
             'web': lambda: self.spec['sre']['artifacts'].remove('web/index.html'),
             'cwd': lambda: self.spec['sre']['settings'].__setitem__('build_cwd', 'missing'),

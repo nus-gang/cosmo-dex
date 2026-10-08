@@ -117,7 +117,7 @@ def verify_spec(source, spec):
                 raise ValueError('APPROVED_TREE_MISMATCH: ' + name)
         report[name] = {'cwd': cwd, 'environment': env, 'argv': argv,
                         'source_inputs': inputs, 'dependency_inputs': dependencies}
-    if 'bin/nus-s3-local-chain' not in spec['chain']['artifacts']:
+    if not {'bin/nus-s3-local-chain','bin/nus-s3-local-initialize'}.issubset(spec['chain']['artifacts']):
         raise ValueError('CHAIN_ARTIFACT_MISSING')
     missing = sorted(set(SRE_NATIVE) - set(spec['sre']['artifacts']))
     if missing:

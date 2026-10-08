@@ -89,7 +89,7 @@ class SourceGate(unittest.TestCase):
         self.assertEqual(result['component_inclusion'], report)
         self.assertEqual(m.HEADS['exchange'], m.component_sources.CANDIDATES['exchange'][0])
         self.assertEqual(m.HEADS['wallet'], m.component_sources.CANDIDATES['wallet'][0])
-        self.assertEqual(m.ANCESTORS['exchange_contract'], '6c0acdaa5ee9ea24fd0a2c83d15dbcf7f359de52')
+        self.assertEqual(m.ANCESTORS['exchange_contract'], '2bb2f6d29da23e1479be85bc16cb175cdb525367')
 
     def test_dirty_source_rejected_before_inclusion(self):
         with self.assertRaisesRegex(ValueError, 'DIRTY_SOURCE'):
