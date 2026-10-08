@@ -42,11 +42,17 @@ class ReleaseSpec(unittest.TestCase):
         self.assertEqual(report['sre']['argv'], [['tool', 'arg']])
         self.assertEqual(report['chain']['cwd'], 'src')
 
+    def test_source_root_build_cwd_is_explicitly_supported(self):
+        self.spec['sre']['settings']['build_cwd'] = '.'
+        report = self.verify()
+        self.assertEqual(report['sre']['cwd'], '.')
+
     def test_prior_submission_shapes_are_rejected(self):
         cases = {
             'native': lambda: self.spec['sre']['artifacts'].remove(r.SRE_NATIVE[0]),
             'web': lambda: self.spec['sre']['artifacts'].remove('web/index.html'),
             'cwd': lambda: self.spec['sre']['settings'].__setitem__('build_cwd', 'missing'),
+            'cwd_parent': lambda: self.spec['sre']['settings'].__setitem__('build_cwd', '..'),
             'input': lambda: self.spec['sre']['settings'].__setitem__(
                 'build_inputs_sha256_json', '{"src/input":"' + '0'*64 + '"}'),
             'argv': lambda: self.spec['sre'].__setitem__('build_argv', ['not-json']),

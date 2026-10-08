@@ -71,8 +71,12 @@ def verify_spec(source, spec):
         required = {'build_cwd', 'build_env_json', 'build_inputs_sha256_json'}
         if not isinstance(settings, dict) or not required.issubset(settings):
             raise ValueError('BUILD_PROVENANCE_REQUIRED: ' + name)
-        cwd = relative(settings['build_cwd'])
-        if not (source / cwd).is_dir():
+        declared_cwd = settings['build_cwd']
+        # A build may run at the exact source root. Keep that representation
+        # distinct from paths accepted by relative(), which intentionally
+        # rejects dot segments for captured files.
+        cwd = '.' if declared_cwd == '.' else relative(declared_cwd)
+        if not (source if cwd == '.' else source / cwd).is_dir():
             raise ValueError('BUILD_CWD_MISSING: ' + name)
         env = canonical_json(settings['build_env_json'], 'BUILD_ENV_INVALID: ' + name)
         if not isinstance(env, dict) or not all(isinstance(k, str) and
