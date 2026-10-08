@@ -44,6 +44,9 @@ loopback 서비스, ENOSPC 복구는 이번 SDK 시험의 PASS에 포함하지 �
   "format": "s3-dev-local-runtime/1",
   "scope": "REVIEWED_RUNTIME",
   "candidate_manifest_sha256": "<승인 후보 MANIFEST.json SHA256>",
+  "public_receipt_manifest_sha256": "5e911b9a5fc750c702c9c8cde09dcfc2c56106a7e0757f1d7ad2e839019b50fa",
+  "public_receipt_schema_sha256": "2bbb848b836c8d15f2732b481f78be2e28b0cbc2b7c783971bc593747d120b6b",
+  "public_receipt_version": "s3-dev-local-account/1",
   "contract_sha256": "<아래 파일 집합의 집계 SHA256>",
   "files_sha256": {"<repo-relative path>": "<exact bytes SHA256>"},
   "components": {
@@ -61,10 +64,17 @@ component descriptor는 `head`, `tree`(lowercase git SHA40), `implementation_set
 이 형식은 Chain 어댑터 입력 codec이며 공통 `protocol/` 또는 승인 계약 파일을 바꾸지 않는다.
 CTO가 새 심사에서 호출 계약을 검토한다.
 
+필수 필드는 위 9개다. 새 공개 pin 3개는 승인 A `ed4cf278cff78312ac606d6834901e0b8b265725`의
+상수와 정확히 같아야 한다. 구 6필드 입력·pin 누락/변조/대소문자 별칭·추가 key는 거절한다.
+
 파일 집합은 승인 rc3 manifest의 204개 원본, `protocol/s3/manifest.json`, 승인 후보의 8개 파일,
-위 5개 descriptor로 정확히 구성한다. 런타임 manifest 자체·genesis·키·실행 결과나 임의 파일은
+공개 계약의 60개 파일과 그 `MANIFEST.json`, 위 5개 descriptor로 정확히 구성한다(총279개).
+공개 MANIFEST의 `files_sha256`은 repo-relative 경로이며 self-excluded다. 상속 213개 집합과
+schema hash·공개 파일 aggregate를 확인하고 공개 MANIFEST 자체도 runtime aggregate에 한 번 넣는다.
+런타임 manifest 자체·genesis·키·실행 결과나 임의 파일은
 허용하지 않는다. 집계는 `SHA256(sorted sha256 + two spaces + repo-relative path + LF)`다.
-후보 manifest와 rc3 manifest 자체의 SHA를 코드에서 pin하고 그 안의 모든 파일 byte를 다시 검증한다.
+후보·rc3·공개 manifest 자체의 SHA를 코드에서 pin하고 그 안의 모든 파일 byte를 다시 검증한다.
+옛 파일 집합에 새 pin만 추가하거나 변경 파일의 hash를 다시 계산해도 승인 집합과 다르면 거절한다.
 
 `Files`는 봉인된 승인 소스 snapshot이다. 현재 작업 디렉터리를 통째로 읽어 다시 봉인하지 않는다.
 기존 B가 승인받은 `chain/app/go.mod` 로컬 codec require/replace 때문에 rc3 원본 lock과
@@ -89,6 +99,9 @@ fixture의 `testdata/local-demo/rc3-chain-app-go.mod`는 `fd9aa6c`의 exact 원�
 - genesis namespace의 exchange 원장과 별도로 불변 `s3_binding`에 guard 원문·contract/config/fee를 저장한다.
   다시 열 때 genesis/chain과 저장 바인딩 전체 및 fee/version이 같아야 한다. 기존 DB에 guard만 바꾸거나
   표준↔개발 DB를 교차 개방할 수 없다.
+- 공개 계약 추가로 달라진 contract hash는 새 genesis와 guard의 전체 Context에 결합한다.
+  구 contract의 InitChain/조회와 다른 contract/genesis의 기존 DB 재개를 거절한다.
+  old/new decoder fallback·guard 재발급·기존 DB migration은 제공하지 않는다.
 - Snapshot/Batch/Order 조회는 같은 확정 H의 전체 Context를 검사한다. COMMITTED/VOID 영수증도
   전체 Context를 검사하므로 digest를 다시 계산한 잘못된 schema/contract/config/genesis를 거절한다.
 
@@ -105,6 +118,11 @@ cd chain/app
 GOTOOLCHAIN=local GOPROXY=off go test -mod=readonly -tags dev_local_demo ./... -count=1 -json
 GOTOOLCHAIN=local GOPROXY=off go test -mod=readonly . -run '^TestS3QueryCanonicalContextAndHistory$' -count=1
 ```
+
+공개 계약 연결 패치의 영향 범위는 `-run '^(TestLocalDemo|TestLocalPublicReceipt|TestS3QueryCanonicalContextAndHistory)'`
+로 재현한다. `TestLocalPublicReceiptRuntimeInitQueryRestart`는 fee0/25에서 공개 B API,
+ML-DSA SDK 정산·재시도·같은 DB 두 번 restart를 실행한다. 합성5 descriptor와 시험 pin을
+사용하므로 실제 runtime 승인·4검증인 합의·DEV01~14·AR01~14를 입증하지 않는다.
 
 `NUS_S3_EVIDENCE_DIR=<별도 시험 경로>`를 지정하면 exact genesis, signed TxRaw/Batch,
 높이·결과·exchange state, profile/manifest/guard 입력, 조회 원문과 restart 전후 응답을 기록한다.

@@ -26,6 +26,10 @@ const localCandidateSHA = "90169d322336a0c0de9bc6c48725d528d42fe74c78ea5b596fc7e
 const localBaselineSHA = "3ff69e73057a2bb6dcff64820123d520b9ad3e5637abbd1ad7d38b8c1a49eb97"
 const localCandidatePath = "proposals/s3-local-dev-v1/"
 const localProfileID = "s3-dev-local-v1"
+const localPublicPath = "proposals/s3-local-account-receipt-v1/"
+const localPublicManifestSHA = "5e911b9a5fc750c702c9c8cde09dcfc2c56106a7e0757f1d7ad2e839019b50fa"
+const localPublicSchemaSHA = "2bbb848b836c8d15f2732b481f78be2e28b0cbc2b7c783971bc593747d120b6b"
+const localPublicVersion = "s3-dev-local-account/1"
 
 // LocalDemoInputs contains exact bytes from an independently pinned input set.
 // The caller must obtain ApprovedRuntimeSHA256 from the review handoff, not from
@@ -46,12 +50,15 @@ type LocalDemoInputs struct {
 }
 
 type localManifest struct {
-	Format       string            `json:"format"`
-	Scope        string            `json:"scope"`
-	CandidateSHA string            `json:"candidate_manifest_sha256"`
-	ContractSHA  string            `json:"contract_sha256"`
-	Files        map[string]string `json:"files_sha256"`
-	Components   map[string]string `json:"components"`
+	Format            string            `json:"format"`
+	Scope             string            `json:"scope"`
+	CandidateSHA      string            `json:"candidate_manifest_sha256"`
+	PublicManifestSHA string            `json:"public_receipt_manifest_sha256"`
+	PublicSchemaSHA   string            `json:"public_receipt_schema_sha256"`
+	PublicVersion     string            `json:"public_receipt_version"`
+	ContractSHA       string            `json:"contract_sha256"`
+	Files             map[string]string `json:"files_sha256"`
+	Components        map[string]string `json:"components"`
 }
 type localGuard struct {
 	Envelope     string            `json:"envelope_version"`
@@ -114,7 +121,7 @@ func validateLocalDemo(in LocalDemoInputs, component bool) (*ex.S3Binding, *cmtt
 		return fail("RUNTIME_MANIFEST_MISMATCH")
 	}
 	var m localManifest
-	if err := localJSON(in.RuntimeManifest, &m, "format", "scope", "candidate_manifest_sha256", "contract_sha256", "files_sha256", "components"); err != nil {
+	if err := localJSON(in.RuntimeManifest, &m, "format", "scope", "candidate_manifest_sha256", "public_receipt_manifest_sha256", "public_receipt_schema_sha256", "public_receipt_version", "contract_sha256", "files_sha256", "components"); err != nil {
 		return nil, nil, err
 	}
 	scope := "REVIEWED_RUNTIME"
@@ -125,6 +132,9 @@ func validateLocalDemo(in LocalDemoInputs, component bool) (*ex.S3Binding, *cmtt
 	}
 	if m.Format != "s3-dev-local-runtime/1" || m.Scope != scope || m.CandidateSHA != localCandidateSHA {
 		return fail("RUNTIME_MANIFEST_SCOPE")
+	}
+	if m.PublicManifestSHA != localPublicManifestSHA || m.PublicSchemaSHA != localPublicSchemaSHA || m.PublicVersion != localPublicVersion {
+		return fail("PUBLIC_RECEIPT_PIN_MISMATCH")
 	}
 	if len(m.Files) > 512 || len(in.Files) != len(m.Files) || len(m.Components) != len(requiredComponents) {
 		return fail("RUNTIME_MANIFEST_FILES")
@@ -168,6 +178,31 @@ func validateLocalDemo(in LocalDemoInputs, component bool) (*ex.S3Binding, *cmtt
 	for name, digest := range candidate.Files {
 		expected[localCandidatePath+name] = digest
 	}
+	// The public overlay is an approved, self-excluded source manifest. Its
+	// listed paths are already repo-relative (unlike the older local proposal).
+	// Pin the manifest itself, then include it and every listed file exactly
+	// once in the runtime aggregate. There is no legacy-manifest fallback.
+	publicRaw := in.Files[localPublicPath+"MANIFEST.json"]
+	if localSHA(publicRaw) != localPublicManifestSHA {
+		return fail("PUBLIC_RECEIPT_MANIFEST_MISMATCH")
+	}
+	var public struct {
+		SelfExcluded bool              `json:"self_excluded"`
+		Aggregate    string            `json:"candidate_files_sha256"`
+		SchemaSHA    string            `json:"public_schema_sha256"`
+		Files        map[string]string `json:"files_sha256"`
+		Inherited    map[string]string `json:"inherited_files_sha256"`
+	}
+	if json.Unmarshal(publicRaw, &public) != nil || !public.SelfExcluded || public.SchemaSHA != localPublicSchemaSHA || public.Files[localPublicPath+"schema.json"] != localPublicSchemaSHA || public.Files[localPublicPath+"MANIFEST.json"] != "" || public.Aggregate != localAggregate(public.Files) || !reflect.DeepEqual(public.Inherited, expected) {
+		return fail("PUBLIC_CONTRACT_AGGREGATE_MISMATCH")
+	}
+	for name, digest := range public.Files {
+		if old, ok := expected[name]; ok && old != digest {
+			return fail("PUBLIC_CONTRACT_OVERLAP")
+		}
+		expected[name] = digest
+	}
+	expected[localPublicPath+"MANIFEST.json"] = localPublicManifestSHA
 	for _, name := range requiredComponents {
 		file := "chain/local-demo/components/" + name + ".json"
 		if m.Components[name] != file || expected[file] != "" {

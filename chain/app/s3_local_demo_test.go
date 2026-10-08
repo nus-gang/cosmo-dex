@@ -104,6 +104,15 @@ func localFixtureInputs(t *testing.T, fee int) (LocalDemoInputs, []mldsa65.PrivK
 	for name := range candidate.Files {
 		in.Files[localCandidatePath+name] = localRead(t, "../../"+localCandidatePath+name)
 	}
+	var public struct {
+		Files map[string]string `json:"files_sha256"`
+	}
+	raw = localRead(t, "../../"+localPublicPath+"MANIFEST.json")
+	mustTest(t, json.Unmarshal(raw, &public))
+	in.Files[localPublicPath+"MANIFEST.json"] = raw
+	for name := range public.Files {
+		in.Files[name] = localRead(t, "../../"+name)
+	}
 	descriptor := "chain/local-demo/components/chain.json"
 	// Historical base pins plus exact patched sources identify an OFFLINE fixture,
 	// not a reviewed new component or final integrated runtime.
@@ -112,7 +121,7 @@ func localFixtureInputs(t *testing.T, fee int) (LocalDemoInputs, []mldsa65.PrivK
 		settings[name] = localSHA(localRead(t, name))
 	}
 	in.Files[descriptor] = localMarshal(t, map[string]any{"head": "f44d511bee7ced4f95dce029ddd7abcf7d8e6722", "tree": "ca10dfdd5ece500af13f866f520c7da8d5a91f65", "implementation_settings": settings})
-	m := localManifest{Format: "s3-dev-local-runtime/1", Scope: "COMPONENT_FIXTURE", CandidateSHA: localCandidateSHA, Files: map[string]string{}, Components: map[string]string{"chain": descriptor}}
+	m := localManifest{Format: "s3-dev-local-runtime/1", Scope: "COMPONENT_FIXTURE", CandidateSHA: localCandidateSHA, PublicManifestSHA: localPublicManifestSHA, PublicSchemaSHA: localPublicSchemaSHA, PublicVersion: localPublicVersion, Files: map[string]string{}, Components: map[string]string{"chain": descriptor}}
 	for name, raw := range in.Files {
 		m.Files[name] = localSHA(raw)
 	}
