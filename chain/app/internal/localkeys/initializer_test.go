@@ -111,24 +111,32 @@ func TestInitializationRejectsBeforePublishAndBadValidator(t *testing.T) {
 	prepared.Destroy()
 }
 
-// NUS-73 must not bypass this failure in the launcher. The reviewed B adapter
-// currently accepts the older six-field manifest only, while the public account
-// receipt contract adds three mandatory fields. The B owner must integrate and
-// re-review that exact contract before this expectation can become success.
-func TestPublicReceiptRuntimeManifestCurrentlyBlockedByB(t *testing.T) {
+// The reviewed B adapter must accept the exact public account receipt pins and
+// return the contract hash that covers the inherited and public file sets.
+func TestPublicReceiptRuntimeManifestAcceptedByB(t *testing.T) {
 	base := guardFixture(t, "0")
-	var manifest map[string]any
+	var manifest struct {
+		PublicManifest string `json:"public_receipt_manifest_sha256"`
+		PublicSchema   string `json:"public_receipt_schema_sha256"`
+		PublicVersion  string `json:"public_receipt_version"`
+		Contract       string `json:"contract_sha256"`
+	}
 	if json.Unmarshal(base.RuntimeManifest, &manifest) != nil {
 		t.Fatal("fixture manifest")
 	}
-	manifest["public_receipt_manifest_sha256"] = "5e911b9a5fc750c702c9c8cde09dcfc2c56106a7e0757f1d7ad2e839019b50fa"
-	manifest["public_receipt_schema_sha256"] = "2bbb848b836c8d15f2732b481f78be2e28b0cbc2b7c783971bc593747d120b6b"
-	manifest["public_receipt_version"] = "s3-dev-local-account/1"
-	base.RuntimeManifest, _ = json.Marshal(manifest)
-	base.ApprovedRuntimeSHA256 = digest(base.RuntimeManifest)
+	if manifest.PublicManifest != "5e911b9a5fc750c702c9c8cde09dcfc2c56106a7e0757f1d7ad2e839019b50fa" ||
+		manifest.PublicSchema != "2bbb848b836c8d15f2732b481f78be2e28b0cbc2b7c783971bc593747d120b6b" ||
+		manifest.PublicVersion != "s3-dev-local-account/1" {
+		t.Fatal("public receipt pins")
+	}
+	raw, _, err := PrepareGuard(base, "11111111-2222-4333-8444-555555555555", "fee0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	base.Guard = raw
 	validated, err := app.ValidateLocalDemo(base)
-	if err == nil || validated != nil || err.Error() != `json: unknown field "public_receipt_manifest_sha256"` {
-		t.Fatalf("B public receipt rejection changed: %v", err)
+	if err != nil || validated["contract_hash"] != manifest.Contract {
+		t.Fatalf("B public receipt validation failed: %v", err)
 	}
 }
 

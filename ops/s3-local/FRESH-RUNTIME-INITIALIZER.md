@@ -44,22 +44,22 @@ CTO→Security decision and current independent CEO/CTO approvals. The first
 authoritative Chain snapshot, C store bootstrap, Paperclip registration and all
 service START operations remain NUS-74.
 
-## Current blocker
+## Approved B integration
 
-The reviewed B `ValidateLocalDemo` still accepts the old six-field runtime
-manifest. The current runtime preflight requires the public account receipt
-manifest/schema/version fields and inherited file set. An exact new manifest is
-therefore rejected before any home is created with:
+NUS-73 consumes the reviewed NUS-55 candidate
+`fb4addfe1bcf9a8c39837b8a8dc199eed9481f27` without changing its five approved
+files. `ValidateLocalDemo` now requires the public account receipt
+manifest/schema/version fields and the inherited public file set. The SRE
+fixture uses A head `ed4cf278cff78312ac606d6834901e0b8b265725`; the resulting
+contract hash therefore covers both the original local-demo inputs and the
+public receipt overlay.
 
-```text
-json: unknown field "public_receipt_manifest_sha256"
-```
-
-This is a B contract-integration change, not launcher policy. NUS-55 must add the
-three pinned fields and public receipt file-set aggregation, prove that the new
-contract hash reaches dynamic Context/genesis/restart validation, and complete
-a new CTO→Security review. L-R must then consume that approved B candidate and
-rerun the initializer and final bundle tests. No SRE fallback is permitted.
+The initializer still derives the Context only through B's
+`PrepareGuard`/`ValidateLocalDemo` path and passes the exact B-produced bundle to
+C. There is no old-manifest fallback, guard reissue, or migration path. Actual
+runtime approval remains dependent on the newly sealed five descriptors,
+contract aggregate, build artifacts, native CTO→Security decision, and current
+independent CEO/CTO approval documents.
 
 ## Component verification
 

@@ -20,8 +20,9 @@ func guardFixture(t *testing.T, fee string) app.LocalDemoInputs {
 func guardFixtureArtifacts(t *testing.T, fee, artifacts string) app.LocalDemoInputs {
 	t.Helper()
 	const prefix = "proposals/s3-local-dev-v1/"
+	const public = "proposals/s3-local-account-receipt-v1/"
 	get := func(path string) []byte {
-		raw, err := exec.Command("git", "show", "fd9aa6ca9093817e4ab09d2ae835197a84bbade6:"+path).Output()
+		raw, err := exec.Command("git", "show", "ed4cf278cff78312ac606d6834901e0b8b265725:"+path).Output()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -44,6 +45,19 @@ func guardFixtureArtifacts(t *testing.T, fee, artifacts string) app.LocalDemoInp
 			in.Files[name] = get(name)
 		}
 	}
+	publicManifest := get(public + "MANIFEST.json")
+	var publicFiles struct {
+		Files map[string]string `json:"files_sha256"`
+	}
+	if json.Unmarshal(publicManifest, &publicFiles) != nil {
+		t.Fatal("public manifest")
+	}
+	for name := range publicFiles.Files {
+		if name != public+"MANIFEST.json" {
+			in.Files[name] = get(name)
+		}
+	}
+	in.Files[public+"MANIFEST.json"] = publicManifest
 	components := map[string]string{}
 	for _, name := range []string{"chain", "exchange", "settlement", "wallet", "sre"} {
 		path := "chain/local-demo/components/" + name + ".json"
@@ -65,7 +79,7 @@ func guardFixtureArtifacts(t *testing.T, fee, artifacts string) app.LocalDemoInp
 		aggregate += hashes[name] + "  " + name + "\n"
 	}
 	contract := digest([]byte(aggregate))
-	in.RuntimeManifest, _ = json.Marshal(map[string]any{"format": "s3-dev-local-runtime/1", "scope": "REVIEWED_RUNTIME", "candidate_manifest_sha256": digest(in.Files[prefix+"MANIFEST.json"]), "contract_sha256": contract, "files_sha256": hashes, "components": components})
+	in.RuntimeManifest, _ = json.Marshal(map[string]any{"format": "s3-dev-local-runtime/1", "scope": "REVIEWED_RUNTIME", "candidate_manifest_sha256": digest(in.Files[prefix+"MANIFEST.json"]), "public_receipt_manifest_sha256": digest(publicManifest), "public_receipt_schema_sha256": digest(in.Files[public+"schema.json"]), "public_receipt_version": "s3-dev-local-account/1", "contract_sha256": contract, "files_sha256": hashes, "components": components})
 	// Synthetic pin exercises B byte checks only; never a runtime approval.
 	in.ApprovedRuntimeSHA256 = digest(in.RuntimeManifest)
 	in.EffectiveProfile = in.Files[prefix+"effective-profile-fee"+fee+".json"]
