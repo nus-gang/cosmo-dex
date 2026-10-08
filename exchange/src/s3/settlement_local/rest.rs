@@ -14,6 +14,7 @@ const EXPECTED_PUBLIC_RECEIPT_VERSION: &str = "s3-dev-local-account/1";
 const EXPECTED_PUBLIC_RECEIPT_SCHEMA_SHA256: &str =
     "2bbb848b836c8d15f2732b481f78be2e28b0cbc2b7c783971bc593747d120b6b";
 const TRUSTED_RECEIPT_VERSION: &str = "s3-dev-local/1";
+
 /// In addition to Engine's validated runtime/home/profile binding, both explicit
 /// component opt-ins must be present. A listener must bind this exact address.
 pub struct Options {

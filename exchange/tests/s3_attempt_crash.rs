@@ -82,6 +82,7 @@ mod attempt_crash {
         Worker::new(engine).prepare(attempt, &[(tx, evidence::TX.into())], observation, now)
     }
 }
+
 struct TestSigner(Vec<u8>);
 impl TestSigner {
     fn new() -> Self {
