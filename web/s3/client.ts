@@ -73,10 +73,10 @@ export class LocalClient {
       const value=await r.json();current();return value;
     }finally{this.#requests.delete(controller);}
   }
-  #acceptReceipt(bytes:Uint8Array,principal:string,expected?:{kind:string;requestHash:string}) {
+  #acceptReceipt(bytes:Uint8Array,principal:string,expected?:{kind?:string;requestHash?:string;commandSeq?:string}) {
     try {
-      const value=this.publicReceipts.accept(bytes,this.ctx,principal);
-      if(expected&&(value.account_result.kind!==expected.kind||value.account_result.request_hash!==expected.requestHash))throw Error('CLIENT_RECEIPT_MISMATCH');
+      const value=this.publicReceipts.accept(bytes,this.ctx,principal,expected?.commandSeq);
+      if(expected?.kind!==undefined&&(value.account_result.kind!==expected.kind||value.account_result.request_hash!==expected.requestHash))throw Error('CLIENT_RECEIPT_MISMATCH');
       const result=value.account_result,gap=this.publicReceipts.gapFor(this.ctx,principal)?' · 과거 receipt seq 간극(계정 revision과 별도)':'';
       this.receipt=`공개 계정 영수증 ${value.source.command_seq} · ${result.kind} ${result.code} / ${result.state} · 기록 효과 ${result.ledger_changes.length}건 · 체인 COMMITTED·durable ACK 아님${gap}`;
       return value;
@@ -126,7 +126,7 @@ export class LocalClient {
     try {
       const bytes=await this.#request(`receipts/commands/${commandSeq}`,undefined,this.#token,true) as Uint8Array;
       if(g!==this.projection.generation)return;
-      return this.#acceptReceipt(bytes,key.owner);
+      return this.#acceptReceipt(bytes,key.owner,{commandSeq});
     }catch(e){if(g===this.projection.generation&&this.projection.reason!=='CLIENT_RECEIPT_MISMATCH')this.projection.close((e as Error).message);throw e;}
   }
   canWithdraw() {const k=this.#key;return !!k&&!!this.#chain&&this.#capable&&this.projection.ready()&&this.history.filter(e=>e.owner===k.owner&&e.height).every(e=>integer(this.projection.view!.observed_height)>=integer(e.height!))&&!this.#busy.has(k.owner)&&!this.history.some(e=>e.owner===k.owner&&e.state==='SUBMISSION_UNKNOWN');}

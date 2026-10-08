@@ -13,7 +13,8 @@ let selected=0,posts=0,mode='ready',revision=1;
 const chainRoutes:string[]=[];
 let accountReply: (()=>Promise<Response>)|undefined;
 let receiptSeq=0;
-const publicReceipt=(request_hash:string)=>({envelope_version:PUBLIC_RECEIPT_VERSION,profile_id:'s3-dev-local-v1',context:ctx,principal:keys[selected].owner,development_receipt:'LOCAL_WRITE_COMPLETED_UNPROVEN_SPACE',durable_ack:false,storage_assurance:'UNPROVEN_HOST_SPACE',source:{command_seq:String(++receiptSeq),record_hash:'11'.repeat(32),command_result_hash:'22'.repeat(32),after_state_hash:'33'.repeat(32)},account_result:{kind:'WITHDRAW_PREPARE',request_hash,code:'OK',state:'LOCAL_ACCEPTED',observed_height:'100',snapshot_id:'55'.repeat(32),affected_order_hashes:[],created_fill_ids:[],corrected_fill_ids:[],committed_fill_ids:[],applied_batch_ids:[],ledger_changes:[]}});
+let receiptMismatch=false;
+const publicReceipt=(request_hash:string,command_seq=String(++receiptSeq))=>({envelope_version:PUBLIC_RECEIPT_VERSION,profile_id:'s3-dev-local-v1',context:ctx,principal:keys[selected].owner,development_receipt:'LOCAL_WRITE_COMPLETED_UNPROVEN_SPACE',durable_ack:false,storage_assurance:'UNPROVEN_HOST_SPACE',source:{command_seq,record_hash:'11'.repeat(32),command_result_hash:'22'.repeat(32),after_state_hash:'33'.repeat(32)},account_result:{kind:'WITHDRAW_PREPARE',request_hash,code:'OK',state:'LOCAL_ACCEPTED',observed_height:'100',snapshot_id:'55'.repeat(32),affected_order_hashes:[],created_fill_ids:[],corrected_fill_ids:[],committed_fill_ids:[],applied_batch_ids:[],ledger_changes:[]}});
 const transport: typeof fetch=async(path,init)=>{
   let data:any;
   if(String(path).includes('/chain/')) {
@@ -29,6 +30,10 @@ const transport: typeof fetch=async(path,init)=>{
   else if(String(path).endsWith('chain/account'))data={context:ctx,owner:keys[selected].address,public_key_base64:base64.encode(keys[selected].publicKey),account_number:'1',sequence:'0',owner_epoch:'0',observed_height:'100',received_at_unix_ms:String(Date.now()),gas_atoms:'1000'};
   else if(String(path).endsWith('chain/broadcast')){posts++;throw Error('lost');}
   else if(String(path).endsWith('chain/result'))throw Error('NOT_FOUND');
+  else if(String(path).includes('receipts/commands/')) {
+    const requested=String(path).split('/').at(-1)!;
+    return new Response(canonical(publicReceipt('44'.repeat(32),receiptMismatch?String(BigInt(requested)+1n):requested)),{headers:{'Content-Type':'application/json','Content-Encoding':'identity'}});
+  }
   else if(String(path).endsWith('account')) {
     if(accountReply)return accountReply();
     data={...structuredClone(raw.other_projection),revision:String(revision),owner:keys[selected].owner,received_at_unix_ms:String(Date.now()),withdraw_frozen:true,withdraw_ready:true};
@@ -60,4 +65,4 @@ async function reorder(fault: string) {
   if(fault==='late-abort'||fault==='late-DP')revision++;
   accountReply=undefined;component.render();
 }
-Object.assign(globalThis,{fixture:{client,component,reorder,chainRoutes,posts:()=>posts,held:()=>{mode='held';selected=keys.findIndex(k=>k.owner===client.projection.owner);client.select(keys[selected]);},owners:keys.map(k=>k.owner)}});
+Object.assign(globalThis,{fixture:{client,component,reorder,chainRoutes,posts:()=>posts,receiptMismatch:async()=>{receiptMismatch=true;let error='';try{await client.queryReceipt('7');}catch(e){error=(e as Error).message;}finally{receiptMismatch=false;component.render();}return {error,canWithdraw:client.canWithdraw(),queryMismatches:client.publicReceipts.queryMismatches.length};},held:()=>{mode='held';selected=keys.findIndex(k=>k.owner===client.projection.owner);client.select(keys[selected]);},owners:keys.map(k=>k.owner)}});

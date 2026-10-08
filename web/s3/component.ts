@@ -14,7 +14,7 @@ export function screen(client: LocalClient) {
     fills:v?.fills.map(f=>`${f.fill_id} · ${{PENDING:'잠정',SUBMISSION_UNKNOWN:'제출 결과 불명',COMMITTED:'체인 확정',CORRECTED:'정정'}[f.state as string]} · revision ${f.revision}`)??[],
     batches:v?.batches.map(b=>`${b.batch.batch_id} · seq ${b.batch.batch_seq} · hash ${b.batch.batch_hash} · ${b.state} · H ${b.receipt?.terminal_height??'—'} · TX ${b.receipt?.terminal_tx_hash??'—'}`)??[],
     history:client.history.filter(e=>e.owner===client.projection.owner),
-    disabled:!client.canWithdraw(), receipt:client.receipt,receiptConflicts:client.publicReceipts.conflicts.length,
+    disabled:!client.canWithdraw(), receipt:client.receipt,receiptConflicts:client.publicReceipts.conflicts.length+client.publicReceipts.queryMismatches.length,
   };
 }
 // Mount is inert until the launcher explicitly passes both opt-ins and pinned Context.

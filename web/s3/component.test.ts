@@ -108,6 +108,30 @@ test('same receipt key byte/source collision preserves evidence and closes sessi
     assert.equal(f.c.publicReceipts.conflicts.length,1);assert.equal(f.c.projection.reason,'CLIENT_RECEIPT_MISMATCH');assert.equal(f.c.canWithdraw(),false);await assert.rejects(()=>f.c.prepare(),/HELD/);
   }finally{f.c.destroy();}
 });
+test('receipt query sequence mismatch preserves received evidence and closes signing and broadcast',async()=>{
+  const f=await clientFixture();try{
+    f.setReceiptReply(async()=>jsonReceipt(publicReceipt(f.key.owner,'8')));
+    await assert.rejects(()=>f.c.queryReceipt('7'),/CLIENT_RECEIPT_MISMATCH/);
+    assert.equal(f.c.publicReceipts.entries.length,0);assert.equal(f.c.publicReceipts.queryMismatches.length,1);assert.equal(f.c.publicReceipts.queryMismatches[0].requestedCommandSeq,'7');
+    assert.equal(f.c.projection.reason,'CLIENT_RECEIPT_MISMATCH');assert.equal(f.c.canWithdraw(),false);await assert.rejects(()=>f.c.withdraw('DEVBASE','1'),/WITHDRAW_HELD/);assert.equal(f.posts(),0);
+  }finally{f.c.destroy();}
+});
+test('receipt mismatch closes an in-flight direct account lookup before signing or broadcast',async()=>{
+  const f=await clientFixture();let signatures=0;const direct=f.key.direct.bind(f.key);f.key.direct=input=>{signatures++;return direct(input);};
+  try {
+    let release!:()=>void;f.setWait(new Promise(r=>release=r));const withdraw=f.c.withdraw('DEVBASE','1');
+    f.setReceiptReply(async()=>jsonReceipt(publicReceipt(f.key.owner,'8')));await assert.rejects(()=>f.c.queryReceipt('7'),/CLIENT_RECEIPT_MISMATCH/);
+    release();await assert.rejects(()=>withdraw,/ACCOUNT_CHANGED_OR_STALE/);
+    assert.equal(signatures,0);assert.equal(f.posts(),0);assert.equal(f.c.history.length,0);assert.equal(f.c.canWithdraw(),false);
+  }finally{f.c.destroy();}
+});
+test('same request identity cannot move to a different receipt sequence or source',async()=>{
+  const f=await clientFixture();try{
+    let seq='7';f.setReceiptReply(async()=>jsonReceipt(publicReceipt(f.key.owner,seq)));
+    await f.c.queryReceipt('7');seq='8';await assert.rejects(()=>f.c.queryReceipt('8'),/CLIENT_RECEIPT_MISMATCH/);
+    assert.equal(f.c.publicReceipts.entries.length,1);assert.equal(f.c.publicReceipts.conflicts.length,1);assert.equal(f.c.projection.reason,'CLIENT_RECEIPT_MISMATCH');assert.equal(f.c.canWithdraw(),false);assert.equal(f.posts(),0);
+  }finally{f.c.destroy();}
+});
 test('delayed public receipt after account switch is discarded without ledger or UI contamination',async()=>{
   const f=await clientFixture();try{
     const pending=deferred<Response>();f.setReceiptReply(async()=>pending.promise);const query=f.c.queryReceipt('9');f.c.select();

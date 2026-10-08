@@ -112,22 +112,38 @@ export function decodePublicReceipt(bytes:Uint8Array,expectedContext:Context,pri
 
 export interface ReceiptEvidence {key:string;raw:Uint8Array;source:PublicReceipt['source'];receipt:PublicReceipt}
 export interface ReceiptConflict {saved:ReceiptEvidence;received:ReceiptEvidence}
+export interface ReceiptQueryMismatch {requestedCommandSeq:string;saved?:ReceiptEvidence;received:ReceiptEvidence}
 export class ReceiptLedger {
   readonly entries:ReceiptEvidence[]=[];readonly conflicts:ReceiptConflict[]=[];
+  readonly queryMismatches:ReceiptQueryMismatch[]=[];
   readonly gaps=new Set<string>();
   gapFor(ctx:Context,principal:string) {return this.gaps.has(canonical([ctx,principal,PUBLIC_RECEIPT_VERSION]));}
-  accept(bytes:Uint8Array,ctx:Context,principal:string) {
+  accept(bytes:Uint8Array,ctx:Context,principal:string,requestedCommandSeq?:string) {
     const receipt=decodePublicReceipt(bytes,ctx,principal),seq=receipt.source.command_seq;
     const key=canonical([ctx,principal,receipt.envelope_version,seq]);
     const evidence:ReceiptEvidence={key,raw:bytes.slice(),source:structuredClone(receipt.source),receipt};
+    if(requestedCommandSeq!==undefined&&seq!==requestedCommandSeq) {
+      const requestedKey=canonical([ctx,principal,receipt.envelope_version,requestedCommandSeq]);
+      this.queryMismatches.push({requestedCommandSeq,saved:this.entries.find(entry=>entry.key===requestedKey),received:evidence});
+      throw Error('CLIENT_RECEIPT_MISMATCH');
+    }
     const saved=this.entries.find(entry=>entry.key===key);
     if(saved) {
       const same=saved.raw.length===evidence.raw.length&&saved.raw.every((b,i)=>b===evidence.raw[i])&&canonical(saved.source)===canonical(evidence.source);
       if(!same){this.conflicts.push({saved,received:evidence});throw Error('CLIENT_RECEIPT_MISMATCH');}
       return saved.receipt;
     }
-    const principalEntries=this.entries.filter(entry=>entry.receipt.principal===principal&&canonical(entry.receipt.context)===canonical(ctx));
-    if(principalEntries.some(entry=>uint(entry.receipt.source.command_seq)+1n<uint(seq)))this.gaps.add(canonical([ctx,principal,PUBLIC_RECEIPT_VERSION]));
-    this.entries.push(evidence);return receipt;
+    const requestKey=canonical([ctx,principal,receipt.envelope_version,receipt.account_result.kind,receipt.account_result.request_hash]);
+    const requestSaved=this.entries.find(entry=>canonical([entry.receipt.context,entry.receipt.principal,entry.receipt.envelope_version,entry.receipt.account_result.kind,entry.receipt.account_result.request_hash])===requestKey);
+    if(requestSaved&&canonical(requestSaved.source)!==canonical(evidence.source)) {
+      this.conflicts.push({saved:requestSaved,received:evidence});throw Error('CLIENT_RECEIPT_MISMATCH');
+    }
+    this.entries.push(evidence);
+    const accountKey=canonical([ctx,principal,PUBLIC_RECEIPT_VERSION]);
+    const seqs=this.entries
+      .filter(entry=>entry.receipt.principal===principal&&entry.receipt.envelope_version===PUBLIC_RECEIPT_VERSION&&canonical(entry.receipt.context)===canonical(ctx))
+      .map(entry=>uint(entry.receipt.source.command_seq)).sort((a,b)=>a<b?-1:a>b?1:0);
+    if(seqs.some((value,index)=>index>0&&seqs[index-1]+1n<value))this.gaps.add(accountKey);else this.gaps.delete(accountKey);
+    return receipt;
   }
 }
