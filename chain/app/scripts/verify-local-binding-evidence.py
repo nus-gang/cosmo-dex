@@ -18,6 +18,26 @@ def aggregate(files):
     return sha(''.join(f'{v}  {k}\n' for k, v in sorted(files.items())).encode())
 
 
+def public_contract(manifest, files, expect):
+    prefix = 'proposals/s3-local-account-receipt-v1/'
+    manifest_sha = '5e911b9a5fc750c702c9c8cde09dcfc2c56106a7e0757f1d7ad2e839019b50fa'
+    schema_sha = '2bbb848b836c8d15f2732b481f78be2e28b0cbc2b7c783971bc593747d120b6b'
+    expect(manifest['public_receipt_manifest_sha256'], manifest_sha, 'public manifest pin')
+    expect(manifest['public_receipt_schema_sha256'], schema_sha, 'public schema pin')
+    expect(manifest['public_receipt_version'], 's3-dev-local-account/1', 'public version')
+    expect(sha(files[prefix+'MANIFEST.json']), manifest_sha, 'public manifest bytes')
+    public = json.loads(files[prefix+'MANIFEST.json'])
+    expect(public['self_excluded'], True, 'public self exclusion')
+    expect(prefix+'MANIFEST.json' in public['files_sha256'], False, 'public self absent')
+    expect(aggregate(public['files_sha256']), public['candidate_files_sha256'], 'public aggregate')
+    expect(sha(files[prefix+'schema.json']), schema_sha, 'public schema bytes')
+    expected = dict(public['inherited_files_sha256'])
+    expected.update(public['files_sha256'])
+    expected[prefix+'MANIFEST.json'] = manifest_sha
+    expected.update({p: sha(files[p]) for p in manifest['components'].values()})
+    expect(manifest['files_sha256'], expected, 'exact inherited/public/component file union')
+
+
 def verify(root):
     checks = 0
 
@@ -37,6 +57,7 @@ def verify(root):
         expect(sha(manifest_raw), inputs['approved_runtime_sha256'], 'fixture pin')
         expect(aggregate(manifest['files_sha256']), manifest['contract_sha256'], 'aggregate')
         expect(manifest['scope'], 'COMPONENT_FIXTURE', 'scope')
+        public_contract(manifest, files, expect)
         guard = json.loads(decode(inputs['guard']))
         context = guard['context']
         expect(context['service_schema'], 's3/3', 'schema')
@@ -93,8 +114,52 @@ def verify(root):
         for query in queries:
             data = json.loads(query.read_bytes())
             expect(data['output']['code'] > 0, True, query.parent.name+' rejection')
+
+        p = root / f'TestLocalPublicReceiptRuntimeInitQueryRestart__fee{fee}'
+        inputs = json.loads((p / 'public-inputs.json').read_bytes())
+        manifest_raw = decode(inputs['runtime_manifest'])
+        manifest = json.loads(manifest_raw)
+        files = {k: decode(v) for k, v in inputs['files'].items()}
+        public_contract(manifest, files, expect)
+        expect({k: sha(v) for k, v in files.items()}, manifest['files_sha256'], 'public API source bytes')
+        expect(sha(manifest_raw), inputs['approved_runtime_sha256'], 'synthetic public API pin')
+        expect(aggregate(manifest['files_sha256']), manifest['contract_sha256'], 'public API aggregate')
+        result = json.loads((p / 'result.json').read_bytes())
+        context = result['context']
+        expect(context, json.loads(decode(inputs['guard']))['context'], 'public API guard context')
+        expect(context['contract_hash'], manifest['contract_sha256'], 'public API contract')
+        expect(context['contract_hash'] != result['old_contract_hash'], True, 'old hash differs')
+        expect(context['genesis_hash'], sha(decode(inputs['genesis'])), 'public API genesis')
+        expect(json.loads(decode(inputs['genesis']))['app_state']['contract_hash'], context['contract_hash'], 'public API app state')
+        expect(result['receipt']['context'], context, 'public API receipt context')
+        expect(result['receipt']['disposition'], 'COMMITTED', 'public API terminal receipt')
+        expect(result['DEV01_14'], 'NOT_RUN', 'DEV boundary')
+        expect(result['AR01_14'], 'NOT_RUN', 'AR boundary')
+        for n in (1, 2):
+            restart = json.loads((p / f'restart-{n}.json').read_bytes())
+            expect(restart['before']['value'], restart['after']['value'], f'restart {n} bytes')
+            expect(restart['before']['height'], restart['after']['height'], f'restart {n} height')
+            expect(json.loads(decode(restart['after']['value']))['receipt'], result['receipt'], f'restart {n} receipt')
+        blocks = [json.loads(x.read_bytes()) for x in sorted(p.glob('block-*.json'))]
+        expect(blocks[3]['exchange_state'], blocks[4]['exchange_state'], 'public API retry effect zero')
+        expect(result['receipt']['terminal_tx_hash'], sha(decode(blocks[3]['txs'][0])), 'public API terminal TX')
+        expect(result['receipt']['terminal_height'], blocks[3]['height'], 'public API terminal height')
+
+        base = json.loads((root / f'TestLocalPublicReceiptRejectManifest__fee{fee}' / 'mutation-base.json').read_bytes())
+        rejections = sorted(root.glob(f'TestLocalPublicReceiptRejectManifest__fee{fee}__*/rejection.json'))
+        expect(len(rejections), 28, 'public manifest negative count')
+        for path in rejections:
+            data = json.loads(path.read_bytes())
+            changed = dict(base, **{k: data[k] for k in ('runtime_manifest', 'approved_runtime_sha256', 'genesis', 'guard')})
+            changed['files'] = dict(base['files'], **data['changed_files'])
+            for name in data['removed_files']:
+                del changed['files'][name]
+            raw = json.dumps(changed, sort_keys=True, separators=(',', ':'), ensure_ascii=True).encode()
+            expect(sha(raw), data['input_sha256'], path.parent.name+' exact input reconstruction')
+            expect(data['input_mutation'], False, path.parent.name+' no input mutation')
+            expect(bool(data['error']), True, path.parent.name+' rejected')
     return {'result': 'PASS', 'checks': checks, 'scope': 'SDK_COMPONENT_EVIDENCE_ONLY',
-            'DEV01_14': 'NOT_RUN', 'G00': 'FAIL_UNPROVEN', 'ACK': 'CLOSED'}
+            'DEV01_14': 'NOT_RUN', 'AR01_14': 'NOT_RUN', 'G00': 'FAIL_UNPROVEN', 'ACK': 'CLOSED'}
 
 
 if __name__ == '__main__':
