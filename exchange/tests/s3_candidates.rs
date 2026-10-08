@@ -1868,3 +1868,7 @@ mod receipt_contract_gap;
 #[cfg(all(feature = "dev-local-settlement", feature = "fault-injection"))]
 #[path = "support/account_events.rs"]
 mod account_events;
+
+#[cfg(all(feature = "dev-local-settlement", feature = "fault-injection"))]
+#[path = "support/settlement_account_receipt.rs"]
+mod settlement_account_receipt;

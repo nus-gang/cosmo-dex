@@ -7,6 +7,14 @@ use crate::s2::{
 };
 use std::net::IpAddr;
 
+// D pins the reviewed public contract independently of C's implementation
+// constants. A future C schema/version change must fail closed until this
+// adapter is reviewed again; the trusted store envelope remains separate.
+const EXPECTED_PUBLIC_RECEIPT_VERSION: &str = "s3-dev-local-account/1";
+const EXPECTED_PUBLIC_RECEIPT_SCHEMA_SHA256: &str =
+    "2bbb848b836c8d15f2732b481f78be2e28b0cbc2b7c783971bc593747d120b6b";
+const TRUSTED_RECEIPT_VERSION: &str = "s3-dev-local/1";
+
 /// In addition to Engine's validated runtime/home/profile binding, both explicit
 /// component opt-ins must be present. A listener must bind this exact address.
 pub struct Options {
@@ -47,6 +55,12 @@ impl Rest {
     pub fn new(engine: Arc<Engine>, snapshot: Snapshot, options: Options) -> Result<Self> {
         if !options.enabled || !options.acknowledge_unproven_space || !options.bind.is_loopback() {
             return Err(Error::Invalid("LOCAL_DEMO_DISABLED"));
+        }
+        if crate::s3::dev_local::PUBLIC_RECEIPT_VERSION != EXPECTED_PUBLIC_RECEIPT_VERSION
+            || crate::s3::dev_local::PUBLIC_RECEIPT_SCHEMA_SHA256
+                != EXPECTED_PUBLIC_RECEIPT_SCHEMA_SHA256
+        {
+            return Err(Error::Invalid("RECEIPT_SCHEMA"));
         }
         let view = engine.reader().get()?;
         if view.state["context"] != *snapshot.context()
@@ -130,7 +144,7 @@ impl Rest {
                 Ok(json!({"logged_out":true}))
             }
             ("GET", "capabilities") => Ok(
-                json!({"envelope_version":"s3-dev-local/1","profile_id":"s3-dev-local-v1","context":self.context,"api_prefix":"/dev-local/v1/","durable_ack":false,"storage_assurance":"UNPROVEN_HOST_SPACE","development_receipt":"LOCAL_WRITE_COMPLETED_UNPROVEN_SPACE","public_receipt_version":crate::s3::dev_local::PUBLIC_RECEIPT_VERSION,"public_receipt_schema_sha256":crate::s3::dev_local::PUBLIC_RECEIPT_SCHEMA_SHA256,"trusted_receipt_version":"s3-dev-local/1","signed_result_query":true,"automatic_withdraw":false,"ws":false}),
+                json!({"envelope_version":TRUSTED_RECEIPT_VERSION,"profile_id":"s3-dev-local-v1","context":self.context,"api_prefix":"/dev-local/v1/","durable_ack":false,"storage_assurance":"UNPROVEN_HOST_SPACE","development_receipt":"LOCAL_WRITE_COMPLETED_UNPROVEN_SPACE","public_receipt_version":EXPECTED_PUBLIC_RECEIPT_VERSION,"public_receipt_schema_sha256":EXPECTED_PUBLIC_RECEIPT_SCHEMA_SHA256,"trusted_receipt_version":TRUSTED_RECEIPT_VERSION,"signed_result_query":true,"automatic_withdraw":false,"ws":false}),
             ),
             ("GET", "account") => self.account(&owner, o, now),
             ("POST", "orders" | "cancels" | "receipts/orders" | "receipts/cancels") => {
@@ -210,10 +224,16 @@ impl Rest {
         }
     }
     fn public_receipt(&self, seq: u64, owner: &str) -> Result<Value> {
-        self.engine
+        let receipt = self
+            .engine
             .account_receipt(seq, owner)?
-            .map(|r| r.to_value())
-            .ok_or(Error::Invalid("RECEIPT_NOT_FOUND"))
+            .ok_or(Error::Invalid("RECEIPT_NOT_FOUND"))?;
+        // Re-read the trusted immutable source and compare the exact canonical
+        // bytes. Public projections never become worker/proof/reconciliation
+        // input, and a source/projection race or mismatch closes as 503.
+        self.engine
+            .verify_account_receipt(seq, owner, receipt.as_bytes())?;
+        Ok(receipt.to_value())
     }
     /// Wire adapters must use these bytes verbatim (application/json, identity).
     /// The object handler remains for existing in-process component callers.
