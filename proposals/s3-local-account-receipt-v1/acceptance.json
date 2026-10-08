@@ -1,0 +1,120 @@
+{
+  "scope": "IMPLEMENTATION_ACCEPTANCE_NOT_STATIC_ORACLE",
+  "scenario_repetitions": "3",
+  "same_home_restarts_each": "2",
+  "fee_profiles": [
+    "fee0",
+    "fee25"
+  ],
+  "evidence_required": [
+    "exact code/head/tree",
+    "contract/schema/vector/lock/runtime manifest hashes",
+    "new Context/genesis hash",
+    "commands/versions/exit",
+    "original request/response bytes",
+    "trusted WAL/frame/marker/result/state/evidence",
+    "client ledger",
+    "same-home replay diffs",
+    "injected defect detection"
+  ],
+  "cases": [
+    {
+      "id": "AR01",
+      "input": "fee0/25 maker/taker·부분 체결·복수 maker",
+      "expected": "원 CommandResult/WAL byte 불변·own ID/ledger만·새 schema PASS",
+      "owner": "Exchange",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "AR02",
+      "input": "cancel·정책 거절·withdraw prepare/abort·UNSETTLED_HOLD",
+      "expected": "원 code/state/효과 보존·거절과 효과0를 혼동하지 않음",
+      "owner": "Exchange",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "AR03",
+      "input": "내부 CORRECTION·SETTLEMENT_APPLY·출금 이후 과거 조회",
+      "expected": "당시 projection 고정·현재 수치 혼합0·own corrected/committed만",
+      "owner": "Exchange",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "AR04",
+      "input": "같은 signed 요청·응답 유실 후 query·같은 home 재시작2회",
+      "expected": "최초 source tuple/공개bytes 동일·새 WAL 명령/서명/자산효과0",
+      "owner": "Exchange",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "AR05",
+      "input": "타 session·위조서명·expired auth·다른 Context·Origin/헤더",
+      "expected": "기존 auth 거절·private 원문0·commit0",
+      "owner": "Settlement",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "AR06",
+      "input": "GET seq 존재/타인/무관 내부·source 누락",
+      "expected": "404 동일화·corrupt는503·missing/timeout을 확정 실패로 해석0",
+      "owner": "Settlement",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "AR07",
+      "input": "과거 epoch/주문 만료/current snapshot stale",
+      "expected": "유효 auth의 과거 query만 허용·새 주문/방송 freshness 유지",
+      "owner": "Exchange",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "AR08",
+      "input": "marker 전후 각 종료·IO/recovery gate",
+      "expected": "전 성공응답0·후 원문 보존·불완전 source 공개0·기존 DEV09 유지",
+      "owner": "Exchange/SRE",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "AR09",
+      "input": "원 result/state/frame/hash·projection 변조",
+      "expected": "trusted verifier 거절·client 재조회 충돌 검출·두 원문 보존",
+      "owner": "Security",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "AR10",
+      "input": "decimal/overflow/추가필드/중복key/1001fills/최대bytes",
+      "expected": "정확한 거절·page 절단0·유효 source public cap 안전",
+      "owner": "Exchange/QA",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "AR11",
+      "input": "old truncated receipt·version/schema mismatch",
+      "expected": "자동 fallback/승격/재해시0·구 client 입력 닫기",
+      "owner": "Wallet",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "AR12",
+      "input": "새 manifest→Context→genesis/home/keys",
+      "expected": "Chain init/query/restart·guard·주문서명 전부 새 pin 일치·old home 변환0",
+      "owner": "SRE/Chain",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "AR13",
+      "input": "client/trusted 두 ledger 및 계정 전환/늦은 응답",
+      "expected": "private 원문은 trusted만·client는 본인bytes·다른 Context/principal 응답 폐기",
+      "owner": "Wallet/Settlement",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "AR14",
+      "input": "C/D/E 최종 승인 candidate와 runtime manifest",
+      "expected": "head/tree/계약/schema/vector/lock/genesis/hash 및 raw evidence 일치",
+      "owner": "SRE/QA",
+      "result": "NOT_RUN"
+    }
+  ]
+}
