@@ -2,9 +2,11 @@
 
 이 디렉터리는 [NUS-73](/NUS/issues/NUS-73)의 진행 중 산출물이다. **실행 launcher·최종 runtime manifest·pin은 아직 완성되지 않았다.** 서비스 시작 명령이 아니며 DEV01~14는 NOT_RUN이다.
 
-**주의:** `manifest.py`의 HEADS는 `component_sources.CANDIDATES`의 고정 참조를 사용한다. 최신 판정/revision 확인과 C/L-D 교차 소스 병합의 검토 출처 결합은 별도로 필요하다. 현재 component 또는 계약 소스 불일치는 봉인을 거절하며 자동 승인 예외를 두지 않는다.
+**주의:** `manifest.py`는 공개 계정 영수증 A와 승인 B/C/D/E의 고정 참조를 사용한다. D가 승인한 `exchange/` adapter bytes와 C ancestry를 별도로 기록한다. 최신 판정/revision 확인과 독립 runtime 심사 출처 결합은 별도로 필요하다. 현재 component 또는 계약 소스 불일치는 봉인을 거절하며 자동 승인 예외를 두지 않는다.
 
-`manifest.py audit`는 고정 A/B/C/L-D/L-E의 ancestor와 후보 commit의 component·계약 원문/mode/누락을 대조한다. 원 A Git snapshot에서 rc3 204파일, rc3 manifest, 개발 후보 8파일을 읽고 승인 SHA를 대조한다. 현재 구현 lock으로 rc3를 다시 봉인하지 않는다. 실제 구현 lock은 별도로 기록한다. clean checkout이 필요하다.
+변경(2026-10-08): 공개 `s3-dev-local-account/1`의 manifest/schema pin과 61개 계약 파일을 trusted `s3-dev-local/1` 입력에 추가했다. old/new fallback은 없고 서비스 활성화·runtime 승인은 여전히 별도다.
+
+`manifest.py audit`는 고정 A/B/C/D/E의 ancestor와 후보 commit의 component·계약 원문/mode/누락을 대조한다. 원 A Git snapshot에서 기존 213개와 공개 계약 61개를 읽어 승인 SHA를 대조한다. 현재 구현 lock으로 계약 snapshot을 다시 봉인하지 않는다. 실제 구현 lock은 별도로 기록한다. clean checkout이 필요하다.
 
 ```sh
 python3 ops/s3-local/manifest.py audit --source . --out /existing-parent/new-audit
@@ -13,7 +15,7 @@ python3 -B -m unittest discover -s ops/s3-local -p 'test_*.py' -v
 
 `seal`은 `--build-spec spec.json --artifacts /build-root`를 추가로 받는다. spec의 키는 정확히 chain/exchange/settlement/wallet/sre다. 각 값에는 `build_argv`(문자열 배열), `toolchain`(문자열), `artifacts`(build-root 상대 파일 배열), `approval_sources`(출처 배열), `settings`(문자열 map)가 필요하다. 원본 lock/실제 lock·정확한 build argv·toolchain·파일 SHA가 5 descriptor의 문자열 설정에 결합된다. 실행 파일, 웹 파일과 launcher를 빠짐없이 열거하는 책임은 빌드 인계와 CTO→Security 심사에 있다. sealer는 경로가 있다고 실행 가능한 서비스인지를 보증하지 않는다.
 
-파일 집합은 상속 213개와 descriptor 5개만이다. 실제 binary는 descriptor 안의 SHA로 결합하며 집계에 파일 자체를 추가하지 않는다. 집계는 경로 정렬 후 `sha256 + two spaces + path + LF`의 SHA256이다. manifest 자신·genesis·key·실행 결과를 집계에 넣지 않는다. 출력 디렉터리 재사용과 symlink/hardlink artifact를 거절한다. `seal`은 모든 descriptor를 만든 뒤 실제 artifact SHA를 다시 읽고, 마지막 source audit의 head/tree/lock/상속 원문이 시작 시점과 같은지 검사한다. 변경·삭제·링크 교체·dirty source면 후보를 반환하지 않는다. 이는 관측 시점의 일관성 검사이며 경로 잠금이나 이후 바이트 불변 보장은 아니다. 출력 이후 실행 시점의 capture/독립 승인 대조도 필요하다.
+파일 집합은 상속 274개와 descriptor 5개만이다. 실제 binary는 descriptor 안의 SHA로 결합하며 집계에 파일 자체를 추가하지 않는다. 집계는 경로 정렬 후 `sha256 + two spaces + path + LF`의 SHA256이다. runtime manifest 자신·genesis·key·실행 결과를 집계에 넣지 않는다. 출력 디렉터리 재사용과 symlink/hardlink artifact를 거절한다. `seal`은 모든 descriptor를 만든 뒤 실제 artifact SHA를 다시 읽고, 마지막 source audit의 head/tree/lock/상속 원문이 시작 시점과 같은지 검사한다. 변경·삭제·링크 교체·dirty source면 후보를 반환하지 않는다. 이는 관측 시점의 일관성 검사이며 경로 잠금이나 이후 바이트 불변 보장은 아니다. 출력 이후 실행 시점의 capture/독립 승인 대조도 필요하다.
 
 codec가 요구하는 `scope=REVIEWED_RUNTIME`은 형식 필드이며 이 도구의 승인 선언이 아니다. `audit.json`의 `runtime_approved=false`, `candidate_runtime_manifest_sha256`은 검토 전 후보 기록이다. 이 값을 스스로 `approved_runtime_sha256`에 복사해 서비스를 시작하지 않는다. CEO/CTO의 독립 승인 출처와 동일 후보 CTO→Security 완료가 있어야 pin으로 인수한다. 한 바이트라도 바뀌면 새 manifest/심사가 필요하다.
 
@@ -28,7 +30,7 @@ python3 -B ops/s3-local/preflight.py \
   --local-demo-profile s3-dev-local/1 --acknowledge-unproven-space
 ```
 
-이 명령은 파일 읽기만 한다. 두 opt-in·manifest 원문 SHA·고정 A/rc3 manifest·상속 213파일과 정확한 5 descriptor·집계·descriptor 내부 실제 artifact SHA를 확인한다. canonical root·상대 경로·각 경로의 no-follow fd 탐색·single regular file을 요구하며 symlink/hardlink/FIFO·파일 변경·크기 초과를 거절한다. 산출물당 512MiB 상한, 해시 메모리는 1MiB다. 네트워크·port bind·home/key 생성·서비스 실행·승인 발급은 없다.
+이 명령은 파일 읽기만 한다. 두 opt-in·manifest 원문 SHA·고정 A manifest 세 개·상속 274파일과 정확한 5 descriptor·집계·descriptor 내부 실제 artifact SHA를 확인한다. 공개 receipt manifest/schema/version pin도 독립 필드로 대조한다. canonical root·상대 경로·각 경로의 no-follow fd 탐색·single regular file을 요구하며 symlink/hardlink/FIFO·파일 변경·크기 초과를 거절한다. 산출물당 512MiB 상한, 해시 메모리는 1MiB다. 네트워크·port bind·home/key 생성·서비스 실행·승인 발급은 없다.
 
 성공 출력은 `byte_match=true`, **`approval_verified=false`**다. 입력 pin의 독립 승인 여부와 CTO→Security 판정은 control plane에서 별도로 확인해야 한다. B/C의 guard/genesis/profile 검증, 실행 직전 재대조, 실제 runtime 등록을 대체하지 않는다. 검사 후 파일 변경 가능성이 있으므로 이 결과만으로 나중 실행을 허가하지 않는다. exact executable 목록의 완전성은 최종 후보 심사 대상이다.
 
@@ -38,7 +40,7 @@ worker/proof/signer·웹 ChainPort·프로세스 launcher·fee0/25 초기화·�
 
 ## Rust input-set 바이트 결합
 
-`preflight.verify_input_set(bundle, artifacts, pin, profile, acknowledge, inputs, input_name)`은 기존 실제 artifact 검증 후 Rust `Validated::decode_bundle` 전송 입력의 manifest 원문과 정확한 218 파일을 같은 pin에 결합한다. 중복 JSON·추가/누락 파일·다른 manifest·비정규 base64·빈/과대 guard/genesis를 거절한다. 입력 파일은 canonical root의 no-follow/single-link/bounded 읽기이며 반환값은 읽은 원문 bytes와 SHA256이다. 후속 launcher는 이 캡처를 사용해야 하며 path 재읽기를 승인된 입력으로 간주하면 안 된다.
+`preflight.verify_input_set(bundle, artifacts, pin, profile, acknowledge, inputs, input_name)`은 기존 실제 artifact 검증 후 Rust `Validated::decode_bundle` 전송 입력의 manifest 원문과 정확한 279 파일을 같은 pin에 결합한다. 중복 JSON·추가/누락 파일·다른 manifest·비정규 base64·빈/과대 guard/genesis를 거절한다. 입력 파일은 canonical root의 no-follow/single-link/bounded 읽기이며 반환값은 읽은 원문 bytes와 SHA256이다. 후속 launcher는 이 캡처를 사용해야 하며 path 재읽기를 승인된 입력으로 간주하면 안 된다.
 
 `input_set_byte_match=true`는 B/C 의미 검증이나 조직 승인 결과가 아니다. guard/genesis 내용과 effective profile은 기존 B/C에서 검증해야 한다. `semantic_validation=false`, `approval_verified=false`를 유지한다. 캡처 출력과 Rust 수신 API는 아래와 같다. 독립 승인 gate·executable 호출·서비스 실행 연결은 아직 미완성이다.
 
@@ -83,7 +85,7 @@ CLI 경계 신규4 및 synthetic child 전체 연결1을 시험했다. 실제 Ru
 
 `review_subject.subject(bundle, artifacts, pin, profile, acknowledge)`는 기존 byte preflight 뒤 manifest 원문과 다섯 descriptor 원문을 다시 SHA 대조하여 캡처한다. 반환되는 canonical JSON은 원문 base64·manifest SHA·component head/tree·build argv·toolchain·실제 구현 lock·component 승인 출처·binary/web SHA 목록을 포함한다. build 정보가 비어 있으면 거절한다. genesis/key/home/실행 결과는 포함하지 않는다. 기존 218파일 집계와 descriptor schema는 바꾸지 않는다.
 
-CEO/CTO 독립 승인 출처에 **같은 반환 원문과 SHA**를 결합할 수 있다. `compare(current, independent_raw, independent_sha256)`는 원문을 바이트 단위로 대조하며, self-asserted hash를 조직 승인으로 승격하지 않는다. 항상 `approval_verified=false`, `services_started=false`, `DEV=NOT_RUN`이다. 승인 출처의 작성자/역할·최신 revision·철회·CTO→Security 완료를 확인하는 실제 gate는 아직 연결하지 않았다. 파일의 현재 바이트 확인은 그 시점의 관측이며 향후 서비스 실행 허가가 아니다. 최종 launcher는 실행 직전 재검증/캡처를 유지해야 한다.
+CEO/CTO 독립 승인 출처에 **같은 반환 원문과 SHA**를 결합할 수 있다. `compare(current, independent_raw, independent_sha256)`는 원문을 바이트 단위로 대조하며, self-asserted hash를 조직 승인으로 승격하지 않는다. 279파일 집합에도 항상 `approval_verified=false`, `services_started=false`, `DEV=NOT_RUN`이다. 승인 출처의 작성자/역할·최신 revision·철회·CTO→Security 완료를 확인하는 실제 gate는 별도다. 파일의 현재 바이트 확인은 그 시점의 관측이며 향후 서비스 실행 허가가 아니다. 최종 launcher는 실행 직전 재검증/캡처를 유지해야 한다.
 
 시험: `python3 -B -m unittest discover -s ops/s3-local -p test_review_subject.py -v` — 합성 descriptor 5 PASS/0 FAIL. 원문 포함·artifact 목록 결합·self-hash/공백 변경·검증 후 manifest/descriptor 교체·binary 변조·build metadata 누락 거절을 확인했다. 실제 승인/서비스/DEV 시험이 아니다.
 
