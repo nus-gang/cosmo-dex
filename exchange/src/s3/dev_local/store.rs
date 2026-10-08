@@ -23,7 +23,7 @@ pub(super) fn frame(raw: &[u8]) -> Result<Vec<u8>> {
     b.extend_from_slice(raw);
     Ok(b)
 }
-fn read_frame(f: &mut File) -> Result<Option<(Value, String, u64)>> {
+fn read_frame(f: &mut File) -> Result<Option<(Value, Vec<u8>)>> {
     let mut h = [0u8; HEADER];
     if f.read(&mut h[..1])? == 0 {
         return Ok(None);
@@ -49,7 +49,7 @@ fn read_frame(f: &mut File) -> Result<Option<(Value, String, u64)>> {
     }
     let mut all = h.to_vec();
     all.extend(raw);
-    Ok(Some((v, sha256(&all), (HEADER + n) as u64)))
+    Ok(Some((v, all)))
 }
 fn commit_value(c: &Commit) -> Value {
     json!({"command_seq":c.command_seq.to_string(),"record_hash":c.record_hash,"end_offset":c.end_offset.to_string()})
@@ -170,7 +170,10 @@ impl Store {
             return Err(Error::Recovery("MARKER_FIELDS"));
         }
         let mut records = vec![];
-        s.scan_committed(&expected, |r| records.push(r))?;
+        s.scan_committed(&expected, |r, _, _| {
+            records.push(r);
+            Ok(())
+        })?;
         s.commit = expected;
         s.check()?;
         Ok((s, bootstrap, records))
@@ -178,13 +181,19 @@ impl Store {
     /// Reuse open's parser/hash chain and referenced-object validation without
     /// moving the writer file offset or collecting a second record log.
     pub fn verify_committed(&self) -> Result<()> {
-        self.scan_committed(&self.commit, |_| {})
+        self.scan_committed(&self.commit, |_, _, _| Ok(()))
     }
-    fn scan_committed(&self, expected: &Commit, mut record: impl FnMut(Value)) -> Result<()> {
+    pub fn scan_committed(
+        &self,
+        expected: &Commit,
+        mut record: impl FnMut(Value, Vec<u8>, &Commit) -> Result<()>,
+    ) -> Result<()> {
         let mut wal = self.root.dir.file("journal.dev.wal", false)?;
         self.root.dir.check_file("journal.dev.wal", &self.wal)?;
         let mut commit = Commit::zero();
-        while let Some((r, h, n)) = read_frame(&mut wal)? {
+        while let Some((r, raw)) = read_frame(&mut wal)? {
+            let h = sha256(&raw);
+            let n = raw.len() as u64;
             if r["context"] != *self.config.context()
                 || schema::num(&r["command_seq"])?
                     != commit
@@ -209,7 +218,7 @@ impl Store {
                 record_hash: h,
                 end_offset: end,
             };
-            record(r);
+            record(r, raw, &commit)?;
         }
         if commit != *expected {
             return Err(Error::Recovery("COMMITTED_FRAME_MISSING"));

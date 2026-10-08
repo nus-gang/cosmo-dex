@@ -150,6 +150,16 @@ impl Validated {
         }
         expected.insert(format!("{PREFIX}MANIFEST.json"), CANDIDATE.into());
         expected.insert("protocol/s3/manifest.json".into(), BASELINE.into());
+        // Approved public overlay is mandatory: old runtime/home inputs do not
+        // silently acquire the new receipt decoder. The overlay manifest is a
+        // pinned build input, excluded from its own runtime aggregate.
+        let overlay: Value = serde_json::from_str(include_str!(
+            "../../../../proposals/s3-local-account-receipt-v1/MANIFEST.json"
+        ))
+        .map_err(|_| Error::Invalid("ACCOUNT_CONTRACT_MANIFEST"))?;
+        for (path, digest) in hashes(&overlay["files_sha256"])? {
+            expected.insert(path, digest);
+        }
         for name in ["chain", "exchange", "settlement", "wallet", "sre"] {
             let path = format!("chain/local-demo/components/{name}.json");
             if components.get(name) != Some(&path) {

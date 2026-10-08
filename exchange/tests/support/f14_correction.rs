@@ -10,7 +10,7 @@ use std::{
     sync::{Arc, Mutex, mpsc},
     time::Duration,
 };
-fn ready(bps: u32) -> (Candidate, Vec<String>) {
+pub(super) fn ready(bps: u32) -> (Candidate, Vec<String>) {
     let mut c = order(
         order(setup(bps, true), 0, "2", 2000, 10000, 11),
         1,

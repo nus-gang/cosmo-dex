@@ -111,7 +111,7 @@ if let Some(saved) = engine.trusted_recovery_failure(&view.commit, batch_id)? {
 
 `Engine::open`도 원 명령의 semantic replay를 마친 뒤 모든 저장된 실패 선택의 원문·참조 그래프를 확인한다. **이전 후보로 만든 home에서 `RejectFinal`은 있지만 typed root가 없는 경우 새 open은 오류로 끝난다.** 공통 store 검증이 조회·명령·방송 callback 경계에서도 모든 기존 실패 root를 확인한다. root와 descriptor를 함께 삭제해도 다른 batch 조회·새 명령·CLOSE 방송이 이를 우회하지 못하고 writer를 닫는다. 조회나 open으로 root를 생성·재계산·보충하지 않으며 자동 migration은 없다. 원문 파일이 이미 있는 이전 home은 기존 검증을 통과해야 한다. 새 합성 home에서 실행하는 component 범위이며 운영 데이터 migration이나 runtime pin 발급을 포함하지 않는다.
 
-변경 응답은 승인된 7필드 envelope다. `development_receipt=LOCAL_WRITE_COMPLETED_UNPROVEN_SPACE`, `durable_ack=false`, `storage_assurance=UNPROVEN_HOST_SPACE`. 내부 rc3 `CommandResult`는 변경하지 않는다. receipt ledger의 `{receipt,command_seq,record_hash,end_offset}`는 독립 시험/인계 컨테이너이며 새 public schema가 아니다. 개발 접수와 chain `COMMITTED`는 별도다. D의 실제 HTTP는 `/dev-local/v1/`·loopback·기존 인증/origin·계정 격리와 묶어 후속 업무에서 검증해야 한다.
+trusted 변경 응답은 승인된 7필드 envelope다. 공개 계정 응답은 [별도 9필드 계약](S3-ACCOUNT-RECEIPT.md)을 사용한다. `development_receipt=LOCAL_WRITE_COMPLETED_UNPROVEN_SPACE`, `durable_ack=false`, `storage_assurance=UNPROVEN_HOST_SPACE`. 내부 rc3 `CommandResult`는 변경하지 않는다. receipt ledger의 `{receipt,command_seq,record_hash,end_offset}`는 독립 시험/인계 컨테이너이며 새 public schema가 아니다. 개발 접수와 chain `COMMITTED`는 별도다. D의 실제 HTTP는 `/dev-local/v1/`·loopback·기존 인증/origin·계정 격리와 묶어 후속 업무에서 검증해야 한다.
 
 VOID audit hash, timeout, NOT_FOUND, CheckTx만으로 보류를 풀 수 없다. 원 정산 확정 실패·다른 시도 전부 종결·raw block/results/TxRaw·원 receipt·같은 높이 C 검증을 기존 `proof.rs`/engine으로 통과해야 CORRECTION을 만들 수 있다. P 재사용과 COMMITTED 역전은 허용하지 않는다.
 
@@ -189,10 +189,4 @@ pin/backoff 뒤 writer 전, writer/prefix 검사 뒤 intent 전, marker/raw 검�
 callback 전이다. writer 전 샘플 외의 callback에서 writer 재진입은 금지한다.
 기본/no-fault build에는 이 API나 clock override가 없다. 기존 F14 phase는 같다.
 
-**공개 receipt 미해결(CTO-70-03):** 현재 `settlement_local/rest.rs`의 투영은 원
-rc3 CommandResult가 아니다. 원 체결 결과 전체에는 상대 계정 ledger도 있으므로
-전체를 공개하는 수정은 계정 격리를 위반한다. 현재 코드는 그 계약 결정을 임의로
-바꾸지 않았다. 별도 공개 version·원 결과 결합·client ledger 검증 의미를 CTO가
-기존 A Security→QA에서 고정해야 한다. 해당 승인과 C 후속 구현/심사 전에는
-이 Settlement 후보를 최종 runtime에 pin하거나 서비스 활성화하지 않는다.
-`receipt_contract_gap` 시험의 PASS는 충돌 재현이며 제품 P2 해소가 아니다.
+**공개 receipt 보완(CTO-70-03):** 승인 A의 별도 `s3-dev-local-account/1`을 구현한 재심사 후보다. 원 trusted `s3-dev-local/1`·전체 CommandResult는 그대로 보존하고, 공개 응답은 검증된 원 명령의 immutable source와 계정별 account_result를 반환한다. 새 Context/home 입력 조건, API와 cap·오류·과거 조회 의미는 [공개 계정 영수증 인계](S3-ACCOUNT-RECEIPT.md)에 있다. 현재 C 후보의 CTO→Security 승인과 최종 runtime pin 전에는 서비스 활성화하지 않는다.

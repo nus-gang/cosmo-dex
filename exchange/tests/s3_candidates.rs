@@ -1491,7 +1491,7 @@ mod settlement_tests {
             assert_eq!(call(&rest,&c,"POST","/dev-local/v1/withdraw/prepare",Some(&token0),&withdraw).0,503);
             assert_eq!(call(&rest,&c,"POST","/dev-local/v1/orders",Some(&token0),&body).0,503);
             assert_eq!(call(&rest,&c,"POST","/dev-local/v1/withdraw/prepare",Some(&token0),&withdraw).0,503);
-            assert_eq!(call(&rest,&c,"POST","/dev-local/v1/receipts/orders",Some(&token0),&body),own);
+            assert_eq!(call(&rest,&c,"POST","/dev-local/v1/receipts/orders",Some(&token0),&body).0,503);
             assert_eq!(call(&rest,&c,"GET","/dev-local/v1/account",Some(&token0),&Value::Null).1["gate"],"RECOVERY_REQUIRED");
             dev_fixture::copy_home("settlement-rest-recovery", &t.dev.home);
             evidence("settlement-rest",json!({"scope":"COMPONENT_SYNTHETIC","result":"PASS","owner_projection":account,"other_projection":other,"receipt":own.1,"checks":["auth","owner","signature","context","origin","loopback","duplicate_headers","two_opt_ins","retry","stale","recovery_query"]}));
@@ -1864,3 +1864,7 @@ mod settlement_gates;
 #[cfg(all(feature = "dev-local-settlement", feature = "fault-injection"))]
 #[path = "support/receipt_contract_gap.rs"]
 mod receipt_contract_gap;
+
+#[cfg(all(feature = "dev-local-settlement", feature = "fault-injection"))]
+#[path = "support/account_events.rs"]
+mod account_events;
