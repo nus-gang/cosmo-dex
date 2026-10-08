@@ -22,6 +22,18 @@ fn request(
     token: Option<&str>,
     body: Option<&Value>,
 ) -> (u16, Value) {
+    request_at(rest, c, method, path, token, body, NOW)
+}
+
+fn request_at(
+    rest: &Rest,
+    c: &Candidate,
+    method: &str,
+    path: &str,
+    token: Option<&str>,
+    body: Option<&Value>,
+    now: u64,
+) -> (u16, Value) {
     let authorization = token.map(|t| format!("Bearer {t}"));
     let mut headers = vec![("origin", ORIGIN)];
     if let Some(value) = &authorization {
@@ -37,7 +49,7 @@ fn request(
             body: &bytes,
         },
         &observation(c),
-        NOW,
+        now,
     )
 }
 
@@ -102,8 +114,42 @@ fn settlement_pins_public_contract_and_keeps_trusted_result_separate() {
                 ),
                 (401, json!({"code":"UNAUTHORIZED","durable_ack":false}))
             );
+            let noncanonical_get = json!({});
+            assert_eq!(
+                request(
+                    &rest,
+                    &c,
+                    "GET",
+                    "/dev-local/v1/receipts/commands/not-a-seq",
+                    None,
+                    Some(&noncanonical_get),
+                ),
+                (401, json!({"code":"UNAUTHORIZED","durable_ack":false}))
+            );
+            assert_eq!(
+                request(
+                    &rest,
+                    &c,
+                    "GET",
+                    "/dev-local/v1/receipts/commands/not-a-seq",
+                    Some("invalid-token"),
+                    Some(&noncanonical_get),
+                ),
+                (401, json!({"code":"UNAUTHORIZED","durable_ack":false}))
+            );
             let token0 = login(&rest, &c, 0);
             let token1 = login(&rest, &c, 1);
+            assert_eq!(
+                request(
+                    &rest,
+                    &c,
+                    "GET",
+                    "/dev-local/v1/receipts/commands/not-a-seq",
+                    Some(&token0),
+                    Some(&noncanonical_get),
+                ),
+                (409, json!({"code":"NON_CANONICAL_WIRE","durable_ack":false}))
+            );
             let capabilities = request(
                 &rest,
                 &c,
@@ -211,6 +257,20 @@ fn settlement_pins_public_contract_and_keeps_trusted_result_separate() {
                     &bytes,
                 )
                 .unwrap();
+            // Run the monotonic-clock expiry probe last: Auth intentionally
+            // invalidates all sessions when time moves backwards afterward.
+            assert_eq!(
+                request_at(
+                    &rest,
+                    &c,
+                    "GET",
+                    "/dev-local/v1/receipts/commands/not-a-seq",
+                    Some(&token0),
+                    Some(&noncanonical_get),
+                    NOW + 301_000,
+                ),
+                (401, json!({"code":"UNAUTHORIZED","durable_ack":false}))
+            );
 
             let view = engine.reader().get().unwrap();
             dev_fixture::evidence(
@@ -224,7 +284,7 @@ fn settlement_pins_public_contract_and_keeps_trusted_result_separate() {
                     "canonical_public_base64":STANDARD.encode(bytes),
                     "commit_after_queries":commit_value(&view.commit),
                     "expected_diff":[],
-                    "checks":["session_first_401","public_schema_pin","trusted_public_type_split","own_query_200","other_query_404","canonical_path_409","missing_404","source_tuple_verification","exact_response_bytes"]
+                    "checks":["session_first_401_empty_body","session_first_401_noncanonical_body_missing_invalid_expired","authenticated_noncanonical_body_409","public_schema_pin","trusted_public_type_split","own_query_200","other_query_404","canonical_path_409","missing_404","source_tuple_verification","exact_response_bytes"]
                 }),
             );
             dev_fixture::copy_home(

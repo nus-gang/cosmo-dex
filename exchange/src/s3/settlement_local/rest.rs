@@ -113,9 +113,6 @@ impl Rest {
         let origin = single(req.headers, "origin")?;
         request::mutation_origin(origin)?;
         let authorization = single(req.headers, "authorization")?;
-        if req.method == "GET" && !req.body.is_empty() {
-            return Err(Error::Invalid("NON_CANONICAL_WIRE"));
-        }
         if ["auth/challenge", "auth/session"].contains(&path) {
             if req.method != "POST" {
                 return Err(Error::Invalid("METHOD_NOT_ALLOWED"));
@@ -135,6 +132,12 @@ impl Rest {
             .lock()
             .map_err(|_| Error::Recovery("AUTH_POISONED"))?
             .owner(authorization, origin, now / 1000)?;
+        // Protected routes authenticate before validating route-specific wire.
+        // This preserves the approved 401 priority and avoids disclosing body or
+        // path validity to missing, invalid, or expired sessions.
+        if req.method == "GET" && !req.body.is_empty() {
+            return Err(Error::Invalid("NON_CANONICAL_WIRE"));
+        }
         match (req.method, path) {
             ("POST", "auth/logout") => {
                 self.auth
