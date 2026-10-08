@@ -1,0 +1,33 @@
+{
+  "candidate": "ALLOC-67-06/local-dev-v1",
+  "status": "DRAFT_SECURITY_THEN_QA_INPUT",
+  "activated": false,
+  "runtime_implemented": false,
+  "base_exchange_head": "83a020ac52805b4da00d1c62f8971c6f247f8903",
+  "base_rc3_head": "51ab101ff5408b873cba101129b4c06962d56cc7",
+  "base_arena_head": "c8f1f7f0df4d4e765c3b0fb4466a4d038060a011",
+  "arena_activated": false,
+  "base_chain_head": "f44d511bee7ced4f95dce029ddd7abcf7d8e6722",
+  "envelope_version": "s3-dev-local/1",
+  "economic_context_schema": "s3/3",
+  "default_enabled": false,
+  "required_build_feature": "dev-local-demo",
+  "binary_name": "nus-s3-local-demo",
+  "required_cli": [
+    "--local-demo-profile",
+    "--acknowledge-unproven-space"
+  ],
+  "runtime_root": ".runtime/s3-dev-local-v1/",
+  "storage_magic": "S3D1",
+  "standard_storage_magic": "S3W1",
+  "header_bytes": "72",
+  "payload_ceiling_bytes": "16777216",
+  "durable_ack": false,
+  "supported_backend_allowlist": [],
+  "G00": "FAIL_UNPROVEN",
+  "standard_ACK": "CLOSED",
+  "cost_authorized_eur": "0",
+  "chain_sdk_context_found": "s3/1",
+  "chain_context_compatibility": "CHANGE_AND_REVIEW_REQUIRED",
+  "review_scope": "DORMANT_CONTRACT_ONLY_NOT_BACKEND_SUPPORT"
+}

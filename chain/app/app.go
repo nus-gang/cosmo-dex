@@ -36,6 +36,7 @@ import (
 	txsigning "github.com/cosmos/cosmos-sdk/x/tx/signing"
 	"github.com/cosmos/gogoproto/proto"
 	ex "github.com/nus-gang/cosmo-dex/chain/app/x/exchange/keeper"
+	s3 "github.com/nus-gang/cosmo-dex/chain/app/x/exchange/s3types"
 	ext "github.com/nus-gang/cosmo-dex/chain/app/x/exchange/types"
 )
 
@@ -164,12 +165,13 @@ func DecodeGenesis(raw []byte) (Genesis, error) {
 
 type App struct {
 	*baseapp.BaseApp
-	Auth        authkeeper.AccountKeeper
-	Bank        bankkeeper.BaseKeeper
-	Exchange    ex.Keeper
-	Codec       *codec.ProtoCodec
-	TxConfig    client.TxConfig
-	GenesisHash []byte
+	Auth           authkeeper.AccountKeeper
+	Bank           bankkeeper.BaseKeeper
+	Exchange       ex.Keeper
+	Codec          *codec.ProtoCodec
+	TxConfig       client.TxConfig
+	GenesisHash    []byte
+	validateS3Init func(*abci.RequestInitChain) error
 }
 
 func Encoding() (*codec.ProtoCodec, client.TxConfig) {
@@ -182,6 +184,7 @@ func Encoding() (*codec.ProtoCodec, client.TxConfig) {
 	authtypes.RegisterInterfaces(r)
 	banktypes.RegisterInterfaces(r)
 	ext.RegisterInterfaces(r)
+	s3.RegisterInterfaces(r)
 	c := codec.NewProtoCodec(r)
 	return c, authtx.NewTxConfig(c, []signing.SignMode{signing.SignMode_SIGN_MODE_DIRECT})
 }
@@ -189,7 +192,11 @@ func New(db dbm.DB, hash []byte, logger log.Logger) (*App, error) {
 	return NewForChain(db, hash, logger, ex.ChainID)
 }
 func NewForChain(db dbm.DB, hash []byte, logger log.Logger, chainID string) (*App, error) {
-	if chainID != ex.ChainID && chainID != ex.S2ChainID {
+	return newForChain(db, hash, logger, chainID, nil)
+}
+
+func newForChain(db dbm.DB, hash []byte, logger log.Logger, chainID string, binding *ex.S3Binding) (*App, error) {
+	if chainID != ex.ChainID && chainID != ex.S2ChainID && chainID != ex.S3ChainID {
 		return nil, fmt.Errorf("WRONG_CHAIN")
 	}
 	if len(hash) != 32 {
@@ -197,13 +204,16 @@ func NewForChain(db dbm.DB, hash []byte, logger log.Logger, chainID string) (*Ap
 	}
 	c, tx := Encoding()
 	decode := func(raw []byte) (sdk.Tx, error) {
-		if len(raw) > 16384 {
+		if len(raw) > 16384 && (chainID != ex.S3ChainID || len(raw) > ex.MaxSettleTxBytes) {
 			return nil, fmt.Errorf("TX_TOO_LARGE")
 		}
 		return tx.TxDecoder()(raw)
 	}
 	b := baseapp.NewBaseApp("nusd", logger, db, decode, baseapp.SetChainID(chainID))
 	b.SetVersion(Version)
+	if chainID == ex.S3ChainID {
+		b.SetVersion("s3-dev-1")
+	}
 	b.SetInterfaceRegistry(c.InterfaceRegistry())
 	b.SetTxEncoder(tx.TxEncoder())
 	ak := storetypes.NewKVStoreKey("auth")
@@ -216,20 +226,38 @@ func NewForChain(db dbm.DB, hash []byte, logger log.Logger, chainID string) (*Ap
 	bank := bankkeeper.NewBaseKeeper(c, runtime.NewKVStoreService(bk), auth, map[string]bool{authtypes.NewModuleAddress(ex.Module).String(): true}, authority, logger)
 	cons := consensuskeeper.NewKeeper(c, runtime.NewKVStoreService(ck), authority, nil)
 	b.SetParamStore(cons.ParamsStore)
-	a := &App{b, auth, bank, ex.Keeper{Key: ek, Bank: bank, Codec: c, GenesisHash: bytes.Clone(hash), Network: chainID}, c, tx, bytes.Clone(hash)}
+	a := &App{BaseApp: b, Auth: auth, Bank: bank, Exchange: ex.Keeper{Key: ek, Bank: bank, Codec: c, GenesisHash: bytes.Clone(hash), Network: chainID, S3Binding: binding}, Codec: c, TxConfig: tx, GenesisHash: bytes.Clone(hash)}
 	ext.RegisterMsgServer(b.MsgServiceRouter(), a.Exchange)
+	s3.RegisterMsgServer(b.MsgServiceRouter(), a.Exchange)
 	ext.RegisterQueryServer(b.GRPCQueryRouter(), queryServer{a})
+	if chainID == ex.S3ChainID {
+		authtypes.RegisterQueryServer(b.GRPCQueryRouter(), authkeeper.NewQueryServer(auth))
+		banktypes.RegisterQueryServer(b.GRPCQueryRouter(), bank)
+	}
 	standard, e := ante.NewAnteHandler(ante.HandlerOptions{AccountKeeper: auth, BankKeeper: bank, SignModeHandler: tx.SignModeHandler()})
 	if e != nil {
 		return nil, e
 	}
 	b.SetAnteHandler(func(ctx sdk.Context, t sdk.Tx, sim bool) (sdk.Context, error) {
+		if chainID == ex.S3ChainID {
+			if _, _, e := envelopeS3(t, len(ctx.TxBytes())); e != nil {
+				return ctx, e
+			}
+			next, e := standard(ctx, t, sim)
+			if e != nil {
+				return next, e
+			}
+			return next, a.guardS3(next, t)
+		}
 		if e := a.guard(ctx, t); e != nil {
 			return ctx, e
 		}
 		return standard(ctx, t, sim)
 	})
 	b.SetInitChainer(a.init)
+	if chainID == ex.S3ChainID {
+		a.configureS3()
+	}
 	if chainID == ex.S2ChainID {
 		b.SetEndBlocker(func(ctx sdk.Context) (sdk.EndBlock, error) {
 			return sdk.EndBlock{}, a.saveS2Header(ctx)
@@ -239,14 +267,27 @@ func NewForChain(db dbm.DB, hash []byte, logger log.Logger, chainID string) (*Ap
 		return nil, e
 	}
 	if b.LastBlockHeight() > 0 {
-		stored := b.CommitMultiStore().GetKVStore(ek).Get([]byte("genesis"))
-		if !bytes.Equal(stored, hash) || (chainID == ex.S2ChainID) != (string(b.CommitMultiStore().GetKVStore(ek).Get([]byte("chain_id"))) == ex.S2ChainID) {
+		store := b.CommitMultiStore().GetKVStore(ek)
+		stored := store.Get([]byte("genesis"))
+		if !bytes.Equal(stored, hash) || chainID != string(store.Get([]byte("chain_id"))) {
 			return nil, fmt.Errorf("genesis hash differs from persisted state")
+		}
+		if !bytes.Equal(store.Get([]byte("s3_binding")), binding.Bytes()) {
+			return nil, fmt.Errorf("S3_BINDING_MISMATCH")
+		}
+		if binding != nil {
+			var cfg ex.S3Config
+			if json.Unmarshal(store.Get(a.Exchange.S3Key("config")), &cfg) != nil || cfg.FeeBPS != binding.FeeBPS || cfg.FeeVersion != 1+binding.FeeBPS/25 {
+				return nil, fmt.Errorf("S3_BINDING_MISMATCH")
+			}
 		}
 	}
 	return a, nil
 }
 func (a *App) guard(ctx sdk.Context, t sdk.Tx) error {
+	if a.Exchange.ChainID() == ex.S3ChainID {
+		return a.guardS3(ctx, t)
+	}
 	if len(ctx.TxBytes()) > 16384 {
 		return fmt.Errorf("TX_TOO_LARGE")
 	}
@@ -307,6 +348,9 @@ func (a *App) init(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseI
 	if req.ChainId != a.Exchange.ChainID() {
 		return nil, fmt.Errorf("WRONG_CHAIN")
 	}
+	if a.Exchange.ChainID() == ex.S3ChainID {
+		return a.initS3(ctx, req)
+	}
 	g, err := DecodeGenesis(req.AppStateBytes)
 	if err != nil {
 		return nil, err
@@ -354,6 +398,9 @@ func (a *App) init(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseI
 	return &abci.ResponseInitChain{Validators: req.Validators}, a.Exchange.Invariant(ctx)
 }
 func (a *App) snapshot(ctx sdk.Context) (map[string]any, error) {
+	if a.Exchange.ChainID() == ex.S3ChainID {
+		return a.s3Snapshot(ctx)
+	}
 	if a.Exchange.ChainID() == ex.S2ChainID {
 		return a.s2Snapshot(ctx)
 	}

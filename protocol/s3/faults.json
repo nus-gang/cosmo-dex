@@ -1,0 +1,134 @@
+{
+  "repetitions_per_variant": "3",
+  "replays_per_crash": "2",
+  "faults": [
+    {
+      "id": "F01",
+      "point": "before batch WAL append",
+      "expected": "NO_BATCH_NO_BROADCAST",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "F02",
+      "point": "after immutable batch fsync before marker",
+      "expected": "UNKNOWN_TAIL_PRESERVE_NO_SEND",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "F03",
+      "point": "after batch marker before attempt",
+      "expected": "REPLAY_SAME_BATCH",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "F04",
+      "point": "after attempt TX fsync before marker",
+      "expected": "UNKNOWN_TAIL_NO_NEW_ENVELOPE",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "F05",
+      "point": "after attempt marker before socket send",
+      "expected": "QUERY_THEN_SAME_TX_ONLY",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "F06",
+      "point": "after broadcast before RPC headers",
+      "expected": "SUBMISSION_UNKNOWN_HOLDS_UNCHANGED",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "F07",
+      "point": "after RPC headers before JSON complete",
+      "expected": "SUBMISSION_UNKNOWN_HOLDS_UNCHANGED",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "F08",
+      "point": "after chain commit before RPC response",
+      "expected": "QUERY_ORIGINAL_RECEIPT_ONE_ASSET_EFFECT",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "F09",
+      "point": "after receipt fsync before engine apply",
+      "expected": "REPLAY_RECEIPT_AND_MATCHING_SNAPSHOT",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "F10",
+      "point": "after candidate engine apply before WAL fsync",
+      "expected": "NO_PARTIAL_PUBLIC_VIEW",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "F11",
+      "point": "after apply WAL fsync before marker",
+      "expected": "PRESERVE_TAIL_RECONCILE_ONCE",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "F12",
+      "point": "after apply marker before UI response",
+      "expected": "REPLAY_ONE_REVISION_NO_DOUBLE_RELEASE",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "F13",
+      "point": "after close receipt before correction plan",
+      "expected": "NO_REPLACEMENT_SEQ_UNTIL_APPLY",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "F14",
+      "point": "after correction closure before candidate state",
+      "expected": "REPLAY_SAME_FULL_DEPENDENCY_SET",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "F15",
+      "point": "after correction WAL fsync before marker",
+      "expected": "NO_PARTIAL_CORRECTION",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "F16",
+      "point": "after correction marker before snapshot publish",
+      "expected": "REPLAY_SAME_NEW_BOOK_AND_HOLDS",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "F17",
+      "point": "after snapshot temp fsync before rename",
+      "expected": "OLD_VALID_SNAPSHOT_PLUS_WAL",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "F18",
+      "point": "second writer lock / WAL corruption / disk reservation unavailable",
+      "expected": "REFUSE_WRITER_OR_HALT_WITH_EVIDENCE",
+      "result": "NOT_RUN"
+    }
+  ],
+  "F18_variants": [
+    "second_writer",
+    "header_bitflip",
+    "payload_bitflip",
+    "missing_marker_committed_frame",
+    "ENOSPC_injection",
+    "exact_16MiB_payload",
+    "16MiB_plus_1_payload",
+    "WAL_and_marker_common_rollback_external_ACK_detection",
+    "RPC_16MiB",
+    "RPC_16MiB_plus1",
+    "missing_raw_object",
+    "tampered_raw_object",
+    "wrong_raw_role",
+    "missing_transitive_ref",
+    "reserve_minus1_before_ACK",
+    "dedicated_reserve_with_general_free_zero",
+    "preallocated_space_crash_replay"
+  ],
+  "execution_requirement": "Each variant on fresh S3 home; no wall-clock races; barrier/tx_index proof. Injection mechanism and NOT_RUN boundaries recorded."
+}

@@ -1,0 +1,31 @@
+syntax = "proto3";
+package nus.protocol.s3;
+import "protocol/v1/protocol.proto";
+
+// Same layout as BatchV1, new version and hash domains for finalized VOID slots.
+// Mandatory singular presence, including zero; strict wire validation before decode.
+message BatchV2 {
+  optional uint32 protocol_version = 1; // exactly 2
+  optional string chain_id = 2;
+  optional string market_id = 3;
+  optional uint64 operator_epoch = 4;
+  optional uint64 batch_seq = 5;
+  optional bytes previous_batch_hash = 6; // last COMMITTED or VOID batch V2 hash
+  optional bytes batch_id = 7;
+  repeated nus.protocol.v1.SignedOrderV1 new_signed_orders = 8;
+  repeated nus.protocol.v1.FillV1 fills = 9;
+  optional bytes genesis_hash = 10;
+  optional string exchange_module_id = 11;
+  optional uint64 market_config_version = 12;
+}
+message BatchReceiptV2 {
+  optional uint32 protocol_version = 1; // exactly 2, COMMITTED only
+  optional string chain_id = 2;
+  optional bytes genesis_hash = 3;
+  optional string market_id = 4;
+  optional uint64 batch_seq = 5;
+  optional bytes batch_id = 6;
+  optional bytes batch_hash = 7;
+  optional uint64 committed_height = 8;
+  optional bytes tx_hash = 9;
+}

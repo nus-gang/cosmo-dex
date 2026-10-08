@@ -1,0 +1,68 @@
+{
+  "scope": "raw strict-wire/resource/business rejection inputs; product execution NOT_RUN",
+  "cases": [
+    {
+      "id": "nine-fills",
+      "file": "vectors/negative-nine-fills.bin",
+      "sha256": "be9e6db471496002392606b079bb133f165473d370bf6ea2542a291ad3e8ccbc",
+      "byte_length": "12715",
+      "expected": "RESOURCE_LIMIT",
+      "setup": "new slot; resource check precedes duplicate fill",
+      "product_result": "NOT_RUN"
+    },
+    {
+      "id": "seventeen-proofs",
+      "file": "vectors/negative-seventeen-proofs.bin",
+      "sha256": "35f0bf8731693de5c48d7fee8548494faf00f34ca473808ec23bbbc896ad6ac3",
+      "byte_length": "92955",
+      "expected": "RESOURCE_LIMIT",
+      "setup": "new slot; resource check precedes duplicate proof",
+      "product_result": "NOT_RUN"
+    },
+    {
+      "id": "duplicate-fill",
+      "file": "vectors/negative-duplicate-fill.bin",
+      "sha256": "bd5e6f8541d07318cf872d474de33a4c0588380b213ac77520055d6624288f41",
+      "byte_length": "11420",
+      "expected": "DUPLICATE_FILL",
+      "setup": "new slot",
+      "product_result": "NOT_RUN"
+    },
+    {
+      "id": "empty",
+      "file": "vectors/negative-empty.bin",
+      "sha256": "e2716fc50adbbeb7457ccee05eac1c1f08f1bb838fbaf3d378a6b5015991e8b9",
+      "byte_length": "11050",
+      "expected": "EMPTY_BATCH",
+      "setup": "new slot; empty before unused proof",
+      "product_result": "NOT_RUN"
+    },
+    {
+      "id": "unknown-tag",
+      "file": "vectors/negative-unknown-tag.bin",
+      "sha256": "0cf19c36a84ff9d3f36697604d78d7523beb87ec120aaf615a7febe242a45655",
+      "byte_length": "11237",
+      "expected": "NON_CANONICAL_WIRE",
+      "setup": "new slot",
+      "product_result": "NOT_RUN"
+    },
+    {
+      "id": "v1-batch-disabled",
+      "file": "vectors/negative-v1-batch-disabled.bin",
+      "sha256": "274890dabfa344ed3b0a2ab91312d03e1c90d7b941f2c566db4f97c9aee7be19",
+      "byte_length": "11235",
+      "expected": "UNSUPPORTED_VERSION",
+      "setup": "S3 genesis height >= 1; valid v1 layout and ID",
+      "product_result": "NOT_RUN"
+    },
+    {
+      "id": "batch-byte-limit",
+      "file": "vectors/negative-batch-byte-limit.bin",
+      "sha256": "d281209cc72d47b090175b22621840d9eb8267d09cc05dc122bfaa759a82830f",
+      "byte_length": "131073",
+      "expected": "RESOURCE_LIMIT",
+      "setup": "reject before decode",
+      "product_result": "NOT_RUN"
+    }
+  ]
+}

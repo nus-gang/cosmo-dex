@@ -1,0 +1,108 @@
+{
+  "scope": "static serialized bound and fixed gas budget, NOT runtime gas measurement",
+  "batches": [
+    {
+      "id": "demo-0",
+      "batch_id": "65d96a78a3dc77aa7fa87eca63f4ca313c7e43c0c08354bee90d8fd80474e7d0",
+      "batch_hash": "6a68571c6bb3af6c09f384227e35029270c4c31fd9652a5cf02e027a89048586",
+      "byte_length": "11235"
+    },
+    {
+      "id": "demo-25",
+      "batch_id": "188ecab7d700aba586f859de0e5e23b51ce476d77ec017e167f46a70539b78d9",
+      "batch_hash": "fcc2a679724e6b3600ccc8aeb19f04542dbb52ba04b4c85c289fbe6807a56a9c",
+      "byte_length": "11235"
+    },
+    {
+      "id": "capacity-valid-8-16",
+      "batch_id": "061de7a992e6d7fc11aebe2e9b7cb5fe09f12d272efdd636c8df35836947e8e4",
+      "batch_hash": "dfb090d63c9c662d28af6a424286c498c5236ff35ab7600b1caddfba51ba3334",
+      "byte_length": "88850"
+    },
+    {
+      "id": "capacity-8-16",
+      "batch_id": "d51a4f43f736553c5351932b40a752e8772e8e78c39c568312f98b08c1cc6e0d",
+      "batch_hash": "42616b49d1f3f297a0bb1b3dae86b2c2c7a4efaaa3427efb040777bf69a9188c",
+      "byte_length": "89308"
+    }
+  ],
+  "txs": [
+    {
+      "id": "tx-demo-0-1",
+      "tx_hash": "8a175fcc3a8de7c295d00941c8f6f91820f5673b1587d8e276637966a7ec0368",
+      "byte_length": "16669"
+    },
+    {
+      "id": "tx-demo-0-2",
+      "tx_hash": "55a1d25d4f6268191dbd4ecab12135ca28fc508ed7a6e55025a38dcf09e4babf",
+      "byte_length": "16671"
+    },
+    {
+      "id": "tx-demo-25-1",
+      "tx_hash": "24c37dea483e6923b59073c33b58933e9b838b604da5d79cf0c014f7440c000d",
+      "byte_length": "16669"
+    },
+    {
+      "id": "tx-demo-25-2",
+      "tx_hash": "d6f3170d08e014ea42907c472a0654c3e6f82b5d52b663f724187eee180f7f76",
+      "byte_length": "16671"
+    },
+    {
+      "id": "tx-capacity-valid-8-16-1",
+      "tx_hash": "90ad6b17e8305647be7aab8d65381d41d3f91cda28a737b61b7ee1b4ec5d9d52",
+      "byte_length": "94288"
+    },
+    {
+      "id": "tx-capacity-valid-8-16-2",
+      "tx_hash": "36e913676bb70a933e2eb62b9a41e962e25ed11546506ceff74dcbe667c6d4d8",
+      "byte_length": "94290"
+    },
+    {
+      "id": "tx-capacity-8-16-1",
+      "tx_hash": "23e105d272a60659f3894c9128f0577f4703b45109b63f8946af00d63ed7b485",
+      "byte_length": "94746"
+    },
+    {
+      "id": "tx-capacity-8-16-2",
+      "tx_hash": "6316e421a9435fea7e50b80d0c1347941e4c7951036e0242528d24a47a83abee",
+      "byte_length": "94748"
+    }
+  ],
+  "static_max_settle_gas": "6943982",
+  "settle_gas_headroom": "3056018",
+  "bound_equation": "139264*10 + 17*750 + 128*1000 + 262144*3 + 96*2000 + 131072*30 + 500000",
+  "bound_precondition": "B must trace actual KV calls including Has and keys; no unbounded iteration in settlement",
+  "envelope_reserve_bytes": "8192",
+  "boundaries": [
+    {
+      "field": "max_batch_bytes",
+      "at": "131072",
+      "at_plus_one": "131073",
+      "expected": "RESOURCE_LIMIT"
+    },
+    {
+      "field": "max_settle_tx_bytes",
+      "at": "139264",
+      "at_plus_one": "139265",
+      "expected": "RESOURCE_LIMIT"
+    },
+    {
+      "field": "max_fills_per_batch",
+      "at": "8",
+      "at_plus_one": "9",
+      "expected": "RESOURCE_LIMIT"
+    },
+    {
+      "field": "max_orders_per_batch",
+      "at": "16",
+      "at_plus_one": "17",
+      "expected": "RESOURCE_LIMIT"
+    },
+    {
+      "field": "max_mldsa_checks_per_block",
+      "at": "34",
+      "at_plus_one": "35",
+      "expected": "RESOURCE_LIMIT"
+    }
+  ]
+}

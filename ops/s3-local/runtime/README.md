@@ -1,0 +1,561 @@
+# L-R HTTP 전송 경계 — 기동 전 구현
+
+[NUS-73](/NUS/issues/NUS-73)의 SRE 소유 배선이다. 승인 L-D `Rest`·C·경제 로직·protocol·Cargo lock을 변경하지 않는다. **listener·worker 실행 파일은 아직 없으며 서비스 시작 명령이 아니다.**
+
+- `http.rs`: literal loopback bind/실제 peer·정확한 Host, 단일 HTTP/1.1 요청, body 16384 bytes·헤더32개·각 line4096 bytes(CRLF 포함), 전체 전송 deadline2초. 본문 할당 전에 Content-Length 상한을 검사한다. DNS/forwarded header로 peer를 대체하지 않는다.
+- Content-Length 중복·Transfer-Encoding 전체·Expect/upgrade·obs-fold/control·비정규 길이·absolute target·query/fragment/escaped path·본문 있는 GET/OPTIONS를 거절한다. POST는 application/json과 정확한 Content-Length를 요구한다. auth/origin 등의 원 헤더 중복은 handler로 보존한다.
+- 한 요청만 dispatch하고 socket을 닫는다. 두 번째 pipelined 요청은 처리하지 않는다. 응답은 no-store·JSON·nosniff·Connection close이며 exact 두 origin 외 값을 반사하지 않는다. CORS OPTIONS는 승인 origin/GET 또는 POST/authorization 및 content-type에만 허용하고 handler·인증·effect를 호출하지 않는다.
+- `rest.rs`: 승인 L-D `Rest::handle`에만 전달한다. peer는 socket.peer_addr, bind는 socket.local_addr이다. owner/관측은 browser에서 가져오지 않는다. now는 요청을 읽은 뒤 실제 Unix ms를 얻고, 외부 trusted adapter가 준 Observation의 원 시각을 보존한다. stale 관측 갱신/서명/방송/경제 전이 우회 없음.
+- 새 package/의존성/feature 없음. 현재 코드는 Cargo 표준 build에 포함하지 않는다. 최종 실행 파일 배선 때 이 모듈과 명령·SHA를 SRE descriptor에 포함해야 한다.
+
+## 최소 검증
+
+설치된 Rust1.92.0에서 `rustc --edition=2024 --test ops/s3-local/runtime/http_test.rs -o "$PAPERCLIP_RUN_SCRATCH_DIR/http-test"` 뒤 생성된 시험 실행 파일을 `--test-threads=1`로 실행한다. 메모리 Wire만 쓰므로 listener/RPC 없음. 14 PASS/0 FAIL: framing·입력 상한·peer/host·deadline·pipeline·CORS·중복 보존·거절 전 effect0. 실제 TCP deadline·통합 인증·체인·DEV05/12 PASS의 근거가 아니다.
+
+`rest.rs`는 승인 L-D를 포함하는 기존 `--offline --locked --features dev-local-settlement` build의 rlib와 serde_json rlib로 `rustc --edition=2024 --crate-type lib --extern … -L dependency=…` 컴파일했다. 이는 API 타입 연결 확인이며 실제 listener/HTTP 통합 실행이 아니다.
+
+남은 실행 배선: bounded accept/process 종료, 신뢰 Chain query·receipt/block/results adapter, worker loop와 비공개 operator signer, 웹 ChainPort/mount, 새 fee0/25 home/genesis·launcher/preflight/cleanup/fault driver, 전체 실제 binary/web의 최종 manifest·독립 pin 출처·CTO→Security. 서비스0·pin 미발급·DEV NOT_RUN·G00=FAIL_UNPROVEN / allowlist=[] / ACK=CLOSED 유지.
+
+## 신뢰 로컬 조회 수집 (추가 진행)
+
+`query.rs`는 읽기 전용 ABCI 6개 경로와 exact-height block/block_results, hash-bound tx만 허용한다. 요청은 Comet v0.40.0의 로컬 설치 소스(`rpc/core/abci.go`, `rpc/core/tx.go`, `libs/bytes/bytes.go`, `libs/json/decoder.go`)와 대조했다: ABCI data는 HexBytes, Tx hash는 base64 bytes다. 서명·broadcast API는 없다.
+
+literal loopback:1024..65535에 직접 연결하고 전체 connect/write/read 2초 deadline, 헤더16KiB/64개·line4096, body16MiB(상속 C RPC evidence cap), wire 추가256KiB·chunk32768개를 상한으로 둔다. 고정 Content-Length 또는 chunked만 받으며 중복 길이·CL/TE 혼용·압축·trailer·redirect·절단·후행 bytes를 거절한다. 원 JSON entity bytes는 재직렬화하지 않는다. HTTP200/JSON-RPC 오류·NOT_FOUND는 확정 또는 실패 증명으로 승격하지 않는다. 실제 TCP deadline/Comet 응답 호환성은 L-T 시험에 남는다.
+
+`collect.rs`는 승인 L-D `decode_snapshot`으로 Context·높이·원 snapshot을 검증하고, 동일 snapshot 높이의 block/results 원문을 C `Objects`에 보존해 기존 `proof::block`을 호출한다. 이것만으로 terminal attempt·absence proof를 만들지 않는다. 연속 snapshot 적용·freshness/Observation·receipt/ConfirmedTx·worker 전이는 후속 배선이다. 기존 C/L-D 소스와 lock 변경0이다.
+
+기존 Rust1.92.0 및 L-D feature rlib로 다음 순수 검증을 실행했다. `DEPS`는 이미 `--offline --locked --features dev-local-settlement`로 만들어진 dependency 디렉터리, 각 `*_RLIB`는 그 디렉터리의 실제 rlib 파일이다. 새 설치나 cargo 해석 없이 그대로 연결한다.
+
+```sh
+rustc --edition=2024 --test ops/s3-local/runtime/collect.rs \
+  --extern nus_exchange_contract="$NUS_RLIB" --extern serde_json="$JSON_RLIB" \
+  --extern base64="$BASE64_RLIB" --extern hex="$HEX_RLIB" \
+  -L dependency="$DEPS" -o "$PAPERCLIP_RUN_SCRATCH_DIR/collect-tests"
+"$PAPERCLIP_RUN_SCRATCH_DIR/collect-tests" --test-threads=1
+```
+
+**13 PASS / 0 FAIL**, query10개를 포함한 총수이며 별도 실행 query10개와 합산하지 않는다. 메모리 fixture만 사용, socket/RPC0·서비스0. 블록 높이/hash/chain/count 불일치·중복 JSON·RPC 오류 거절과 원 증거 byte 보존을 확인했다. 합성 block fixture는 runtime pin이나 실제 체인 증거가 아니다. 최종 manifest·독립 승인·DEV 통합은 여전히 미완료다.
+
+## 연결 수락·종료 루프 (추가 진행)
+
+`lifecycle.rs`와 `rest.rs::serve_service`는 이미 검증·bind된 listener를 승인 REST에 연결한다. exact `127.0.0.1:1024..65535` 대조 후 nonblocking accept, accepted stream blocking 설정, 동시 연결1개·추가 thread/사용자 공간 queue0이다. 각 반복은25ms 쉬고 trusted tick을 먼저 실행한다. tick 오류는 즉시 루프를 종료하며 재시도·새 Observation 발급·자동 정정을 하지 않는다. `serve_service`는 성공한 trusted callback의 관측 시각을 변경 없이 보존한다.
+
+수명은1..3600초 범위(0초 초과의 Duration), 요청 상한은1..100000이며 거절된 요청도 포함한다. 정상 반환에는 종료 원인·성공/거절 요청 수·tick 수가 남고 오류는 상위 launcher의 실패 종료로 전달해야 한다. 정지 AtomicBool 또는 monotonic 수명 상한에서 신규 요청을 닫으며 accept 중 정지해도 연결을 처리하지 않는다. 종료 시 listener/연결을 drop하고 home·key·WAL·guard·lock inode는 삭제하지 않는다. Engine 소유자는 반환 후 drop하여 writer lock을 해제해야 한다.
+
+이는 프로세스 hard timeout이나 CPU/메모리 RLIMIT 구현이 아니다. 실행 중 callback은 강제로 중단하지 않으므로 종료 지연은 현재 callback 시간만큼 늘어날 수 있다. HTTP는 기존2초 deadline을 사용하지만 trusted tick의 전체 RPC 호출 수·deadline, OS signal 연결·관리 runtime의 강제 종료 grace는 최종 executable/launcher에서 추가로 고정해야 한다. 이 루프 자체는 bind·키 생성·서비스 시작을 하지 않는다. 실제 listener·신호·포트 해제는 L-T 검증이다.
+
+기존 `/Users/gangdongju/.rustup/toolchains/1.92.0-aarch64-apple-darwin/bin/rustc`로 다음을 실행했다. 주입 HOME의 rustup shim은 쓰기 거절됐으며 새 설치 없이 설치된 binary 절대 경로로 해결했다.
+
+```sh
+rustc --edition=2024 --test ops/s3-local/runtime/lifecycle.rs -o "$PAPERCLIP_RUN_SCRATCH_DIR/lifecycle-tests"
+"$PAPERCLIP_RUN_SCRATCH_DIR/lifecycle-tests" --test-threads=1
+```
+
+**9 PASS / 0 FAIL**: 잘못된 상한·endpoint, 시작 전 정지, worker 오류 뒤 accept/retry0, tick 선행·거절 요청 계수, idle 수명·catch-up 방지, listener 실패, accept 중 정지/drop, tick 후 수명 만료를 가상 시계/가짜 연결로 확인했다. Rust 표준 라이브러리만 사용하고 socket/RPC0이다. 승인 L-D feature의 기존 rlib와 `rest.rs` library 컴파일도 PASS. 전체 executable, 실제 worker/proof/signer, ChainPort, fee0/25 초기화·launcher·최종 manifest는 여전히 미완료다.
+
+## 순차 관측과 C 저장 연결 (추가 진행)
+
+`observe.rs::Observer`는 승인 bootstrap binding으로 decode한 마지막 저장 관측과 C의 `latest_observation_ref`(없으면 `chain_snapshot`)·Context를 비교한다. 적용 원장보다 앞선 관측이 저장돼 있으면 bootstrap으로 되돌아가 시작하는 것을 거절한다. `tick`은 읽기 전용 `ChainRead`와 승인 `Worker::reconcile(Command::Snapshot)`만 호출한다. REST/browser가 snapshot·시각·높이를 지정하는 경로가 아니다.
+
+한 tick은 latest 조회1개, gap이면 exact next-height 조회1개, 저장 최대1개로 제한한다. `Snapshot::advance`의 연속 높이·epoch·계정·terminal slot 검증을 그대로 사용한다. gap을 한 번에 건너뛰거나 반복 조회하지 않는다. 원 ABCI 응답 bytes는 RPC evidence로 C에 전달하고 C 저장 성공 뒤에만 내부 anchor와 Observation을 공개한다. 어떤 조회/시각/검증/저장 오류나 unwind든 lane을 닫으며 다음 호출은 IO 전에 거절한다. 같은 높이의 동일 snapshot은 재저장하지 않는다.
+
+Observation의 received_at은 전체 조회 뒤·저장 전 wall clock, query_latency_ms는 tick 시작부터 조회가 끝날 때까지 monotonic elapsed다. 저장 후 시각을 덮어쓰지 않는다. gap은 catching_up=true이고 오래된 블록/느린 조회는 기존 C/REST freshness 검사에서 접수가 제한된다. 이미 저장할 수 있는 과거 관측은 대사를 위해 저장하되 freshness를 위조하지 않는다. 네트워크 예산은 최대2회×2초, C fsync의 OS 차단 시간은 별도이며 hard process timeout을 주장하지 않는다.
+
+설치 Rust1.92.0과 기존 offline/locked L-D rlib로 **20 PASS / 0 FAIL**(observer7+상속 query/collect13)을 확인했다. 새 observer7개 중 실제 C store 시험1개는 fee0/25 각각 Snapshot 저장→CATCHING_UP·미적용 C 보존→close→두 번 replay의 동일 state/commit 및 마지막 관측 anchor 복구를 검증했다. 나머지는 메모리 callback으로 저장 실패·영구 닫힘·조회 상한·원 bytes·시각 보존을 확인했다. RPC/listener/서비스0이다. 최초 store 시험은 시험 RPC를 정수 금지 canonical encoder에 넣어 NON_CANONICAL_VALUE로 실패했으며 RPC 원문 생성만 serde_json으로 수정한 뒤 통과했다. 경제/체인 구현 변경0이다.
+
+재현은 `observe-build.json`의 rustc argv와 `CARGO_MANIFEST_DIR=<checkout>/exchange`를 사용한다. `--test ops/s3-local/runtime/observe.rs`와 기존 `nus_exchange_contract/serde_json/base64/hex/fips204` rlib, `-L dependency=...`가 필요하다. 시험 실행에는 `PAPERCLIP_RUN_SCRATCH_DIR`을 지정한다. 시험 home/genesis/key/pin은 공개 합성 fixture이며 서비스에 사용할 수 없다.
+
+잔여: terminal attempt/receipt proof·signer·seal/submit/apply worker loop, 웹 ChainPort/mount, fee0/25 실제 초기화, launcher/cleanup/fault driver, 최종 binary·manifest·독립 승인 출처. 이 observer는 확정 실패/영수증/Apply를 임의로 만들지 않는다. 서비스0·pin 미발급·DEV NOT_RUN 및 원 G00/ACK 상태를 유지한다.
+
+## 확정 TX 포함 수집 (추가 진행)
+
+`ChainRead::confirmed(snapshot, persisted_tx)`는 검증된 단일 snapshot H의 block/results 두 응답을 가져와 exact TX bytes의 위치를 찾고, 원 RPC 두 개와 TX를 Objects에 보존한 뒤 승인 C `proof::confirmed`를 호출한다. snapshot H/hash·chain·TX index/hash·code/codespace/gas를 기존 검증기로 대조한다. code/gas의 RPC 정수/문자열 표현만 계약의 정수 문자열로 옮기며 음수·소수·비정규 정수·u32 code 초과는 거절한다. 동일 TX가 여러 위치에 있으면 모호한 위치를 선택하지 않고 거절한다.
+
+조회는 최대2회×기존2초 제한이며 빈/초과 TX를 IO 전에 거절한다. 미발견은 `None`이고 단일 블록에 없다는 뜻뿐이다. timeout 전체 부재 증명·terminal attempt 전이·VOID/정정·D/P 해제·receipt COMMITTED를 생성하지 않는다. nonzero ABCI code도 포함 증거의 메타데이터일 뿐이다. 반환 Objects는 메모리 evidence이며 worker가 C API로 저장해야 영속 증거가 된다. RPC 실패는 오류로 전파하며 재시도/추정은 하지 않는다.
+
+기존 offline/locked rlib와 Rust1.92.0으로 `--test ops/s3-local/runtime/collect.rs`를 빌드하여 **20 PASS / 0 FAIL**(신규 포함 시험7 + 기존 query/collect13)을 확인했다. exact 두 번째 TX/index·raw bytes 보존, 성공/실패 code, 빈 블록/미발견, 중복 TX, 잘못된 정수·범위, snapshot/hash/raw-ref 변조, TX 크기 거절을 메모리 fixture로 검증했다. 실제 socket/RPC/서비스0이며 기존 observer 시험20과 합산하지 않는다. 컴파일 명령은 `inclusion-build.json`, 원 결과는 `inclusion-tests.log`다.
+
+잔여 worker/receipt/absence/signer·ChainPort·초기화·launcher·최종 manifest·독립 승인 범위와 DEV NOT_RUN은 유지한다.
+
+## Batch 조회와 timeout 전체 부재 수집 (추가 진행)
+
+`ChainRead::batch`는 exact H의 B Batch 조회 원문과 `BatchLookup`을 반환한다. JSON-RPC id/error/code, canonical value·Context·H·snapshot id·requested seq·LastBatch를 검증한다. seq>LastBatch일 때만 NOT_FOUND_AT_HEIGHT/null을 허용하고, 이미 지난 seq의 누락은 RECEIPT_INCONSISTENCY다. FOUND는 조회 자료일 뿐이며 terminal TX 검증 전 COMMITTED가 아니다.
+
+`ChainRead::absence`는 C에 저장된 Attempt와 정확히8개 연속 snapshot을 받는다. timeout 이후 높이·같은 Context·계정 번호/sequence를 확인한 다음 Batch 조회1회, block/results16회까지만 수행한다. 각 RPC deadline2초, 원 증거 합계16MiB이며 C `proof::absence`가 TX 미포함·연속 block hash를 검증한다. 조회 오류는 재시도 없이 전파하고 partial proof/상태 전이를 반환하지 않는다. 반환은 메모리 proof와 원 evidence이며 영속화·Attempt 전이·봉투 재시도·정정은 수행하지 않는다. NOT_FOUND 단독으로 D/P를 해제하지 않는다.
+
+**운영자 Account 연결:** `account.rs`와 `ChainRead::account`는 정확히 snapshot H의 `/cosmos.auth.v1beta1.Query/Account` 원문을 검증한다. 승인 SDK v0.55.0의 QueryAccountResponse/Any/BaseAccount와 ML-DSA Any만 허용한다. 주소·키 해시·H·RPC id/code, protobuf 중복/미지 필드·잘못된 wire·비최소 정수·overflow·잘림을 거절한다. 등록 사용자라면 snapshot의 계정 번호/sequence/키와도 같아야 한다. SDK가 생략한 0 scalar는 0으로 해석하고 u64 정수는 손실 없이 보존한다.
+
+`Account` 내부 필드는 private이다. `absence_with_account`는 검증된 Account의 snapshot id/owner/number/sequence를 IO 전에 대조하고 원 응답을 evidence에 추가한다. 등록되지 않은 운영자도 이 경로를 사용할 수 있으며 snapshot에 임의 사용자 추가는 하지 않는다. 기존 `absence`는 snapshot-only 경로여서 계정 누락을 계속 거절한다. Account는 신뢰 로컬 RPC 관측이며 Merkle 증명이 아니다. 서명·방송·영속화·worker 연결은 아직 남아 있다.
+
+Rust1.92.0·기존 offline/locked rlib로 **28 PASS/0 FAIL**(신규8+기존20), 실제 socket/RPC/서비스0. 8개 높이·17개 원 evidence 보존, 포함TX/깨진 hash chain·과거 seq 영수증 누락·잘못된 Context/H/id/정수·원문 canonical 위반·history gap·timeout equality·계정 누락·sequence 역행·총량초과·RPC 중단을 시험했다. 최초4개 실패는 fixture에서 운영자 계정이 없었던 것에 따른 panic이며 실패 로그를 보존하고 등록 운영자 fixture와 미등록 거절시험을 분리했다. 경제/Chain/C/lock 변경0. `absence-build.json` 명령과 `absence-tests.log`가 재현 근거다.
+
+다음 SRE 작업: receipt/signer/worker, 웹 ChainPort, fee0/25 초기화·launcher/정리/fault driver·최종 binary/manifest. CTO→Security 제출 전이며 runtime pin 미발급·DEV NOT_RUN·원 G00/ACK와 부모 blocker 유지.
+
+
+Account 연결 검증: 기존 시험과 신규7개를 합쳐 **35 PASS/0 FAIL**. SDK v0.55.0 실제 Marshal 결과를 `testdata/account-sdk.go`로 offline 생성하고 Rust decoder와 대조했다. 이 generator는 합성 공개키만 쓰며 서비스/서명/방송을 실행하지 않는다. `account-build.json`·`account-sdk-build.json`과 로그가 명령 근거다. generator 첫 컴파일의 any 이름 충돌과 fixture 주소 hex 직렬화 오류는 수정했고 최초 실패 로그를 보존했다. 실제 RPC·worker·DEV 통합은 NOT_RUN이다.
+
+## COMMITTED receipt 수집
+
+`ChainRead::committed_receipt`는 신뢰하는 current/terminal Snapshot과 영속 BatchIdentity·TX 원문을 받는다. 같은 current H Batch 원문을 검증하고 terminal H의 exact TX/index/block/results를 기존 C `proof::receipt`로 결합한다. 원 Batch 응답도 Objects에 보존한다. Context/Batch/terminal H/hash 불일치는 block IO 전에 거절한다. nonzero code·TX 누락·위조 receipt wire·VOID·NOT_FOUND·조회 오류는 COMMITTED로 승격하지 않는다. 새 경제 로직/엔진 전이/서명/방송은 없다. VOID resolution evidence와 worker 영속 적용은 후속 배선이다.
+
+합성 순수시험 신규6개와 기존35개 총41 PASS. 실제 RPC/서비스0, DEV NOT_RUN, runtime pin 미발급. 원 G00/ACK·부모 blocker 유지.
+
+## VOID receipt 전송 연결
+
+`ChainRead::void_receipt`는 C가 영속화한 `ResolutionEvidence` reference와 Objects를 받는다. 매번 원 bytes·schema·Context·Batch를 대조하고 참조 closure만 복사한다(원 증거 closure 16MiB 상한). 같은 H Batch의 실패 TX hash·resolution domain hash·terminal H/TX를 대조한 뒤 실제 성공 CLOSE TX 포함 증거를 조립한다. 원 Batch RPC·block/results·TX·failure evidence를 함께 반환한다. hash만 있고 원 증거가 없거나 참조가 변조되면 IO 전에 거절한다.
+
+이 반환은 **전송 증거 조립**이며 실패 또는 정정 승인이 아니다. 승인 C `record_receipt`가 저장된 failure_evidence·CLOSE attempt·CLOSING·모든 settle attempt 종결과 정확한 증거를 다시 확인해야 한다. 수집기는 Command/Apply나 경제 전이를 실행하지 않는다. 그 연결은 worker 구현에 남는다. 기존 C/L-D 및 lock 변경0.
+
+기존 offline/locked rlib와 Rust1.92.0으로 `collect.rs` 순수시험 **46 PASS / 0 FAIL**(신규 VOID 5개 + 기존41개). VOID 양성 fixture는 전송 검증용 합성 schema이며 엔진이 승인한 실패 증거가 아니다. 원 bytes 보존·hash-only/변조 거절·lookup 불일치·실패/누락 CLOSE TX 거절을 확인했다. 실제 RPC/서비스0·DEV NOT_RUN·runtime pin 미발급. worker/signer·웹 ChainPort·초기화/launcher·최종 manifest 및 CTO→Security는 미완료다.
+
+## 비공개 operator signer
+
+`signer.rs::LocalSigner`는 별도 canonical 절대 key 디렉터리(root0700·현재 euid) 아래 `operator.seed` 32 bytes만 읽는다. directory FD에 상대적인 openat·NOFOLLOW/CLOEXEC/NONBLOCK, regular file·현재 euid·0600·nlink1·정확한 길이·읽기 전후 metadata를 검사한다. seed는 Zeroizing으로 지우고 fips204 PrivateKey의 ZeroizeOnDrop을 사용한다. 같은 uid의 악성 프로세스나 메모리/core dump에 대한 격리 보장은 아니다. 새 키 생성·실서비스 seed 사용·복구·보관 구현은 이 모듈에 없다.
+
+로드 시 pinned genesis/operator 구성에서 얻은 예상 공개키와 ML-DSA-65 파생 공개키가 일치해야 한다. 기대키를 REST/browser에서 받으면 안 된다. `OperatorSigner`를 구현하며 L-D가 조립한 bounded SignDoc에 빈 context와 FIPS 204 deterministic signing(rnd=0)을 사용한다. signer 자체가 SignDoc 경제 의미를 다시 구현하지 않는다. 승인 L-D는 결과 서명·operator address/key를 검증하며 영속 intent 뒤에만 방송한다. runtime 내부에서만 접근하고 HTTP API로 노출하지 않는다.
+
+기존 offline/locked cache의 fips204 0.4.6·libc·zeroize rlib를 사용했다. Cargo.toml/lock 수정0이며 최종 rustc build에서 이 세 rlib도 exact 명령·SHA 입력으로 기록해야 한다. 순수시험 **7 PASS / 0 FAIL**: 합성 키 실제 서명 검증·문서 상한, root/file 권한, 길이, 공개키 mismatch, symlink/hardlink, FIFO/디렉터리 거절. 시험 파일은 run scratch에서 생성·정리하며 공개 seed는 runtime용이 아니다. 최초 trait 오류 타입 컴파일 실패 후 C Error 타입으로 수정해 통과했다. 서비스/RPC0, DEV NOT_RUN. signer와 실제 worker의 통합은 후속 배선이다.
+
+## Account를 결합한 제출 lane
+
+`submit.rs::SubmitLane`은 동일 Engine으로 생성한 승인 L-D Worker에만 준비/방송을 위임한다. prepare는 C의 마지막 저장 관측·Context·freshness 확인 → 같은 H 운영자 Account 조회1회 → private Account binding 대조 → 원 Observation 시각으로 freshness 재검사 → `Worker::prepare_settle` 순서다. 조회 후 시각을 새 Observation으로 발급하지 않는다. 조회 중 stale·다른 snapshot·RPC 오류는 signer와 commit 전에 거절한다. L-D가 미해소 시도와 재시도 예산을 다시 검사한다. 반환 account_rpc는 audit 원문이며 C에 저장한 terminal proof를 뜻하지 않는다.
+
+방송은 별도 `broadcast_existing`에서 저장된 exact TX hash만 받는다. 같은 Context/operator/epoch 및 timeout 이전인지 검사하고 L-D의 영속 UNKNOWN/count → writer gate 내 bounded IO 순서를 사용한다. 이 경로는 signer·새 TX·새 Batch를 만들지 않는다. 두 메서드는 오류/unwind 후 lane을 닫으며 restart는 C 저장 상태를 다시 읽어야 한다. 조회1회는 기존2초 한도, 방송은 L-D의 최대2초 지연+2초 IO 한도이며 OS fsync 차단시간은 별도다. 자동 seal/terminal proof/Apply·반복 scheduling은 후속 worker 조립에 남는다.
+
+검증 결과와 exact rustc 명령은 `submit-build.json`·`submit-tests.log`로 인계한다. 실제 C store의 fee0/25 준비·원 TX/횟수 보존·미해소 TX 재서명0·두 번 replay, 조회 실패 후 IO 재시도0, 조회 중 stale, 잘못된 Account/저장 snapshot의 서명0을 순수시험한다. 실제 방송·listener·서비스는 실행하지 않으며 해당 연결의 실제 검증은 L-T에 남는다. engine/Chain/경제/lock 변경0이다.
+
+## 포함 증거의 영속 Attempt 전이
+
+`SubmitLane::resolve_inclusion`은 신뢰 관측의 한 높이에 대해 최대 block/results 2회(각2초) 조회를 수행하고 승인 L-D `Worker::reconcile(Command::Resolve)`에 원 증거를 전달한다. C writer gate 안에서는 영속 Attempt/TX 원문을 복사만 하고, gate 밖에서 조회한다. 이 복사는 방송 허가가 아니며 새 서명/방송을 하지 않는다.
+
+조회 전후 동일 저장 snapshot·Context·freshness를 검사한다. Attempt의 first_possible_height..timeout_height 범위 밖·terminal Attempt·조회/증거/저장 오류는 lane을 닫고 재호출 IO를 거절한다. `None`은 그 한 블록의 미발견이며 저장·종결·정정을 하지 않는다. 포함 코드0/비0을 각각 INCLUDED_SUCCESS/INCLUDED_FAILURE 입력으로 옮기지만, C가 원 block/results/TX·history·hash·정수·불변 봉투를 다시 검증한 뒤에만 저장된다. 이 전이는 COMMITTED receipt나 잔고 확정이 아니다.
+
+합성 순수시험은 fee0/25 × code0/1019의 실제 C store Resolve·원장/배치 보존·각각 두 번 replay, 미발견의 commit 불변, 위조 code 거절/오류 후 IO0, 조회 후 stale 저장0을 확인한다. 최초 시험은 정상적으로 갱신되는 attempt_refs/last_command_seq/stream_seq까지 불변으로 비교하여 실패했다. 비교 범위를 수정하고 실패 원문을 보존했다. 기존 fixture 공개 합성 키만 사용하며 RPC/listener/서비스0이다. `terminal-build.json`의 기존 offline/locked rlib와 Rust1.92.0 명령이 재현 근거다.
+
+남은 실행 배선은 재시작 history 순회·absence/receipt/Apply·worker scheduling, 웹 ChainPort/mount, fee0/25 실제 초기화·launcher/cleanup/fault driver, 최종 binary/manifest·독립 pin 출처·CTO→Security다. 현재 runtime pin 미발급·DEV NOT_RUN이며 원 G00/ACK·부모 blocker를 유지한다.
+
+## 저장된 관측의 Apply 배선
+
+`SubmitLane::apply`는 최신 저장 snapshot·Context·freshness를 확인한 뒤 승인 L-D `Worker::reconcile(Command::Apply)`를 호출한다. RPC·새 서명·영수증 합성은 없으며 경제 전이는 C만 수행한다. 시각 오류·stale·anchor 불일치·C 거절 뒤 lane은 닫히고 재시도하지 않는다. 이 메서드는 receipt 존재 여부를 대신 판단하거나 timeout을 확정 실패로 바꾸지 않는다.
+
+fee0/25의 미정산 PREPARED 배치가 있는 다음 높이를 적용하고 accounts/fills/batches·attempt·resolution/correction 보존과 두 번 replay를 검증한다. 이 시험은 잔고 확정 시연이 아니라 미정산 보류 보존 시험이다. stale·잘못된 anchor·시계 오류의 commit 불변도 확인한다. `apply-build-v2.json`과 `apply-tests-v2.log`가 exact 명령/결과이며 fixture는 공개 합성 데이터다. 최초 시험의 필드명 `balances`는 실제 schema의 `accounts`로 보정했다.
+
+잔여: terminal raw TX/history 재시작 복구·receipt 저장·전체 worker scheduling, 웹 ChainPort·초기화/launcher·cleanup/fault driver·최종 binary/manifest·독립 pin 승인. 서비스/RPC0·DEV NOT_RUN이며 CTO→Security 제출 전이다.
+
+## 승인된 trusted 복구 API 연결
+
+C 복구 API head `77a5e68b5685b1eba4a8f5fc0c03915e74c39d77`, tree
+`770d9883506d5edf34c4f6423fd2b37b0af4a51a`를 통합했다.
+[CTO 승인](/NUS/issues/NUS-70#document-trusted-recovery-api-cto-review)
+revision `00112aed-fde1-4cf1-ab87-0bd868363b0d`와
+[Security 승인](/NUS/issues/NUS-70#document-trusted-recovery-api-security-review)
+revision `c9298fb7-537d-4b24-b8a9-de6cc27166f7`의 동일 후보다.
+이 component 승인은 최종 runtime pin이 아니다.
+
+`recovery.rs::RecoveryCursor`는 C의 동일 View.commit에 history/attempt를 묶는다.
+시작 시 observation 한 행과 applied/latest 두 anchor만 읽고, history는 호출당1..64행,
+attempt는 순번 한 개씩 읽는다. 전체 history/attempt를 무제한으로 복사하지 않는다.
+오류 또는 unwind 뒤 cursor는 닫히며 기존 부분 결과를 새 commit과 섞어 재시도하지 않는다.
+새 commit의 복구는 전체 cursor를 버린 뒤 다시 시작해야 한다.
+anchors/view는 고정 당시 자료이므로 효과 허가나 현재 freshness로 사용하면 안 된다.
+
+`Observer::recover`는 마지막 저장 관측을 복원한다. 적용 C보다 앞선 관측도 유지하며,
+복구 자체는 새 Observation·시각·방송·commit·REST 응답을 만들지 않는다.
+다음 tick에서 신뢰 RPC를 읽고 기존 C freshness 및 effect gate를 통과해야 한다.
+terminal TxRaw는 evidence 조회만 허용하고 기존 `with_committed_attempt` 거절을 보존한다.
+이 모듈은 공개 route나 Serialize를 추가하지 않는다.
+
+재현은 recovery-submit-build.json / recovery-observe-build.json의 rustc argv와
+CARGO_MANIFEST_DIR, 현재 run scratch를 사용한다. 먼저 통합 checkout의 exchange에서
+`cargo build --offline --locked --features dev-local-settlement --lib`를 실행한다.
+Cargo.toml은 L-D 통합 설정이므로 C-only manifest와 구분한다.
+서비스 기동·완성 worker/receipt/scheduling·웹 ChainPort·초기화/launcher·최종 manifest는
+아직 완료되지 않았다. DEV NOT_RUN / runtime pin 미발급 / 원 G00·ACK 유지.
+
+## 복구된 COMMITTED 영수증 저장 연결
+
+`SubmitLane::committed_receipt`는 동일 C commit의 attempt 순번·terminal TX 원문과
+해당 높이 history 1행을 읽는다. `SETTLE/INCLUDED_SUCCESS`만 받아 기존
+`ChainRead::committed_receipt`로 조회하고 승인 C `Command::Receipt`에 원 증거를
+전달한다. unresolved/실패/CLOSE attempt는 이 COMMITTED 경로에서 IO 전에 거절한다.
+조회 전후 최신 snapshot·freshness, 조회 후 commit 동일성, Batch·terminal TX
+동일성을 검사한다. 영수증 의미·wire·원 증거 검증은 C가 담당한다.
+오류 뒤 lane은 닫히며 자동 재시도·새 서명·방송·Apply를 하지 않는다.
+
+순수 fixture 시험은 fee0/25 각각 terminal 기록 후 재시작 → 영수증 저장 → 두 번
+재생을 확인한다. 저장 단계에서는 accounts/fills/chain_snapshot/corrections가
+변하지 않는다. 실제 확정 잔고의 Apply 시연은 포함하지 않는다.
+위조 receipt wire, stale, RPC 오류와 미종결 attempt의 commit 불변도 검사한다.
+명령과 결과는 receipt-store/build.json·compile.log·tests.log에 보존한다.
+
+남은 범위: VOID/실패 증거·전체 worker scheduling, 웹 ChainPort, 초기화/launcher/
+cleanup/fault driver, 최종 binary/manifest·독립 pin·CTO→Security. 서비스0·RPC0·
+DEV NOT_RUN·runtime pin 미발급이며 원 G00/ACK와 부모 blocker는 그대로다.
+
+## 확정 실패 저장 연결 / 다음 API 경계
+
+`SubmitLane::reject_final`은 trusted snapshot·freshness를 대조하고 승인 C `Command::RejectFinal`에 위임한다. C가 저장된 시도·최신 관측으로 실패를 선택하고 검증한다. 오류 뒤 lane은 닫히며 CLOSE·VOID receipt·Apply를 자동 생성하지 않는다.
+
+현재 C의 commit-pinned attempt/history 복구 API에는 별도로 저장된 ResolutionEvidence 원문/참조/closure가 없다. 정확한 VOID 연결을 위해 원 C 업무에 trusted read-only batch 실패 증거 복구 API를 요청한다. SRE가 원문을 재계산하거나 hash-only로 대체하지 않는다. 서비스0·runtime pin 미발급·DEV NOT_RUN이다.
+
+## 승인된 실패 원문 복구 API 통합
+
+C 후보 `8bbacf927358fb96bb028230de527b5dcc1dd6e4`를 통합했다.
+[NUS-70 CTO 승인](/NUS/issues/NUS-70#document-failure-recovery-api-cto-review)
+revision `c6b449be-3e4d-4133-a09c-f13791cf588a`와
+[Security 승인](/NUS/issues/NUS-70#document-failure-recovery-api-security-review)
+revision `777de971-fc0e-497e-91a6-1a340b3722b6`의 동일 후보다.
+위 API 공백 기록은 이전 후보의 이력이며 이번 후보에서 해소됐다.
+
+`RecoveryCursor::failure(batch_id)`는 cursor의 같은 commit으로 C의
+`trusted_recovery_failure`를 호출한다. 저장된 typed 원문·참조·도달 Objects만
+반환하며 SRE 재계산·자동 보충·방송 허가는 없다. 오류 후 cursor 전체가 닫힌다.
+이전 home에 RejectFinal 원문이 없으면 새 C open은 실패하며 자동 수리하지 않는다.
+
+fee0/25 실패 저장 뒤 원문/참조 대조와 두 번 replay, terminal callback 거절,
+stale commit 거절 뒤 history/attempt/view 닫힘을 순수 fixture로 검증한다.
+실제 VOID/CLOSE 전송·worker scheduling·웹 ChainPort·초기화/launcher·최종 manifest는
+후속 작업이다. 서비스/RPC0·runtime pin 미발급·DEV NOT_RUN 유지.
+
+이 통합의 build cache는 checkout 형제 `NUS-73-build-target`에 보존한다.
+`CARGO_HOME=/Users/gangdongju/.cargo`, 설치 Rust 1.92.0의 절대 cargo/rustc,
+`--offline --locked --features dev-local-settlement --lib`를 사용했다.
+순수 submit 시험은 동일 dependency rlib들과 bech32를 명시적으로 연결한다.
+최초 rustc 명령에서 bech32 누락으로 실패한 로그와 보정 argv를 증거에 포함한다.
+
+
+## 승인 CLOSE API와 Account 연결
+
+L-D 후보 `46546d317701b127da8196e9e6abdab7ce9a3d6e`를 fast-forward로 통합했다.
+[NUS-71 CTO 검토](/NUS/issues/NUS-71#document-close-api-cto-review)
+revision `b99ee8de-86dc-4a89-8695-ce69317aef9f`와
+[Security 검토](/NUS/issues/NUS-71#document-close-api-security-review)
+revision `d54094e3-73b7-47e3-87f9-56b030ce0bb7`에서 승인된 동일 후보다.
+
+`SubmitLane::prepare_close`는 Account IO 전에 C commit을 고정하고, 동일 H/owner/키의
+검증된 Account에서 number/sequence를 얻는다. 조회 후 freshness와 snapshot binding을
+다시 확인하고 승인 `Worker::prepare_close`에 commit을 전달한다. C 저장 실패 원문과
+closure 선택·서명·Attempt 전이는 L-D/C가 담당한다. SRE가 실패 원문을 재계산하지 않는다.
+실패 또는 unwind 뒤 lane은 닫히며 후속 IO/서명을 거절한다. 이 메서드는 방송하지 않는다.
+
+fee0/25의 실패 저장→재시작→CLOSE PREPARED/count0→두 번 replay, 원 실패 원문 보존과
+자산 불변을 순수 fixture로 확인한다. 미해소 CLOSE의 재서명, Account 조회 오류·다른 높이·
+조회 중 stale·동일 snapshot의 commit 경합은 서명 전에 거절되어야 한다. Account 원문은
+비공개 audit 반환값이며 REST 응답이나 확정 영수증이 아니다. 공개 fixture 키는 시험에서만 쓴다.
+
+잔여: VOID receipt 저장/worker scheduling, 웹 ChainPort, fee0/25 초기화·launcher·정리·
+fault driver, 최종 binary/web manifest와 독립 runtime pin 및 CTO→Security 검토.
+서비스/RPC0·DEV NOT_RUN·runtime pin 미발급·원 G00/ACK와 부모 blocker 유지.
+
+### VOID 영수증 영속 연결
+
+`SubmitLane::void_receipt`는 동일 C commit에서 성공 CLOSE TxRaw·terminal history·저장된 실패 원문 closure를 복구한다. `ChainRead::void_receipt` 결과의 VOID/batch/terminal TX/실패 참조를 대조하고 C `Command::Receipt`에 저장을 위임한다. 조회 뒤 commit 경합·stale·오류는 lane을 닫는다. 자산 해제/정정은 별도 승인 C Apply에 남는다. 순수시험은 fee0/25 재시작·두 번 replay 및 위조/조회 오류를 검증하며 실제 RPC/DEV 통합 결과가 아니다.
+
+### timeout 관측 복구 연결
+
+`RecoveryCursor::timeout_history`는 같은 commit의 미해소 Attempt에서 높이 범위를 얻어 정확히 8개 연속 저장 snapshot/원문을 반환한다. 종결 TX·timeout 전·없는 TX·commit 경합·불완전 범위는 cursor를 닫는다. 저장 관측은 freshness나 부재 증명이 아니다. `SubmitLane::resolve_absence`는 이 API로 history를 직접 복구하고 현재 snapshot과 대조한 뒤 Account·block/results·Batch 원 RPC 및 C의 기존 proof 검증에 위임한다. 호출자가 임의 history를 전달하는 실행 경로를 제거했다.
+
+fee0/25 두 번 재시작에서 원문과 높이·commit/state 불변을 확인하는 신규 순수시험 3개를 추가했다. 실제 RPC/서비스 기동0, runtime pin 미발급, DEV NOT_RUN이다. worker scheduling·웹 ChainPort·초기화/launcher·정리/fault driver·최종 manifest/독립 승인 출처는 계속 남아 있다.
+
+### bounded scheduler (기동 전 순수 검증)
+
+`schedule.rs`와 `Observer::scheduled_tick`은 monotonic 주기·수명·총 tick
+상한을 적용한다. tick마다 순차 관측을 먼저 저장하고 원 Observation을
+작업 callback에 그대로 전달한다. catch-up 중 callback0이며 지연 뒤
+몰아서 실행하지 않는다. 오류/panic/clock 역행 뒤 해당 scheduler는 닫힌다.
+정산 상태별 action dispatcher와 process driver 연결은 아직 남아 있다.
+서비스 실행·DEV 통합·runtime 승인을 의미하지 않는다.
+
+## 재시작 후 과거 포함 높이 조회
+
+`SubmitLane::resolve_historical_inclusion`은 현재 fresh Snapshot/Observation과 저장 TX hash, 조회할 높이를 받는다. C의 동일 commit에 고정한 trusted attempt/history 원문으로 해당 높이를 복원하고 신뢰 RPC block/results 최대2회(각2초)로 포함을 확인한다. 과거 snapshot에 새 Observation을 발급하지 않는다. 현재 관측 freshness·commit을 IO 전후 확인하며 C의 Resolve 검증에 최종 판정을 위임한다.
+
+한 호출은 한 높이만 조회한다. 미발견은 저장 변경 없는 false이며 timeout 부재·VOID·정정 근거가 아니다. 높이는 attempt의 first..timeout 및 현재 높이 이하로 제한한다. terminal/범위 오류·IO 실패·stale·commit 경합 뒤 lane은 닫힌다. 기존 현재 높이 resolve도 동일 복구 경로를 사용한다. dispatcher는 후속 단계에서 미조회 높이를 순회해야 하며 현재 이 함수만으로 완성된 자동 복구 worker를 뜻하지 않는다.
+
+## 포함 높이 순회 연결
+
+`SubmitLane::scan_inclusion`은 C에서 복구한 unresolved Attempt의 정확한 8높이
+범위를 한 호출당 한 높이씩 조회한다. 같은 hash의 성공한 미발견만 RAM cursor를
+진행시키며 미래 높이는 IO 없이 기다린다. 재시작/hash 변경은 첫 가능 높이부터
+다시 확인한다. 포함 결과는 기존 `resolve_at_with`의 원문·freshness·동일 commit
+검증과 C Resolve를 통과해야 한다. IO/stale/terminal/오류/unwind 후 lane은 닫힌다.
+
+`WindowScanned`는 scheduling 결과일 뿐 부재 증명이 아니다. 저장 상태/자산은
+변하지 않으며 timeout 종결은 별도 전체 absence 원문 검증을 요구한다. cursor는
+영속 증거로 저장하거나 REST에 노출하지 않는다. fee0/25 순수시험에서 한 tick 한
+높이, 8높이 미발견 무변경, 두 번 재시작, 미래 높이 대기, 이후 포함과 종결 거절,
+오류/panic 뒤 재호출0을 검증한다. 상태별 전체 dispatcher와 실행 파일 연결은
+남아 있으며 실제 서비스0·DEV NOT_RUN·runtime pin 미발급이다.
+
+## 미해소 Attempt 분기 연결
+
+`SubmitLane::pending_tick`은 매 tick C의 영속 Attempt를 다시 읽어 한 action만
+실행한다. PREPARED/count0·유효 operator/epoch·timeout 전에는 기존 영속 방송
+API를 호출한다. UNKNOWN은 재서명/자동 재방송하지 않고 한 높이 포함 조회를
+진행한다. 전체 범위 조회 후 timeout을 지난 경우에도 별도 전체 absence 원문을
+다시 수집·검증한 뒤 C Resolve만 호출한다. 분기 결과는 영수증이 아니다.
+오류와 unwind 뒤 lane을 닫으며 새 effect를 실행하지 않는다.
+
+fee0/25 순수시험은 UNKNOWN 두 번 replay·한 action·오류/panic 재호출0과
+scan 완료 뒤 전체 부재 proof 저장·자산 불변을 확인한다. 실제 RPC/서비스0,
+DEV NOT_RUN·pin 미발급. 전체 batch dispatcher(Seal/terminal/receipt/Apply),
+worker executable·웹 ChainPort·초기화/launcher·fault/정리·manifest는 남아 있다.
+
+## 활성 batch dispatcher
+
+`SubmitLane::active_tick`은 C의 동일 commit에서 미해소 batch 하나와 최대5개
+Attempt 원문을 복구한다. 이미 영수증을 저장한 batch는 제외한다. 미해소
+Attempt는 기존 pending dispatcher, 성공 SETTLE/CLOSE는 각각 원 COMMITTED/VOID
+수집·저장, 종결 실패 SETTLE은 C RejectFinal, 저장된 실패 뒤에는 승인 CLOSE
+준비로 연결한다. 전부 부재 입증된 SETTLE만 같은 batch로 다음 봉투를 준비한다.
+상속 SETTLE3/CLOSE2 상한을 넘으면 오류로 닫히며 임의 실패/VOID로 바꾸지 않는다.
+
+각 tick은 한 action만 실행한다. 준비와 방송, 실패 판정과 CLOSE 준비, 영수증
+저장과 Apply를 같은 tick에 연쇄 실행하지 않는다. active batch가 없으면
+`None`이며 이는 idle/Apply/Seal 중 어느 것도 승인하지 않는다. 바깥 driver의
+Seal 목적 선택과 Apply 연결은 아직 남아 있다. 원문 recovery·C/L-D의 최종
+검증이 권위이며 dispatcher 자체는 경제/정정 알고리즘을 구현하지 않는다.
+
+선택 전 freshness, effect 전 동일 commit, 오류/panic 후 lane 닫힘을 적용한다.
+시험은 fee0/25 실제 C store에서 최초 준비(count0), 두 번 replay 후 pending,
+COMMITTED/VOID 원문 저장 뒤 자산 적용0·두 번 replay, 실패 판정 뒤 별도 CLOSE,
+전체 부재 입증 후 동일 batch 재시도와 오류/panic 뒤 재호출0을 검증한다.
+메모리 RPC·공개 합성 키를 사용하는 순수 component 시험이다.
+실제 RPC/서비스0·DEV NOT_RUN·runtime pin 미발급. 전체 driver·실행 파일·웹
+ChainPort·초기화/launcher·fault/정리·최종 manifest와 CTO→Security는 미완료다.
+
+## 명시적 Seal 진입점
+
+`SubmitLane::seal`은 trusted driver의 목적 문자열을 승인 `Worker::reconcile(Command::Seal)`에 전달한다. C가 FIFO·만료 여유·epoch·실패 목적을 검증하며 SRE가 재계산하거나 실패 시 다른 목적으로 재시도하지 않는다. browser 라우트 없음. stale/clock/C 거절 뒤 lane은 닫힌다. Seal은 attempt 생성·서명·방송·Apply를 수행하지 않는다. 목적 선택과 Apply/Seal 전체 dispatcher는 아직 후속 배선이다.
+
+순수시험 `seal_lane_`는 fee0/25 정상 Seal의 accounts 불변·attempt0·동일 home 두 번 replay, 중복 Seal·잘못된 목적·근거 없는 RESOLVE_FAILURE·stale·clock 오류의 commit/state 보존과 lane 닫힘을 검증한다. 최종 결과와 rustc argv는 seal-lane artifact에 기록한다. 서비스/RPC0·runtime pin 미발급·DEV NOT_RUN.
+
+
+## 관측 대사 바깥 dispatcher — 2026-10-07
+
+`SubmitLane::reconcile_tick`은 저장된 같은 commit의 활성 batch를 먼저 처리하고, 활성 batch가 없고 최신 snapshot이 적용 anchor와 다를 때만 `Apply`를 위임한다. 두 anchor가 같으면 `Idle`이며 IO·Seal·서명·commit을 실행하지 않는다. 영수증 저장과 Apply는 별도 tick이다. stale/clock/기존 action 오류·panic 후 lane을 닫고 재호출하지 않는다. C의 경제·proof·정정·lock은 변경하지 않았다. 자동 Seal 목적 선택은 아직 별도 trusted driver 연결점이며 Idle을 Seal 승인으로 사용하지 않는다.
+
+신규 순수시험3 PASS/0 FAIL: fee0/25 × COMMITTED/VOID 영수증 저장→재시작→C Apply→두 번 replay/Idle, 대기 fill의 자동 Seal0·commit 불변, stale/IO/panic 뒤 effect 재호출0. 시험은 메모리 RPC 원문과 공개 합성 키를 사용하며 실제 RPC·서비스0이다. 전체100개 중 기존97개는 이번 재실행하지 않았다. `reconcile-dispatch/build.json`, `compile.log`, `tests.log`에 실제 명령·결과를 보존한다. runtime pin 미발급·DEV NOT_RUN.
+
+## 승인 C 준비 판단 연결 — 2026-10-07
+
+위의 자동 Seal 미연결 기록을 이번 변경으로 갱신한다. C `20c0cd9`의
+`trusted_reconcile_readiness`를 동일 commit·관측·시각으로 호출한다. 활성
+batch 처리 후, Apply Ready이면 한 tick에 Apply만 실행한다. 다음 tick은 새
+commit을 다시 조회한다. Apply가 보류되거나 관측이 없으면 C가 반환한 Ready
+Seal 목적만 전달하고 Waiting이면 Idle이다. SRE는 FIFO·expiry·epoch 규칙을
+복제하지 않으며 다른 목적으로 재시도하지 않는다. 오류/panic 뒤 lane 닫힘과
+실제 C 실행 검증을 유지한다. 준비 판단과 분기 결과는 방송 권한이나 영수증이
+아니다. 실제 worker 실행 파일·웹 ChainPort·초기화/launcher·fault/정리·최종
+manifest는 후속 작업이며 서비스/RPC0·DEV NOT_RUN·runtime pin 미발급이다.
+
+## worker process driver 배선
+
+`driver.rs::Driver::recover`는 승인 C의 Engine을 받아 Observer 복구·Worker·SubmitLane·같은 loopback endpoint의 읽기/방송 client를 묶는다. 생성은 socket 연결/bind/서비스 기동을 수행하지 않는다. 비공개 `OperatorSigner`는 driver가 소유하고 REST로 내보내지 않는다. `tick`은 순차 관측 저장 후 기존 `reconcile_tick` 한 번만 호출하며, catch-up이면 dispatcher 호출0이다. 반환 관측의 received_at/latency를 다시 찍지 않는다. 이 반환을 `rest::serve_service`의 trusted callback에 연결할 수 있다.
+
+driver는 수명1ns..3600초·tick1..3600 상한, 시계 역행, 관측 mismatch를 IO/작업 경계에서 거절한다. 오류/unwind/명시 stop 후 재호출은 닫히고 이전 관측을 반환하지 않는다. 수명 검사는 tick 시작 경계이며 실행 중 RPC/fsync의 hard timeout을 보장하지 않는다. cadence는 기존 lifecycle의1초 간격을 사용한다. REST executable의 입력/preflight/Engine·signer 구성·signal 등록은 아직 미완료다.
+
+기존 offline/locked rlib와 Rust1.92.0으로 driver와 모든 실제 호출을 컴파일하고 신규 순수시험3개를 수행한다. 최초 fixture snapshot 참조 오류 로그와 보정 결과를 Paperclip artifact에 보존한다. 시험은 메모리 callback이며 RPC/서비스0, 실제 driver tick 통합/DEV는 NOT_RUN이다. 중복 포함된 기존 모듈 시험은 합산하지 않는다.
+
+# 실행 준비 연결 — 기동 전 component 검증
+
+`startup.rs`는 두 opt-in과 모든 실행 인자를 명시적으로 받는다. 중복/미지정/알 수 없는 옵션, 상대·상위 경로, 비정규 정수, 공개/DNS/IPv6 주소, privileged port, REST/RPC 충돌, 수명·요청·tick 상한 초과를 IO 전에 거절한다. 입력은 canonical regular file·단일 link·bounded read·읽기 전후 metadata 일치를 요구하고 FIFO/link/directory를 거절한다.
+
+`prepare`는 정확한 입력 원문으로 승인 C `Validated::decode_bundle`을 호출하고 **기존 home만** 연다. C의 commit-pinned recovery에서 applied snapshot은 REST에, latest snapshot은 driver 복구에 연결한다. 동일 검증 genesis에 있는 운영자 공개키 중 최신 관측 operator와 일치하는 키만 private signer에 결합한다. 준비 실패/drop 후 C writer lock은 해제하고 home/guard/WAL은 보존한다. 생성·repair·network bind/RPC/tick/서비스 기동은 없다.
+
+검증: 기존 offline/locked dependency와 설치 Rust1.92.0으로 컴파일 PASS. 신규 순수시험 **3 PASS / 0 FAIL**, 기존 포함 모듈 180개는 미실행이며 합산하지 않는다. fee0/25 각각 두 번 준비/drop/replay의 commit 불변·writer2 거절, 잘못된 signer 이후 lock 해제, 없는 home 자동 생성0, 입력/파일 거절을 확인했다. 공개 합성 fixture 키/manifest는 순수시험에만 사용한다. 컴파일 명령은 build.json, 원 출력은 compile.log/tests.log다.
+
+이 준비 함수의 바이트 검증은 독립 승인이나 디스크 binary 검증이 아니다. 다음 SRE 작업은 기존 preflight의 실제 binary 대조와 승인 출처 gate를 launcher에 연결하고 executable/signal, 웹 ChainPort, 새 fee0/25 초기화, fault/정리, 최종 manifest를 완성하는 것이다. 전체 후보 CTO→Security 전이며 runtime pin 미발급·DEV NOT_RUN·서비스/RPC0·€0. 원 G00=FAIL_UNPROVEN / allowlist=[] / ACK=CLOSED와 표준 부모 blocker 유지.
+
+## 프로세스 종료 연결
+
+ eb935f7 위 SRE 변경. 이번 대상은 signals.rs 및 startup.rs의 Prepared::serve/run_with다. 이전 미커밋 driver/startup 변경도 첨부 patch에 포함한다.
+
+- Signals는 SIGINT/SIGTERM을 stop AtomicBool에 latch한다. handler는 할당/IO/로그/파일 삭제를 수행하지 않는다. 설치는 프로세스당 1회이며 기존 비기본 handler와 충돌하면 거절한다. 일부 설치 실패는 rollback 후 오류를 반환한다. 실행 파일은 이 오류에서 종료해야 한다.
+- Prepared::serve는 이미 검증되고 bind된 listener를 소비하여 REST→Driver 연결을 수행한다. 직접 bind하지 않는다. 정상/오류 반환과 unwind 때 Engine Arc·private signer가 drop된다. home/key/WAL/guard/lock inode를 삭제하거나 수리하지 않는다.
+- graceful stop은 진행 중 RPC/fsync를 중단하지 않는다. managed runtime의 강제 종료 grace·최종 executable gate 연결은 남아 있다. 같은 프로세스에서 별도 signal manager의 병행 설치는 지원하지 않는다.
+
+## 검증
+
+설치 Rust1.92.0 및 이전 offline/locked feature rlib 사용. build.json / signal-build.json에 argv가 있다. 새 설치·lock 변경0.
+
+startup 시험 3 PASS/0 FAIL: 기존 3개 중 실제 home 시험에 정상/오류/panic 자원 해제 경로를 보강했다. fee0/25에서 각 경로 후 C Engine 재개방 및 commit 불변. 나머지 포함 모듈 시험180은 이번 미실행이다.
+
+signal 감독 시험1 PASS/0 FAIL: 격리된 시험 subprocess3개(int/term/conflict). 실제 자기 프로세스 raise로 stop latch·중복 설치 거절·drop 후 원 handler 복원을 확인했다. 이 3개를 추가 독립 시험수로 합산하지 않는다. 서비스 종료/포트 해제 통합 검증은 아니다.
+
+
+실행 파일의 독립 승인 gate·signal guard 호출 및 최종 launcher 연결은 아직 남아 있다.
+
+## 기동 전 검증 executable
+
+`preflight_main.rs`는 `validate-captured --capture-sha256 <sha256> <startup 필수 인자>`만 제공한다. 닫힌 stdin의 캡처를 기존 C 의미 검증·기존 home·private signer·driver 준비에 전달하고, 모든 소유권을 drop한 뒤 성공 JSON을 출력한다. serve 명령·bind·tick·RPC 없음. stdout은 의미 검증 결과이며 approval_verified=false/service_started=false/durable_ack=false다. 거절은 exit2·stdout0·고정 오류 문구이며 키/입력/경로/error chain을 출력하지 않는다.
+
+기존 offline/locked rlib와 설치 Rust1.92.0으로 실행 파일 및 시험 build PASS. 기존 startup 시험1개를 process harness로 보강하여 fee0/25 각각 subprocess2회 검증·종료 뒤 writer 재개방·commit 불변을 확인했다(1 PASS/0 FAIL, 54.49초). 183개 나머지 포함 모듈시험 미실행. CLI 거절5개는 stdin을 열어 둔 상태에서3초 내 exit2·빈 stdout을 확인했다. 서로 다른 시험 층의 수를 합산하지 않는다. 합성 fixture만 사용하며 실제 Python CLI→실행 파일 전체 연결은 아직 미검증이다.
+
+실행 예: Python capture 명령의 성공/상한/시간제한 확인 후 저장한 원문을 stdin으로 전달한다. 이 실행 파일에는 자체 stdin wall-time 제한이 없으므로 살아 있는 producer를 직접 연결하지 말고 부모가 완전히 수집한 유한 입력을 사용한다. runtime pin은 전송 SHA와 다르며 조직 승인은 이 도구가 하지 않는다.
+
+현재 소스는 base eb935f7 위 누적 미커밋 SRE 변경이다. 이전 driver/startup/signal/capture와 이번 소스를 함께 보존한다. 최종 서비스 실행 파일·독립 승인 gate·웹 ChainPort·새 초기화/launcher/fault/정리·최종 manifest·CTO→Security 심사는 남아 있다. 서비스/RPC/listener0·runtime pin 미발급·DEV NOT_RUN·€0. 원 G00/ACK와 부모 blocker 유지.
+
+
+# 검증 프로세스 시간·출력 상한 연결
+
+[NUS-73](/NUS/issues/NUS-73), SRE L-R. base eb935f7 위 누적 미커밋 SRE 변경을 보존한다. 이번 변경은 `ops/s3-local/process_check.py`, 해당 시험, startup process harness다.
+
+- 유한 캡처 bytes(1..48MiB)를 받아 SHA256·고정 validate-captured 명령으로 자식을 실행한다. argv 배열만 사용하며 shell0, Paperclip/loader 환경 전달0이다.
+- nonblocking selector가 stdin과 stdout/stderr를 함께 처리한다. wall deadline 최대60초, stdout/stderr 각각4096 bytes 상한. EOF 뒤 종료하지 않는 자식도 deadline으로 거절한다.
+- exit0·stderr0·정확한 boolean JSON만 성공이다. 숫자1을 true로 인정하지 않으며 중복 키·추가 키·승인 true·실행 true를 거절한다. 원 자식 출력은 호출자에게 전달하지 않는다.
+- 성공/실패/unwind에서 프로세스 group 종료·직접 자식 wait/reap·pipe close. home/guard/WAL/key/lock inode 삭제0. 정상 동작하는 validator는 결과 출력 전에 Engine을 drop한다. timeout 종료는 자동 home 수리 근거가 아니다.
+- 실행 파일 경로의 승인·descriptor 결합은 이 감독 함수의 책임이 아니다. 실제 byte preflight/독립 승인 gate를 통과한 전용 검증 실행 파일을 최종 launcher가 지정해야 한다. 임의 프로그램을 안전하게 실행하는 sandbox가 아니다. 이번 source에는 서비스 실행 명령이 없다.
+
+## 검증
+
+Python 순수 프로세스 시험5 PASS/0 FAIL: 2MiB 전송·정확한 argv/SHA·환경 격리, 입력 미소비 timeout, stdout/stderr flood, EOF 후 미종료, descendant pipe 유지, 직접 자식 reap, 잘못된 성공 보고서·거절·상한·입력 거절. 반복 실행 수를 합산하지 않는다.
+
+기존 offline/locked dependency rlib와 설치 Rust1.92.0을 사용해 실제 validator/startup test 컴파일 PASS. `*-build.json`은 exact argv를 기록한다. 수정된 Rust startup 시험은 같은 fee0/25 fixture를 Python 감독 함수→실제 Rust validator에 전달하며 종료 후 writer 재개방·commit 불변을 확인한다. 기존 C/경제·proof·lock·공통 계약 변경0. 합성 fixture/test pin이며 조직 승인이 아니다.
+
+Rust process 시험1 PASS/0 FAIL(56.25초), 나머지 포함 모듈183개는 미실행이다. 로그의 panic2회는 의도적으로 주입하고 catch한 정상 시험 경로다. `startup-tests.log`와 `test-command.json`에 원문을 보존한다. Python 시험과 Rust 포함 모듈 수는 합산하지 않는다.
+
+## 남은 범위
+
+SRE가 Python byte capture와 최종 launcher·전용 service executable·독립 승인 gate·웹 ChainPort·fee0/25 초기화·fault/정리·최종 manifest를 계속한다. 이번에 전체 byte capture→semantic CLI가 완성됐다고 주장하지 않는다. 최종 동일 후보의 CTO→Security 심사와 독립 CEO/CTO pin 출처도 남아 있다.
+
+서비스/RPC/listener0·runtime pin 미발급·DEV NOT_RUN·€0. 원 G00=FAIL_UNPROVEN / allowlist=[] / ACK=CLOSED와 표준 부모 blocker 유지.
+
+### 실제 offline validator 연결 시험
+
+`startup.rs`의 `tests::offline_descriptor_capture_real_validator`는 실제 빌드한
+validator를 다섯 합성 descriptor의 artifact 목록에 고정하고 fee0/25별
+manifest·genesis·guard·초기 snapshot을 같은 합성 Context로 결합한다.
+`test_real_validator.py`가 byte preflight → capture → private 실행 사본 →
+Rust/C 의미 검증을 실행한다. 임시 실행 사본 제거와 기존 home 두 번 replay의
+commit 불변을 확인한다. `NUS73_PREFLIGHT_EXECUTABLE`,
+`NUS73_PROCESS_CHECK_PYTHON`, `NUS73_PROCESS_CHECK_MODULE`은 필수다.
+공개 fixture 키·합성 pin은 이 순수 시험 전용이며 runtime 승인이나 DEV PASS가 아니다.
+# worker 실행 파일과 시작 순서 — NUS-73
+
+base eb935f7 위 누적 SRE 미커밋 변경. 승인 C/L-D 경제·proof·lock·공통 계약 변경0.
+
+`runtime/worker_main.rs`를 기존 startup/Driver/REST/signals에 연결했다. 명시적인
+`serve-captured --start-gate-fd <fd> --capture-sha256 <sha256> <startup 필수 인자>`를
+받는다. 기본 Cargo feature/표준 실행 파일은 변경하지 않는다. FD는 3..1024의
+정규 정수이며 연결된 AF_UNIX stream만 받는다. 두 opt-in·모든 입력 gate 후
+기존 home/writer/private signer를 준비하고 inherited socketpair로 READY를
+보낸다. 최대5초 안에 정확한 START\n과 EOF를 받아야 loopback bind→REST/Driver를
+실행한다. SIGINT/SIGTERM stop, 거절, 오류, unwind는 고정 진단과 exit2로 끝난다.
+
+이 IPC는 부모/자식 순서 제어이며 조직 승인이나 재사용 permit이 아니다.
+최종 managed launcher가 동일 staged binary/capture, 독립 승인 최신 상태를
+READY 수신 후 재조회하고 시작 직전에 검사해야 한다. 해당 launcher 연결은
+미완료다. 직접 명령 실행은 승인된 서비스 시작 경로가 아니다. stdin은 부모가
+수집한 유한 capture를 전송해야 하며 준비 단계 전체 wall deadline과 reap은
+부모 감독 책임이다. stdin EOF 대기 자체의 자식 wall-time 제한은 없다.
+
+## 검증
+
+- 설치 Rust1.92.0·기존 cache·offline/locked dependency build, worker 및 startup test 컴파일 PASS. 새 설치/lock 변경0.
+- start_gate 순수시험3 PASS/0 FAIL: 정확한 신호+EOF, EOF 없는 신호 timeout, 빈/절단/추가/잘못된 신호·stop·상한 거절. anonymous socketpair만 사용.
+- 실제 worker 거절 harness를 추가한 startup 시험1 PASS/0 FAIL(52.98초). fee0/25 각각 준비 후 EOF/잘못된 신호/SIGTERM 거절, stdout0·고정 오류·exit2, 부모 reap. 후속 C home 두 번 replay·commit 불변. 기존184 포함 모듈은 미실행이며 중복 합산0.
+- CLI 거절6 PASS: 열린 stdin에서도3초 내 거절·stdout0·고정 오류. 서비스 진입 전 인자 거절 경계.
+- 최초 오래된 rlib API 불일치와 cargo rustc 경로 오류는 현재 소스 offline/locked 재빌드 및 명시적 RUSTC/CARGO_HOME 설정으로 수정했다. 실패/보정 로그 모두 보존.
+
+실제 worker에 START를 보낸 횟수0. chain RPC/listener/서비스0·DEV NOT_RUN·runtime pin 미발급·€0.
+worker SHA256은 worker-sha256.json에 기록하며 승인 pin으로 사용하지 않는다.
+소스·누적 patch·정확한 build argv·검증·컴파일된 worker를 ZIP에 함께 보존한다.
+
+## 다음 SRE 실행
+
+READY 뒤 최신 승인 재조회/실행 바이트 결합과 managed launcher 감독을 연결한다.
+웹 ChainPort·새 fee0/25 초기화·fault/정리·최종 다섯 descriptor/manifest·독립
+CEO/CTO 원문 승인과 CTO→Security 심사는 남아 있다. L-T 서비스 시작은 아직
+허용되지 않는다. 원 G00=FAIL_UNPROVEN / allowlist=[] / ACK=CLOSED와 부모 blocker 유지.
+
+ChainPort Account bridge (`ChainRead::direct_account`)는 인증 caller의 owner를
+받아 최신 검증 Snapshot과 같은 H의 auth Account를 대조한다. 웹 응답에는
+Context/owner/key/account number/sequence/epoch/gas/H를 투영하고 두 RPC 원문을
+보존한다. 전체 조회 2초 초과·시계 역행·미등록/다른 owner·IO는 재시도 없이
+거절한다. received_at은 시작 시각이므로 느린 조회가 freshness를 갱신하지 않는다.
+HTTP 인증 및 브라우저 연결은 아직 남아 있으며 이 API는 서명/방송하지 않는다.
+
+
+### ChainPort 계정 HTTP router 연결
+
+`chain_router.rs`는 기존 bounded HTTP Wire를 통해 정확한
+`GET /dev-local/v1/chain/account`만 기존 인증 adapter에 전달한다.
+peer·중복 header·body를 유지하며 기존 REST 경로는 승인 Rest로 전달한다.
+미구현 chain 경로는 404, 계정 경로의 POST/본문은 400이다.
+worker startup은 Driver::tick_snapshot의 동일 Snapshot/Observation을
+직렬 accept loop에 전달한다. 원 관측 freshness를 갱신하지 않는다.
+별도 인증 store나 브라우저 지정 owner/anchor를 만들지 않는다.
+
+검증: 메모리 HTTP 신규4 + adapter/조회 회귀62 = 66 PASS. worker와 startup
+컴파일 확인. 실제 로그인·RPC·listener·browser 시험은 L-T이며 NOT_RUN이다.
+방송 owner 결합/결과 HTTP와 브라우저 ChainPort, 초기화 및 최종 manifest는
+아직 남아 있다. 이번 연결만으로 runtime 승인이나 DEV PASS를 뜻하지 않는다.
+
+
+## 인증 ChainPort 결과 조회
+
+`POST /dev-local/v1/chain/result`는 `{"tx_hash":"<lowercase SHA256>"}`만 받는다. 기존 origin/session 인증을 조회 전후 검사하며 trusted ChainRead의 확정 block/results 증거로 검증한 결과만 반환한다. `409 CHAIN_RESULT_UNAVAILABLE`은 미확정/조회 실패이고 VOID나 확정 실패 증거가 아니다. 실제 서비스 및 브라우저 통합은 L-T에 남는다.
+
+## 저장 fault 명령 원문 결합
+
+fault-build 전용 `SubmitLane::fault_seal_recorded`는 외부 command SHA를 받지 않는다.
+실제 Seal 목적·Context·snapshot ID/SHA·현재 commit·Observation·평가 시각·fault 선택/두 opt-in을
+canonical JSON으로 만들어 기록 경계에 전달한다. 독점 Engine 전제는 그대로다.
+`s3-local-storage-fault/2` 보고서는 bounded(1..16384 bytes) 원문의 base64와
+직접 계산한 SHA256을 reserved/final 두 줄에 보존한다. 비밀 입력을 넣지 않는다.
+범용 `run_recorded_command` 호출자는 실제 closure와 같은 공개 명령 bytes를 전달할 책임이 있다.
+
+보고서는 인증/실행 허가·체인 확정이 아니다. scope_returned는 내부 명령 성공을 뜻하지 않으며
+final 누락/부분 기록은 UNKNOWN이다. 인증 fault CLI 및 최종 runtime manifest 연결은 아직 남아 있다.
+서비스/START/RPC0·runtime pin 미발급·DEV NOT_RUN·durable_ack=false를 유지한다.
+
+### 저장 fault 전용 child (인증 부모 연결 전)
+
+`fault_main.rs`는 `dev-local-demo` + `fault-injection` C build에만 연결하는
+별도 실행 파일이다. 일반 `worker_main.rs`에는 fault 옵션이 없다.
+부모는 descriptor에 기록된 실제 binary/capture를 대조하고 독립 승인을 확인한 뒤
+private 시작 채널을 전달해야 한다. 이 부모 경로는 아직 미연결이며 직접 기동하지 않는다.
+
+인자 순서:
+
+```text
+fault-seal-captured --start-gate-fd FD --capture-sha256 SHA256
+--enable-storage-fault --fault-point POINT --fault-occurrence N
+--fault-purpose NORMAL|RESOLVE_FAILURE --fault-evidence-root ABSOLUTE_PRIVATE_DIRECTORY
+<기존 Inputs의 모든 필수 인자 및 두 opt-in>
+```
+
+기존 capture/C store/private signer 준비 뒤 READY를 내고 START+EOF까지 기다린다.
+START 이후 신뢰 RPC 관측 1회를 기존 Observer에 저장하며, catching-up·stop·수명 초과는
+Seal 전에 거절한다. 명시적 목적의 Seal 한 번만 기존 보고서 scope로 실행하고 driver를
+소비한다. dispatcher·서명·방송·listener는 호출하지 않는다. 목적의 경제적 적합성은 C가
+판정한다. 보고서 예약/원문 fsync는 Seal 전에 수행하며 관측 저장보다 먼저라는 뜻은 아니다.
+
+결과 `s3-local-fault-seal-result/1`의 `command_succeeded`와 `injected`는 서로 다른 사실이다.
+프로세스 exit0은 보고서 반환을 뜻하며 fault 도달/DEV PASS를 보장하지 않는다.
+오류 또는 final 누락 시 원문·home을 보존하고 자동 재시도하지 않는다.
+이번 검증은 컴파일·인자/보고서 회귀·열린 stdin의 CLI 거절이다. 실제 child READY/START,
+인증 부모/descriptor 조합·정상 RPC·전체 장애 시연은 미실행이다.
+
+### Apply 저장 fault 내부 API
+
+`SubmitLane::fault_apply_recorded`는 fault-injection build에서만 제공한다.
+기존 `Worker.reconcile(Command::Apply)` 한 번을 저장 hook/보고서 scope로
+감싼다. `errno=None`은 Generic/v2, ENOSPC/EDQUOT/EIO는 v3이다.
+실제 Context/snapshot/commit/Observation/시각과 선택을
+`s3-local-fault-apply-command/1` 원문으로 결합한다. 결과·미도달과 무관하게
+lane은 닫히며 Engine을 drop한 뒤 복구한다. 일반 scheduler에는 연결하지 않는다.
+현재 fault child/인증 CLI의 명령은 여전히 Seal이다. Apply CLI와 COMMITTED/VOID
+적용·정정의 명령별 fault 배선, crash와 F10~16 판정은 별도 미완료다.
+미정산 attempt를 유지하는 Apply의 IO/replay 시험을 정산 확정 시험으로 합산하지 않는다.
+
+### F05 전용 crash child (기동 전 준비)
+
+`before_send_main.rs`는 fault-injection 전용 `f05-crash-captured` 진입점이다.
+`--start-gate-fd FD --capture-sha256 SHA` 다음에 before_send_options의
+`--enable-f05-before-send true --tx-hash HASH --fault-evidence-root ABS --worker-inputs`와 기존 worker 입력을 받는다.
+기존 C/private signer 준비 → READY/START → 관측1회 → exact TX의 승인 Worker intent 저장 → writer lock callback의 예약/file·root fsync → exit86 순서다.
+증거 디렉터리는 사전에 private 0700으로 준비해야 한다. 관측/intent는 예약보다 먼저 저장되며 오류 후 자동 재시도하지 않는다.
+새 서명/dispatcher/전송/receipt/Apply/listener는 호출하지 않는다. exit86이나 예약 파일만으로 F05/DEV 성공을 판정하지 않는다.
+현재 컴파일/잘못된 입력 거절만 검증하며 유효 child READY·인증 부모/descriptor/CLI 최종 연결은 NOT_RUN이다.

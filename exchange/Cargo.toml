@@ -7,9 +7,19 @@ publish = false
 [workspace]
 
 [features]
+default = []
+# Separate, explicitly selected development store; never a standard ACK path.
+dev-local-demo = []
+# Dormant Settlement component; no listener or automatic startup.
+dev-local-settlement = ["dev-local-demo"]
 # Only the subprocess fault harness enables this. Normal binaries do not read
 # fault environment variables or include injected storage errors.
 fault-injection = []
+
+[[bin]]
+name = "nus-s3-local-demo"
+path = "src/bin/nus-s3-local-demo.rs"
+required-features = ["dev-local-demo"]
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }

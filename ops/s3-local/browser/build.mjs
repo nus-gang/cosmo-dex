@@ -1,0 +1,16 @@
+import { build } from '../../../web/node_modules/esbuild/lib/main.js';
+import { mkdir, writeFile, readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { isAbsolute, join } from 'node:path';
+import { createHash } from 'node:crypto';
+const out=process.argv[2];
+if(process.argv.length!==3||!isAbsolute(out))throw Error('ABSOLUTE_OUTPUT_REQUIRED');
+const result=await build({entryPoints:[fileURLToPath(new URL('./entry.ts',import.meta.url))],bundle:true,write:false,platform:'browser',format:'esm',target:'es2022',legalComments:'inline'});
+const bytes=result.outputFiles[0].contents;
+const page=await build({entryPoints:[fileURLToPath(new URL('./main.ts',import.meta.url))],bundle:true,write:false,platform:'browser',format:'esm',target:'es2022',legalComments:'inline'});
+const html=await readFile(new URL('./index.html',import.meta.url));
+const files=[['entry.js',bytes],['page.js',page.outputFiles[0].contents],['index.html',html]];
+await mkdir(out,{recursive:true});
+for(const [name,content] of files)await writeFile(join(out,name),content);
+await writeFile(join(out,'entry-build.json'),JSON.stringify({profile:'s3-dev-local-v1',default_enabled:false,runtime_approved:false,files:files.map(([name,content])=>({name,bytes:content.length,sha256:createHash('sha256').update(content).digest('hex')}))},null,2)+'\n');
+console.log('SRE browser module built; runtime_approved=false');

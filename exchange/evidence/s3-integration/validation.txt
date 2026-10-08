@@ -1,0 +1,280 @@
+   Compiling nus-exchange-contract v0.1.0 (/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/worktrees/NUS-56/exchange)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.07s
+     Running tests/s2_journal.rs (exchange/target/debug/deps/s2_journal-116953b0cc8c02d6)
+
+running 14 tests
+test authenticated_s2_order_bytes_survive_process_restart ... 
+running 1 test
+ok
+test child_process ... ok
+test committed_record_and_outbox_recover_atomically ... ok
+test completed_frame_loss_header_payload_marker_corruption_stop_recovery ... ok
+test correction_consumes_and_replenishes_reserve ... ok
+test crash_points_never_silently_lose_a_committed_record ... 
+running 1 test
+
+running 1 test
+
+running 1 test
+
+running 1 test
+
+running 1 test
+ok
+test dropped_writer_reopens_while_unrelated_child_is_before_exec ... 
+running 1 test
+test child_process ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.00s
+
+
+running 1 test
+test child_process ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.00s
+
+ok
+test framing_matches_approved_fixture ... ok
+test malformed_records_context_change_and_existing_namespace_are_rejected ... ok
+test marker_write_failure_poisoning_preserves_unknown_tail ... ok
+test resource_limit_has_no_sequence_or_wal_effect ... ok
+test single_writer_is_enforced_across_processes ... 
+running 1 test
+test child_process ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.00s
+
+ok
+test status_revision_missing_corrupt_or_exhausted_never_resets ... ok
+test status_revision_reservations_survive_restart_and_fail_closed ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.08s
+
+     Running tests/s2_ledger.rs (exchange/target/debug/deps/s2_ledger-715fcbb829c0bba8)
+
+running 5 tests
+test all_failed_fills_leave_both_parties_unchanged ... ok
+test exhaustive_small_fills_conserve_net_plus_fee_and_hold_limit ... ok
+test fees_are_per_fill_ceil_and_exactly_reversed ... ok
+test partial_price_improvement_cancel_and_pending_not_spendable ... ok
+test shared_available_prevents_overreservation_and_self_trade ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests/s2_sequencer.rs (exchange/target/debug/deps/s2_sequencer-102f10e85ff61ac5)
+
+running 40 tests
+test automatic_signed_recovery_preserves_semantic_corruption_and_rejects_wrong_bootstrap ... ok
+test continuous_snapshot_expires_orders_without_epoch_correction ... ok
+test correction_includes_counterparty_followup_and_fill_execution_order ... ok
+test correction_marker_failure_keeps_old_ledger_and_requires_recovery ... ok
+test deterministic_rejection_is_bound_and_candidate_does_not_change_source ... ok
+test disconnected_counterparty_order_retains_fifo_and_reserve ... ok
+test duplicate_and_identical_snapshot_preserve_state_hash_and_entity_revision ... ok
+test empty_pending_withdraw_is_ready_and_unknown_owner_is_rejected ... ok
+test epoch_correction_preserves_lifetime_fills_and_original_receipt ... ok
+test epoch_expiry_margin_and_staleness_are_enforced_for_new_effects ... ok
+test failed_append_keeps_candidate_private_and_closes_signed_commit_boundary ... ok
+test invalid_signature_and_foreign_session_cannot_read_duplicate_receipt ... ok
+test ioc_partial_callback_fill_releases_only_remainder_and_keeps_worst_buy_debit ... ok
+test ledger_view_combines_committed_owner_state_with_live_global_and_local_gates ... ok
+test local_action_abort_requires_new_snapshot_and_never_restores_orders ... ok
+test local_action_owner_and_kind_have_independent_id_namespaces ... ok
+test local_action_rejects_malformed_input_without_binding_or_effect ... ok
+test local_prepare_retry_preserves_sequence_evidence_and_original_epoch ... ok
+test observation_projection_retains_success_and_never_invents_restart_freshness ... ok
+test pending_receipts_cannot_fund_new_orders ... ok
+test persisted_bootstrap_recovers_and_rejects_missing_corrupt_or_wrong_anchor ... ok
+test private_pages_bind_owner_sequence_and_exclude_counterparty_evidence ... ok
+test public_book_committed_aggregation_hash_and_restart ... ok
+test randomized_signature_retry_preserves_original_evidence_and_body_binding ... ok
+test real_signed_partial_fill_cancel_and_duplicate_have_one_effect ... ok
+test replay_of_recorded_signed_inputs_preserves_sequence_fill_id_and_ledger ... ok
+test replay_preserves_full_state_hash_including_rejection_binding ... ok
+test schema_state_retains_signed_evidence_quantities_and_held_outbox ... ok
+test sequential_signed_requests_cannot_overreserve_confirmed_funds ... ok
+test service_gate_gap_catchup_and_conflict_are_fail_closed ... ok
+test service_gate_rejects_mismatched_duplicate_observation ... ok
+test service_gate_reobserves_after_restart_and_keeps_original_receipts ... ok
+test signed_cancel_target_nonce_and_terminal_noop_are_bound ... ok
+test signed_commit_boundary_publishes_after_fsync_and_retries_original_receipt ... ok
+test signed_records_fsync_reopen_and_deterministically_replay_full_results ... ok
+test snapshot_correction_commits_replays_and_preserves_receipts ... ok
+test status_revisions_order_live_responses_restart_and_fail_closed ... ok
+test withdraw_cancels_only_open_reserve_and_retains_pending_hold ... ok
+test withdrawal_failed_marker_never_publishes_or_returns_receipt ... ok
+test withdrawal_records_commit_replay_original_receipts_and_reject_tampering ... ok
+
+test result: ok. 40 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.89s
+
+     Running tests/s2_snapshot.rs (exchange/target/debug/deps/s2_snapshot-b7ce1118b2d84fc8)
+
+running 9 tests
+test account_identity_sequence_and_block_time_cannot_regress ... ok
+test canonical_contract_fixture_and_key_owner_binding ... ok
+test conservation_and_checked_sum_fail_closed ... ok
+test cursor_is_contiguous_and_conflicts_never_replace_committed_snapshot ... ok
+test freshness_thresholds_use_recorded_times_and_bound_cursor ... ok
+test registered_accounts_and_asset_order_are_exact ... ok
+test rejects_mixed_context_and_hash_tampering ... ok
+test strict_structure_ranges_base64_and_duplicate_json_keys ... ok
+test withdrawal_requires_epoch_advance_and_returns_correction_seed ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests/s3_accounting.rs (exchange/target/debug/deps/s3_accounting-647661f26adf8e8a)
+
+running 7 tests
+test corrected_domain_ends_related_remainders_without_spending_or_losing_independent_fill ... ok
+test cumulative_history_1000_1001_fills_200_201_orders_fee0_fee25_not_page_limited ... S3_EVIDENCE {"case":"fills1000-orders200-fee0","corrected_count":"1000","expected_diff":[],"fills":"1000","orders":"200","result":"PASS","source":"SYNTHETIC_INTERNAL_HISTORY_CAPACITY; not a reachable matching trace or valid signature fixture","survivors":[]}
+S3_EVIDENCE {"case":"fills1000-orders200-fee25","corrected_count":"1000","expected_diff":[],"fills":"1000","orders":"200","result":"PASS","source":"SYNTHETIC_INTERNAL_HISTORY_CAPACITY; not a reachable matching trace or valid signature fixture","survivors":[]}
+S3_EVIDENCE {"case":"fills1001-orders201-fee0","corrected_count":"1001","expected_diff":[],"fills":"1001","orders":"201","result":"PASS","source":"SYNTHETIC_INTERNAL_HISTORY_CAPACITY; not a reachable matching trace or valid signature fixture","survivors":[]}
+S3_EVIDENCE {"case":"fills1001-orders201-fee25","corrected_count":"1001","expected_diff":[],"fills":"1001","orders":"201","result":"PASS","source":"SYNTHETIC_INTERNAL_HISTORY_CAPACITY; not a reachable matching trace or valid signature fixture","survivors":[]}
+ok
+test directional_fixture_preserves_same_owner_independent_asset_and_committed_history ... ok
+test latest_insufficient_c_keeps_entire_old_ledger_unchanged ... ok
+test partial_commit_preserves_other_pending_and_remaining_r ... ok
+test predecessor_replay_rejects_missing_edges_and_terminal_reversal_atomically ... ok
+test same_height_candidate_releases_price_improvement_exactly_once ... S3_EVIDENCE {"actual_confirmed":[{"BASE":"9000000","QUOTE":"10000000","owner":"A"},{"BASE":"1000000","QUOTE":"90000000","owner":"B"}],"bps":"0","buyer_quote_available":"90000000","buyer_quote_before":{"A":"88000000","C":"100000000","D":"12000000"},"case":"demo-accounting","expected_confirmed":[{"BASE":"9000000","QUOTE":"10000000","owner":"A"},{"BASE":"1000000","QUOTE":"90000000","owner":"B"}],"expected_diff":[],"fill_id":"F1","genesis_hash":null,"height":null,"result":"PASS","source":"SYNTHETIC_COMPONENT_TEST","tx_hash":null}
+S3_EVIDENCE {"actual_confirmed":[{"BASE":"9000000","QUOTE":"9975000","owner":"A"},{"BASE":"997500","QUOTE":"90000000","owner":"B"}],"bps":"25","buyer_quote_available":"90000000","buyer_quote_before":{"A":"88000000","C":"100000000","D":"12000000"},"case":"demo-accounting","expected_confirmed":[{"BASE":"9000000","QUOTE":"9975000","owner":"A"},{"BASE":"997500","QUOTE":"90000000","owner":"B"}],"expected_diff":[],"fill_id":"F1","genesis_hash":null,"height":null,"result":"PASS","source":"SYNTHETIC_COMPONENT_TEST","tx_hash":null}
+S3_EVIDENCE {"actual_confirmed":[{"BASE":"9000000","QUOTE":"10000000","owner":"A"},{"BASE":"1000000","QUOTE":"90000000","owner":"B"}],"bps":"0","buyer_quote_available":"90000000","buyer_quote_before":{"A":"88000000","C":"100000000","D":"12000000"},"case":"demo-accounting","expected_confirmed":[{"BASE":"9000000","QUOTE":"10000000","owner":"A"},{"BASE":"1000000","QUOTE":"90000000","owner":"B"}],"expected_diff":[],"fill_id":"F1","genesis_hash":null,"height":null,"result":"PASS","source":"SYNTHETIC_COMPONENT_TEST","tx_hash":null}
+S3_EVIDENCE {"actual_confirmed":[{"BASE":"9000000","QUOTE":"9975000","owner":"A"},{"BASE":"997500","QUOTE":"90000000","owner":"B"}],"bps":"25","buyer_quote_available":"90000000","buyer_quote_before":{"A":"88000000","C":"100000000","D":"12000000"},"case":"demo-accounting","expected_confirmed":[{"BASE":"9000000","QUOTE":"9975000","owner":"A"},{"BASE":"997500","QUOTE":"90000000","owner":"B"}],"expected_diff":[],"fill_id":"F1","genesis_hash":null,"height":null,"result":"PASS","source":"SYNTHETIC_COMPONENT_TEST","tx_hash":null}
+S3_EVIDENCE {"actual_confirmed":[{"BASE":"9000000","QUOTE":"10000000","owner":"A"},{"BASE":"1000000","QUOTE":"90000000","owner":"B"}],"bps":"0","buyer_quote_available":"90000000","buyer_quote_before":{"A":"88000000","C":"100000000","D":"12000000"},"case":"demo-accounting","expected_confirmed":[{"BASE":"9000000","QUOTE":"10000000","owner":"A"},{"BASE":"1000000","QUOTE":"90000000","owner":"B"}],"expected_diff":[],"fill_id":"F1","genesis_hash":null,"height":null,"result":"PASS","source":"SYNTHETIC_COMPONENT_TEST","tx_hash":null}
+S3_EVIDENCE {"actual_confirmed":[{"BASE":"9000000","QUOTE":"9975000","owner":"A"},{"BASE":"997500","QUOTE":"90000000","owner":"B"}],"bps":"25","buyer_quote_available":"90000000","buyer_quote_before":{"A":"88000000","C":"100000000","D":"12000000"},"case":"demo-accounting","expected_confirmed":[{"BASE":"9000000","QUOTE":"9975000","owner":"A"},{"BASE":"997500","QUOTE":"90000000","owner":"B"}],"expected_diff":[],"fill_id":"F1","genesis_hash":null,"height":null,"result":"PASS","source":"SYNTHETIC_COMPONENT_TEST","tx_hash":null}
+ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.26s
+
+     Running tests/s3_candidates.rs (exchange/target/debug/deps/s3_candidates-c7fb06aff513da1d)
+
+running 6 tests
+test eight_block_absence_proof_allows_envelope_retry_but_never_correction ... ok
+test inclusion_tampering_and_unknown_are_rejected_without_releasing_holds ... ok
+test schema_hash_and_context_negatives ... ok
+test signed_batch_committed_same_height_price_improvement_and_idempotency ... S3_CANDIDATE {"batch":{"batch_hash":"f606587fd2035169343d5122a33edc6193aad2e6ce261cf47de35ebcb3e18a61","batch_id":"298b735061c5d397f5812621e7d9d63dbf3687d0d9d1c8f811056c970c28cd53","batch_seq":"1","fill_ids":["be24574daff3b8040a88dd43f5baf09fcf0ec1db017e1ef4dcea7c2b9cdd42a7"],"operator_epoch":"1","previous_batch_hash":"0000000000000000000000000000000000000000000000000000000000000000"},"bps":"0","case":"signed-commit","expected_diff":[],"height":"101","price_improvement_released":"2000000","result":"PASS","scope":"SYNTHETIC_RPC_PRIVATE_CANDIDATE","state_hash":"a14020478b70acdb3665f784046d468ce37740892b885c36c7fa1be1ce523118","tx_hash":"ff7a9544c1d47a286c9270402fc01c407f78b2974500b68443f7b5f8fe1d277c"}
+S3_CANDIDATE {"batch":{"batch_hash":"f606587fd2035169343d5122a33edc6193aad2e6ce261cf47de35ebcb3e18a61","batch_id":"298b735061c5d397f5812621e7d9d63dbf3687d0d9d1c8f811056c970c28cd53","batch_seq":"1","fill_ids":["be24574daff3b8040a88dd43f5baf09fcf0ec1db017e1ef4dcea7c2b9cdd42a7"],"operator_epoch":"1","previous_batch_hash":"0000000000000000000000000000000000000000000000000000000000000000"},"bps":"0","case":"signed-commit","expected_diff":[],"height":"101","price_improvement_released":"2000000","result":"PASS","scope":"SYNTHETIC_RPC_PRIVATE_CANDIDATE","state_hash":"a14020478b70acdb3665f784046d468ce37740892b885c36c7fa1be1ce523118","tx_hash":"ff7a9544c1d47a286c9270402fc01c407f78b2974500b68443f7b5f8fe1d277c"}
+S3_CANDIDATE {"batch":{"batch_hash":"f606587fd2035169343d5122a33edc6193aad2e6ce261cf47de35ebcb3e18a61","batch_id":"298b735061c5d397f5812621e7d9d63dbf3687d0d9d1c8f811056c970c28cd53","batch_seq":"1","fill_ids":["be24574daff3b8040a88dd43f5baf09fcf0ec1db017e1ef4dcea7c2b9cdd42a7"],"operator_epoch":"1","previous_batch_hash":"0000000000000000000000000000000000000000000000000000000000000000"},"bps":"0","case":"signed-commit","expected_diff":[],"height":"101","price_improvement_released":"2000000","result":"PASS","scope":"SYNTHETIC_RPC_PRIVATE_CANDIDATE","state_hash":"a14020478b70acdb3665f784046d468ce37740892b885c36c7fa1be1ce523118","tx_hash":"ff7a9544c1d47a286c9270402fc01c407f78b2974500b68443f7b5f8fe1d277c"}
+S3_CANDIDATE {"batch":{"batch_hash":"b01ef0650319c7d7bf296f00fb3085544ee607cca5b616e862846fb21647f402","batch_id":"b76930171ecbb91a833a8351ad098420dce001d1c44cd3bec4694340f89cb6fd","batch_seq":"1","fill_ids":["be24574daff3b8040a88dd43f5baf09fcf0ec1db017e1ef4dcea7c2b9cdd42a7"],"operator_epoch":"1","previous_batch_hash":"0000000000000000000000000000000000000000000000000000000000000000"},"bps":"25","case":"signed-commit","expected_diff":[],"height":"101","price_improvement_released":"2000000","result":"PASS","scope":"SYNTHETIC_RPC_PRIVATE_CANDIDATE","state_hash":"a651397761fc96d36791b842e7da16570416dfbfcd5e8cfc24052699243f5513","tx_hash":"cc70ea229c630224335c53938d4756dc5971d324f658a9de0f1c0c846222e032"}
+S3_CANDIDATE {"batch":{"batch_hash":"b01ef0650319c7d7bf296f00fb3085544ee607cca5b616e862846fb21647f402","batch_id":"b76930171ecbb91a833a8351ad098420dce001d1c44cd3bec4694340f89cb6fd","batch_seq":"1","fill_ids":["be24574daff3b8040a88dd43f5baf09fcf0ec1db017e1ef4dcea7c2b9cdd42a7"],"operator_epoch":"1","previous_batch_hash":"0000000000000000000000000000000000000000000000000000000000000000"},"bps":"25","case":"signed-commit","expected_diff":[],"height":"101","price_improvement_released":"2000000","result":"PASS","scope":"SYNTHETIC_RPC_PRIVATE_CANDIDATE","state_hash":"a651397761fc96d36791b842e7da16570416dfbfcd5e8cfc24052699243f5513","tx_hash":"cc70ea229c630224335c53938d4756dc5971d324f658a9de0f1c0c846222e032"}
+S3_CANDIDATE {"batch":{"batch_hash":"b01ef0650319c7d7bf296f00fb3085544ee607cca5b616e862846fb21647f402","batch_id":"b76930171ecbb91a833a8351ad098420dce001d1c44cd3bec4694340f89cb6fd","batch_seq":"1","fill_ids":["be24574daff3b8040a88dd43f5baf09fcf0ec1db017e1ef4dcea7c2b9cdd42a7"],"operator_epoch":"1","previous_batch_hash":"0000000000000000000000000000000000000000000000000000000000000000"},"bps":"25","case":"signed-commit","expected_diff":[],"height":"101","price_improvement_released":"2000000","result":"PASS","scope":"SYNTHETIC_RPC_PRIVATE_CANDIDATE","state_hash":"a651397761fc96d36791b842e7da16570416dfbfcd5e8cfc24052699243f5513","tx_hash":"cc70ea229c630224335c53938d4756dc5971d324f658a9de0f1c0c846222e032"}
+ok
+test strict_wire_matches_approved_batch_and_transaction_vectors ... ok
+test void_closes_forward_dependencies_preserves_independent_fill_and_next_slot ... S3_CANDIDATE {"case":"directed-correction","corrected":["be24574daff3b8040a88dd43f5baf09fcf0ec1db017e1ef4dcea7c2b9cdd42a7","addca9ca57ce9c5b9fe756c49eba0af0da3d0f99148c41a9eaf2c3d375fe5db7","3c6320adde42e5aa835031066a8dbab0dd50d98c7f06ceabbc0e03407550a53c"],"expected_diff":[],"next_batch":{"batch_hash":"24c22b0d3d16f358dda83bdb37040b4f4d93496efb2c08158e04d8d56900b8f6","batch_id":"07cc4d27044b507398d7430ddca76a84fe9fefe34ae910e06177df243ccc8217","batch_seq":"2","fill_ids":["70a044e281b16630355d1bb673eee487650d2c46a3221d1945b2b8ea88f5d026"],"operator_epoch":"1","previous_batch_hash":"04ccb30956dff477c9fea8483e2bf438bdffd292a2b6c33278d8cb3ca44a9b45"},"result":"PASS","scope":"SYNTHETIC_RPC_PRIVATE_CANDIDATE","state_hash":"028783348953951c9e6208eea0b79c4233ecc430642bfc8463aced9845107594","survivor":"70a044e281b16630355d1bb673eee487650d2c46a3221d1945b2b8ea88f5d026"}
+S3_CANDIDATE {"case":"directed-correction","corrected":["be24574daff3b8040a88dd43f5baf09fcf0ec1db017e1ef4dcea7c2b9cdd42a7","addca9ca57ce9c5b9fe756c49eba0af0da3d0f99148c41a9eaf2c3d375fe5db7","3c6320adde42e5aa835031066a8dbab0dd50d98c7f06ceabbc0e03407550a53c"],"expected_diff":[],"next_batch":{"batch_hash":"24c22b0d3d16f358dda83bdb37040b4f4d93496efb2c08158e04d8d56900b8f6","batch_id":"07cc4d27044b507398d7430ddca76a84fe9fefe34ae910e06177df243ccc8217","batch_seq":"2","fill_ids":["70a044e281b16630355d1bb673eee487650d2c46a3221d1945b2b8ea88f5d026"],"operator_epoch":"1","previous_batch_hash":"04ccb30956dff477c9fea8483e2bf438bdffd292a2b6c33278d8cb3ca44a9b45"},"result":"PASS","scope":"SYNTHETIC_RPC_PRIVATE_CANDIDATE","state_hash":"028783348953951c9e6208eea0b79c4233ecc430642bfc8463aced9845107594","survivor":"70a044e281b16630355d1bb673eee487650d2c46a3221d1945b2b8ea88f5d026"}
+S3_CANDIDATE {"case":"directed-correction","corrected":["be24574daff3b8040a88dd43f5baf09fcf0ec1db017e1ef4dcea7c2b9cdd42a7","addca9ca57ce9c5b9fe756c49eba0af0da3d0f99148c41a9eaf2c3d375fe5db7","3c6320adde42e5aa835031066a8dbab0dd50d98c7f06ceabbc0e03407550a53c"],"expected_diff":[],"next_batch":{"batch_hash":"24c22b0d3d16f358dda83bdb37040b4f4d93496efb2c08158e04d8d56900b8f6","batch_id":"07cc4d27044b507398d7430ddca76a84fe9fefe34ae910e06177df243ccc8217","batch_seq":"2","fill_ids":["70a044e281b16630355d1bb673eee487650d2c46a3221d1945b2b8ea88f5d026"],"operator_epoch":"1","previous_batch_hash":"04ccb30956dff477c9fea8483e2bf438bdffd292a2b6c33278d8cb3ca44a9b45"},"result":"PASS","scope":"SYNTHETIC_RPC_PRIVATE_CANDIDATE","state_hash":"028783348953951c9e6208eea0b79c4233ecc430642bfc8463aced9845107594","survivor":"70a044e281b16630355d1bb673eee487650d2c46a3221d1945b2b8ea88f5d026"}
+ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.19s
+
+     Running tests/s3_journal.rs (exchange/target/debug/deps/s3_journal-521c32cb3e032f8d)
+
+running 16 tests
+test child_process ... ok
+test committed_record_and_outbox_recover_atomically ... ok
+test completed_frame_loss_header_payload_marker_corruption_stop_recovery ... ok
+test content_addressed_raw_evidence_is_required_on_append_and_every_replay ... ok
+test correction_consumes_and_replenishes_reserve ... ok
+test correction_flag_cannot_spend_reserve_for_an_ordinary_command ... ok
+test crash_points_never_silently_lose_a_committed_record ... 
+running 1 test
+S3_EVIDENCE {"case":"storage-crash","expected":"ZERO_COMMIT","expected_diff":[],"point":"before","repetition":"0","replay":"0","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+S3_EVIDENCE {"case":"storage-crash","expected":"ZERO_COMMIT","expected_diff":[],"point":"before","repetition":"0","replay":"1","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+
+running 1 test
+S3_EVIDENCE {"case":"storage-crash","expected":"RECOVERY_REQUIRED_EVIDENCE_PRESERVED","expected_diff":[],"point":"partial","repetition":"0","replay":"0","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+S3_EVIDENCE {"case":"storage-crash","expected":"RECOVERY_REQUIRED_EVIDENCE_PRESERVED","expected_diff":[],"point":"partial","repetition":"0","replay":"1","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+
+running 1 test
+S3_EVIDENCE {"case":"storage-crash","expected":"RECOVERY_REQUIRED_EVIDENCE_PRESERVED","expected_diff":[],"point":"wal","repetition":"0","replay":"0","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+S3_EVIDENCE {"case":"storage-crash","expected":"RECOVERY_REQUIRED_EVIDENCE_PRESERVED","expected_diff":[],"point":"wal","repetition":"0","replay":"1","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+
+running 1 test
+S3_EVIDENCE {"case":"storage-crash","expected":"RECOVERY_REQUIRED_EVIDENCE_PRESERVED","expected_diff":[],"point":"marker","repetition":"0","replay":"0","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+S3_EVIDENCE {"case":"storage-crash","expected":"RECOVERY_REQUIRED_EVIDENCE_PRESERVED","expected_diff":[],"point":"marker","repetition":"0","replay":"1","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+
+running 1 test
+S3_EVIDENCE {"case":"storage-crash","expected":"ONE_COMMIT","expected_diff":[],"point":"rename","repetition":"0","replay":"0","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+S3_EVIDENCE {"case":"storage-crash","expected":"ONE_COMMIT","expected_diff":[],"point":"rename","repetition":"0","replay":"1","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+
+running 1 test
+S3_EVIDENCE {"case":"storage-crash","expected":"ONE_COMMIT","expected_diff":[],"point":"commit","repetition":"0","replay":"0","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+S3_EVIDENCE {"case":"storage-crash","expected":"ONE_COMMIT","expected_diff":[],"point":"commit","repetition":"0","replay":"1","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+
+running 1 test
+S3_EVIDENCE {"case":"storage-crash","expected":"ZERO_COMMIT","expected_diff":[],"point":"before","repetition":"1","replay":"0","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+S3_EVIDENCE {"case":"storage-crash","expected":"ZERO_COMMIT","expected_diff":[],"point":"before","repetition":"1","replay":"1","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+
+running 1 test
+S3_EVIDENCE {"case":"storage-crash","expected":"RECOVERY_REQUIRED_EVIDENCE_PRESERVED","expected_diff":[],"point":"partial","repetition":"1","replay":"0","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+S3_EVIDENCE {"case":"storage-crash","expected":"RECOVERY_REQUIRED_EVIDENCE_PRESERVED","expected_diff":[],"point":"partial","repetition":"1","replay":"1","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+
+running 1 test
+S3_EVIDENCE {"case":"storage-crash","expected":"RECOVERY_REQUIRED_EVIDENCE_PRESERVED","expected_diff":[],"point":"wal","repetition":"1","replay":"0","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+S3_EVIDENCE {"case":"storage-crash","expected":"RECOVERY_REQUIRED_EVIDENCE_PRESERVED","expected_diff":[],"point":"wal","repetition":"1","replay":"1","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+
+running 1 test
+S3_EVIDENCE {"case":"storage-crash","expected":"RECOVERY_REQUIRED_EVIDENCE_PRESERVED","expected_diff":[],"point":"marker","repetition":"1","replay":"0","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+S3_EVIDENCE {"case":"storage-crash","expected":"RECOVERY_REQUIRED_EVIDENCE_PRESERVED","expected_diff":[],"point":"marker","repetition":"1","replay":"1","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+
+running 1 test
+S3_EVIDENCE {"case":"storage-crash","expected":"ONE_COMMIT","expected_diff":[],"point":"rename","repetition":"1","replay":"0","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+S3_EVIDENCE {"case":"storage-crash","expected":"ONE_COMMIT","expected_diff":[],"point":"rename","repetition":"1","replay":"1","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+
+running 1 test
+S3_EVIDENCE {"case":"storage-crash","expected":"ONE_COMMIT","expected_diff":[],"point":"commit","repetition":"1","replay":"0","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+S3_EVIDENCE {"case":"storage-crash","expected":"ONE_COMMIT","expected_diff":[],"point":"commit","repetition":"1","replay":"1","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+
+running 1 test
+S3_EVIDENCE {"case":"storage-crash","expected":"ZERO_COMMIT","expected_diff":[],"point":"before","repetition":"2","replay":"0","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+S3_EVIDENCE {"case":"storage-crash","expected":"ZERO_COMMIT","expected_diff":[],"point":"before","repetition":"2","replay":"1","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+
+running 1 test
+S3_EVIDENCE {"case":"storage-crash","expected":"RECOVERY_REQUIRED_EVIDENCE_PRESERVED","expected_diff":[],"point":"partial","repetition":"2","replay":"0","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+S3_EVIDENCE {"case":"storage-crash","expected":"RECOVERY_REQUIRED_EVIDENCE_PRESERVED","expected_diff":[],"point":"partial","repetition":"2","replay":"1","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+
+running 1 test
+S3_EVIDENCE {"case":"storage-crash","expected":"RECOVERY_REQUIRED_EVIDENCE_PRESERVED","expected_diff":[],"point":"wal","repetition":"2","replay":"0","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+S3_EVIDENCE {"case":"storage-crash","expected":"RECOVERY_REQUIRED_EVIDENCE_PRESERVED","expected_diff":[],"point":"wal","repetition":"2","replay":"1","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+
+running 1 test
+S3_EVIDENCE {"case":"storage-crash","expected":"RECOVERY_REQUIRED_EVIDENCE_PRESERVED","expected_diff":[],"point":"marker","repetition":"2","replay":"0","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+S3_EVIDENCE {"case":"storage-crash","expected":"RECOVERY_REQUIRED_EVIDENCE_PRESERVED","expected_diff":[],"point":"marker","repetition":"2","replay":"1","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+
+running 1 test
+S3_EVIDENCE {"case":"storage-crash","expected":"ONE_COMMIT","expected_diff":[],"point":"rename","repetition":"2","replay":"0","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+S3_EVIDENCE {"case":"storage-crash","expected":"ONE_COMMIT","expected_diff":[],"point":"rename","repetition":"2","replay":"1","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+
+running 1 test
+S3_EVIDENCE {"case":"storage-crash","expected":"ONE_COMMIT","expected_diff":[],"point":"commit","repetition":"2","replay":"0","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+S3_EVIDENCE {"case":"storage-crash","expected":"ONE_COMMIT","expected_diff":[],"point":"commit","repetition":"2","replay":"1","result":"PASS","source":"REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"}
+ok
+test dropped_writer_reopens_while_unrelated_child_is_before_exec ... 
+running 1 test
+test child_process ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+
+running 1 test
+test child_process ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+ok
+test malformed_records_context_change_and_existing_namespace_are_rejected ... ok
+test missing_or_traversal_evidence_cannot_be_committed ... ok
+test payload_limit_exact_16mib_boundary ... ok
+test resource_limit_has_no_sequence_or_wal_effect ... ok
+test s3_magic_and_namespace_reject_s2_without_modifying_old_home ... ok
+test single_writer_is_enforced_across_processes ... 
+running 1 test
+test child_process ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+ok
+test status_revision_missing_corrupt_or_exhausted_never_resets ... ok
+test status_revision_reservations_survive_restart_and_fail_closed ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.83s
+
