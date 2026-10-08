@@ -1856,3 +1856,11 @@ mod settlement_tests {
         );
     }
 }
+
+#[cfg(all(feature = "dev-local-settlement", feature = "fault-injection"))]
+#[path = "support/settlement_gates.rs"]
+mod settlement_gates;
+
+#[cfg(all(feature = "dev-local-settlement", feature = "fault-injection"))]
+#[path = "support/receipt_contract_gap.rs"]
+mod receipt_contract_gap;

@@ -565,9 +565,19 @@ impl Engine {
             .writer
             .lock()
             .map_err(|_| Error::Recovery("WRITER_POISONED"))?;
+        self.execute_locked(&mut w, command, raw_evidence, observation, now)
+    }
+    fn execute_locked(
+        &self,
+        w: &mut Writer,
+        command: Command,
+        raw_evidence: &[(Vec<u8>, String)],
+        observation: &Observation,
+        now: u64,
+    ) -> Result<Option<Value>> {
         w.ensure_open()?;
         if let Err(e) = w.check_store() {
-            self.close(&mut w)?;
+            self.close(w)?;
             return Err(super::storage_error(e));
         }
         let mut input = w.candidate.clone();
@@ -630,7 +640,7 @@ impl Engine {
                     Ok(n) => n,
                     Err(e @ Error::Invalid(_)) => return Err(e),
                     Err(e) => {
-                        self.close(&mut w)?;
+                        self.close(w)?;
                         return Err(e);
                     }
                 };
@@ -733,7 +743,7 @@ impl Engine {
         match outcome {
             Ok(v) => Ok(Some(v)),
             Err(e) => {
-                self.close(&mut w)?;
+                self.close(w)?;
                 Err(super::storage_error(e))
             }
         }
@@ -775,6 +785,58 @@ impl Engine {
             }
         }
         Ok(())
+    }
+    /// Settlement's only intent-to-socket boundary. Hold the writer continuously
+    /// from latest observation/commit validation through durable intent and IO.
+    /// `clock` must sample the time at the call, including queue/backoff/fsync.
+    #[cfg(feature = "dev-local-settlement")]
+    pub(crate) fn broadcast_attempt<T>(
+        &self,
+        expected: &Commit,
+        original: &Value,
+        observation: &Observation,
+        mut clock: impl FnMut() -> Result<u64>,
+        effect: impl FnOnce(&Value, &[u8]) -> T,
+    ) -> Result<T> {
+        let (mut w, _) = self.recovery_writer(expected)?;
+        let integrity = w.store.verify_committed();
+        self.finish_recovery_read(&mut w, integrity)?;
+        let now = clock()?;
+        w.candidate.latest().freshness(observation, now)?;
+        let mut intent = w
+            .candidate
+            .attempts()
+            .iter()
+            .find(|a| a["tx_hash"] == original["tx_hash"])
+            .cloned()
+            .ok_or(Error::Invalid("ATTEMPT_NOT_FOUND"))?;
+        if intent != *original {
+            return Err(Error::Invalid("STALE_COMMIT"));
+        }
+        if !["PREPARED", "SUBMISSION_UNKNOWN"].contains(&intent["state"].as_str().unwrap_or("")) {
+            return Err(Error::Invalid("ATTEMPT_TERMINAL"));
+        }
+        let count = schema::num(&intent["broadcast_count"])?;
+        if count >= 3 {
+            return Err(Error::Invalid("RETRY_BUDGET_EXHAUSTED"));
+        }
+        intent["state"] = json!("SUBMISSION_UNKNOWN");
+        intent["broadcast_count"] = json!((count + 1).to_string());
+        self.execute_locked(
+            &mut w,
+            Command::Resolve(intent.clone()),
+            &[],
+            observation,
+            now,
+        )?
+        .ok_or(Error::Recovery("INTENT_NOT_COMMITTED"))?;
+        // Marker already committed. A subsequent IO/freshness error must keep
+        // this conservative UNKNOWN intent/count; never roll back or resend.
+        let raw = w.store.read(&intent["raw_tx_ref"]);
+        let raw = self.finish_recovery_read(&mut w, raw)?;
+        w.candidate.latest().freshness(observation, clock()?)?;
+        // No engine writer call/reentrancy inside the bounded callback.
+        Ok(effect(&intent, &raw))
     }
     /// Execute D's bounded effect callback while holding the single writer gate.
     /// Receipt, raw TX and current store identity are checked before invocation.

@@ -166,3 +166,33 @@ WAL prefix와 원문 집합을 두 번 읽으며 처리 비용은 보존된 기�
 ## F14 correction closure 시험 경계
 
 `dev-local-demo,fault-injection` 전용 `Engine::set_correction_hook`의 정확한 위치, Prepare/SemanticReplay 방문 수와 오류·재시작 의미는 [S3-F14-FAULT-API.md](S3-F14-FAULT-API.md)에 명세했다. 기존 IO hook·경제 규칙·개발 receipt 의미를 유지한다.
+
+## Settlement 방송의 현재 관측 gate — CTO-70-02 수정 후보
+
+`Worker::broadcast`는 같은 reader Commit의 원 Attempt를 pin하고 기존
+0/1000/2000ms backoff 뒤 writer lock을 잡는다. commit이 바뀌면
+`STALE_COMMIT`으로 거절한다. 같은 writer 아래 prefix/raw·최신 Snapshot의
+`freshness` 검증 → UNKNOWN/count+1 저장·공개 → 원 TX/store 재검증 → 현재
+시각 freshness 재검증 → bounded callback 순서다. 사이에 다른 engine writer가
+진입하지 않는다. 잘못된 관측·backoff 만료·관측 경합은 callback0·새 intent0이다.
+
+production API는 adapter의 `now`뿐 아니라 현재 SystemTime과 진입 후 Instant
+경과를 사용한다. 오래된 `now`로 signer/queue/fsync 지연을 숨길 수 없다.
+marker가 완료된 뒤 만료되면 callback은 거절하지만 이미 저장된 UNKNOWN/count는
+보존한다. 이 경우를 저장 전 거절의 commit0과 구분한다. 자동 rollback/retry·예산
+초기화는 없다. `reconcile`과 trusted read의 기존 CATCHING_UP 처리에는 새 일괄
+freshness 제한을 적용하지 않는다.
+
+fault-only `test_broadcast_with_clock`은 실제 경로의 clock/barrier 시험용이며
+`dev-local-settlement,fault-injection` 두 feature가 필요하다. clock 샘플은
+pin/backoff 뒤 writer 전, writer/prefix 검사 뒤 intent 전, marker/raw 검사 뒤
+callback 전이다. writer 전 샘플 외의 callback에서 writer 재진입은 금지한다.
+기본/no-fault build에는 이 API나 clock override가 없다. 기존 F14 phase는 같다.
+
+**공개 receipt 미해결(CTO-70-03):** 현재 `settlement_local/rest.rs`의 투영은 원
+rc3 CommandResult가 아니다. 원 체결 결과 전체에는 상대 계정 ledger도 있으므로
+전체를 공개하는 수정은 계정 격리를 위반한다. 현재 코드는 그 계약 결정을 임의로
+바꾸지 않았다. 별도 공개 version·원 결과 결합·client ledger 검증 의미를 CTO가
+기존 A Security→QA에서 고정해야 한다. 해당 승인과 C 후속 구현/심사 전에는
+이 Settlement 후보를 최종 runtime에 pin하거나 서비스 활성화하지 않는다.
+`receipt_contract_gap` 시험의 PASS는 충돌 재현이며 제품 P2 해소가 아니다.

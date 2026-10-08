@@ -219,17 +219,19 @@ impl Worker {
         &self,
         hash: &str,
         o: &Observation,
-        now: u64,
+        mut clock: impl FnMut() -> Result<u64>,
         effect: impl FnOnce(&Value, &[u8]) -> T,
     ) -> Result<T> {
         let _lane = self
             .lane
             .lock()
             .map_err(|_| Error::Recovery("WORKER_POISONED"))?;
-        let mut intent = self
+        let expected = self.engine.reader().get()?.commit.clone();
+        let intent = self
             .engine
-            .committed_attempt(hash)?
-            .ok_or(Error::Invalid("ATTEMPT_NOT_FOUND"))?;
+            .trusted_recovery_attempt(&expected, hash)?
+            .ok_or(Error::Invalid("ATTEMPT_NOT_FOUND"))?
+            .attempt;
         if !["PREPARED", "SUBMISSION_UNKNOWN"].contains(&intent["state"].as_str().unwrap_or("")) {
             return Err(Error::Invalid("ATTEMPT_TERMINAL"));
         }
@@ -237,24 +239,13 @@ impl Worker {
         if count >= 3 {
             return Err(Error::Invalid("RETRY_BUDGET_EXHAUSTED"));
         }
-        // The inherited profile requires 0/1000/2000ms. Wait the full delay
-        // even after restart: no in-memory timestamp can reset the durable count.
-        // This is outside C's writer lock; the exact intent is checked again below.
+        // Full inherited 0/1000/2000ms backoff, even after restart. The pinned
+        // commit is rechecked after the wait; a concurrent observation rejects
+        // this attempt without a new intent, count, receipt, or callback.
         std::thread::sleep(std::time::Duration::from_millis(count * 1000));
-        intent["state"] = json!("SUBMISSION_UNKNOWN");
-        intent["broadcast_count"] = json!((count + 1).to_string());
-        // WAL/objects/marker fsync and publication must finish before entering callback.
+        clock()?;
         self.engine
-            .execute(Command::Resolve(intent.clone()), &[], o, now)?
-            .ok_or(Error::Recovery("INTENT_NOT_COMMITTED"))?;
-        self.engine
-            .with_committed_attempt(hash, |stored, raw| {
-                if stored != &intent {
-                    return Err(Error::Recovery("INTENT_CHANGED"));
-                }
-                Ok(effect(stored, raw))
-            })?
-            .ok_or(Error::Invalid("ATTEMPT_NOT_FOUND"))?
+            .broadcast_attempt(&expected, &intent, o, clock, effect)
     }
     /// CheckTx, timeout, response loss and NOT_FOUND never resolve an attempt.
     /// No automatic replacement TX, new batch, release or correction is performed.
@@ -265,9 +256,22 @@ impl Worker {
         o: &Observation,
         now: u64,
     ) -> Result<Value> {
-        self.broadcast_inner(hash, o, now, |_, raw| {
-            let _ = rpc.broadcast(raw);
-        })?;
+        let anchor = unix_ms()?.max(now);
+        let started = std::time::Instant::now();
+        let mut last = anchor;
+        self.broadcast_inner(
+            hash,
+            o,
+            || {
+                // Old adapter time cannot hide signer/queue/backoff/fsync delays.
+                // Anchor monotonic elapsed to current wall time; never go back.
+                last = last.max(unix_ms()?).max(elapsed_ms(anchor, started)?);
+                Ok(last)
+            },
+            |_, raw| {
+                let _ = rpc.broadcast(raw);
+            },
+        )?;
         Ok(json!({"tx_hash":hash,"state":"SUBMISSION_UNKNOWN","durable_ack":false}))
     }
     /// Trusted chain adapter only: C revalidates exact raw evidence and same-H proof.
@@ -300,8 +304,33 @@ impl Worker {
         now: u64,
         effect: impl FnOnce(&Value, &[u8]) -> T,
     ) -> Result<T> {
-        self.broadcast_inner(hash, o, now, effect)
+        let started = std::time::Instant::now();
+        self.broadcast_inner(hash, o, || elapsed_ms(now, started), effect)
     }
+    /// Fault-only deterministic clock/barrier. Same writer/freshness/proof path;
+    /// no socket capability. This API is absent without fault-injection.
+    #[cfg(feature = "fault-injection")]
+    pub fn test_broadcast_with_clock<T>(
+        &self,
+        hash: &str,
+        o: &Observation,
+        clock: impl FnMut() -> Result<u64>,
+        effect: impl FnOnce(&Value, &[u8]) -> T,
+    ) -> Result<T> {
+        self.broadcast_inner(hash, o, clock, effect)
+    }
+}
+fn elapsed_ms(now: u64, started: std::time::Instant) -> Result<u64> {
+    let elapsed =
+        u64::try_from(started.elapsed().as_millis()).map_err(|_| Error::Invalid("STALE"))?;
+    now.checked_add(elapsed).ok_or(Error::Invalid("STALE"))
+}
+fn unix_ms() -> Result<u64> {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .ok()
+        .and_then(|d| u64::try_from(d.as_millis()).ok())
+        .ok_or(Error::Invalid("STALE"))
 }
 mod rest;
 pub use rest::{Options, Request, Rest};
