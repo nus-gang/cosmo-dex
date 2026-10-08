@@ -5,7 +5,7 @@ import {LocalClient, type Entry} from './client.ts';
 import {LocalKey} from './key.ts';
 import {base64} from './direct-codec.ts';
 import {encode} from '../src/codec.ts';
-import {PREFIX} from './state.ts';
+import {PREFIX,PUBLIC_RECEIPT_SCHEMA_SHA256,PUBLIC_RECEIPT_VERSION,TRUSTED_RECEIPT_VERSION} from './state.ts';
 
 const ctx=fixture.owner_projection.context,origin='http://127.0.0.1:5173';
 const json=(value:unknown)=>new Response(JSON.stringify(value));
@@ -31,7 +31,7 @@ function harness(flags:[boolean,boolean]=[true,true]) {
       return json({wire_base64:base64.encode(encode('WalletChallengeV1',{protocol_version:'1',chain_id:ctx.chain_id,genesis_hash:ctx.genesis_hash,owner:keys[selected].owner,server_origin:origin,audience:'exchange-api',challenge_nonce:'aa'.repeat(32),issued_at:String(now),expiry_time:String(now+100)}))});
     }
     if(path==='auth/session')return json({token:'synthetic-session-'+selected});
-    if(path==='capabilities')return json({...fixture.receipt,api_prefix:PREFIX,signed_result_query:true,automatic_withdraw:false,ws:false});
+    if(path==='capabilities')return json({...fixture.receipt,api_prefix:PREFIX,public_receipt_version:PUBLIC_RECEIPT_VERSION,public_receipt_schema_sha256:PUBLIC_RECEIPT_SCHEMA_SHA256,trusted_receipt_version:TRUSTED_RECEIPT_VERSION,signed_result_query:true,automatic_withdraw:false,ws:false});
     if(path==='account')return json(view());
     if(path==='chain/account')return json(direct());
     if(path==='chain/broadcast')return json({state:'UNKNOWN'});

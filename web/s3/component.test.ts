@@ -1,16 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fixture from './fixtures/ld-rest.json' with {type:'json'};
-import { Projection, capability, envelope, PREFIX, type Account } from './state.ts';
+import { Projection, capability, envelope, PREFIX, PUBLIC_RECEIPT_SCHEMA_SHA256, PUBLIC_RECEIPT_VERSION, TRUSTED_RECEIPT_VERSION, type Account } from './state.ts';
 import { LocalClient, type ChainPort } from './client.ts';
 import { LocalKey } from './key.ts';
 import { screen } from './component.ts';
-import { ml_dsa65 } from '../src/wallet.ts';
+import { ml_dsa65, sha256 } from '../src/wallet.ts';
 import { envelope as txEnvelope } from './direct-codec.ts';
-import { base64, integer } from './direct-codec.ts';
+import { base64, hex, integer } from './direct-codec.ts';
 import { encode } from '../src/codec.ts';
+import { canonical } from '../s2/state.ts';
 const ctx=fixture.owner_projection.context;
-const caps={...fixture.receipt,api_prefix:PREFIX,signed_result_query:true,automatic_withdraw:false,ws:false};
+const caps={...fixture.receipt,api_prefix:PREFIX,public_receipt_version:PUBLIC_RECEIPT_VERSION,public_receipt_schema_sha256:PUBLIC_RECEIPT_SCHEMA_SHA256,trusted_receipt_version:TRUSTED_RECEIPT_VERSION,signed_result_query:true,automatic_withdraw:false,ws:false};
+const publicReceipt=(principal:string,command_seq='1',kind='WITHDRAW_PREPARE',code='OK',state='LOCAL_ACCEPTED',request_hash='44'.repeat(32))=>({
+  envelope_version:PUBLIC_RECEIPT_VERSION,profile_id:'s3-dev-local-v1',context:ctx,principal,
+  development_receipt:'LOCAL_WRITE_COMPLETED_UNPROVEN_SPACE',durable_ack:false,storage_assurance:'UNPROVEN_HOST_SPACE',
+  source:{command_seq,record_hash:'11'.repeat(32),command_result_hash:'22'.repeat(32),after_state_hash:'33'.repeat(32)},
+  account_result:{kind,request_hash,code,state,observed_height:'100',snapshot_id:'55'.repeat(32),affected_order_hashes:[],created_fill_ids:[],corrected_fill_ids:[],committed_fill_ids:[],applied_batch_ids:[],ledger_changes:[]},
+});
+const jsonReceipt=(value:unknown)=>new Response(canonical(value),{headers:{'Content-Type':'application/json','Content-Encoding':'identity'}});
 const account=(owner='alice',now=Date.now()): Account=>({...structuredClone(fixture.other_projection),durable_ack:false,owner,received_at_unix_ms:String(now),withdraw_frozen:true,withdraw_ready:true});
 function setup() {const p=new Projection(ctx);p.select('alice');return p;}
 test('approved L-D raw projection and receipt remain developer evidence, not assets',()=>{
@@ -20,7 +28,7 @@ test('approved L-D raw projection and receipt remain developer evidence, not ass
   assert.equal(p.view!.ledger[0].R,'1000000');
 });
 test('capability rejects profile/context/guarantee/fallback drift',()=>{
-  for(const change of [{durable_ack:true},{api_prefix:'/s2/'},{automatic_withdraw:true},{ws:true},{signed_result_query:false},{profile_id:'standard'},{context:{...ctx,genesis_hash:'00'.repeat(32)}},{development_receipt:'COMMITTED'}])assert.throws(()=>capability({...caps,...change},ctx));
+  for(const change of [{durable_ack:true},{api_prefix:'/s2/'},{automatic_withdraw:true},{ws:true},{signed_result_query:false},{profile_id:'standard'},{context:{...ctx,genesis_hash:'00'.repeat(32)}},{development_receipt:'COMMITTED'},{public_receipt_version:'s3-dev-local/1'},{public_receipt_schema_sha256:'00'.repeat(32)},{trusted_receipt_version:PUBLIC_RECEIPT_VERSION}])assert.throws(()=>capability({...caps,...change},ctx));
 });
 test('atomic integer ledger rejects float, negative, excess and P reused in A',()=>{
   for(const change of [{C:'1.0'},{A:'-1'},{A:'1000000000001',P:'1'},{C:(1n<<128n).toString()},{R:'1000000000001'}]){
@@ -48,18 +56,18 @@ test('D/P/R held, COMMITTED requires receipt, committed cannot be corrected',()=
   v.batches=[{state:'COMMITTED',revision:'1',batch:{batch_id:'ab'.repeat(32),batch_hash:'cd'.repeat(32),batch_seq:'1'},receipt:{disposition:'COMMITTED',terminal_height:'100',terminal_tx_hash:'ef'.repeat(32),batch_receipt_v2:'Zg=='}}];assert.ok(p.accept(v,p.generation,Date.now(),0));v.revision='2';v.fills[0].state='CORRECTED';assert.equal(p.accept(v,p.generation,Date.now(),0),false);
 });
 async function clientFixture() {
-  const key=new LocalKey();let owner=key.owner,posts=0,prepare=0,view=account(owner);let directWait: Promise<void>|undefined;let accountReply: (()=>Promise<Response>)|undefined;
+  const key=new LocalKey();let owner=key.owner,posts=0,prepare=0,view=account(owner);let directWait: Promise<void>|undefined;let accountReply: (()=>Promise<Response>)|undefined;let receiptReply: ((route:string,init?:RequestInit)=>Promise<Response>)|undefined;
   const chain:ChainPort={account:async()=>{if(directWait)await directWait;return {context:ctx,owner:key.address,public_key_base64:base64.encode(key.publicKey),account_number:'1',sequence:'0',owner_epoch:'0',observed_height:'100',received_at_unix_ms:String(Date.now()),gas_atoms:'1000'};},broadcast:async()=>{posts++;throw Error('response lost');},result:async()=>{throw Error('NOT_FOUND');}};
   const transport:typeof fetch=async(path,init)=>{
     const route=String(path).slice(PREFIX.length);assert.ok(String(path).startsWith(PREFIX));
     let value:unknown;
     if(route==='auth/challenge') {const now=Math.floor(Date.now()/1000);value={wire_base64:base64.encode(encode('WalletChallengeV1',{protocol_version:'1',chain_id:ctx.chain_id,genesis_hash:ctx.genesis_hash,owner,server_origin:'http://127.0.0.1:5173',audience:'exchange-api',challenge_nonce:'aa'.repeat(32),issued_at:String(now),expiry_time:String(now+100)}))};}
     else if(route==='auth/session')value={token:'fixture-session'};
-    else {assert.equal((init?.headers as any).Authorization,'Bearer fixture-session');if(route==='capabilities')value=caps;else if(route==='account'){if(accountReply)return accountReply();value=view;}else{prepare++;value=fixture.receipt;}}
+    else {assert.equal((init?.headers as any).Authorization,'Bearer fixture-session');if(route==='capabilities')value=caps;else if(route==='account'){if(accountReply)return accountReply();value=view;}else{prepare++;if(receiptReply)return receiptReply(route,init);const request_id=init?.body?JSON.parse(String(init.body)).request_id:undefined,request_hash=request_id?hex(sha256(new TextEncoder().encode(canonical({request_id})))):'44'.repeat(32);value=publicReceipt(owner,String(prepare),route.endsWith('abort')?'WITHDRAW_ABORT':'WITHDRAW_PREPARE','OK','LOCAL_ACCEPTED',request_hash);return jsonReceipt(value);}}
     return new Response(JSON.stringify(value));
   };
   const c=new LocalClient(ctx,transport,chain,true,true);c.select(key);await c.login('http://127.0.0.1:5173');
-  return {c,key,chain,posts:()=>posts,prepare:()=>prepare,setWait:(p:Promise<void>)=>{directWait=p;},setView:(v:Account)=>{view=v;},setAccountReply:(reply:()=>Promise<Response>)=>{accountReply=reply;}};
+  return {c,key,chain,posts:()=>posts,prepare:()=>prepare,setWait:(p:Promise<void>)=>{directWait=p;},setView:(v:Account)=>{view=v;},setAccountReply:(reply:()=>Promise<Response>)=>{accountReply=reply;},setReceiptReply:(reply:(route:string,init?:RequestInit)=>Promise<Response>)=>{receiptReply=reply;}};
 }
 test('default disabled and missing second opt-in perform zero network requests',async()=>{
   for(const flags of [[false,false],[true,false],[false,true]]){let requests=0;const key=new LocalKey();const c=new LocalClient(ctx,async()=>{requests++;throw Error();},undefined,...flags as [boolean,boolean]);c.select(key);await assert.rejects(()=>c.login('http://127.0.0.1:5173'),/OPT_INS/);assert.equal(requests,0);c.destroy();}
@@ -77,7 +85,41 @@ test('switch during direct account response generates no signature or broadcast'
   const f=await clientFixture();try{let release!:()=>void;f.setWait(new Promise(r=>release=r));const pending=f.c.withdraw('DEVBASE','1');f.c.select();release();await assert.rejects(()=>pending,/ACCOUNT_CHANGED/);assert.equal(f.posts(),0);assert.equal(f.c.history.length,0);assert.equal(screen(f.c).ledger.length,0);}finally{f.key.destroy();}
 });
 test('prepare developer receipt cannot mutate C; view displays guarantee, hold and account boundary',async()=>{
-  const f=await clientFixture();try{const before=f.c.projection.view!.ledger[0].C;await f.c.prepare();assert.equal(f.prepare(),1);assert.equal(f.c.projection.view!.ledger[0].C,before);assert.match(screen(f.c).receipt,/체인 확정 아님/);assert.match(screen(f.c).notice,/durable_ack=false/);f.c.select();assert.deepEqual(screen(f.c).history,[]);assert.deepEqual(screen(f.c).ledger,[]);}finally{f.key.destroy();}
+  const f=await clientFixture();try{const before=f.c.projection.view!.ledger[0].C;await f.c.prepare();assert.equal(f.prepare(),1);assert.equal(f.c.projection.view!.ledger[0].C,before);assert.match(screen(f.c).receipt,/체인 COMMITTED·durable ACK 아님/);assert.match(screen(f.c).notice,/durable_ack=false/);f.c.select();assert.deepEqual(screen(f.c).history,[]);assert.deepEqual(screen(f.c).ledger,[]);}finally{f.key.destroy();}
+});
+test('recorded rejection is displayed without COMMITTED/durable promotion or local ledger effects',async()=>{
+  const f=await clientFixture();try{
+    const held={...structuredClone(f.c.projection.view!),withdraw_ready:false};held.ledger[0].D='1';held.ledger[0].A=String(BigInt(held.ledger[0].C)-1n);f.setView(held);
+    f.setReceiptReply(async(_route,init)=>{const request_id=JSON.parse(String(init!.body)).request_id,request_hash=hex(sha256(new TextEncoder().encode(canonical({request_id}))));return jsonReceipt(publicReceipt(f.key.owner,'1','WITHDRAW_PREPARE','UNSETTLED_HOLD','REJECTED',request_hash));});
+    const before=canonical(f.c.projection.view!.ledger);await f.c.prepare();
+    assert.match(f.c.receipt,/REJECTED/);assert.match(f.c.receipt,/체인 COMMITTED·durable ACK 아님/);assert.equal(f.c.canWithdraw(),false);assert.equal(canonical(f.c.projection.view!.ledger),before);assert.equal(f.c.projection.reason,'REVISION_CONFLICT');
+  }finally{f.c.destroy();}
+});
+test('prepare receipt kind/request binding mismatch closes session without trusting the result',async()=>{
+  const f=await clientFixture();try{
+    f.setReceiptReply(async()=>jsonReceipt(publicReceipt(f.key.owner,'1','ORDER')));
+    await assert.rejects(()=>f.c.prepare(),/CLIENT_RECEIPT_MISMATCH/);assert.equal(f.c.projection.reason,'CLIENT_RECEIPT_MISMATCH');assert.equal(f.c.canWithdraw(),false);
+  }finally{f.c.destroy();}
+});
+test('same receipt key byte/source collision preserves evidence and closes session asset actions',async()=>{
+  const f=await clientFixture();try{
+    let changed=false;f.setReceiptReply(async()=>{const value=publicReceipt(f.key.owner,'7');if(changed)value.account_result.request_hash='66'.repeat(32);changed=true;return jsonReceipt(value);});
+    await f.c.queryReceipt('7');await assert.rejects(()=>f.c.queryReceipt('7'),/CLIENT_RECEIPT_MISMATCH/);
+    assert.equal(f.c.publicReceipts.conflicts.length,1);assert.equal(f.c.projection.reason,'CLIENT_RECEIPT_MISMATCH');assert.equal(f.c.canWithdraw(),false);await assert.rejects(()=>f.c.prepare(),/HELD/);
+  }finally{f.c.destroy();}
+});
+test('delayed public receipt after account switch is discarded without ledger or UI contamination',async()=>{
+  const f=await clientFixture();try{
+    const pending=deferred<Response>();f.setReceiptReply(async()=>pending.promise);const query=f.c.queryReceipt('9');f.c.select();
+    pending.resolve(jsonReceipt(publicReceipt(f.key.owner,'9')));await assert.rejects(()=>query,/ACCOUNT_CHANGED/);
+    assert.equal(f.c.publicReceipts.entries.length,0);assert.equal(f.c.receipt,'');assert.equal(f.c.canWithdraw(),false);
+  }finally{f.key.destroy();}
+});
+test('public receipt requires application/json identity transport bytes and closes on drift',async()=>{
+  const f=await clientFixture();try{
+    f.setReceiptReply(async()=>new Response(canonical(publicReceipt(f.key.owner,'8'))));
+    await assert.rejects(()=>f.c.queryReceipt('8'),/RECEIPT_CANONICAL/);assert.equal(f.c.projection.reason,'RECEIPT_CANONICAL');assert.equal(f.c.publicReceipts.entries.length,0);assert.equal(f.c.canWithdraw(),false);
+  }finally{f.c.destroy();}
 });
 test('noncanonical amount rejected before signing or broadcast',async()=>{
  const f=await clientFixture();try{for(const amount of ['1.1','-1','01','0',(1n<<128n).toString()])await assert.rejects(()=>f.c.withdraw('DEVBASE',amount));assert.equal(f.posts(),0);assert.equal(f.c.history.length,0);}finally{f.c.destroy();}

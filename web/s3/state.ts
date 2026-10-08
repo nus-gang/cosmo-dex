@@ -2,6 +2,9 @@ import { integer } from './direct-codec.ts';
 import { canonical } from '../s2/state.ts';
 export type Context = Record<string, string>;
 export const PREFIX = '/dev-local/v1/';
+export const PUBLIC_RECEIPT_VERSION = 's3-dev-local-account/1';
+export const PUBLIC_RECEIPT_SCHEMA_SHA256 = '2bbb848b836c8d15f2732b481f78be2e28b0cbc2b7c783971bc593747d120b6b';
+export const TRUSTED_RECEIPT_VERSION = 's3-dev-local/1';
 export const ASSURANCE = 'LOCAL_WRITE_COMPLETED_UNPROVEN_SPACE · durable_ack=false · UNPROVEN_HOST_SPACE';
 export function context(actual: Context, expected: Context) {
   if (canonical(actual) !== canonical(expected) || actual.service_schema !== 's3/3' || actual.chain_id !== 'nus-s3-dev-1') throw Error('CONTEXT_MISMATCH');
@@ -12,7 +15,9 @@ export function envelope(v: any, ctx: Context) {
 }
 export function capability(v: any, ctx: Context) {
   envelope(v, ctx);
-  if (v.api_prefix !== PREFIX || v.signed_result_query !== true || v.automatic_withdraw !== false || v.ws !== false) throw Error('CAPABILITY_MISMATCH');
+  if (v.api_prefix !== PREFIX || v.signed_result_query !== true || v.automatic_withdraw !== false || v.ws !== false ||
+    v.public_receipt_version !== PUBLIC_RECEIPT_VERSION || v.public_receipt_schema_sha256 !== PUBLIC_RECEIPT_SCHEMA_SHA256 ||
+    v.trusted_receipt_version !== TRUSTED_RECEIPT_VERSION) throw Error('RECEIPT_SCHEMA');
 }
 export interface Ledger { denom: string; C: string; R: string; D: string; P: string; A: string }
 export interface Account {

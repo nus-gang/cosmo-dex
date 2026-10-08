@@ -1,6 +1,6 @@
 # L-E 로컬 정산·출금 component 인계
 
-[NUS-72](/NUS/issues/NUS-72). 입력은 L-D `f81c63fefaa89ee54ab3e2bee8ca5766221530e2`, tree `3c856e544d86bbbc5ce6a2a00ea62901bad64eff`이며 A/B/C ancestry를 포함하는 별도 clone이다. 기존 S0/S1/S2 파일·공통 protocol·dependency/lock을 변경하지 않았다. 새 설치·서비스 기동·main 병합·runtime pin 발급 없음.
+[NUS-72](/NUS/issues/NUS-72). 새 입력은 공개 계정 영수증을 연결한 승인 L-D head `ccabc5ae15b4a5246a85d568a22910d3e17b4851`, tree `9f0b2cc6fe5bc296b73a7134c88e85207fdebafa`다. 공개 계약 head `ed4cf278cff78312ac606d6834901e0b8b265725`, schema SHA256 `2bbb848b836c8d15f2732b481f78be2e28b0cbc2b7c783971bc593747d120b6b`를 별도 pin한다. 이전 Wallet 승인 후보의 5개 커밋을 이 exact D 후보 위에 이식했으며 기존 S0/S1/S2 파일·공통 protocol·dependency/lock은 변경하지 않았다. 새 설치·서비스 기동·main 병합·runtime pin 발급 없음.
 
 ## 실행 경계
 
@@ -13,6 +13,14 @@ L-R은 승인 context와 두 opt-in을 공급하고 아래 transport를 배선�
 - `broadcast(tx_bytes)`는 사용자 서명 원 TxRaw를 bounded loopback RPC에 한 번 전달한다. HTTP/CheckTx 성공도 UNKNOWN으로 유지한다. signer/private key를 adapter에 넘기지 않는다.
 - `result(tx_hash)`는 B의 trusted RPC block+block_results에서 해당 TX index, 원 TxRaw, Context/chain/genesis/확정 높이와 code를 검증한 **확정 결과만** 반환한다. NOT_FOUND/CheckTx/mempool/timeout은 throw한다. 임의 `/tx` 성공을 확정으로 매핑하지 않는다. client도 원 TX bytes/hash·code/state·서명 당시 H보다 큰 확정 H를 확인한다. 결과 조회는 생성/방송을 하지 않는다.
 - 직접 계정·방송·조회 HTTP route는 L-D가 제공하지 않는다. 기존 `/s1` 또는 `/s2` URL을 S3에 재사용하지 않았다. 새 authenticated factory가 L-R의 고정 chain/account GET, chain/broadcast POST, chain/result POST를 같은 private bearer로 호출한다. L-R에서 이 세 route를 실제 B adapter에 연결하고 기동 전 검토한다. ChainPort가 없으면 출금 버튼이 닫힌다. 실제 end-to-end API/브라우저·4검증인 DEV12는 L-T에서 검증한다.
+
+## 공개 계정 영수증
+
+capabilities는 trusted `s3-dev-local/1`과 공개 `s3-dev-local-account/1`을 서로 다른 필드로 고정한다. 공개 schema pin이 없거나 다르면 `RECEIPT_SCHEMA`로 닫고 old/new fallback을 하지 않는다. `withdraw/prepare`, `withdraw/abort`, `receipts/commands/{seq}` 성공 body는 최대 16 MiB의 exact canonical UTF-8 bytes로 읽는다. 중복 key, BOM/개행/공백, 숫자 JSON, 추가·누락 key, 비정규 U64/U128, 8단계 초과 nesting, 잘못된 Context/principal/hash/enum/ledger 식을 거절한다. atoms는 JS `Number`로 변환하지 않고 `bigint` 경계와 `A=C−R−D`를 검사한다.
+
+tab-memory 공개 ledger 키는 전체 Context/principal/public version/command_seq다. 같은 키의 body 또는 source tuple이 달라지면 `CLIENT_RECEIPT_MISMATCH`로 현재 session의 자산 동작을 닫고 저장 bytes와 새 bytes를 모두 보존한다. token은 ledger에 넣지 않는다. 과거 command_seq 간극은 공개 receipt 이력 간극으로만 표시하며 현재 account revision gap과 합성하지 않는다. 계정 전환 후 지연 receipt는 ledger/UI에 반영하지 않는다.
+
+`LOCAL_ACCEPTED`와 `REJECTED`는 원 code/state 및 본인 `ledger_changes` 수를 기록으로 보여 주지만 현재 account projection을 직접 변경하지 않는다. `LOCAL_ACCEPTED`는 chain `COMMITTED`, durable ACK, 출금 가능으로 승격되지 않는다. 출금 가능 여부는 계속 fresh current account의 C/R/D/P·fill/batch·withdraw gate만 결정한다.
 
 ## 화면과 안전 조건
 
@@ -27,7 +35,7 @@ C/R/D/P/A는 하나의 account revision으로 교체한다. atoms는 canonical �
 기존 설치 dependency cache와 lock 사용. 새 설치 금지. checkout web에서:
 
 ```sh
-node --experimental-strip-types --test s3/component.test.ts s3/auth-api.test.ts
+node --experimental-strip-types --test s3/receipt.test.ts s3/component.test.ts s3/auth-api.test.ts
 node_modules/.bin/tsc -p s3/tsconfig.json
 node s3/build.mjs
 node s3/browser.test.mjs <증거 디렉터리>
