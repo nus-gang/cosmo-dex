@@ -15,11 +15,13 @@ ROOT = Path(__file__).resolve().parents[2]
 class Binding(unittest.TestCase):
     def test_approved_originals_and_distinct_implementation_lock(self):
         files = m.inherited(ROOT)
-        self.assertEqual(len(files), 213)
+        self.assertEqual(len(files), 274)
         self.assertEqual(m.sha(files['protocol/s3/manifest.json']), m.BASELINE)
         self.assertNotEqual(files['chain/app/go.mod'], (ROOT/'chain/app/go.mod').read_bytes())
         self.assertNotIn('runtime-manifest.json', files)
         self.assertNotIn('runtime/genesis.json', files)  # Approved historical fixtures remain inherited.
+        self.assertEqual(m.sha(files[m.PUBLIC_PREFIX+'MANIFEST.json']), m.PUBLIC_MANIFEST)
+        self.assertEqual(m.sha(files[m.PUBLIC_PREFIX+'schema.json']), m.PUBLIC_SCHEMA)
 
     def test_reject_duplicate_json_and_unsafe_paths(self):
         with self.assertRaisesRegex(ValueError, 'DUPLICATE'):
@@ -49,7 +51,7 @@ class Binding(unittest.TestCase):
                           'artifacts': ['synthetic-test-only'], 'approval_sources': ['TEST_ONLY_NOT_APPROVED'],
                           'settings': {'fixture': 'true'}} for name in m.COMPONENTS}
             files, report, first = m.make_candidate(ROOT, root, spec)
-            self.assertEqual(len(files), 218)
+            self.assertEqual(len(files), 279)
             self.assertFalse(report['runtime_approved'])
             self.assertNotIn('approved_runtime_sha256', report)
             self.assertEqual(set(first['components']), set(m.COMPONENTS))
@@ -87,6 +89,7 @@ class SourceGate(unittest.TestCase):
         self.assertEqual(result['component_inclusion'], report)
         self.assertEqual(m.HEADS['exchange'], m.component_sources.CANDIDATES['exchange'][0])
         self.assertEqual(m.HEADS['wallet'], m.component_sources.CANDIDATES['wallet'][0])
+        self.assertEqual(m.ANCESTORS['exchange_contract'], '6c0acdaa5ee9ea24fd0a2c83d15dbcf7f359de52')
 
     def test_dirty_source_rejected_before_inclusion(self):
         with self.assertRaisesRegex(ValueError, 'DIRTY_SOURCE'):

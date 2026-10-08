@@ -1491,7 +1491,7 @@ mod settlement_tests {
             assert_eq!(call(&rest,&c,"POST","/dev-local/v1/withdraw/prepare",Some(&token0),&withdraw).0,503);
             assert_eq!(call(&rest,&c,"POST","/dev-local/v1/orders",Some(&token0),&body).0,503);
             assert_eq!(call(&rest,&c,"POST","/dev-local/v1/withdraw/prepare",Some(&token0),&withdraw).0,503);
-            assert_eq!(call(&rest,&c,"POST","/dev-local/v1/receipts/orders",Some(&token0),&body),own);
+            assert_eq!(call(&rest,&c,"POST","/dev-local/v1/receipts/orders",Some(&token0),&body).0,503);
             assert_eq!(call(&rest,&c,"GET","/dev-local/v1/account",Some(&token0),&Value::Null).1["gate"],"RECOVERY_REQUIRED");
             dev_fixture::copy_home("settlement-rest-recovery", &t.dev.home);
             evidence("settlement-rest",json!({"scope":"COMPONENT_SYNTHETIC","result":"PASS","owner_projection":account,"other_projection":other,"receipt":own.1,"checks":["auth","owner","signature","context","origin","loopback","duplicate_headers","two_opt_ins","retry","stale","recovery_query"]}));
@@ -1705,6 +1705,54 @@ mod settlement_tests {
             evidence("settlement-public-receipt",json!({"scope":"COMPONENT_SYNTHETIC","result":"PASS","account":account,"other_account":other}));
         });
     }
+    #[test]
+    fn settlement_signed_receipt_survives_two_restarts_without_extra_effect() {
+        for bps in [0, 25] {
+            let c = setup(bps, true);
+            TRACE.with_borrow_mut(|trace| {
+                let t = trace.as_mut().unwrap();
+                let options = || Options {
+                    enabled: true,
+                    acknowledge_unproven_space: true,
+                    bind: "127.0.0.1".parse().unwrap(),
+                };
+                let e = Arc::new(t.dev.engine.take().unwrap());
+                let rest = Rest::new(e.clone(), c.snapshot().clone(), options()).unwrap();
+                let old_token = login(&rest, &c, 0);
+                let (raw, signature) = sign_order(&c, 0, "2", 1000, 10000, 247);
+                let body = json!({"context":c.snapshot().context(),
+                    "wire_base64":STANDARD.encode(raw),"signature_base64":STANDARD.encode(signature)});
+                let original = call(&rest, &c, "POST", "/dev-local/v1/orders", Some(&old_token), &body);
+                assert_eq!(original.0, 200);
+                let before = e.reader().get().unwrap();
+                let disk = failure_recovery::files(&t.dev.home);
+                drop(rest);
+                drop(e);
+                for _ in 0..2 {
+                    let e = Arc::new(DevEngine::open(&t.dev.home, t.dev.config.clone()).unwrap());
+                    let rest = Rest::new(e.clone(), c.snapshot().clone(), options()).unwrap();
+                    assert_eq!(call(&rest, &c, "POST", "/dev-local/v1/orders", Some(&old_token), &body).0, 401);
+                    let token = login(&rest, &c, 0);
+                    for route in ["/dev-local/v1/orders", "/dev-local/v1/receipts/orders"] {
+                        assert_eq!(call(&rest, &c, "POST", route, Some(&token), &body), original);
+                    }
+                    let after = e.reader().get().unwrap();
+                    assert_eq!(after.commit, before.commit);
+                    assert_eq!(after.state, before.state);
+                    assert_eq!(after.receipts, before.receipts);
+                    assert_eq!(failure_recovery::files(&t.dev.home), disk);
+                }
+                dev_fixture::copy_home(&format!("settlement-retry-fee{bps}"), &t.dev.home);
+                dev_fixture::evidence(&format!("settlement-retry-fee{bps}"), &json!({
+                    "result":"PASS","scope":"REST_HANDLER_COMPONENT_NO_LISTENER",
+                    "restarts":2,"old_session_status":401,"receipt":original.1,
+                    "request":body,"state":before.state,
+                    "receipt_ledger":before.receipts.values().collect::<Vec<_>>(),
+                    "expected_diff":[],"additional_commits":0,"additional_effects":0
+                }));
+            });
+        }
+    }
     fn prepared() -> (Candidate, Value) {
         let mut c = order(setup(25, true), 0, "2", 1000, 10000, 241);
         c = order(c, 1, "1", 1000, 10000, 242);
@@ -1808,3 +1856,19 @@ mod settlement_tests {
         );
     }
 }
+
+#[cfg(all(feature = "dev-local-settlement", feature = "fault-injection"))]
+#[path = "support/settlement_gates.rs"]
+mod settlement_gates;
+
+#[cfg(all(feature = "dev-local-settlement", feature = "fault-injection"))]
+#[path = "support/receipt_contract_gap.rs"]
+mod receipt_contract_gap;
+
+#[cfg(all(feature = "dev-local-settlement", feature = "fault-injection"))]
+#[path = "support/account_events.rs"]
+mod account_events;
+
+#[cfg(all(feature = "dev-local-settlement", feature = "fault-injection"))]
+#[path = "support/settlement_account_receipt.rs"]
+mod settlement_account_receipt;

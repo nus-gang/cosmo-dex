@@ -237,6 +237,84 @@ impl Engine {
             }
         }
     }
+    /// Trusted source access. Re-executes the complete marker-covered prefix,
+    /// including every evidence closure, and compares the published revision.
+    /// No path selector, mutation, effect callback, or cache-only success.
+    pub fn trusted_receipt_source(&self, seq: u64) -> Result<Option<super::ReceiptSource>> {
+        let mut w = self
+            .writer
+            .lock()
+            .map_err(|_| Error::Recovery("WRITER_POISONED"))?;
+        w.ensure_open()?;
+        let result = (|| {
+            let bootstrap = w.check_store()?;
+            let mut candidate = Candidate::new(w.config.bootstrap(&bootstrap)?)?;
+            let mut previous = Commit::zero();
+            let published = self.reader.get()?;
+            let mut selected = None;
+            w.store
+                .scan_committed(&w.store.commit, |record, raw, commit| {
+                    let objects = w.store.load(&record["evidence_refs"])?;
+                    let (next, prepared) =
+                        Prepared::replay(&candidate, &record, &objects, &previous)
+                            .map_err(|_| Error::Recovery("RECEIPT_SEMANTIC_REPLAY"))?;
+                    if published.receipts.get(&commit.command_seq)
+                        != Some(&ledger_entry(&w.config, prepared.result.clone(), commit))
+                    {
+                        return Err(Error::Recovery("RECEIPT_RESULT_MISMATCH"));
+                    }
+                    if commit.command_seq == seq {
+                        selected = Some(super::account_receipt::source(raw, &record)?);
+                    }
+                    previous = commit.clone();
+                    candidate = next;
+                    Ok(())
+                })?;
+            if previous != published.commit
+                || previous != w.store.commit
+                || candidate.full_state()? != published.state
+                || candidate.full_state()? != w.candidate.full_state()?
+                || published.receipts.len() as u64 != previous.command_seq
+            {
+                return Err(Error::Recovery("RECEIPT_REVISION_MISMATCH"));
+            }
+            Ok(selected)
+        })();
+        self.finish_recovery_read(&mut w, result)
+    }
+    /// Principal is supplied only by the authenticated trusted adapter. The
+    /// returned type cannot be constructed from arbitrary public JSON.
+    pub fn account_receipt(
+        &self,
+        seq: u64,
+        principal: &str,
+    ) -> Result<Option<super::AccountReceipt>> {
+        let Some(source) = self.trusted_receipt_source(seq)? else {
+            return Ok(None);
+        };
+        match source.project(principal) {
+            Ok(value) => Ok(value),
+            Err(e) => {
+                let mut w = self
+                    .writer
+                    .lock()
+                    .map_err(|_| Error::Recovery("WRITER_POISONED"))?;
+                self.close(&mut w)?;
+                Err(super::storage_error(e))
+            }
+        }
+    }
+    /// Trusted ledger comparison; source hashes alone are not client proof of
+    /// global state, conservation, or server honesty.
+    pub fn verify_account_receipt(&self, seq: u64, principal: &str, raw: &[u8]) -> Result<()> {
+        let expected = self
+            .account_receipt(seq, principal)?
+            .ok_or(Error::Invalid("RECEIPT_NOT_FOUND"))?;
+        if expected.as_bytes() != raw {
+            return Err(Error::Recovery("SOURCE_PROJECTION_MISMATCH"));
+        }
+        Ok(())
+    }
     /// Select Seal purpose/wait and assess Apply under the same store/writer
     /// lock. The caller supplies the latest observation, not the applied one.
     /// Prefer Ready Apply, otherwise Ready Seal, otherwise reconcile ActiveBatch
@@ -565,9 +643,19 @@ impl Engine {
             .writer
             .lock()
             .map_err(|_| Error::Recovery("WRITER_POISONED"))?;
+        self.execute_locked(&mut w, command, raw_evidence, observation, now)
+    }
+    fn execute_locked(
+        &self,
+        w: &mut Writer,
+        command: Command,
+        raw_evidence: &[(Vec<u8>, String)],
+        observation: &Observation,
+        now: u64,
+    ) -> Result<Option<Value>> {
         w.ensure_open()?;
         if let Err(e) = w.check_store() {
-            self.close(&mut w)?;
+            self.close(w)?;
             return Err(super::storage_error(e));
         }
         let mut input = w.candidate.clone();
@@ -630,7 +718,7 @@ impl Engine {
                     Ok(n) => n,
                     Err(e @ Error::Invalid(_)) => return Err(e),
                     Err(e) => {
-                        self.close(&mut w)?;
+                        self.close(w)?;
                         return Err(e);
                     }
                 };
@@ -661,6 +749,16 @@ impl Engine {
             return Err(Error::Invalid("STORAGE_CAPACITY"));
         }
         let p = Prepared::prepare(&input, &after, &kind, observation, now, &w.store.commit)?;
+        // Admission uses the same exact projection and byte limits before any
+        // objects/WAL/marker are written. Never truncate a receipt after commit.
+        let admission = (|| {
+            let raw_frame = frame(&canonical(&p.record)?)?;
+            super::account_receipt::source(raw_frame, &p.record)?.check_admission()
+        })();
+        if let Err(e) = admission {
+            self.close(w)?;
+            return Err(super::storage_error(e));
+        }
         let full = after.evidence_set()?;
         let mut objects = Objects::default();
         for r in p.record["evidence_refs"].as_array().unwrap() {
@@ -733,7 +831,7 @@ impl Engine {
         match outcome {
             Ok(v) => Ok(Some(v)),
             Err(e) => {
-                self.close(&mut w)?;
+                self.close(w)?;
                 Err(super::storage_error(e))
             }
         }
@@ -775,6 +873,58 @@ impl Engine {
             }
         }
         Ok(())
+    }
+    /// Settlement's only intent-to-socket boundary. Hold the writer continuously
+    /// from latest observation/commit validation through durable intent and IO.
+    /// `clock` must sample the time at the call, including queue/backoff/fsync.
+    #[cfg(feature = "dev-local-settlement")]
+    pub(crate) fn broadcast_attempt<T>(
+        &self,
+        expected: &Commit,
+        original: &Value,
+        observation: &Observation,
+        mut clock: impl FnMut() -> Result<u64>,
+        effect: impl FnOnce(&Value, &[u8]) -> T,
+    ) -> Result<T> {
+        let (mut w, _) = self.recovery_writer(expected)?;
+        let integrity = w.store.verify_committed();
+        self.finish_recovery_read(&mut w, integrity)?;
+        let now = clock()?;
+        w.candidate.latest().freshness(observation, now)?;
+        let mut intent = w
+            .candidate
+            .attempts()
+            .iter()
+            .find(|a| a["tx_hash"] == original["tx_hash"])
+            .cloned()
+            .ok_or(Error::Invalid("ATTEMPT_NOT_FOUND"))?;
+        if intent != *original {
+            return Err(Error::Invalid("STALE_COMMIT"));
+        }
+        if !["PREPARED", "SUBMISSION_UNKNOWN"].contains(&intent["state"].as_str().unwrap_or("")) {
+            return Err(Error::Invalid("ATTEMPT_TERMINAL"));
+        }
+        let count = schema::num(&intent["broadcast_count"])?;
+        if count >= 3 {
+            return Err(Error::Invalid("RETRY_BUDGET_EXHAUSTED"));
+        }
+        intent["state"] = json!("SUBMISSION_UNKNOWN");
+        intent["broadcast_count"] = json!((count + 1).to_string());
+        self.execute_locked(
+            &mut w,
+            Command::Resolve(intent.clone()),
+            &[],
+            observation,
+            now,
+        )?
+        .ok_or(Error::Recovery("INTENT_NOT_COMMITTED"))?;
+        // Marker already committed. A subsequent IO/freshness error must keep
+        // this conservative UNKNOWN intent/count; never roll back or resend.
+        let raw = w.store.read(&intent["raw_tx_ref"]);
+        let raw = self.finish_recovery_read(&mut w, raw)?;
+        w.candidate.latest().freshness(observation, clock()?)?;
+        // No engine writer call/reentrancy inside the bounded callback.
+        Ok(effect(&intent, &raw))
     }
     /// Execute D's bounded effect callback while holding the single writer gate.
     /// Receipt, raw TX and current store identity are checked before invocation.

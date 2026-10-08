@@ -9,9 +9,12 @@ import subprocess
 
 CANDIDATES = {
     'chain': ('497ecba3008de9168c431facc4ff9fc8a4fc329b', 'chain/'),
-    'exchange': ('3802bf0cd3dabd36ee495a60ac38cfa9a9cec9c7', 'exchange/'),
-    'settlement': ('46546d317701b127da8196e9e6abdab7ce9a3d6e', 'settlement/'),
-    'wallet': ('720163e80cf239279d49ce58304fd3865e6bd684', 'web/'),
+    # D is the latest independently approved byte source for exchange/: its
+    # reviewed REST adapter intentionally changes two C-owned files. C remains
+    # a mandatory ancestor in manifest.py and is never replaced as provenance.
+    'exchange': ('ccabc5ae15b4a5246a85d568a22910d3e17b4851', 'exchange/'),
+    'settlement': ('ccabc5ae15b4a5246a85d568a22910d3e17b4851', 'settlement/'),
+    'wallet': ('4062facbb0039ff2d2a6e6d126dcba2836c63ded', 'web/'),
 }
 
 

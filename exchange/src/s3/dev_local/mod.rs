@@ -1,5 +1,9 @@
 //! Dormant, single-writer development engine. No networking, standard ACK,
 //! physical reservation or automatic recovery. See S3-DEV-LOCAL.md.
+mod account_receipt;
+pub use account_receipt::{
+    AccountReceipt, PUBLIC_RECEIPT_SCHEMA_SHA256, PUBLIC_RECEIPT_VERSION, ReceiptSource,
+};
 mod binding;
 #[cfg(feature = "fault-injection")]
 pub(crate) mod correction_fault;

@@ -61,6 +61,15 @@ pub fn inputs(bps: u32, users: &[Value]) -> Inputs {
         );
     }
     files.insert(format!("{prefix}MANIFEST.json"), raw);
+    let overlay: Value = serde_json::from_slice(
+        &std::fs::read(root.join("proposals/s3-local-account-receipt-v1/MANIFEST.json")).unwrap(),
+    )
+    .unwrap();
+    for (p, digest) in overlay["files_sha256"].as_object().unwrap() {
+        let raw = std::fs::read(root.join(p)).unwrap();
+        assert_eq!(sha256(&raw), digest.as_str().unwrap());
+        files.insert(p.clone(), raw);
+    }
     let mut components = BTreeMap::new();
     for name in ["chain", "exchange", "settlement", "wallet", "sre"] {
         let p = format!("chain/local-demo/components/{name}.json");

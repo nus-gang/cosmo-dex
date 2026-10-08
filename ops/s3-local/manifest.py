@@ -10,13 +10,22 @@ import stat
 import subprocess
 import component_sources
 
-A = 'fd9aa6ca9093817e4ab09d2ae835197a84bbade6'
+A = 'ed4cf278cff78312ac606d6834901e0b8b265725'
 CANDIDATE = '90169d322336a0c0de9bc6c48725d528d42fe74c78ea5b596fc7e059d747dda2'
 BASELINE = '3ff69e73057a2bb6dcff64820123d520b9ad3e5637abbd1ad7d38b8c1a49eb97'
 PREFIX = 'proposals/s3-local-dev-v1/'
+PUBLIC_PREFIX = 'proposals/s3-local-account-receipt-v1/'
+PUBLIC_MANIFEST = '5e911b9a5fc750c702c9c8cde09dcfc2c56106a7e0757f1d7ad2e839019b50fa'
+PUBLIC_SCHEMA = '2bbb848b836c8d15f2732b481f78be2e28b0cbc2b7c783971bc593747d120b6b'
+PUBLIC_VERSION = 's3-dev-local-account/1'
 HEADS = {
     'contract': A,
     **{name: source[0] for name, source in component_sources.CANDIDATES.items()},
+}
+# C is still a required approved ancestor even though D is the later reviewed
+# byte source for exchange/. This records both provenance and final bytes.
+ANCESTORS = {
+    'exchange_contract': '6c0acdaa5ee9ea24fd0a2c83d15dbcf7f359de52',
 }
 COMPONENTS = ('chain', 'exchange', 'settlement', 'wallet', 'sre')
 LOCKS = ('chain/app/go.mod', 'chain/app/go.sum', 'chain/go.mod', 'chain/go.sum',
@@ -120,7 +129,7 @@ def read_regular(root, name):
 def contract_identity(root, head):
     """The candidate must retain A's contract bytes/modes, not only its ancestry."""
     report = {prefix: component_sources.compare(root, A, head, prefix)
-              for prefix in ('protocol/s3/', PREFIX)}
+              for prefix in ('protocol/s3/', PREFIX, PUBLIC_PREFIX)}
     if any(not item['approved_files_preserved'] or item['added']
            for item in report.values()):
         raise ValueError('CONTRACT_SOURCE_REVIEW_REQUIRED')
@@ -133,7 +142,7 @@ def source_identity(root):
     if git(root, 'status', '--porcelain'):
         raise ValueError('DIRTY_SOURCE')
     approvals = {}
-    for name, h in HEADS.items():
+    for name, h in {**HEADS, **ANCESTORS}.items():
         git(root, 'merge-base', '--is-ancestor', h, head)
         approvals[name] = {'head': h, 'tree': git(root, 'rev-parse', h+'^{tree}').decode().strip()}
     contract = contract_identity(root, head)
@@ -149,14 +158,26 @@ def inherited(root):
     get = lambda path: git(root, 'show', A+':'+relative(path))
     baseline = get('protocol/s3/manifest.json')
     candidate = get(PREFIX+'MANIFEST.json')
-    if sha(baseline) != BASELINE or sha(candidate) != CANDIDATE:
+    public = get(PUBLIC_PREFIX+'MANIFEST.json')
+    if (sha(baseline) != BASELINE or sha(candidate) != CANDIDATE
+            or sha(public) != PUBLIC_MANIFEST):
         raise ValueError('APPROVED_MANIFEST_MISMATCH')
-    b, c = decode(baseline), decode(candidate)
+    b, c, p = decode(baseline), decode(candidate), decode(public)
     if aggregate(b['files_sha256']) != b['contract_sha256']:
         raise ValueError('RC3_AGGREGATE_MISMATCH')
+    if (p.get('self_excluded') is not True
+            or p.get('public_schema_sha256') != PUBLIC_SCHEMA
+            or aggregate(p['files_sha256']) != p['candidate_files_sha256']):
+        raise ValueError('PUBLIC_CONTRACT_AGGREGATE_MISMATCH')
     expected = dict(b['files_sha256'])
     expected.update({PREFIX+p: h for p, h in c['files_sha256'].items()})
-    expected.update({'protocol/s3/manifest.json': BASELINE, PREFIX+'MANIFEST.json': CANDIDATE})
+    for path, digest in p['files_sha256'].items():
+        if path in expected and expected[path] != digest:
+            raise ValueError('PUBLIC_CONTRACT_OVERLAP')
+        expected[path] = digest
+    expected.update({'protocol/s3/manifest.json': BASELINE,
+                     PREFIX+'MANIFEST.json': CANDIDATE,
+                     PUBLIC_PREFIX+'MANIFEST.json': PUBLIC_MANIFEST})
     files = {}
     for path, digest in expected.items():
         raw = get(path)
@@ -229,7 +250,11 @@ def make_candidate(root, artifacts, spec):
         files[path] = encode({'head': report['head'], 'tree': report['tree'], 'implementation_settings': settings})
     hashes = {p: sha(b) for p, b in files.items()}
     manifest = {'format': 's3-dev-local-runtime/1', 'scope': 'REVIEWED_RUNTIME',
-                'candidate_manifest_sha256': CANDIDATE, 'contract_sha256': aggregate(hashes),
+                'candidate_manifest_sha256': CANDIDATE,
+                'public_receipt_manifest_sha256': PUBLIC_MANIFEST,
+                'public_receipt_schema_sha256': PUBLIC_SCHEMA,
+                'public_receipt_version': PUBLIC_VERSION,
+                'contract_sha256': aggregate(hashes),
                 'files_sha256': hashes, 'components': components}
     # Re-read at the end: a candidate must not combine different source or build
     # observations. This is a bounded consistency check, not a filesystem lock.

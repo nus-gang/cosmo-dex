@@ -1,12 +1,11 @@
-//! Offline F04 component verification. No listener, RPC, transport or service.
+//! Offline C Attempt crash component verification. No SRE runtime dependency,
+//! listener, RPC, transport or service; this does not execute the F04 driver.
 #![cfg(all(
     feature = "dev-local-demo",
     feature = "dev-local-settlement",
     feature = "fault-injection"
 ))]
 
-#[path = "../../ops/s3-local/runtime/attempt_crash.rs"]
-mod attempt_crash;
 #[path = "support/dev_fixture.rs"]
 mod fixture;
 
@@ -29,6 +28,60 @@ use std::{
     time::{Duration, Instant},
 };
 
+// Test-only command recorder. Exercise C's real writer and exact storage hook
+// without importing an unreviewed launcher/driver into this component tree.
+mod attempt_crash {
+    use super::*;
+    use nus_exchange_contract::s3::{evidence, settlement_local::Worker};
+    use std::{fs::OpenOptions, io::Write, sync::Arc};
+    pub const EXIT: i32 = 86;
+    pub fn run_recorded(
+        engine: Arc<Engine>,
+        attempt: serde_json::Value,
+        tx: Vec<u8>,
+        observation: &nus_exchange_contract::s3::snapshot::Observation,
+        now: u64,
+        root: &Path,
+    ) -> nus_exchange_contract::s3::dev_local::Result<()> {
+        if attempt["kind"] != "SETTLE"
+            || attempt["state"] != "PREPARED"
+            || attempt["broadcast_count"] != "0"
+            || attempt["tx_hash"] != sha256(&tx)
+            || attempt["raw_tx_ref"] != evidence::reference(&tx, evidence::TX)?
+            || observation.catching_up
+        {
+            return Err(Error::Invalid("F04_ATTEMPT_INPUT"));
+        }
+        let command = serde_json::to_vec(&serde_json::json!({
+            "schema":"nus70-attempt-crash-component/1", "fault_id":"F04",
+            "command":"Attempt", "point":"after_wal_sync", "exit_code":EXIT,
+            "expected":"UNKNOWN_TAIL_NO_NEW_ENVELOPE",
+            "attempt":attempt, "tx_base64":STANDARD.encode(&tx), "now_ms":now,
+            "observation":{"snapshot_id":observation.snapshot_id,
+                "cursor_height":observation.cursor_height,"received_at":observation.received_at,
+                "query_latency_ms":observation.query_latency_ms,"catching_up":observation.catching_up}
+        })).map_err(|_| Error::Recovery("ENCODING"))?;
+        let row = canonical(
+            &serde_json::json!({"phase":"reserved","crash_verified":false,
+            "command_base64":STANDARD.encode(&command),"command_sha256":sha256(&command)}),
+        )?;
+        let mut report = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(root.join("storage-crash.jsonl"))?;
+        report.write_all(&row)?;
+        report.write_all(b"\n")?;
+        report.sync_all()?;
+        std::fs::File::open(root)?.sync_all()?;
+        engine.set_fault_hook(Some(Arc::new(|point| {
+            if point == "after_wal_sync" {
+                std::process::exit(EXIT);
+            }
+            Ok(())
+        })))?;
+        Worker::new(engine).prepare(attempt, &[(tx, evidence::TX.into())], observation, now)
+    }
+}
 struct TestSigner(Vec<u8>);
 impl TestSigner {
     fn new() -> Self {
@@ -231,7 +284,7 @@ fn f04_after_attempt_wal_fsync_preserves_unknown_tail_and_creates_no_envelope() 
             .unwrap();
         assert_eq!(rows[0]["command_sha256"], sha256(&command));
         let command: serde_json::Value = serde_json::from_slice(&command).unwrap();
-        assert_eq!(command["schema"], "s3-local-f04-attempt-crash/1");
+        assert_eq!(command["schema"], "nus70-attempt-crash-component/1");
         assert_eq!(command["fault_id"], "F04");
         assert_eq!(command["command"], "Attempt");
         assert_eq!(command["point"], "after_wal_sync");
@@ -265,6 +318,17 @@ fn f04_after_attempt_wal_fsync_preserves_unknown_tail_and_creates_no_envelope() 
                 report
             );
         }
+        fixture::copy_home(&format!("attempt-unknown-tail-fee{bps}"), &home);
+        fixture::evidence(
+            &format!("attempt-crash-fee{bps}"),
+            &serde_json::json!({
+                "scope":"C_ATTEMPT_PROCESS_COMPONENT_NOT_SRE_F04", "result":"PASS",
+                "exit":status.code(),"reopens":2,"reopen_result":"RECOVERY_REQUIRED",
+                "marker_before":STANDARD.encode(&marker_before),"marker_after":STANDARD.encode(&marker_after),
+                "wal_before":STANDARD.encode(&wal_before),"wal_after":STANDARD.encode(&wal_after),
+                "report":rows,"new_envelope_count":0,"automatic_repair_count":0
+            }),
+        );
         std::fs::remove_dir_all(evidence).unwrap();
         std::fs::remove_dir_all(home).unwrap();
     }

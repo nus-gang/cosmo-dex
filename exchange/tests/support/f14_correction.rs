@@ -10,7 +10,7 @@ use std::{
     sync::{Arc, Mutex, mpsc},
     time::Duration,
 };
-fn ready(bps: u32) -> (Candidate, Vec<String>) {
+pub(super) fn ready(bps: u32) -> (Candidate, Vec<String>) {
     let mut c = order(
         order(setup(bps, true), 0, "2", 2000, 10000, 11),
         1,
@@ -563,4 +563,127 @@ fn f14_panic_restores_scope_and_poison_blocks_writer() {
         &json!({"before":view(&before),"replays":replays,"files":original,"callbacks":0,"result":"PASS"}),
     );
     dev_fixture::copy_home("f14-panic", &d.home);
+}
+
+// Retained CTO regressions from the approved F14 review.
+
+#[test]
+fn cto_f14_instance_scope_and_clear_do_not_leak() {
+    for bps in [0, 25] {
+        let (first, ids) = ready(bps);
+        let mut a = take();
+        let (second, _) = ready(bps);
+        let mut b = take();
+        let e1 = a.engine.as_ref().unwrap();
+        let e2 = b.engine.as_ref().unwrap();
+        let visits = Arc::new(Mutex::new(vec![]));
+        let recorded = visits.clone();
+        e1.set_correction_hook(Some(Arc::new(move |v| {
+            closure(v, &ids);
+            recorded.lock().unwrap().push(event(v));
+            Ok(())
+        })))
+        .unwrap();
+        e2.set_correction_hook(Some(Arc::new(|_| panic!("cleared instance hook fired"))))
+            .unwrap();
+        e2.set_correction_hook(None).unwrap();
+        // Same thread, other Engine executes first; registered e1 hook is dormant.
+        e2.execute(Command::Apply, &[], &observation(&second), NOW)
+            .unwrap()
+            .unwrap();
+        assert!(visits.lock().unwrap().is_empty());
+        first.apply().unwrap();
+        assert!(visits.lock().unwrap().is_empty());
+        let b_after = e2.reader().get().unwrap();
+        assert_eq!(b_after.state, second.apply().unwrap().full_state().unwrap());
+        e1.execute(Command::Apply, &[], &observation(&first), NOW)
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            visits
+                .lock()
+                .unwrap()
+                .iter()
+                .map(|v| v["phase"].as_str().unwrap())
+                .collect::<Vec<_>>(),
+            ["Prepare", "SemanticReplay"]
+        );
+        first.apply().unwrap();
+        assert_eq!(visits.lock().unwrap().len(), 2);
+        let a_after = e1.reader().get().unwrap();
+        same(&a_after, &b_after);
+        assert!(
+            e1.execute(Command::Apply, &[], &observation(&first), NOW)
+                .unwrap()
+                .is_none()
+        );
+        assert!(
+            e2.execute(Command::Apply, &[], &observation(&second), NOW)
+                .unwrap()
+                .is_none()
+        );
+        assert_eq!(visits.lock().unwrap().len(), 2);
+        let ar = two_opens(&mut a, &a_after, true);
+        let br = two_opens(&mut b, &b_after, true);
+        dev_fixture::evidence(
+            &format!("cto-f14-instance-fee{bps}"),
+            &json!({"result":"PASS","same_thread":true,"visits":*visits.lock().unwrap(),"first":view(&a_after),"second":view(&b_after),"first_replays":ar,"second_replays":br}),
+        );
+        dev_fixture::copy_home(&format!("cto-f14-instance-a-fee{bps}"), &a.home);
+        dev_fixture::copy_home(&format!("cto-f14-instance-b-fee{bps}"), &b.home);
+    }
+}
+
+#[test]
+fn cto_f14_semantic_panic_resets_scope_and_keeps_transaction() {
+    for bps in [0, 25] {
+        let (c, ids) = ready(bps);
+        let mut d = take();
+        let e = d.engine.as_ref().unwrap();
+        let before = e.reader().get().unwrap();
+        let original = files(&d.home);
+        let visits = Arc::new(Mutex::new(vec![]));
+        let recorded = visits.clone();
+        e.set_correction_hook(Some(Arc::new(move |v| {
+            closure(v, &ids);
+            recorded.lock().unwrap().push(event(v));
+            if v.phase == Phase::SemanticReplay {
+                panic!("CTO semantic phase deliberate panic");
+            }
+            Ok(())
+        })))
+        .unwrap();
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            e.execute(Command::Apply, &[], &observation(&c), NOW)
+        }));
+        assert!(result.is_err());
+        c.apply().unwrap(); // Same thread: both correction and IO scopes must unwind.
+        assert_eq!(visits.lock().unwrap().len(), 2);
+        same(&before, &e.reader().get().unwrap());
+        assert!(matches!(
+            e.execute(Command::Apply, &[], &observation(&c), NOW),
+            Err(Error::Recovery("WRITER_POISONED"))
+        ));
+        assert!(matches!(
+            e.set_correction_hook(None),
+            Err(Error::Recovery("WRITER_POISONED"))
+        ));
+        let mut callbacks = 0;
+        assert!(
+            e.with_committed_attempt("unused", |_, _| callbacks += 1)
+                .is_err()
+        );
+        assert_eq!(callbacks, 0);
+        let disk = files(&d.home);
+        assert!(disk.contains_key("transaction.dev"));
+        for (path, hash) in &original {
+            assert_eq!(disk.get(path), Some(hash));
+        }
+        let replays = two_opens(&mut d, &before, false);
+        dev_fixture::evidence(
+            &format!("cto-f14-semantic-panic-fee{bps}"),
+            &json!({"result":"PASS","before":view(&before),"visits":*visits.lock().unwrap(),"files_before":original,"files_after":disk,"callbacks":callbacks,"replays":replays}),
+        );
+        dev_fixture::copy_home(&format!("cto-f14-semantic-panic-fee{bps}"), &d.home);
+    }
 }

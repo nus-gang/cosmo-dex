@@ -3,7 +3,8 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
-from manifest import COMPONENTS, CANDIDATE, aggregate, encode, inherited
+from manifest import (COMPONENTS, CANDIDATE, PUBLIC_MANIFEST, PUBLIC_SCHEMA,
+                      PUBLIC_VERSION, aggregate, encode, inherited)
 from preflight import verify, file_digest, bounded
 
 class PreflightFixture:
@@ -30,7 +31,13 @@ class PreflightFixture:
             p = 'chain/local-demo/components/' + c + '.json'
             components[c] = p
             self.put(p, encode({'head': 'a'*40, 'tree': 'b'*40, 'implementation_settings': {'artifacts_sha256_json': encode({self.binary.name: hashlib.sha256(self.binary.read_bytes()).hexdigest()}).decode()}}))
-        self.manifest = {'format':'s3-dev-local-runtime/1', 'scope':'REVIEWED_RUNTIME', 'candidate_manifest_sha256':CANDIDATE, 'files_sha256':self.hashes, 'components':components, 'contract_sha256':aggregate(self.hashes)}
+        self.manifest = {'format':'s3-dev-local-runtime/1', 'scope':'REVIEWED_RUNTIME',
+                         'candidate_manifest_sha256':CANDIDATE,
+                         'public_receipt_manifest_sha256':PUBLIC_MANIFEST,
+                         'public_receipt_schema_sha256':PUBLIC_SCHEMA,
+                         'public_receipt_version':PUBLIC_VERSION,
+                         'files_sha256':self.hashes, 'components':components,
+                         'contract_sha256':aggregate(self.hashes)}
         self.seal()
     def put(self, name, raw):
         p = self.bundle / 'files' / name

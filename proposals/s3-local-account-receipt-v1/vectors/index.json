@@ -1,0 +1,426 @@
+{
+  "scope": "STATIC_PROJECTION_AND_SOURCE_HASH_ONLY; all product acceptance NOT_RUN",
+  "cases": [
+    {
+      "id": "fee0-maker-partial",
+      "source": "fee0-maker-partial.frame",
+      "source_sha256": "7a677f53c35f606ace69e9d7eaef3b00a1d8c6a5807c3cf37374f0f769d49277",
+      "expected": "fee0-maker-partial.json",
+      "expected_sha256": "a5eaeeb7fc766d9949c001ac7056a6ddda0fe8049923054cb92e3aed7ecd0e87",
+      "expected_bytes": "1568",
+      "principal": "ZBHy+zsA/eQg30bQEWhTLER14As=",
+      "context": {
+        "chain_id": "nus-s3-dev-1",
+        "config_hash": "3f191ced0b17538b4f755c4beda0859c00bfc41a325d5d581518eb23d7c18f41",
+        "contract_hash": "a78911795ea2ce9ef532c72d9d978ac608259a8b46d68cc5cbb1de88a51fb33e",
+        "genesis_hash": "fbf4c612dce2960416188301de5413e9804d5d530b94d588ab1adefe7896d27c",
+        "market_config_version": "1",
+        "market_id": "DEVBASE/DEVQUOTE",
+        "service_schema": "s3/3"
+      },
+      "origin": {
+        "kind": "PINNED_COMPONENT_RECORD_NOT_NEW_RUNTIME",
+        "head": "47204abad01cf0999877541c097dff2a26e4bd9d",
+        "wal_sha256": "1d1951ed2c1be35a8f8426f98ece06e70a48c86901a8bcad333a57a68d8a0d30",
+        "record_index": "1",
+        "source_path": "reviews/cto/nus-70-47204ab/evidence/targeted/gates-and-contract/raw/stores/receipt-contract-gap-fee0-nus70-test-21772-2/journal.dev.wal"
+      },
+      "source_tuple": {
+        "after_state_hash": "f54a22eb596462fcc7a79a156317ab6454e22c5f629e76887d67223722d2a961",
+        "command_result_hash": "9e8c109ea1918c40117bf708c250f863df47f19f4c35ed3b653488fa30579f9c",
+        "command_seq": "1",
+        "record_hash": "7a677f53c35f606ace69e9d7eaef3b00a1d8c6a5807c3cf37374f0f769d49277"
+      },
+      "expected_own_orders": [
+        "fc20293ac760145bf278931ad3aab8fa39f2038dcc134a61b3daeee17c03c285"
+      ],
+      "expected_own_created_fills": [],
+      "expected_own_corrected_fills": [],
+      "expected_own_committed_fills": []
+    },
+    {
+      "id": "fee0-taker-trade",
+      "source": "fee0-taker-trade.frame",
+      "source_sha256": "484e9acb1832f1a3d9375b65a69be589b87db3eb101abc64f7ad74ea7dae5e4b",
+      "expected": "fee0-taker-trade.json",
+      "expected_sha256": "c27cb4530ffb783a24656960740d0ad390f9620d609833980792d4962a16c3a8",
+      "expected_bytes": "1825",
+      "principal": "oIaWES+LNih3s7qlJGBQntJ0Cx4=",
+      "context": {
+        "chain_id": "nus-s3-dev-1",
+        "config_hash": "3f191ced0b17538b4f755c4beda0859c00bfc41a325d5d581518eb23d7c18f41",
+        "contract_hash": "a78911795ea2ce9ef532c72d9d978ac608259a8b46d68cc5cbb1de88a51fb33e",
+        "genesis_hash": "fbf4c612dce2960416188301de5413e9804d5d530b94d588ab1adefe7896d27c",
+        "market_config_version": "1",
+        "market_id": "DEVBASE/DEVQUOTE",
+        "service_schema": "s3/3"
+      },
+      "origin": {
+        "kind": "PINNED_COMPONENT_RECORD_NOT_NEW_RUNTIME",
+        "head": "47204abad01cf0999877541c097dff2a26e4bd9d",
+        "wal_sha256": "1d1951ed2c1be35a8f8426f98ece06e70a48c86901a8bcad333a57a68d8a0d30",
+        "record_index": "2",
+        "source_path": "reviews/cto/nus-70-47204ab/evidence/targeted/gates-and-contract/raw/stores/receipt-contract-gap-fee0-nus70-test-21772-2/journal.dev.wal"
+      },
+      "source_tuple": {
+        "after_state_hash": "5b383864d05b9316169f14427c74d8aea2f93b5e71d326a2fb5ea91b716c0ae6",
+        "command_result_hash": "1f9617615e12e9e4ee69cad66ef3837c295ca1f3792578f58571bdaa576e74c1",
+        "command_seq": "2",
+        "record_hash": "484e9acb1832f1a3d9375b65a69be589b87db3eb101abc64f7ad74ea7dae5e4b"
+      },
+      "expected_own_orders": [
+        "eac83c345a612d5db8e491d22e71d20967a235bfbda8cf71492b044540bd704c"
+      ],
+      "expected_own_created_fills": [
+        "be24574daff3b8040a88dd43f5baf09fcf0ec1db017e1ef4dcea7c2b9cdd42a7"
+      ],
+      "expected_own_corrected_fills": [],
+      "expected_own_committed_fills": []
+    },
+    {
+      "id": "fee25-maker-partial",
+      "source": "fee25-maker-partial.frame",
+      "source_sha256": "2a8ba7476c1ea3118946d5db3855f3bd0aa7e2d6f7f150f868700f8014e08aa6",
+      "expected": "fee25-maker-partial.json",
+      "expected_sha256": "0ff86ab1bce5b2df8f6360e6a150d90c177d3f028b402c7028bdfcc06e3f14c4",
+      "expected_bytes": "1568",
+      "principal": "ZBHy+zsA/eQg30bQEWhTLER14As=",
+      "context": {
+        "chain_id": "nus-s3-dev-1",
+        "config_hash": "8719f0dcacb18268f55947afaf5d0e6fa0ea2d698509930b55925b492bb85fa1",
+        "contract_hash": "a78911795ea2ce9ef532c72d9d978ac608259a8b46d68cc5cbb1de88a51fb33e",
+        "genesis_hash": "a3413978fca4aa956e4bcf2105344048c7da0e22db70e3e87a59e4c42aad13e2",
+        "market_config_version": "1",
+        "market_id": "DEVBASE/DEVQUOTE",
+        "service_schema": "s3/3"
+      },
+      "origin": {
+        "kind": "PINNED_COMPONENT_RECORD_NOT_NEW_RUNTIME",
+        "head": "47204abad01cf0999877541c097dff2a26e4bd9d",
+        "wal_sha256": "33121afe68e4f8ea51ff3c559e2f09fe20b6a5384a9056b4a582c21d3ed186ca",
+        "record_index": "1",
+        "source_path": "reviews/cto/nus-70-47204ab/evidence/targeted/gates-and-contract/raw/stores/receipt-contract-gap-fee25-nus70-test-21772-3/journal.dev.wal"
+      },
+      "source_tuple": {
+        "after_state_hash": "d4173177fc428f8cac026be6b59fa19d3f9e2c469d124911417e8cd2eb069070",
+        "command_result_hash": "786e16865f574d176e649bf0fd1614b0ff1d57ab9d72530f9e426df9eb974b67",
+        "command_seq": "1",
+        "record_hash": "2a8ba7476c1ea3118946d5db3855f3bd0aa7e2d6f7f150f868700f8014e08aa6"
+      },
+      "expected_own_orders": [
+        "ab09f1277d7148ed1f56eb6736a1057190115152dd83627885f0932ec0de622d"
+      ],
+      "expected_own_created_fills": [],
+      "expected_own_corrected_fills": [],
+      "expected_own_committed_fills": []
+    },
+    {
+      "id": "fee25-taker-trade",
+      "source": "fee25-taker-trade.frame",
+      "source_sha256": "f70352e2beece8bd7c4f49fa15fbac00e7a3fe6d959da3e5a76c3f9f5ef6cbed",
+      "expected": "fee25-taker-trade.json",
+      "expected_sha256": "d92619fa6fbf43e9b414ec433bc78224f38237cda45765cd4116357753e91859",
+      "expected_bytes": "1824",
+      "principal": "oIaWES+LNih3s7qlJGBQntJ0Cx4=",
+      "context": {
+        "chain_id": "nus-s3-dev-1",
+        "config_hash": "8719f0dcacb18268f55947afaf5d0e6fa0ea2d698509930b55925b492bb85fa1",
+        "contract_hash": "a78911795ea2ce9ef532c72d9d978ac608259a8b46d68cc5cbb1de88a51fb33e",
+        "genesis_hash": "a3413978fca4aa956e4bcf2105344048c7da0e22db70e3e87a59e4c42aad13e2",
+        "market_config_version": "1",
+        "market_id": "DEVBASE/DEVQUOTE",
+        "service_schema": "s3/3"
+      },
+      "origin": {
+        "kind": "PINNED_COMPONENT_RECORD_NOT_NEW_RUNTIME",
+        "head": "47204abad01cf0999877541c097dff2a26e4bd9d",
+        "wal_sha256": "33121afe68e4f8ea51ff3c559e2f09fe20b6a5384a9056b4a582c21d3ed186ca",
+        "record_index": "2",
+        "source_path": "reviews/cto/nus-70-47204ab/evidence/targeted/gates-and-contract/raw/stores/receipt-contract-gap-fee25-nus70-test-21772-3/journal.dev.wal"
+      },
+      "source_tuple": {
+        "after_state_hash": "7fcb2fddf9c402a325e936bcc64d37d741b45c0eebf530baf33cd299b6b9c574",
+        "command_result_hash": "cf63776b8f931e74011202cb8eb37136ffcf1ea02ad28f81bc749cf2243e05dd",
+        "command_seq": "2",
+        "record_hash": "f70352e2beece8bd7c4f49fa15fbac00e7a3fe6d959da3e5a76c3f9f5ef6cbed"
+      },
+      "expected_own_orders": [
+        "d05faa951e7fad17dab5a2c0a55327ace5ada5477400580da8e3993891554999"
+      ],
+      "expected_own_created_fills": [
+        "be24574daff3b8040a88dd43f5baf09fcf0ec1db017e1ef4dcea7c2b9cdd42a7"
+      ],
+      "expected_own_corrected_fills": [],
+      "expected_own_committed_fills": []
+    },
+    {
+      "id": "correction-1",
+      "source": "correction-1.frame",
+      "source_sha256": "993ff36a8a0c8b90132cf643a0007aca52d90f3c5da86a2c0e9ec957af98282f",
+      "expected": "correction-1.json",
+      "expected_sha256": "442c50d0fdb4e5ac1e3aa6ac385be20e6dddf4730949f4bf3ed21f5830c00492",
+      "expected_bytes": "1968",
+      "principal": "ZBHy+zsA/eQg30bQEWhTLER14As=",
+      "context": {
+        "chain_id": "nus-s3-dev-1",
+        "config_hash": "734e51d9293873b8e6fdae201881bdb71a0fc7442416d46f00fd1ccd8cce3203",
+        "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+        "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
+        "market_config_version": "1",
+        "market_id": "DEVBASE/DEVQUOTE",
+        "service_schema": "s3/3"
+      },
+      "origin": {
+        "kind": "INHERITED_SYNTHETIC_HASH_FIXTURE",
+        "path": "protocol/s3/vectors/correction-state-hash.json",
+        "step": "correction-1"
+      },
+      "source_tuple": {
+        "after_state_hash": "2ad61c01ec57e68c02f35749e0bdf2bd727e44cfc9ec8579d64f3f3f7707e0bf",
+        "command_result_hash": "df34cd1c94d37aaeb0f30a0186b92b4aecc0e8a787d0b8d70a4df4bed3fbd5da",
+        "command_seq": "5",
+        "record_hash": "993ff36a8a0c8b90132cf643a0007aca52d90f3c5da86a2c0e9ec957af98282f"
+      },
+      "expected_own_orders": [
+        "5e12c5a33bcbefbff5012ec76d332149ec49aa4038e71aa599fb27c41e700c15"
+      ],
+      "expected_own_created_fills": [],
+      "expected_own_corrected_fills": [
+        "be24574daff3b8040a88dd43f5baf09fcf0ec1db017e1ef4dcea7c2b9cdd42a7"
+      ],
+      "expected_own_committed_fills": []
+    },
+    {
+      "id": "correction-2",
+      "source": "correction-2.frame",
+      "source_sha256": "af5f0d5adfeb34f951ae40e7aed8fb5988ba8df04cfe279b103961b9a253ae6d",
+      "expected": "correction-2.json",
+      "expected_sha256": "9bd8dab3304c2d2bb2328f995c6cad6ebad715efce1a8fec265ca8d76b10c051",
+      "expected_bytes": "1968",
+      "principal": "APcdh4pZRaEIcCfVQJaJx0+a8V8=",
+      "context": {
+        "chain_id": "nus-s3-dev-1",
+        "config_hash": "734e51d9293873b8e6fdae201881bdb71a0fc7442416d46f00fd1ccd8cce3203",
+        "contract_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+        "genesis_hash": "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5",
+        "market_config_version": "1",
+        "market_id": "DEVBASE/DEVQUOTE",
+        "service_schema": "s3/3"
+      },
+      "origin": {
+        "kind": "INHERITED_SYNTHETIC_HASH_FIXTURE",
+        "path": "protocol/s3/vectors/correction-state-hash.json",
+        "step": "correction-2"
+      },
+      "source_tuple": {
+        "after_state_hash": "77522b86e769667fbe4414d89970cd51d93423e9156eac6c99a2c0ef48671355",
+        "command_result_hash": "52b1da1ff1ef0ce3d89cc156cd138270b850bdb8659c709cac627eebff2911a3",
+        "command_seq": "6",
+        "record_hash": "af5f0d5adfeb34f951ae40e7aed8fb5988ba8df04cfe279b103961b9a253ae6d"
+      },
+      "expected_own_orders": [
+        "f62ffe4433c6e9c33a86b63d231cbd96d95b8d2076a7ed903addb1cb39c0d990"
+      ],
+      "expected_own_created_fills": [],
+      "expected_own_corrected_fills": [
+        "fe8ed292e6c72e71219dcade142a7ef0eeb519038361976eab53b2a9768d2ca2"
+      ],
+      "expected_own_committed_fills": []
+    },
+    {
+      "id": "cancel-ok",
+      "source": "cancel-ok.frame",
+      "source_sha256": "5c472e3b97e373e9d9036ceb4c0ad71beb5403c3fd39ece536faac14b466b606",
+      "expected": "cancel-ok.json",
+      "expected_sha256": "e7db087d48dad022635609306c32019fd591c5647cdf2f0c26ae618f448aa546",
+      "expected_bytes": "1359",
+      "principal": "oIaWES+LNih3s7qlJGBQntJ0Cx4=",
+      "context": {
+        "chain_id": "nus-s3-dev-1",
+        "config_hash": "3f191ced0b17538b4f755c4beda0859c00bfc41a325d5d581518eb23d7c18f41",
+        "contract_hash": "a78911795ea2ce9ef532c72d9d978ac608259a8b46d68cc5cbb1de88a51fb33e",
+        "genesis_hash": "fbf4c612dce2960416188301de5413e9804d5d530b94d588ab1adefe7896d27c",
+        "market_config_version": "1",
+        "market_id": "DEVBASE/DEVQUOTE",
+        "service_schema": "s3/3"
+      },
+      "origin": {
+        "kind": "SYNTHETIC_PROJECTION_ONLY_NO_SIGNATURE_OR_ECONOMIC_PROOF"
+      },
+      "source_tuple": {
+        "after_state_hash": "bb08fb900e6f72b50e8da632332a672414fc05ef0247f9cdca935df766c8897e",
+        "command_result_hash": "5206db7eb0f20e8d4cc44935d618746b7d827261bbedd1f66d6439132e46535a",
+        "command_seq": "3",
+        "record_hash": "5c472e3b97e373e9d9036ceb4c0ad71beb5403c3fd39ece536faac14b466b606"
+      },
+      "expected_own_orders": [
+        "eac83c345a612d5db8e491d22e71d20967a235bfbda8cf71492b044540bd704c"
+      ],
+      "expected_own_created_fills": [],
+      "expected_own_corrected_fills": [],
+      "expected_own_committed_fills": []
+    },
+    {
+      "id": "order-insufficient_available",
+      "source": "order-insufficient_available.frame",
+      "source_sha256": "950b2213226d2c68573cfd3493325541f13b2c19b405d880e88c4841050276ad",
+      "expected": "order-insufficient_available.json",
+      "expected_sha256": "51a3901ce7522cfa3d4d6f9b111ef6acf7675a934472679840b57a5a66bebc58",
+      "expected_bytes": "1306",
+      "principal": "oIaWES+LNih3s7qlJGBQntJ0Cx4=",
+      "context": {
+        "chain_id": "nus-s3-dev-1",
+        "config_hash": "3f191ced0b17538b4f755c4beda0859c00bfc41a325d5d581518eb23d7c18f41",
+        "contract_hash": "a78911795ea2ce9ef532c72d9d978ac608259a8b46d68cc5cbb1de88a51fb33e",
+        "genesis_hash": "fbf4c612dce2960416188301de5413e9804d5d530b94d588ab1adefe7896d27c",
+        "market_config_version": "1",
+        "market_id": "DEVBASE/DEVQUOTE",
+        "service_schema": "s3/3"
+      },
+      "origin": {
+        "kind": "SYNTHETIC_PROJECTION_ONLY_NO_SIGNATURE_OR_ECONOMIC_PROOF"
+      },
+      "source_tuple": {
+        "after_state_hash": "9de5cd1e0b472ea7fa24748840971f3a7a5ccef28f729280ddb9b34c0a644c07",
+        "command_result_hash": "e25264057091a7b1c29b3a7185db90f302703d3d205bad750a54f0f99a9d39a4",
+        "command_seq": "3",
+        "record_hash": "950b2213226d2c68573cfd3493325541f13b2c19b405d880e88c4841050276ad"
+      },
+      "expected_own_orders": [],
+      "expected_own_created_fills": [],
+      "expected_own_corrected_fills": [],
+      "expected_own_committed_fills": []
+    },
+    {
+      "id": "withdraw_prepare-unsettled_hold",
+      "source": "withdraw_prepare-unsettled_hold.frame",
+      "source_sha256": "e55d28f5456d7c37668b32a604df4e1c76d6fee559d5dc79731b264708a33302",
+      "expected": "withdraw_prepare-unsettled_hold.json",
+      "expected_sha256": "fc255a139aa889dbfcb6a7a50988f38ce1ea03641c03b03c92ec99b7f35aa393",
+      "expected_bytes": "1309",
+      "principal": "oIaWES+LNih3s7qlJGBQntJ0Cx4=",
+      "context": {
+        "chain_id": "nus-s3-dev-1",
+        "config_hash": "3f191ced0b17538b4f755c4beda0859c00bfc41a325d5d581518eb23d7c18f41",
+        "contract_hash": "a78911795ea2ce9ef532c72d9d978ac608259a8b46d68cc5cbb1de88a51fb33e",
+        "genesis_hash": "fbf4c612dce2960416188301de5413e9804d5d530b94d588ab1adefe7896d27c",
+        "market_config_version": "1",
+        "market_id": "DEVBASE/DEVQUOTE",
+        "service_schema": "s3/3"
+      },
+      "origin": {
+        "kind": "SYNTHETIC_PROJECTION_ONLY_NO_SIGNATURE_OR_ECONOMIC_PROOF"
+      },
+      "source_tuple": {
+        "after_state_hash": "b70c727c92014e9feb2d8255d87e7199a5fd03aa916fa94a28cc3c7e23c22fcb",
+        "command_result_hash": "68a7cf05e41440a58fcfeb1878fa3b597c362b742f3d2901b453e7c120fe91d7",
+        "command_seq": "3",
+        "record_hash": "e55d28f5456d7c37668b32a604df4e1c76d6fee559d5dc79731b264708a33302"
+      },
+      "expected_own_orders": [],
+      "expected_own_created_fills": [],
+      "expected_own_corrected_fills": [],
+      "expected_own_committed_fills": []
+    },
+    {
+      "id": "withdraw_abort-stale",
+      "source": "withdraw_abort-stale.frame",
+      "source_sha256": "386f1ea987cc63a6b12fa512176b9f889aac945508cd899c32665d8868e47070",
+      "expected": "withdraw_abort-stale.json",
+      "expected_sha256": "44082816c2aefb2fac277f3d2da5fb5dad98ab48f498bfbf8fa2bc3066bb7ee7",
+      "expected_bytes": "1298",
+      "principal": "oIaWES+LNih3s7qlJGBQntJ0Cx4=",
+      "context": {
+        "chain_id": "nus-s3-dev-1",
+        "config_hash": "3f191ced0b17538b4f755c4beda0859c00bfc41a325d5d581518eb23d7c18f41",
+        "contract_hash": "a78911795ea2ce9ef532c72d9d978ac608259a8b46d68cc5cbb1de88a51fb33e",
+        "genesis_hash": "fbf4c612dce2960416188301de5413e9804d5d530b94d588ab1adefe7896d27c",
+        "market_config_version": "1",
+        "market_id": "DEVBASE/DEVQUOTE",
+        "service_schema": "s3/3"
+      },
+      "origin": {
+        "kind": "SYNTHETIC_PROJECTION_ONLY_NO_SIGNATURE_OR_ECONOMIC_PROOF"
+      },
+      "source_tuple": {
+        "after_state_hash": "1667f17dacf09d9e75251741a82a2f89bb4be80830889e1371df7adcec473d5a",
+        "command_result_hash": "2f978e72d3130840d28ce17d73515539232a5fa27b5c8961adcabc4bb36a95aa",
+        "command_seq": "3",
+        "record_hash": "386f1ea987cc63a6b12fa512176b9f889aac945508cd899c32665d8868e47070"
+      },
+      "expected_own_orders": [],
+      "expected_own_created_fills": [],
+      "expected_own_corrected_fills": [],
+      "expected_own_committed_fills": []
+    },
+    {
+      "id": "multiple-makers",
+      "source": "multiple-makers.frame",
+      "source_sha256": "f93e2991a5a5587db4b10a912ebe592a2ef481b213a9c06522d3c5000bcbb0bd",
+      "expected": "multiple-makers.json",
+      "expected_sha256": "fe4ebecc039ec22c26fd3e342d657e00c7d52a68bd509c504f9042373d9a5a12",
+      "expected_bytes": "1892",
+      "principal": "oIaWES+LNih3s7qlJGBQntJ0Cx4=",
+      "context": {
+        "chain_id": "nus-s3-dev-1",
+        "config_hash": "3f191ced0b17538b4f755c4beda0859c00bfc41a325d5d581518eb23d7c18f41",
+        "contract_hash": "a78911795ea2ce9ef532c72d9d978ac608259a8b46d68cc5cbb1de88a51fb33e",
+        "genesis_hash": "fbf4c612dce2960416188301de5413e9804d5d530b94d588ab1adefe7896d27c",
+        "market_config_version": "1",
+        "market_id": "DEVBASE/DEVQUOTE",
+        "service_schema": "s3/3"
+      },
+      "origin": {
+        "kind": "SYNTHETIC_PROJECTION_ONLY_NO_ECONOMIC_PROOF"
+      },
+      "source_tuple": {
+        "after_state_hash": "68ef975103cde4c79651862b00c2db60d4e6f78404a420b46e516d23ad286ac6",
+        "command_result_hash": "8623432c685d69a72609801762883b7335676ab27d8212914e40d69854a0fa71",
+        "command_seq": "2",
+        "record_hash": "f93e2991a5a5587db4b10a912ebe592a2ef481b213a9c06522d3c5000bcbb0bd"
+      },
+      "expected_own_orders": [
+        "eac83c345a612d5db8e491d22e71d20967a235bfbda8cf71492b044540bd704c"
+      ],
+      "expected_own_created_fills": [
+        "be24574daff3b8040a88dd43f5baf09fcf0ec1db017e1ef4dcea7c2b9cdd42a7",
+        "feff9b6e35cd68142c86e7a949b07315a4ca05733c39b0a5cd877fef2399588a"
+      ],
+      "expected_own_corrected_fills": [],
+      "expected_own_committed_fills": []
+    },
+    {
+      "id": "committed-event",
+      "source": "committed-event.frame",
+      "source_sha256": "840b8c1613593bb2e2382644367a1a5505101983f58f47b6f6e86a4096a7f364",
+      "expected": "committed-event.json",
+      "expected_sha256": "1b08181e2dc445f8968649526b29301b0590434441922adae6d4db1bc622ec53",
+      "expected_bytes": "1769",
+      "principal": "oIaWES+LNih3s7qlJGBQntJ0Cx4=",
+      "context": {
+        "chain_id": "nus-s3-dev-1",
+        "config_hash": "8719f0dcacb18268f55947afaf5d0e6fa0ea2d698509930b55925b492bb85fa1",
+        "contract_hash": "a78911795ea2ce9ef532c72d9d978ac608259a8b46d68cc5cbb1de88a51fb33e",
+        "genesis_hash": "a3413978fca4aa956e4bcf2105344048c7da0e22db70e3e87a59e4c42aad13e2",
+        "market_config_version": "1",
+        "market_id": "DEVBASE/DEVQUOTE",
+        "service_schema": "s3/3"
+      },
+      "origin": {
+        "kind": "SYNTHETIC_PROJECTION_ONLY_NO_CHAIN_PROOF"
+      },
+      "source_tuple": {
+        "after_state_hash": "7fcb2fddf9c402a325e936bcc64d37d741b45c0eebf530baf33cd299b6b9c574",
+        "command_result_hash": "7f357d0f422d7e9d8406d02912fd1c39194a1c481d3f8898317de7b311935870",
+        "command_seq": "2",
+        "record_hash": "840b8c1613593bb2e2382644367a1a5505101983f58f47b6f6e86a4096a7f364"
+      },
+      "expected_own_orders": [],
+      "expected_own_created_fills": [],
+      "expected_own_corrected_fills": [],
+      "expected_own_committed_fills": [
+        "be24574daff3b8040a88dd43f5baf09fcf0ec1db017e1ef4dcea7c2b9cdd42a7"
+      ]
+    }
+  ]
+}

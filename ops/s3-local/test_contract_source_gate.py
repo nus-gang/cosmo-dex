@@ -9,7 +9,7 @@ import test_component_sources
 class ContractGate(test_component_sources.Inclusion):
     def setUp(self):
         super().setUp()
-        for prefix in ('protocol/s3/', manifest.PREFIX):
+        for prefix in ('protocol/s3/', manifest.PREFIX, manifest.PUBLIC_PREFIX):
             path = self.root / prefix
             path.mkdir(parents=True)
             (path/'contract.json').write_bytes(b'{"approved":true}\n')
@@ -23,14 +23,14 @@ class ContractGate(test_component_sources.Inclusion):
         (self.root/'Cargo.lock').write_text('new implementation lock')
         candidate = self.commit()
         report = self.inspect(candidate)
-        self.assertEqual(set(report), {'protocol/s3/', manifest.PREFIX})
+        self.assertEqual(set(report), {'protocol/s3/', manifest.PREFIX, manifest.PUBLIC_PREFIX})
         self.assertTrue(all(x['approved_files_preserved'] for x in report.values()))
         # Evidence is pinned to commit; working tree changes are handled by source_identity.
         (self.root/'protocol/s3/contract.json').write_bytes(b'dirty')
         self.assertEqual(report, self.inspect(candidate))
 
     def test_contract_changes_require_review_despite_ancestry(self):
-        for prefix in ('protocol/s3/', manifest.PREFIX):
+        for prefix in ('protocol/s3/', manifest.PREFIX, manifest.PUBLIC_PREFIX):
             for change in ('bytes', 'mode', 'missing', 'added'):
                 with self.subTest(prefix=prefix, change=change):
                     self.git('reset', '--hard', self.approved)

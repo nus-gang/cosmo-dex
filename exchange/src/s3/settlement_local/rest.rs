@@ -1,5 +1,5 @@
 //! Direct REST handler component. No listener, signing keys or trusted-control route.
-use super::super::snapshot::Snapshot;
+use super::super::{journal::canonical, snapshot::Snapshot};
 use super::*;
 use crate::s2::{
     auth::Auth,
@@ -7,6 +7,13 @@ use crate::s2::{
 };
 use std::net::IpAddr;
 
+// D pins the reviewed public contract independently of C's implementation
+// constants. A future C schema/version change must fail closed until this
+// adapter is reviewed again; the trusted store envelope remains separate.
+const EXPECTED_PUBLIC_RECEIPT_VERSION: &str = "s3-dev-local-account/1";
+const EXPECTED_PUBLIC_RECEIPT_SCHEMA_SHA256: &str =
+    "2bbb848b836c8d15f2732b481f78be2e28b0cbc2b7c783971bc593747d120b6b";
+const TRUSTED_RECEIPT_VERSION: &str = "s3-dev-local/1";
 /// In addition to Engine's validated runtime/home/profile binding, both explicit
 /// component opt-ins must be present. A listener must bind this exact address.
 pub struct Options {
@@ -35,44 +42,6 @@ fn select(v: &Value, keys: &[&str]) -> Value {
             .collect(),
     )
 }
-fn receipt(v: &Value, owner: &str) -> Value {
-    let mut out = select(
-        v,
-        &[
-            "envelope_version",
-            "profile_id",
-            "context",
-            "development_receipt",
-            "durable_ack",
-            "storage_assurance",
-        ],
-    );
-    let r = &v["command_result"];
-    let mut result = select(
-        r,
-        &[
-            "command_seq",
-            "kind",
-            "request_hash",
-            "code",
-            "state",
-            "observed_height",
-            "snapshot_id",
-        ],
-    );
-    result["ledger_changes"] = json!(
-        r["ledger_changes"]
-            .as_array()
-            .map(|rows| rows
-                .iter()
-                .filter(|r| r["owner"] == owner)
-                .cloned()
-                .collect::<Vec<_>>())
-            .unwrap_or_default()
-    );
-    out["command_result"] = result;
-    out
-}
 fn single<'a>(headers: &'a [(&str, &'a str)], name: &str) -> Result<Option<&'a str>> {
     let mut it = headers.iter().filter(|(k, _)| k.eq_ignore_ascii_case(name));
     let v = it.next().map(|(_, v)| *v);
@@ -85,6 +54,12 @@ impl Rest {
     pub fn new(engine: Arc<Engine>, snapshot: Snapshot, options: Options) -> Result<Self> {
         if !options.enabled || !options.acknowledge_unproven_space || !options.bind.is_loopback() {
             return Err(Error::Invalid("LOCAL_DEMO_DISABLED"));
+        }
+        if crate::s3::dev_local::PUBLIC_RECEIPT_VERSION != EXPECTED_PUBLIC_RECEIPT_VERSION
+            || crate::s3::dev_local::PUBLIC_RECEIPT_SCHEMA_SHA256
+                != EXPECTED_PUBLIC_RECEIPT_SCHEMA_SHA256
+        {
+            return Err(Error::Invalid("RECEIPT_SCHEMA"));
         }
         let view = engine.reader().get()?;
         if view.state["context"] != *snapshot.context()
@@ -111,6 +86,7 @@ impl Rest {
                     "NOT_FOUND" => 404,
                     "METHOD_NOT_ALLOWED" => 405,
                     "RESOURCE_LIMIT" => 413,
+                    "RECEIPT_NOT_FOUND" => 404,
                     _ => 409,
                 },
                 json!({"code":code,"durable_ack":false}),
@@ -136,9 +112,6 @@ impl Rest {
         let origin = single(req.headers, "origin")?;
         request::mutation_origin(origin)?;
         let authorization = single(req.headers, "authorization")?;
-        if req.method == "GET" && !req.body.is_empty() {
-            return Err(Error::Invalid("NON_CANONICAL_WIRE"));
-        }
         if ["auth/challenge", "auth/session"].contains(&path) {
             if req.method != "POST" {
                 return Err(Error::Invalid("METHOD_NOT_ALLOWED"));
@@ -158,6 +131,12 @@ impl Rest {
             .lock()
             .map_err(|_| Error::Recovery("AUTH_POISONED"))?
             .owner(authorization, origin, now / 1000)?;
+        // Protected routes authenticate before validating route-specific wire.
+        // This preserves the approved 401 priority and avoids disclosing body or
+        // path validity to missing, invalid, or expired sessions.
+        if req.method == "GET" && !req.body.is_empty() {
+            return Err(Error::Invalid("NON_CANONICAL_WIRE"));
+        }
         match (req.method, path) {
             ("POST", "auth/logout") => {
                 self.auth
@@ -167,7 +146,7 @@ impl Rest {
                 Ok(json!({"logged_out":true}))
             }
             ("GET", "capabilities") => Ok(
-                json!({"envelope_version":"s3-dev-local/1","profile_id":"s3-dev-local-v1","context":self.context,"api_prefix":"/dev-local/v1/","durable_ack":false,"storage_assurance":"UNPROVEN_HOST_SPACE","development_receipt":"LOCAL_WRITE_COMPLETED_UNPROVEN_SPACE","signed_result_query":true,"automatic_withdraw":false,"ws":false}),
+                json!({"envelope_version":TRUSTED_RECEIPT_VERSION,"profile_id":"s3-dev-local-v1","context":self.context,"api_prefix":"/dev-local/v1/","durable_ack":false,"storage_assurance":"UNPROVEN_HOST_SPACE","development_receipt":"LOCAL_WRITE_COMPLETED_UNPROVEN_SPACE","public_receipt_version":EXPECTED_PUBLIC_RECEIPT_VERSION,"public_receipt_schema_sha256":EXPECTED_PUBLIC_RECEIPT_SCHEMA_SHA256,"trusted_receipt_version":TRUSTED_RECEIPT_VERSION,"signed_result_query":true,"automatic_withdraw":false,"ws":false}),
             ),
             ("GET", "account") => self.account(&owner, o, now),
             ("POST", "orders" | "cancels" | "receipts/orders" | "receipts/cancels") => {
@@ -199,9 +178,11 @@ impl Rest {
                         now,
                     )?
                 };
-                result
-                    .map(|v| receipt(&v, &owner))
-                    .ok_or(Error::Invalid("NOT_FOUND"))
+                let result = result.ok_or(Error::Invalid("RECEIPT_NOT_FOUND"))?;
+                self.public_receipt(
+                    schema::num(&result["command_result"]["command_seq"])?,
+                    &owner,
+                )
             }
             ("POST", "withdraw/prepare" | "withdraw/abort") => {
                 let body = request::object(req.body, &["context", "request_id"])?;
@@ -230,9 +211,42 @@ impl Rest {
                         now,
                     )?
                     .ok_or(Error::Invalid("NOT_FOUND"))?;
-                Ok(receipt(&v, &owner))
+                self.public_receipt(schema::num(&v["command_result"]["command_seq"])?, &owner)
+            }
+            ("GET", path) if path.starts_with("receipts/commands/") => {
+                let seq = &path["receipts/commands/".len()..];
+                let seq =
+                    schema::num(&json!(seq)).map_err(|_| Error::Invalid("NON_CANONICAL_WIRE"))?;
+                if seq == 0 {
+                    return Err(Error::Invalid("NON_CANONICAL_WIRE"));
+                }
+                self.public_receipt(seq, &owner)
             }
             _ => Err(Error::Invalid("NOT_FOUND")),
+        }
+    }
+    fn public_receipt(&self, seq: u64, owner: &str) -> Result<Value> {
+        let receipt = self
+            .engine
+            .account_receipt(seq, owner)?
+            .ok_or(Error::Invalid("RECEIPT_NOT_FOUND"))?;
+        // Re-read the trusted immutable source and compare the exact canonical
+        // bytes. Public projections never become worker/proof/reconciliation
+        // input, and a source/projection race or mismatch closes as 503.
+        self.engine
+            .verify_account_receipt(seq, owner, receipt.as_bytes())?;
+        Ok(receipt.to_value())
+    }
+    /// Wire adapters must use these bytes verbatim (application/json, identity).
+    /// The object handler remains for existing in-process component callers.
+    pub fn handle_bytes(&self, req: Request<'_>, o: &Observation, now: u64) -> (u16, Vec<u8>) {
+        let (status, value) = self.handle(req, o, now);
+        match canonical(&value) {
+            Ok(raw) => (status, raw),
+            Err(_) => (
+                503,
+                br#"{"code":"RECOVERY_REQUIRED","durable_ack":false}"#.to_vec(),
+            ),
         }
     }
     fn account(&self, owner: &str, o: &Observation, now: u64) -> Result<Value> {

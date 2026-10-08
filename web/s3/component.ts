@@ -1,11 +1,11 @@
 import { LocalClient } from './client.ts';
-import { ASSURANCE } from './state.ts';
+import { ASSURANCE, PUBLIC_RECEIPT_SCHEMA_SHA256, PUBLIC_RECEIPT_VERSION, TRUSTED_RECEIPT_VERSION } from './state.ts';
 import { display, atoms } from './direct-codec.ts';
 import type { LocalKey } from './key.ts';
 export function screen(client: LocalClient) {
   const v=client.projection.view;
   return {
-    notice:`개발 전용 · s3-dev-local/1 · ${ASSURANCE} · G00=FAIL_UNPROVEN / allowlist=[] / ACK=CLOSED`,
+    notice:`개발 전용 · 공개 ${PUBLIC_RECEIPT_VERSION} (${PUBLIC_RECEIPT_SCHEMA_SHA256.slice(0,12)}…) / trusted ${TRUSTED_RECEIPT_VERSION} 분리 · ${ASSURANCE} · G00=FAIL_UNPROVEN / allowlist=[] / ACK=CLOSED`,
     owner:client.projection.owner,
     status:client.projection.open()?(client.canWithdraw()?'조회 정상 · 직접 출금 준비 완료':'조회 정상 · 출금 보류'):'보류 / '+client.projection.reason,
     revision:v?.revision??'—',
@@ -14,7 +14,7 @@ export function screen(client: LocalClient) {
     fills:v?.fills.map(f=>`${f.fill_id} · ${{PENDING:'잠정',SUBMISSION_UNKNOWN:'제출 결과 불명',COMMITTED:'체인 확정',CORRECTED:'정정'}[f.state as string]} · revision ${f.revision}`)??[],
     batches:v?.batches.map(b=>`${b.batch.batch_id} · seq ${b.batch.batch_seq} · hash ${b.batch.batch_hash} · ${b.state} · H ${b.receipt?.terminal_height??'—'} · TX ${b.receipt?.terminal_tx_hash??'—'}`)??[],
     history:client.history.filter(e=>e.owner===client.projection.owner),
-    disabled:!client.canWithdraw(), receipt:client.receipt,
+    disabled:!client.canWithdraw(), receipt:client.receipt,receiptConflicts:client.publicReceipts.conflicts.length+client.publicReceipts.queryMismatches.length,
   };
 }
 // Mount is inert until the launcher explicitly passes both opt-ins and pinned Context.

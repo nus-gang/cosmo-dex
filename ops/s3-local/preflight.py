@@ -6,7 +6,9 @@ import json
 from pathlib import Path
 import re
 import stat
-from manifest import COMPONENTS, CANDIDATE, BASELINE, PREFIX, aggregate, decode, relative
+from manifest import (COMPONENTS, CANDIDATE, BASELINE, PREFIX, PUBLIC_PREFIX,
+                      PUBLIC_MANIFEST, PUBLIC_SCHEMA, PUBLIC_VERSION,
+                      aggregate, decode, relative)
 
 MAX_MANIFEST = 262144
 MAX_DESCRIPTOR = 1048576
@@ -96,20 +98,41 @@ def verify(bundle, artifacts, pin, profile, acknowledge):
     if hashlib.sha256(raw).hexdigest() != pin:
         raise ValueError('RUNTIME_PIN_MISMATCH')
     m = decode(raw)
-    if set(m) != {'format', 'scope', 'candidate_manifest_sha256', 'contract_sha256', 'files_sha256', 'components'} or m['format'] != 's3-dev-local-runtime/1' or m['scope'] != 'REVIEWED_RUNTIME' or m['candidate_manifest_sha256'] != CANDIDATE:
+    if (set(m) != {'format', 'scope', 'candidate_manifest_sha256',
+                   'public_receipt_manifest_sha256', 'public_receipt_schema_sha256',
+                   'public_receipt_version', 'contract_sha256', 'files_sha256', 'components'}
+            or m['format'] != 's3-dev-local-runtime/1'
+            or m['scope'] != 'REVIEWED_RUNTIME'
+            or m['candidate_manifest_sha256'] != CANDIDATE
+            or m['public_receipt_manifest_sha256'] != PUBLIC_MANIFEST
+            or m['public_receipt_schema_sha256'] != PUBLIC_SCHEMA
+            or m['public_receipt_version'] != PUBLIC_VERSION):
         raise ValueError('MANIFEST_POLICY')
     expected_components = {c: 'chain/local-demo/components/' + c + '.json' for c in COMPONENTS}
-    if m['components'] != expected_components or len(m['files_sha256']) != 218 or aggregate(m['files_sha256']) != m['contract_sha256']:
+    if m['components'] != expected_components or aggregate(m['files_sha256']) != m['contract_sha256']:
         raise ValueError('MANIFEST_FILE_SET')
-    # Independently anchor the exact 213 inherited paths to approved manifests.
+    # Independently anchor the inherited paths to all approved manifests.
     baseline_raw = bounded(bundle, 'files/protocol/s3/manifest.json', MAX_MANIFEST)
     candidate_raw = bounded(bundle, 'files/' + PREFIX + 'MANIFEST.json', MAX_MANIFEST)
-    if hashlib.sha256(baseline_raw).hexdigest() != BASELINE or hashlib.sha256(candidate_raw).hexdigest() != CANDIDATE:
+    public_raw = bounded(bundle, 'files/' + PUBLIC_PREFIX + 'MANIFEST.json', MAX_MANIFEST)
+    if (hashlib.sha256(baseline_raw).hexdigest() != BASELINE
+            or hashlib.sha256(candidate_raw).hexdigest() != CANDIDATE
+            or hashlib.sha256(public_raw).hexdigest() != PUBLIC_MANIFEST):
         raise ValueError('APPROVED_MANIFEST_MISMATCH')
     expected = dict(decode(baseline_raw)['files_sha256'])
     expected.update({PREFIX + p: h for p, h in decode(candidate_raw)['files_sha256'].items()})
-    expected.update({'protocol/s3/manifest.json': BASELINE, PREFIX + 'MANIFEST.json': CANDIDATE})
-    if set(m['files_sha256']) != set(expected) | set(expected_components.values()) or any(m['files_sha256'][p] != h for p, h in expected.items()):
+    public = decode(public_raw)
+    if (public.get('self_excluded') is not True
+            or public.get('public_schema_sha256') != PUBLIC_SCHEMA
+            or aggregate(public['files_sha256']) != public['candidate_files_sha256']):
+        raise ValueError('PUBLIC_CONTRACT_AGGREGATE_MISMATCH')
+    expected.update(public['files_sha256'])
+    expected.update({'protocol/s3/manifest.json': BASELINE,
+                     PREFIX + 'MANIFEST.json': CANDIDATE,
+                     PUBLIC_PREFIX + 'MANIFEST.json': PUBLIC_MANIFEST})
+    if (len(m['files_sha256']) != len(expected) + len(expected_components)
+            or set(m['files_sha256']) != set(expected) | set(expected_components.values())
+            or any(m['files_sha256'][p] != h for p, h in expected.items())):
         raise ValueError('INHERITED_FILE_SET')
     # B/C Validate calls remain mandatory for genesis/guard/profile semantics.
     for path, digest in m['files_sha256'].items():

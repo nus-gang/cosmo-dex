@@ -1,7 +1,9 @@
-import { Projection, capability, context, envelope, PREFIX, type Context } from './state.ts';
+import { Projection, capability, context, PREFIX, type Context } from './state.ts';
 import { LocalKey } from './key.ts';
 import { base64, integer, hex, type Input } from './direct-codec.ts';
+import { ReceiptLedger, type PublicReceipt } from './receipt.ts';
 import { sha256 } from '../src/wallet.ts';
+import { canonical } from '../s2/state.ts';
 export interface DirectAccount {
   context: Context; owner: string; public_key_base64: string; account_number: string; sequence: string; owner_epoch: string;
   observed_height: string; received_at_unix_ms: string; gas_atoms: string;
@@ -16,7 +18,7 @@ export interface ChainPort {
 export interface Entry {owner: string; input: Input; tx_bytes: string; tx_hash: string; state: 'SUBMISSION_UNKNOWN'|'COMMITTED'|'REJECTED_FINAL'; height?: string}
 const id=()=>hex(crypto.getRandomValues(new Uint8Array(32)));
 export class LocalClient {
-  readonly projection: Projection; readonly history: Entry[]=[];
+  readonly projection: Projection; readonly history: Entry[]=[];readonly publicReceipts=new ReceiptLedger();
   #token=''; #key?: LocalKey; #busy=new Set<string>(); #capable=false;
   #chain?: ChainPort; #requests=new Set<AbortController>();
   receipt='';
@@ -47,7 +49,7 @@ export class LocalClient {
   revokeSession(){this.select(this.#key);}
   select(key?: LocalKey) {for(const pending of this.#requests)pending.abort();this.#requests.clear();this.#key=key;this.#token='';this.#capable=false;this.receipt='';this.projection.select(key?.owner??'');}
   destroy(){this.#key?.destroy();this.select();}
-  async #request(path: string, body?: unknown, token=this.#token) {
+  async #request(path: string, body?: unknown, token=this.#token, exactBytes=false) {
     if(!this.enabled||!this.acknowledge)throw Error('TWO_OPT_INS_REQUIRED');
     const generation=this.projection.generation,controller=new AbortController(),started=performance.now();
     this.#requests.add(controller);
@@ -63,8 +65,25 @@ export class LocalClient {
         if(r.status===401||r.status===403)this.revokeSession();
         throw Error(r.status===503?'RECOVERY_REQUIRED':`HTTP_${r.status}`);
       }
+      if(exactBytes){
+        const media=r.headers.get('Content-Type')?.split(';',1)[0].trim().toLowerCase(),encoding=r.headers.get('Content-Encoding');
+        if(media!=='application/json'||(encoding!==null&&encoding.toLowerCase()!=='identity'))throw Error('RECEIPT_CANONICAL');
+        const value=new Uint8Array(await r.arrayBuffer());current();return value;
+      }
       const value=await r.json();current();return value;
     }finally{this.#requests.delete(controller);}
+  }
+  #acceptReceipt(bytes:Uint8Array,principal:string,expected?:{kind?:string;requestHash?:string;commandSeq?:string}) {
+    try {
+      const value=this.publicReceipts.accept(bytes,this.ctx,principal,expected?.commandSeq);
+      if(expected?.kind!==undefined&&(value.account_result.kind!==expected.kind||value.account_result.request_hash!==expected.requestHash))throw Error('CLIENT_RECEIPT_MISMATCH');
+      const result=value.account_result,gap=this.publicReceipts.gapFor(this.ctx,principal)?' · 과거 receipt seq 간극(계정 revision과 별도)':'';
+      this.receipt=`공개 계정 영수증 ${value.source.command_seq} · ${result.kind} ${result.code} / ${result.state} · 기록 효과 ${result.ledger_changes.length}건 · 체인 COMMITTED·durable ACK 아님${gap}`;
+      return value;
+    }catch(e){
+      if((e as Error).message==='CLIENT_RECEIPT_MISMATCH'){this.#capable=false;this.projection.close('CLIENT_RECEIPT_MISMATCH');}
+      throw e;
+    }
   }
   async login(origin: string) {
     const key=this.#key;if(!key)throw Error('KEY_REQUIRED');
@@ -93,11 +112,22 @@ export class LocalClient {
     if(!key||!this.#capable||!this.projection.open()||this.#busy.has(key.owner)||this.history.some(e=>e.owner===key.owner&&e.state==='SUBMISSION_UNKNOWN'))throw Error('WITHDRAW_HELD');
     this.#busy.add(key.owner);
     try {
-      const r=await this.#request(abort?'withdraw/abort':'withdraw/prepare',{context:this.ctx,request_id:id()});
+      const request_id=id(),kind=abort?'WITHDRAW_ABORT':'WITHDRAW_PREPARE';
+      const r=await this.#request(abort?'withdraw/abort':'withdraw/prepare',{context:this.ctx,request_id},this.#token,true) as Uint8Array;
       if(g!==this.projection.generation)return;
-      envelope(r,this.ctx);integer(r.command_result.command_seq);this.receipt=`개발 명령 결과 ${r.command_result.code} / ${r.command_result.state} — 체인 확정 아님`;await this.refresh();
-    }catch(e){if(g===this.projection.generation)this.projection.close('PREPARE_RESULT_UNKNOWN');throw e;}
+      const requestHash=hex(sha256(new TextEncoder().encode(canonical({request_id}))));
+      this.#acceptReceipt(r,key.owner,{kind,requestHash});await this.refresh();
+    }catch(e){if(g===this.projection.generation&&this.projection.reason!=='CLIENT_RECEIPT_MISMATCH')this.projection.close('PREPARE_RESULT_UNKNOWN');throw e;}
     finally{this.#busy.delete(key.owner);}
+  }
+  async queryReceipt(commandSeq:string):Promise<PublicReceipt|undefined> {
+    const key=this.#key,g=this.projection.generation;
+    if(!key||!this.#capable||integer(commandSeq)===0n)throw Error('CAPABILITY_REQUIRED');
+    try {
+      const bytes=await this.#request(`receipts/commands/${commandSeq}`,undefined,this.#token,true) as Uint8Array;
+      if(g!==this.projection.generation)return;
+      return this.#acceptReceipt(bytes,key.owner,{commandSeq});
+    }catch(e){if(g===this.projection.generation&&this.projection.reason!=='CLIENT_RECEIPT_MISMATCH')this.projection.close((e as Error).message);throw e;}
   }
   canWithdraw() {const k=this.#key;return !!k&&!!this.#chain&&this.#capable&&this.projection.ready()&&this.history.filter(e=>e.owner===k.owner&&e.height).every(e=>integer(this.projection.view!.observed_height)>=integer(e.height!))&&!this.#busy.has(k.owner)&&!this.history.some(e=>e.owner===k.owner&&e.state==='SUBMISSION_UNKNOWN');}
   async withdraw(denom: Input['denom'], amount: string) {

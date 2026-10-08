@@ -111,7 +111,7 @@ if let Some(saved) = engine.trusted_recovery_failure(&view.commit, batch_id)? {
 
 `Engine::open`도 원 명령의 semantic replay를 마친 뒤 모든 저장된 실패 선택의 원문·참조 그래프를 확인한다. **이전 후보로 만든 home에서 `RejectFinal`은 있지만 typed root가 없는 경우 새 open은 오류로 끝난다.** 공통 store 검증이 조회·명령·방송 callback 경계에서도 모든 기존 실패 root를 확인한다. root와 descriptor를 함께 삭제해도 다른 batch 조회·새 명령·CLOSE 방송이 이를 우회하지 못하고 writer를 닫는다. 조회나 open으로 root를 생성·재계산·보충하지 않으며 자동 migration은 없다. 원문 파일이 이미 있는 이전 home은 기존 검증을 통과해야 한다. 새 합성 home에서 실행하는 component 범위이며 운영 데이터 migration이나 runtime pin 발급을 포함하지 않는다.
 
-변경 응답은 승인된 7필드 envelope다. `development_receipt=LOCAL_WRITE_COMPLETED_UNPROVEN_SPACE`, `durable_ack=false`, `storage_assurance=UNPROVEN_HOST_SPACE`. 내부 rc3 `CommandResult`는 변경하지 않는다. receipt ledger의 `{receipt,command_seq,record_hash,end_offset}`는 독립 시험/인계 컨테이너이며 새 public schema가 아니다. 개발 접수와 chain `COMMITTED`는 별도다. D의 실제 HTTP는 `/dev-local/v1/`·loopback·기존 인증/origin·계정 격리와 묶어 후속 업무에서 검증해야 한다.
+trusted 변경 응답은 승인된 7필드 envelope다. 공개 계정 응답은 [별도 9필드 계약](S3-ACCOUNT-RECEIPT.md)을 사용한다. `development_receipt=LOCAL_WRITE_COMPLETED_UNPROVEN_SPACE`, `durable_ack=false`, `storage_assurance=UNPROVEN_HOST_SPACE`. 내부 rc3 `CommandResult`는 변경하지 않는다. receipt ledger의 `{receipt,command_seq,record_hash,end_offset}`는 독립 시험/인계 컨테이너이며 새 public schema가 아니다. 개발 접수와 chain `COMMITTED`는 별도다. D의 실제 HTTP는 `/dev-local/v1/`·loopback·기존 인증/origin·계정 격리와 묶어 후속 업무에서 검증해야 한다.
 
 VOID audit hash, timeout, NOT_FOUND, CheckTx만으로 보류를 풀 수 없다. 원 정산 확정 실패·다른 시도 전부 종결·raw block/results/TxRaw·원 receipt·같은 높이 C 검증을 기존 `proof.rs`/engine으로 통과해야 CORRECTION을 만들 수 있다. P 재사용과 COMMITTED 역전은 허용하지 않는다.
 
@@ -166,3 +166,27 @@ WAL prefix와 원문 집합을 두 번 읽으며 처리 비용은 보존된 기�
 ## F14 correction closure 시험 경계
 
 `dev-local-demo,fault-injection` 전용 `Engine::set_correction_hook`의 정확한 위치, Prepare/SemanticReplay 방문 수와 오류·재시작 의미는 [S3-F14-FAULT-API.md](S3-F14-FAULT-API.md)에 명세했다. 기존 IO hook·경제 규칙·개발 receipt 의미를 유지한다.
+
+## Settlement 방송의 현재 관측 gate — CTO-70-02 수정 후보
+
+`Worker::broadcast`는 같은 reader Commit의 원 Attempt를 pin하고 기존
+0/1000/2000ms backoff 뒤 writer lock을 잡는다. commit이 바뀌면
+`STALE_COMMIT`으로 거절한다. 같은 writer 아래 prefix/raw·최신 Snapshot의
+`freshness` 검증 → UNKNOWN/count+1 저장·공개 → 원 TX/store 재검증 → 현재
+시각 freshness 재검증 → bounded callback 순서다. 사이에 다른 engine writer가
+진입하지 않는다. 잘못된 관측·backoff 만료·관측 경합은 callback0·새 intent0이다.
+
+production API는 adapter의 `now`뿐 아니라 현재 SystemTime과 진입 후 Instant
+경과를 사용한다. 오래된 `now`로 signer/queue/fsync 지연을 숨길 수 없다.
+marker가 완료된 뒤 만료되면 callback은 거절하지만 이미 저장된 UNKNOWN/count는
+보존한다. 이 경우를 저장 전 거절의 commit0과 구분한다. 자동 rollback/retry·예산
+초기화는 없다. `reconcile`과 trusted read의 기존 CATCHING_UP 처리에는 새 일괄
+freshness 제한을 적용하지 않는다.
+
+fault-only `test_broadcast_with_clock`은 실제 경로의 clock/barrier 시험용이며
+`dev-local-settlement,fault-injection` 두 feature가 필요하다. clock 샘플은
+pin/backoff 뒤 writer 전, writer/prefix 검사 뒤 intent 전, marker/raw 검사 뒤
+callback 전이다. writer 전 샘플 외의 callback에서 writer 재진입은 금지한다.
+기본/no-fault build에는 이 API나 clock override가 없다. 기존 F14 phase는 같다.
+
+**공개 receipt 보완(CTO-70-03):** 승인 A의 별도 `s3-dev-local-account/1`을 구현한 재심사 후보다. 원 trusted `s3-dev-local/1`·전체 CommandResult는 그대로 보존하고, 공개 응답은 검증된 원 명령의 immutable source와 계정별 account_result를 반환한다. 새 Context/home 입력 조건, API와 cap·오류·과거 조회 의미는 [공개 계정 영수증 인계](S3-ACCOUNT-RECEIPT.md)에 있다. 현재 C 후보의 CTO→Security 승인과 최종 runtime pin 전에는 서비스 활성화하지 않는다.

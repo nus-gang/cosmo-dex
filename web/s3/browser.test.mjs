@@ -13,6 +13,12 @@ try {
   assert.equal(await withdraw.isDisabled(),true);
   await login.click();await page.waitForFunction(()=>fixture.client.canWithdraw());
   assert.match(await page.locator('body').textContent(),/durable_ack=false/);
+  assert.match(await page.locator('body').textContent(),/공개 s3-dev-local-account\/1 .* trusted s3-dev-local\/1 분리/);
+  await page.getByRole('button',{name:'출금 준비 (주문 동결·잔량 취소)'}).click();await page.waitForFunction(()=>fixture.client.receipt.includes('공개 계정 영수증'));
+  assert.match(await page.locator('body').textContent(),/LOCAL_ACCEPTED .* 체인 COMMITTED·durable ACK 아님/);
+  assert.deepEqual(await page.evaluate(()=>fixture.receiptMismatch()),{error:'CLIENT_RECEIPT_MISMATCH',canWithdraw:false,queryMismatches:1});
+  assert.equal(await withdraw.isDisabled(),true);assert.match(await page.getByRole('status').textContent(),/CLIENT_RECEIPT_MISMATCH/);assert.equal(await page.evaluate(()=>fixture.posts()),0);
+  await page.screenshot({path:out+'/receipt-mismatch-held.png',fullPage:true});await login.click();await page.waitForFunction(()=>fixture.client.canWithdraw());
   for(const fault of ['recovery','503','disconnect','late-recovery','late-abort','late-DP']) {
     await page.evaluate(fault=>fixture.reorder(fault),fault);
     assert.equal(await withdraw.isDisabled(),true);
@@ -36,7 +42,7 @@ try {
   await page.evaluate(()=>fixture.held());await login.click();await page.waitForFunction(()=>fixture.client.projection.view!==undefined);
   assert.equal(await withdraw.isDisabled(),true);assert.match(await page.locator('body').textContent(),/제출 결과 불명/);
   await page.screenshot({path:out+'/component.png',fullPage:true});
-  await writeFile(out+'/browser.json',JSON.stringify({scope:'BROWSER_COMPONENT_SYNTHETIC_NO_SERVICE',browser:browser.version(),checks:['initial-disabled','guarantee-label','direct-click-one-TX','unknown-query-no-retry','account-switch-empty','DP-held','recovery-delayed-OPEN-disabled','503-delayed-OPEN-disabled','disconnect-delayed-OPEN-disabled','earlier-request-latest-recovery-disabled','OPEN-abort-held','OPEN-DP-held','authenticated-chain-three-routes'],pass:13,fail:0,DEV12:'NOT_RUN'},null,2)+'\n');
+  await writeFile(out+'/browser.json',JSON.stringify({scope:'BROWSER_COMPONENT_SYNTHETIC_NO_SERVICE',browser:browser.version(),checks:['initial-disabled','guarantee-label','public-trusted-version-split','public-receipt-not-committed','receipt-query-mismatch-held','direct-click-one-TX','unknown-query-no-retry','account-switch-empty','DP-held','recovery-delayed-OPEN-disabled','503-delayed-OPEN-disabled','disconnect-delayed-OPEN-disabled','earlier-request-latest-recovery-disabled','OPEN-abort-held','OPEN-DP-held','authenticated-chain-three-routes'],pass:16,fail:0,DEV12:'NOT_RUN'},null,2)+'\n');
   await page.evaluate(()=>fixture.component.destroy());assert.equal(await page.locator('#app').textContent(),'');
-  console.log('browser component: 13 PASS / 0 FAIL; DEV12 NOT_RUN');
+  console.log('browser component: 16 PASS / 0 FAIL; DEV12 NOT_RUN');
 }finally{await browser.close();}
