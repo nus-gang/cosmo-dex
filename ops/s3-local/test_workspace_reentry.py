@@ -59,6 +59,7 @@ class ReentryTest(unittest.TestCase):
     def archive(self,record,name='prior'):
         root=self.root/name;root.mkdir(mode=0o700);box=root/'mailbox';box.mkdir(mode=0o700)
         _write(box,'challenge',record['challenge'].encode());_write(box,'pids.json',record['pid_raw'].encode())
+        record.update(schema='s3-local-stopped-receipt/2',archive_root=str(root))
         _write(root,'receipt.json',m.encode(record));return root/'receipt.json'
 
     def test_original_stop_fixture_accepted_only_with_bound_evidence_and_fresh_probes(self):
@@ -147,7 +148,9 @@ class ReentryTest(unittest.TestCase):
         _write(box.root,'pids.json',record['pid_raw'].encode());pids=box.collect()
         evidence=dict(control_plane_stop_verified=True,host_release_observations_complete=True,pid_handoff_collected=True,
             listed_pids=list(pids),service_id=SID,stop_response=record['stop_response'])
-        receipt=m.preserve(box,packet,evidence);self.assertEqual(m.read_receipt(receipt)[0],record)
+        receipt=m.preserve(box,packet,evidence)
+        record.update(schema='s3-local-stopped-receipt/2',archive_root=str(receipt.parent))
+        self.assertEqual(m.read_receipt(receipt)[0],record)
         self.assertFalse(box.root.exists());fresh=WebMailbox(box.root);self.assertNotEqual(box.nonce,fresh.nonce)
         entry=m.Reentry(packet,[receipt]);entry.bind_mailbox(fresh)
         with self.assertRaises(ValueError):m.preserve(box,packet,evidence)
@@ -196,6 +199,7 @@ class ReentryTest(unittest.TestCase):
         _write(box.root,'pids.json',record['pid_raw'].encode())
         saved={p.name:p.read_bytes() for p in box.root.iterdir()}
         copied=m.import_evidence(packet,record['stop_response'],box.root,self.root/'imported')
+        record.update(schema='s3-local-stopped-receipt/2',archive_root=str(copied.parent))
         self.assertEqual(m.read_receipt(copied)[0],record)
         self.assertEqual(saved,{p.name:p.read_bytes() for p in box.root.iterdir()})
         with self.assertRaises(FileExistsError):m.import_evidence(packet,record['stop_response'],box.root,self.root/'imported')

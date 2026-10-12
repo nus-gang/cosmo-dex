@@ -4,6 +4,7 @@ Receipts are local, same-uid evidence. Authenticated current listings and launch
 approval audits remain mandatory. No service row is discarded or rewritten.
 """
 import copy
+import ctypes
 import hashlib
 import json
 import os
@@ -13,7 +14,7 @@ import stat
 import time
 
 from native_review import COMPANY, _uuid
-from pid_mailbox import _root, _read, _nonce, _write, Mailbox
+from pid_mailbox import _root, _read, _nonce, _write, _archive_pending, _archive_clear, Mailbox
 from web_pid_mailbox import WebMailbox, _report
 from workspace_registration import PROJECT, prepare, prepare_chain, prepare_web
 from runtime_evidence import operation, _time
@@ -112,7 +113,27 @@ def service_record(record):
     return service, wid, kind, args, endpoints, pids
 
 
+def _sync(directory):
+    fd = os.open(directory, os.O_RDONLY|os.O_DIRECTORY)
+    try: os.fsync(fd)
+    finally: os.close(fd)
+
+
+def _rename_exclusive(source, destination):
+    # Current approved host: Darwin. Local SDK sys/stdio.h: RENAME_EXCL=4.
+    # No overwrite fallback on an unsupported platform.
+    rename = ctypes.CDLL(None, use_errno=True).renamex_np
+    rename.argtypes = (ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint)
+    rename.restype = ctypes.c_int
+    if rename(os.fsencode(source), os.fsencode(destination), 4) != 0:
+        raise OSError(ctypes.get_errno(), 'archive rename rejected')
+
+
 def read_receipt(path):
+    return _read_receipt(path, Path(path).parent)
+
+
+def _read_receipt(path, published_root):
     path = Path(path); _root(path.parent)
     if path.name != 'receipt.json': raise ValueError(ERROR)
     fd = os.open(path, os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
@@ -125,10 +146,13 @@ def read_receipt(path):
         if len(raw) != m.st_size or os.read(fd,1): raise ValueError(ERROR)
     finally: os.close(fd)
     value = json.loads(raw)
-    if (encode(value) != raw or value['schema'] != 's3-local-stopped-receipt/1' or
+    if (encode(value) != raw or value['schema'] != 's3-local-stopped-receipt/2' or
+            value['archive_root'] != str(published_root) or
             _read(_root(path.parent/'mailbox'), 'challenge').decode() != value['challenge'] or
             _read(path.parent/'mailbox', 'pids.json').decode() != value['pid_raw']):
         raise ValueError(ERROR)
+    if Path(path).parent == published_root:
+        _archive_clear(value['mailbox_root'])
     service_record(value)
     return value, hashlib.sha256(raw).hexdigest()
 
@@ -286,25 +310,33 @@ def preserve(mailbox, packet, evidence):
         root = _root(mailbox.root); current = root.stat()
         if ((current.st_dev,current.st_ino) != (mailbox.identity.st_dev,mailbox.identity.st_ino) or
                 set(p.name for p in root.iterdir()) != {'challenge','pids.json'}): raise ValueError()
-        record = dict(schema='s3-local-stopped-receipt/1',packet=copy.deepcopy(packet),
+        record = dict(schema='s3-local-stopped-receipt/2',packet=copy.deepcopy(packet),
             stop_response=copy.deepcopy(evidence['stop_response']),mailbox_root=str(root),
             challenge=_read(root,'challenge').decode(),pid_raw=_read(root,'pids.json').decode())
         if record['challenge'] != mailbox.nonce: raise ValueError()
         service,_,_,_,_,pids = service_record(record)
         if list(pids) != evidence['listed_pids'] or service['id'] != evidence['service_id']: raise ValueError()
         archive = _root(root.parent)/('completed-'+mailbox.nonce)
-        archive.mkdir(mode=0o700)
+        pending = _archive_pending(root)
+        receipt = archive/'receipt.json'
+        record['archive_root'] = str(archive)
+        pending.mkdir(mode=0o700)
+        # Persist the reservation BEFORE the original path can be vacated.
+        _sync(root.parent)
         raw = encode(record)
         if len(raw)>LIMIT: raise ValueError()
-        _write(archive,'receipt.json',raw)
-        # Destination is inside a newly, exclusively created private directory.
-        os.rename(root,archive/'mailbox')
-        for directory in (archive,archive.parent):
-            fd=os.open(directory,os.O_RDONLY|os.O_DIRECTORY)
-            try:os.fsync(fd)
-            finally:os.close(fd)
-        read_receipt(archive/'receipt.json')
-        return archive/'receipt.json'
+        _write(pending,'receipt.json',raw)
+        _rename_exclusive(root,pending/'mailbox')
+        _sync(pending)
+        _sync(pending.parent)
+        _read_receipt(pending/'receipt.json',archive)
+        # Publication is the last filesystem operation. All evidence/reservation
+        # syncs have succeeded. No fallible post-publication fsync/validation:
+        # interruption after this atomic rename is a committed publication.
+        # This final name is not fsynced: receipt availability after host power
+        # loss is unproven. Missing/pending receipts deny reentry; no durable ACK.
+        _rename_exclusive(pending,archive)
+        return receipt
     except Exception: raise ValueError(ERROR) from None
 
 
@@ -321,12 +353,17 @@ def import_evidence(packet, stop_response, mailbox_root, destination):
     service_record(record)
     if root.stat() != before: raise ValueError(ERROR)
     destination=Path(destination);_root(destination.parent)
-    destination.mkdir(mode=0o700)
-    box=destination/'mailbox';box.mkdir(mode=0o700)
+    if destination.exists(): raise FileExistsError(destination)
+    pending=destination.with_name('.'+destination.name+'.import-pending')
+    pending.mkdir(mode=0o700)
+    _sync(pending.parent)
+    record['schema']='s3-local-stopped-receipt/2'
+    record['archive_root']=str(destination)
+    box=pending/'mailbox';box.mkdir(mode=0o700)
     _write(box,'challenge',record['challenge'].encode());_write(box,'pids.json',record['pid_raw'].encode())
-    _write(destination,'receipt.json',encode(record))
-    fd=os.open(destination.parent,os.O_RDONLY|os.O_DIRECTORY)
-    try:os.fsync(fd)
-    finally:os.close(fd)
-    read_receipt(destination/'receipt.json')
-    return destination/'receipt.json'
+    _write(pending,'receipt.json',encode(record))
+    _sync(pending.parent)
+    _read_receipt(pending/'receipt.json',destination)
+    receipt=destination/'receipt.json'
+    _rename_exclusive(pending,destination)
+    return receipt

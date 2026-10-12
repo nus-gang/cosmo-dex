@@ -31,3 +31,14 @@ API 직접 조합은 `Reentry(packet, receipt_paths, transition=...)`를 authent
 RC4 준비 workspace를 새 후보 준비 workspace로 갱신할 때도 같은 등록 ID를 사용한다. 권한 있는 주체가 기존 workspace의 cwd와 runtimeConfig를 새 준비 packet으로 명시적으로 갱신해야 한다. `transition`에 정확한 RC4 준비→새 후보 준비 pair를 지정한다. 이 경로는 **keys→keys만**, 새 cwd/bundle/artifacts/pin/final decision/두 revision/IPC/mailbox가 모두 다른 경우에 허용한다. worker·Chain·거래 중인 웹의 후보 교체는 지원하지 않는다. 이어서 최종 웹으로 바꾸면 `transition`을 `[이전준비→새준비, 새준비→최종웹]` 두 pair 배열로 보존하여 남아 있는 옛 service 행도 모두 대조한다.
 
 이전 실행 객체가 종료된 경우 원 STOP 응답과 공개 mailbox를 `import-stopped-evidence --request /절대경로/import.json`으로 복사할 수 있다. import.json의 필드는 `packet`, `stop_response`, `mailbox_root`, `destination`이며 각각 이전 원문 객체/원문 응답/원본 mailbox 절대 경로/새 archive 절대 경로다. 부모는 private0700이어야 한다. 원본 RC4 mailbox는 이동·수정하지 않는다. 출력 receipt는 과거 증거일 뿐이며 새 승인이나 현재 자원 해제를 주장하지 않는다. 충돌·부분 기록은 보존하고 자동 재시도하지 않는다.
+
+
+## RC6 — 보존 완료의 공개 경계
+
+CTO-RC5-01 수정: `.<mailbox명>.archive-pending`을 mkdir하고 부모를 fsync한 뒤에만 원 mailbox를 그 안으로 이동한다. receipt/file·디렉터리·이동 후 부모 fsync 및 원문 대조가 모두 끝날 때까지 이 예약 디렉터리는 남는다. `Mailbox`/`WebMailbox`는 예약이 존재하면 새 nonce를 만들지 않는다. 오류·KeyboardInterrupt·프로세스 종료 뒤에도 자료를 삭제하거나 자동 재시도하지 않는다.
+
+마지막 파일시스템 연산은 Darwin `renamex_np(RENAME_EXCL)`로 pending 디렉터리를 `completed-<nonce>`에 공개하는 것이다. 기존 목적지는 덮어쓰지 않는다. **이 원자적 rename이 완료 경계**이며, 그 뒤 오류를 낼 수 있는 fsync/검증을 실행하지 않는다. 완료 직후 응답 전에 프로세스가 종료되면 이미 공개된 영수증을 다음 프로세스가 읽는다. 최종 이름 자체의 전원 장애 내구성은 입증하지 않았고 별도 fsync 성공도 주장하지 않는다. 이름이 없거나 pending이면 재진입을 거절한다. 이는 종료 증거 공개 경계이며 `durable_ack=false`와 원 G00를 변경하지 않는다.
+
+내부 종료 receipt는 `s3-local-stopped-receipt/2`와 정확한 `archive_root`를 요구한다. staging 경로·구 v1 receipt는 자동 인수/업그레이드하지 않는다. 읽기와 두 Reentry 검사/최종 confirm은 완료 경로와 pending 부재를 재확인한다. 기존 RC4/RC5 원 STOP/PID 자료는 원 mailbox가 온전할 때 명시적 import로 복사할 수 있으며, import 역시 모든 fsync 뒤 마지막 no-replace rename으로 게시한다. 실패한 pending/mailbox를 원본으로 삼거나 파일을 직접 이동·편집해 복구하는 경로는 없다. 불완전 자료는 보존하고 별도 조사한다.
+
+`test_archive_publication.py`는 fee0/25 × 준비웹/최종웹/worker/Chain의 5 fsync와 2 rename 경계를 실제 파일시스템에서 주입한다. 정상·완료 직후 종료는 새 프로세스에서 인수하고, 완료 전 EIO/interrupt/exit는 receipt·nonce·Reentry·빈 receipt CLI의 session/START를 거절한다. STOP/PID/probe는 합성이며 실제 제품 서비스 재시작 시험은 NUS-74에 남는다.

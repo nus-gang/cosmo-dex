@@ -54,12 +54,20 @@ class ArchiveTest(unittest.TestCase):
             with self.assertRaises(ValueError): p.preserve_completed_mailbox()
 
     def test_fsync_failure_keeps_archive_and_consumes_attempt(self):
-        f,p,kw = self.fixture()
-        self.complete(f,p,kw)
-        with patch('prepared_session.os.fsync', side_effect=OSError('fault')):
+        for boundary in (1,2,3):
+            f,p,kw = self.fixture()
+            self.complete(f,p,kw)
+            actual=pid_mailbox.os.fsync;calls=0
+            def sync(fd):
+                nonlocal calls
+                calls+=1
+                if calls==boundary: raise OSError('fault')
+                return actual(fd)
+            with patch('prepared_session.os.fsync', side_effect=sync):
+                with self.assertRaises(ValueError): p.preserve_completed_mailbox()
+            saved=(p.evidence_path if boundary==1 else pid_mailbox._archive_pending(p.evidence_path)/'mailbox')
+            self.assertTrue((saved/'pids.json').exists())
             with self.assertRaises(ValueError): p.preserve_completed_mailbox()
-        saved = p.evidence_path.parent/('completed-'+p._mailbox.nonce)/'mailbox'
-        self.assertTrue((saved/'pids.json').exists())
-        with self.assertRaises(ValueError): p.preserve_completed_mailbox()
+            with self.assertRaises(ValueError): PreparedSession(*f.f.args,fee_bps=0)
 
 if __name__ == '__main__': unittest.main()

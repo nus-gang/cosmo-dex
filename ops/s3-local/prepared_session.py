@@ -10,7 +10,7 @@ from pathlib import Path
 
 import mailbox_session
 from offline_cli import parse
-from pid_mailbox import Mailbox, _root, _read, _nonce
+from pid_mailbox import Mailbox, _root, _read, _nonce, _archive_pending
 from workspace_registration import prepare
 
 ERROR = 'PREPARED_SESSION_REJECTED'
@@ -79,15 +79,18 @@ class PreparedSession:
                 raise ValueError()
             if _read(root, 'pids.json') != self._pid_raw:
                 raise ValueError()
+            from workspace_reentry import _sync, _rename_exclusive
             archive = parent / ('completed-' + box.nonce)
-            archive.mkdir(mode=0o700)
-            _root(archive)
+            if archive.exists(): raise ValueError()
+            pending = _archive_pending(root)
+            pending.mkdir(mode=0o700)
+            _sync(parent)
             destination = archive / 'mailbox'
-            os.rename(root, destination)
-            for directory in (archive, parent):
-                fd = os.open(directory, os.O_RDONLY | os.O_DIRECTORY)
-                try: os.fsync(fd)
-                finally: os.close(fd)
+            _rename_exclusive(root, pending/'mailbox')
+            _sync(pending)
+            _sync(parent)
+            # Same final publication boundary as the receipt-producing path.
+            _rename_exclusive(pending, archive)
             return destination
         except Exception:
             raise ValueError(ERROR) from None

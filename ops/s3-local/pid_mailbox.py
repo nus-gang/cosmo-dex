@@ -24,6 +24,18 @@ def _root(path):
     return path
 
 
+def _archive_pending(path):
+    return Path(path).with_name('.'+Path(path).name+'.archive-pending')
+
+
+def _archive_clear(path):
+    # A durable reservation survives errors/process exit after the mailbox move.
+    # Even a malformed or dangling entry is evidence, never an empty slot.
+    try: _archive_pending(path).lstat()
+    except FileNotFoundError: return
+    raise ValueError(ERROR)
+
+
 def _read(root, name):
     fd = os.open(root / name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
     try:
@@ -103,6 +115,7 @@ class Mailbox:
         try:
             path = Path(path)
             _root(path.parent)
+            _archive_clear(path)
             path.mkdir(mode=0o700)
             self.root = _root(path)
             self.identity = self.root.stat()
