@@ -31,6 +31,8 @@ def session(python, candidate, argv, *, mailbox, raw, artifacts, arguments,
             raise ValueError()
         endpoints = worker_endpoints(worker_config(python, candidate, argv,
             fee_bps=kwargs['fee_bps']), python, candidate, fee_bps=kwargs['fee_bps'])
+        if kwargs.get('reentry') is not None:
+            kwargs['reentry'].bind_mailbox(mailbox)
         # Freeze capture and invocation before any managed control request.
         artifacts = copy.deepcopy(artifacts)
         arguments = tuple(arguments)

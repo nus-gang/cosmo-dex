@@ -20,7 +20,7 @@ ERROR = 'AUTHENTICATED_CHAIN_SESSION_REJECTED'
 
 @contextmanager
 def session(python, candidate, argv, workspace_id, *, fee_bps, validator_index,
-            mailbox, stop=lambda: False):
+            mailbox, stop=lambda: False, reentry=None):
     if (type(mailbox) is not Mailbox or mailbox.used or
             getattr(mailbox, '_authenticated_attempted', False)):
         raise ValueError(ERROR)
@@ -74,7 +74,7 @@ def session(python, candidate, argv, workspace_id, *, fee_bps, validator_index,
             with chain_session.session(python, candidate, argv, fee_bps=fee_bps,
                     validator_index=validator_index, mailbox=mailbox,
                     broker_root=a.approval_socket.parent, broker=broker_at,
-                    client=client, audit=audit) as evidence:
+                    client=client, audit=audit, **({} if reentry is None else {'reentry':reentry})) as evidence:
                 yield evidence
     except (KeyboardInterrupt, SystemExit):
         raise

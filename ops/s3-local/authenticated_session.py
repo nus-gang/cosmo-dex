@@ -18,7 +18,7 @@ ERROR = 'AUTHENTICATED_SESSION_REJECTED'
 
 
 @contextmanager
-def session(prepared, workspace_id, *, stop=lambda: False):
+def session(prepared, workspace_id, *, stop=lambda: False, reentry=None):
     # Internal PreparedSession state is trusted; no serialized permits/adapters.
     if getattr(prepared, '_authenticated_attempted', False) or prepared._used:
         raise ValueError(ERROR)
@@ -59,7 +59,7 @@ def session(prepared, workspace_id, *, stop=lambda: False):
         with prepared.session(client=client, broker_root=a.approval_socket.parent,
                 broker=broker_at, audit=audit, raw=raw, artifacts=a.artifacts,
                 arguments=arguments, scratch=a.scratch,
-                validator_sha256=digest) as evidence:
+                validator_sha256=digest, **({} if reentry is None else {'reentry':reentry})) as evidence:
             yield evidence
     except (KeyboardInterrupt, SystemExit):
         raise

@@ -23,7 +23,7 @@ def prepare(python, candidate, argv, *, fee_bps):
             'approval_verified': False, 'starts_service': False}
 
 
-def registered(packet, workspaces):
+def registered(packet, workspaces, *, reentry=None):
     """Match a fresh authenticated workspace listing to the prepared request.
 
     Strict equality refuses command/env/config drift and duplicate registrations.
@@ -44,14 +44,25 @@ def registered(packet, workspaces):
             raise ValueError()
         w = matches[0]
         wid = _uuid(w['id'])
+        if sum(row.get('id') == wid for row in workspaces) != 1:
+            raise ValueError()
         if (w['companyId'] != COMPANY or w['projectId'] != PROJECT or
                 w['isPrimary'] is not False or w['sourceType'] != 'local_path' or
                 w['cwd'] != body['cwd'] or w['runtimeConfig'] != body['runtimeConfig'] or
-                w['runtimeServices'] != [] or
                 any(w.get(k) is not None for k in (
                     'setupCommand', 'cleanupCommand', 'sharedWorkspaceKey',
                     'remoteProvider', 'remoteWorkspaceRef', 'repoUrl'))):
             raise ValueError()
+        if reentry is None:
+            if w['runtimeServices'] != []:
+                raise ValueError()
+        else:
+            # A typed, freshly probed history is required; a stopped label or
+            # serialized success flag is never sufficient.
+            from workspace_reentry import Reentry
+            if type(reentry) is not Reentry:
+                raise ValueError()
+            reentry.check(packet, w)
         commands = body['runtimeConfig']['workspaceRuntime']['commands']
         if len(commands) != 1:
             raise ValueError()

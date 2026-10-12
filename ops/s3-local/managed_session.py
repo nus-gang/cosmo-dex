@@ -16,7 +16,7 @@ CLEANUP_ERROR = 'MANAGED_SESSION_STOP_UNCONFIRMED'
 
 @contextmanager
 def _session(python, candidate, argv, *, fee_bps, broker_root,
-             broker, read_workspaces, request, audit):
+             broker, read_workspaces, request, audit, reentry=None):
     """Internal seam: one targeted start, unconditional targeted stop once sent.
 
     A stop response is retained as evidence, not asserted to prove process exit.
@@ -38,13 +38,16 @@ def _session(python, candidate, argv, *, fee_bps, broker_root,
             if Path(endpoint) != args.approval_socket:
                 raise ValueError()
             target = registered(packet, read_workspaces(
-                f'/api/projects/{PROJECT}/workspaces'))
+                f'/api/projects/{PROJECT}/workspaces'), reentry=reentry)
             audit()  # Must raise on denial; no serialized permit is accepted.
             # Re-read after audit: no command/config drift is accepted at dispatch.
             current = registered(packet, read_workspaces(
-                f'/api/projects/{PROJECT}/workspaces'))
+                f'/api/projects/{PROJECT}/workspaces'), reentry=reentry)
             if current != target:
                 raise ValueError()
+            if reentry is not None:
+                audit()
+                reentry.confirm(packet, read_workspaces(f'/api/projects/{PROJECT}/workspaces'), target['workspace_id'])
             evidence = {'start_attempted': False, 'stop_attempted': False,
                         'stop_acknowledged': False, 'process_exit_verified': False,
                         'approval_verified': False, 'DEV': 'NOT_RUN'}
@@ -88,7 +91,7 @@ def _observed_session(python, candidate, argv, *, client, **kwargs):
         operation(response, action, client._workspace_id, command)
         if action == 'stop':
             stop_evidence.update(stopped(response, client.read_workspaces(
-                f'/api/projects/{PROJECT}/workspaces'), client._workspace_id, config))
+                f'/api/projects/{PROJECT}/workspaces'), client._workspace_id, config, history=kwargs.get('reentry')))
         return response
 
     evidence = None

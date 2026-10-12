@@ -19,7 +19,7 @@ ERROR = 'AUTHENTICATED_WEB_SESSION_REJECTED'
 
 @contextmanager
 def session(python, candidate, argv, workspace_id, *, fee_bps, mailbox,
-            stop=lambda: False):
+            stop=lambda: False, reentry=None):
     if (type(mailbox) is not WebMailbox or mailbox.used or
             getattr(mailbox, '_authenticated_attempted', False)):
         raise ValueError(ERROR)
@@ -58,7 +58,7 @@ def session(python, candidate, argv, workspace_id, *, fee_bps, mailbox,
         audit()
         with web_session.session(python, candidate, argv, fee_bps=fee_bps,
                 mailbox=mailbox, broker_root=endpoint.parent, broker=broker_at,
-                client=client, audit=audit) as evidence:
+                client=client, audit=audit, **({} if reentry is None else {'reentry':reentry})) as evidence:
             yield evidence
     except (KeyboardInterrupt, SystemExit):
         raise

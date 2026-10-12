@@ -29,7 +29,7 @@ def session(python, candidate, argv, **kwargs):
 
 @contextmanager
 def _session(python, candidate, argv, *, fee_bps, mailbox, broker_root,
-             broker, client, audit, process, port, writer, validator_index):
+             broker, client, audit, process, port, writer, validator_index, reentry=None):
     try:
         argv = tuple(argv)
         args = parse(['serve-chain-reviewed', *argv])
@@ -49,16 +49,21 @@ def _session(python, candidate, argv, *, fee_bps, mailbox, broker_root,
             host_release_observations_complete=False, pid_handoff_collected=False,
             pid_evidence_retained=True, inventory_complete_verified=False,
             cleanup_complete_verified=False, approval_verified=False, DEV='NOT_RUN')
+        if reentry is not None:
+            reentry.bind_mailbox(mailbox)
         with broker(root) as actual:
             if Path(actual) != endpoint:
                 raise ValueError()
             path = f'/api/projects/{PROJECT}/workspaces'
-            target = registered(packet, client.read_workspaces(path))
+            target = registered(packet, client.read_workspaces(path), reentry=reentry)
             if target['workspace_id'] != client._workspace_id:
                 raise ValueError()
             audit()
-            if registered(packet, client.read_workspaces(path)) != target:
+            if registered(packet, client.read_workspaces(path), reentry=reentry) != target:
                 raise ValueError()
+            if reentry is not None:
+                audit()
+                reentry.confirm(packet, client.read_workspaces(path), client._workspace_id)
             yielded = False
             try:
                 evidence['start_attempted'] = True
@@ -70,8 +75,9 @@ def _session(python, candidate, argv, *, fee_bps, mailbox, broker_root,
                 evidence['stop_attempted'] = True
                 try:
                     response = client.request(copy.deepcopy(target['requests']['stop']))
+                    evidence['stop_response'] = copy.deepcopy(response)
                     evidence.update(stopped(response, client.read_workspaces(path),
-                                            client._workspace_id, config))
+                                            client._workspace_id, config, history=reentry))
                 except BaseException:
                     raise ValueError(STOP_ERROR) from None
                 if yielded:

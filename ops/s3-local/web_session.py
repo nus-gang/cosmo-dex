@@ -28,11 +28,22 @@ def session(python, candidate, argv, **kwargs):
 
 @contextmanager
 def _session(python, candidate, argv, *, fee_bps, mailbox, broker_root,
-             broker, client, audit, process, port):
+             broker, client, audit, process, port, reentry=None, key_packet=None):
     try:
         argv = tuple(argv)
-        args, _, endpoint, _, _, _, _, _ = parse_web(['serve-web-reviewed', *argv])
-        packet = prepare_web(python, candidate, argv, fee_bps=fee_bps)
+        if key_packet is None:
+            args, _, endpoint, _, _, _, _, _ = parse_web(['serve-web-reviewed', *argv])
+            packet = prepare_web(python, candidate, argv, fee_bps=fee_bps)
+        else:
+            from workspace_reentry import command_info
+            import shlex
+            packet = copy.deepcopy(key_packet)
+            kind, args, _ = command_info(packet)
+            words = shlex.split(packet['body']['runtimeConfig']['workspaceRuntime']['commands'][0]['command'])
+            if (kind != 'keys' or words[1] != str(python) or packet['body']['cwd'] != str(candidate)
+                    or words[5:] != list(argv) or packet['body']['name'] != f'nus-s3-local-web-fee{fee_bps}'):
+                raise ValueError()
+            endpoint = args.approval_socket
         config = packet['body']['runtimeConfig']
         command, = config['workspaceRuntime']['commands']
         endpoints = (('127.0.0.1', command['port']),)
@@ -46,16 +57,21 @@ def _session(python, candidate, argv, *, fee_bps, mailbox, broker_root,
             host_release_observations_complete=False, pid_handoff_collected=False,
             pid_evidence_retained=True, inventory_complete_verified=False,
             cleanup_complete_verified=False, approval_verified=False, DEV='NOT_RUN')
+        if reentry is not None:
+            reentry.bind_mailbox(mailbox)
         with broker(root) as actual:
             if Path(actual) != endpoint:
                 raise ValueError()
             path = f'/api/projects/{PROJECT}/workspaces'
-            target = registered(packet, client.read_workspaces(path))
+            target = registered(packet, client.read_workspaces(path), reentry=reentry)
             if target['workspace_id'] != client._workspace_id:
                 raise ValueError()
             audit()
-            if registered(packet, client.read_workspaces(path)) != target:
+            if registered(packet, client.read_workspaces(path), reentry=reentry) != target:
                 raise ValueError()
+            if reentry is not None:
+                audit()
+                reentry.confirm(packet, client.read_workspaces(path), client._workspace_id)
             yielded = False
             try:
                 evidence['start_attempted'] = True
@@ -67,8 +83,9 @@ def _session(python, candidate, argv, *, fee_bps, mailbox, broker_root,
                 evidence['stop_attempted'] = True
                 try:
                     response = client.request(copy.deepcopy(target['requests']['stop']))
+                    evidence['stop_response'] = copy.deepcopy(response)
                     evidence.update(stopped(response, client.read_workspaces(path),
-                                            client._workspace_id, config))
+                                            client._workspace_id, config, history=reentry))
                 except BaseException:
                     raise ValueError(STOP_ERROR) from None
                 if yielded:

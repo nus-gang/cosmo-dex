@@ -120,3 +120,5 @@ OS별 reuse 규칙 때문에 bind 결과만으로 모든 기존 socket 부재를
 않는다. 관리 API `stopped` 증거와 별도로 보존한다. 현재 session 자동 연결과
 실제 호스트 bind 시험은 미실행이며 L-T에서 승인된 후보·종료 절차에 연결한다.
 L-R 신규 4개 시험은 socket/clock 주입의 순수시험이다.
+
+정상 종료 이력의 재시작·준비→최종 웹 전환은 [WORKSPACE-REENTRY.md](WORKSPACE-REENTRY.md)를 따른다. 기존 빈 배열 조건을 임의로 제거하지 않는다.

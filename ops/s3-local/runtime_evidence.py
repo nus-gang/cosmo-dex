@@ -38,7 +38,7 @@ def operation(response, action, workspace_id, command):
         raise ValueError(ERROR) from None
 
 
-def stopped(response, listing, workspace_id, config):
+def stopped(response, listing, workspace_id, config, *, history=None):
     try:
         command, = config['workspaceRuntime']['commands']
         operation_id = operation(response, 'stop', workspace_id, command)
@@ -50,7 +50,17 @@ def stopped(response, listing, workspace_id, config):
                     workspace['runtimeConfig'] != config or workspace['cwd'] != command['cwd'] or
                     workspace['isPrimary'] is not False):
                 raise ValueError()
-            service, = workspace['runtimeServices']
+            services = workspace['runtimeServices']
+            if history is None:
+                service, = services
+            else:
+                sid = response['operation']['metadata']['runtimeServiceId']
+                service, = [s for s in services if s['id'] == sid]
+                prior = history.prior_services()
+                prior.pop(sid, None)
+                rest = [s for s in services if s['id'] != sid]
+                if len(rest) != len(prior) or {s['id']: s for s in rest} != prior:
+                    raise ValueError()
             _uuid(service['id'])
             if (service['companyId'] != COMPANY or service['projectId'] != PROJECT or
                     service['projectWorkspaceId'] != workspace_id or
