@@ -185,7 +185,9 @@ class Reentry:
             services = [service_record(r)[0]['id'] for r, _ in self.records]
             if len(set(services)) != len(services): raise ValueError()
             transitions = [] if transition is None else transition if isinstance(transition,list) else [transition]
-            if len(transitions)>2: raise ValueError()
+            # Preserve the actual RC4 + RC6 stopped rows through RC7 preparation
+            # and the final web command. Every edge still binds exact packets.
+            if len(transitions)>3: raise ValueError()
             self.transitions=copy.deepcopy(transitions)
             for edge in self.transitions: self._edge(edge)
             if self.transitions:

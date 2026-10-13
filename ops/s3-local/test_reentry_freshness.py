@@ -198,5 +198,34 @@ class FreshnessTest(unittest.TestCase):
             self.assertEqual((failed.root/'challenge').read_bytes(),original)
             self.assertEqual(set(p.name for p in failed.root.iterdir()),{'challenge'})
 
+    def test_two_prior_candidates_new_preparation_and_final_keep_all_rows(self):
+        for fee in (0,25):
+            spec,reports=fixture();packets=[];records=[];paths=[]
+            for i in range(3):
+                spec.update(candidate='/candidate'+str(i),bundle='/bundle'+str(i),artifacts='/artifacts'+str(i),
+                    runtime_pin=str(i+1)*64,native_decision_id=f'{i+1:08d}-2222-4333-8444-555555555555',
+                    ceo_revision=f'{i+4:08d}-2222-4333-8444-555555555555',
+                    cto_revision=f'{i+7:08d}-2222-4333-8444-555555555555',control_root='/private/control'+str(i))
+                packet=key_packets(spec)[int(bool(fee))];packets.append(packet)
+                record=synthetic(packet,nonce=str(i+1)*64,sid=f'{i+1:08d}-3333-4333-8333-333333333333')
+                records.append(record);paths.append(self.archive(record,f'history{fee}-{i}'))
+            for report in reports.values():report['runtime_pin']=spec['runtime_pin']
+            final=render(spec,reports)['packets'][(6 if fee else 0)+1]
+            edges=[dict(previous=packets[0],next=packets[1]),dict(previous=packets[1],next=packets[2]),
+                   dict(previous=packets[2],next=final)]
+            row=copy.deepcopy(records[-1]['stop_response']['workspace']);row.update(copy.deepcopy(final['body']))
+            row['runtimeServices']=[r['stop_response']['workspace']['runtimeServices'][0] for r in records]
+            original=copy.deepcopy(row)
+            entry=m.Reentry(final,paths,transition=edges)
+            with patch.object(m,'fresh_resources',side_effect=probe) as resources:
+                registered(final,[row],reentry=entry);registered(final,[row],reentry=entry)
+                entry.confirm(final,[row],WID)
+                self.assertEqual(resources.call_count,6)
+            self.assertEqual(row,original)
+            for invalid in (edges[1:],list(reversed(edges)),edges+[edges[-1]]):
+                with self.assertRaises(ValueError):m.Reentry(final,paths,transition=invalid)
+            entry=m.Reentry(final,paths,transition=edges);row['runtimeServices'].pop(0)
+            with self.assertRaises(ValueError):registered(final,[row],reentry=entry)
+
 
 if __name__ == '__main__': unittest.main()
