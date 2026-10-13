@@ -19,7 +19,7 @@ L-T-RC4-01 수정. `runtimeServices` 원문을 유지한다. `registered()`의 �
 - 최초 실행은 receipts=[]이다. 정상 STOP·fresh listing·PID/port(Chain/worker는 writer까지) 확인 후 `completed-<nonce>/receipt.json`과 원 mailbox를 no-replace/fsync 경계로 보존하고 경로를 출력한다. 다음 호출은 같은 mailbox 경로에 새 nonce를 만든다. 중단/START 응답 유실/STOP 불명/정리 실패는 자동 재시도·삭제·nonce 교체 없이 원 mailbox를 보존한다.
 - 재시작은 `receipts`에 현재 listing의 **각 service ID마다 최신 정상 종료 receipt의 절대 경로**를 넣는다(최대32). 같은 ID의 이전 receipt는 파일로 보존하지만 최신 증거와 중복 입력하지 않는다. 다른 command의 이전 stopped 행도 모두 목록에 있어야 한다. 재사용되거나 새로 생긴 service ID는 다음 STOP 원문에서 확인한다.
 - 준비→최종 웹은 `transition={"previous": <정확한 준비 packet>, "next": <정확한 최종 packet>}`를 추가한다. 두 packet의 workspace명/cwd/Python·pin·승인 revision·IPC·origin이 같아야 하며, 새 최종 packet이 fresh 인증 listing의 현재 config와 같아야 한다. 필요한 board의 권한 있는 config 변경은 기존 등록 workspace에서 수행한다. 이 CLI는 설정을 바꾸거나 등록 제한을 우회하지 않는다. 임의 command·다른 candidate로의 암묵 전환은 거절한다.
-- 두 등록 조회에서 receipt 원문/실제 archive와 company/project/workspace/scope/command/STOP service/PID를 대조하고 자원 해제를 새로 관측한다. 기존 관측 성공 flag는 허가로 쓰지 않는다. 마지막 승인 audit 뒤 세 번째 fresh GET에서 행과 설정이 같아야 START한다. IO/시계/시간상한/변경은 해당 인수 객체를 닫는다.
+- 두 등록 조회에서 receipt 원문/실제 archive와 company/project/workspace/scope/command/STOP service/PID를 대조하고 자원 해제를 새로 관측한다. 기존 관측 성공 flag는 허가로 쓰지 않는다. 순서는 등록/자원1 → fresh 승인 audit1 → fresh 승인 audit2 → 등록/자원2 → final GET/confirm → START다. 마지막 자원 검사 종료부터 confirm까지 2초 상한을 유지한다. IO/시계/시간상한/변경은 해당 인수 객체를 닫는다.
 - worker 재진입은 pinned capture와 실제 offline validator로 같은 home을 open/drop한다. Chain은 기존 `writer.dev.lock`을 생성·삭제 없이 다시 획득/해제한다. 원 home/guard/genesis를 재생성하거나 수리하지 않는다.
 
 API 직접 조합은 `Reentry(packet, receipt_paths, transition=...)`를 authenticated web/Chain/worker session의 `reentry=`로 전달하고, 성공적으로 context를 나온 뒤 `preserve(mailbox, packet, evidence)`로 보존한다. 실패한 context에서 preserve를 호출하지 않는다. 새 CLI는 이 순서를 구현한다. 기존 일회 CLI도 보존되며 종료 이력에 대한 암묵 fallback은 없다.
@@ -42,3 +42,20 @@ CTO-RC5-01 수정: `.<mailbox명>.archive-pending`을 mkdir하고 부모를 fsyn
 내부 종료 receipt는 `s3-local-stopped-receipt/2`와 정확한 `archive_root`를 요구한다. staging 경로·구 v1 receipt는 자동 인수/업그레이드하지 않는다. 읽기와 두 Reentry 검사/최종 confirm은 완료 경로와 pending 부재를 재확인한다. 기존 RC4/RC5 원 STOP/PID 자료는 원 mailbox가 온전할 때 명시적 import로 복사할 수 있으며, import 역시 모든 fsync 뒤 마지막 no-replace rename으로 게시한다. 실패한 pending/mailbox를 원본으로 삼거나 파일을 직접 이동·편집해 복구하는 경로는 없다. 불완전 자료는 보존하고 별도 조사한다.
 
 `test_archive_publication.py`는 fee0/25 × 준비웹/최종웹/worker/Chain의 5 fsync와 2 rename 경계를 실제 파일시스템에서 주입한다. 정상·완료 직후 종료는 새 프로세스에서 인수하고, 완료 전 EIO/interrupt/exit는 receipt·nonce·Reentry·빈 receipt CLI의 session/START를 거절한다. STOP/PID/probe는 합성이며 실제 제품 서비스 재시작 시험은 NUS-74에 남는다.
+
+## RC7 — 승인 지연과 challenge-only 실패의 재개
+
+L-T-RC6-01: 긴 두 번째 승인 조회가 마지막 자원 관측의 2초를 소모하던 순서를 수정했다. 두 fresh 승인 조회를 모두 마지막 등록/자원 검사 앞으로 옮겼다. 준비 웹·최종 웹·worker·Chain에 동일하게 적용한다. 승인 callback은 매번 인증된 최신 native/CEO/CTO 문서와 후보 bytes를 확인하며 이전 성공 결과를 permit으로 재사용하지 않는다. 실제 2.1초 승인 지연은 이후 새 자원 관측으로 처리한다. final GET 자체가 2초를 넘거나 실패하면 START0으로 거절한다. 자원 probe의 기존 60초 총상한과 각 adapter 상한, writer 검사, managed child의 독립 승인 gate는 유지한다. final GET→START 비원자성 및 자원 지속 예약의 한계는 그대로다.
+
+challenge만 있는 mailbox는 **실행되지 않았다는 증명도 정상 STOP receipt도 아니다**. 오류 뒤 같은 CLI를 반복해 nonce를 교체하지 않는다. `preserve`/`import-stopped-evidence`로 완료 자료를 만들거나 빈 receipts로 종료 이력을 숨기지 않는다. 기존 failed root/home/guard/genesis는 이동·수정·삭제하지 않는다.
+
+이번 RC6 준비 웹 실패의 운영자 검토 및 명시적 재개 절차는 다음과 같다. 이 절은 L-R에서 서비스를 실행하는 명령이 아니며 새 승인 후 NUS-74에서 수행한다.
+
+1. 실패 run의 stdout/stderr·오류 원인·request/등록 packet·runtime pin·승인 revision·challenge 원문/SHA·mailbox 파일 목록을 업무 artifact에 보존한다. 정상 종료 receipt들과 fresh 인증 workspace listing의 모든 service 행도 보존한다. challenge-only만 보고 START0으로 추정하지 말고 관리 operation/run 결과에서 START 요청 여부를 대조한다. 불명 요청·살아 있는 PID·누락된 STOP/PID·미해소 pending이면 재개하지 않고 조사한다.
+2. NUS-73 새 후보 CTO→Security와 CEO/CTO 각 canonical 독립 승인, NUS-75 조합 gate를 확인한다. RC6 승인/pin은 재사용하지 않는다. 새 후보 checkout/bundle/artifacts와 새 private control root를 사용한다. 기존 실패 경로에 mkdir/rm/mv를 하지 않는다. 새 control root의 준비 packet을 `registration_render.py`의 기존 key-packet 생성 경로로 만들고, 권한 있는 주체가 **기존 준비 workspace ID**의 정확한 새 cwd/runtimeConfig를 등록한다. 완료된 RC6 설정을 같은 값으로 다시 쓰는 작업이 아니다.
+3. 기존 service 행마다 최신 정상 STOP receipt를 유지하고 request의 `packet`은 새 준비 packet, `workspace_id`는 기존 ID, `receipts`는 위 완료 receipt 목록, `transition`은 정확한 이전 준비→새 준비 pair(기존 이력이 있으면 지원되는 연속 pair 최대2)로 지정한다. failed challenge를 receipts에 넣지 않는다. 새 packet은 cwd/bundle/artifacts/pin/decision/두 revision/IPC/mailbox가 모두 달라야 한다. 과거 receipt를 확인하는 것만으로 기동을 허가하지 않는다.
+4. 운영자 검토 기록과 원문 해시를 NUS-74에 남긴 뒤 `python3 -B <새 candidate>/ops/s3-local/restart_session_cli.py run-reentry-reviewed --request <새 private request.json>`을 명시적으로 한 번 실행한다. 새 mailbox 경로에 새 nonce가 생성되고 두 fresh audit·두 등록/자원 검사·final GET을 모두 다시 거친다. 거절 시 새 실패 자료도 보존한다. 성공 후 생성된 정상 종료 receipt만 다음 재진입에 사용한다.
+
+현재 keys→keys 후보 전환만 지원한다. worker·Chain·최종 웹의 challenge-only 실패에 대해 home 교체나 후보 전환을 자동 적용하지 않는다. 이들의 불명 실행은 STOP/PID 원문과 자원 상태를 먼저 조사하고 소유 업무에 재개 조건을 기록한다. 이번 실제 실패는 준비 웹이므로 위 기존 전환 경로를 사용한다. 동일 후보/같은 mailbox의 수동 재설정 명령은 제공하지 않는다.
+
+`test_reentry_freshness.py`는 네 역할 × fee0/25에서 실제 monotonic clock의 2.1초 지연과 합성 인증/제어/자원 IO를 구분해 기록한다. 거절 뒤 challenge 보존·기존 경로 새 nonce 거절, 이전 준비의 정상 receipt와 새 후보/새 nonce를 명시한 전환을 시험한다. 실제 실패 mailbox는 시험 입력으로 수정하지 않는다. 실제 managed 재시작·DEV/AR 제품 판정은 새 pin 이후 NUS-74에서 수행한다.

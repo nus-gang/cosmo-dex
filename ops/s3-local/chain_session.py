@@ -59,10 +59,13 @@ def _session(python, candidate, argv, *, fee_bps, mailbox, broker_root,
             if target['workspace_id'] != client._workspace_id:
                 raise ValueError()
             audit()
+            if reentry is not None:
+                # Keep potentially slow approval IO outside the final resource
+                # freshness window; registration and writer checks follow it.
+                audit()
             if registered(packet, client.read_workspaces(path), reentry=reentry) != target:
                 raise ValueError()
             if reentry is not None:
-                audit()
                 reentry.confirm(packet, client.read_workspaces(path), client._workspace_id)
             yielded = False
             try:

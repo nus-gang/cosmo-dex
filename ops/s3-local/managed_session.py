@@ -40,13 +40,14 @@ def _session(python, candidate, argv, *, fee_bps, broker_root,
             target = registered(packet, read_workspaces(
                 f'/api/projects/{PROJECT}/workspaces'), reentry=reentry)
             audit()  # Must raise on denial; no serialized permit is accepted.
+            if reentry is not None:
+                audit()  # Finish approval IO before the last resource probe.
             # Re-read after audit: no command/config drift is accepted at dispatch.
             current = registered(packet, read_workspaces(
                 f'/api/projects/{PROJECT}/workspaces'), reentry=reentry)
             if current != target:
                 raise ValueError()
             if reentry is not None:
-                audit()
                 reentry.confirm(packet, read_workspaces(f'/api/projects/{PROJECT}/workspaces'), target['workspace_id'])
             evidence = {'start_attempted': False, 'stop_attempted': False,
                         'stop_acknowledged': False, 'process_exit_verified': False,

@@ -61,7 +61,7 @@ class SessionsTest(core.ReentryTest):
             f.kw['reentry']=m.Reentry(packet,[path])
             with patch.object(m,'fresh_resources',side_effect=probe):
                 with f.run_session():pass
-            self.assertEqual(f.events,['broker-open','read','audit','read','audit','read','start','stop','broker-close'])
+            self.assertEqual(f.events,['broker-open','read','audit','audit','read','read','start','stop','broker-close'])
 
     def test_cli_all_four_modes_archive_before_same_path_next_nonce(self):
         spec,reports=fixture()
