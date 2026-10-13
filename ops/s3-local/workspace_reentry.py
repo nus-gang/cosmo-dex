@@ -288,6 +288,23 @@ class Reentry:
             self._closed = True
             raise
 
+    def begin(self):
+        """Consume this session attempt even if an audit fails before probe two."""
+        if self._closed or getattr(self, '_attempted', False):
+            raise ValueError(ERROR)
+        self._attempted = True
+
+    def final_check(self, packet, listing, workspace_id, authorize):
+        """Check fresh authority after final GET, then enforce resource freshness."""
+        try:
+            if self._closed or not getattr(self, '_attempted', False) or not callable(authorize):
+                raise ValueError(ERROR)
+            authorize()
+            self.confirm(packet, listing, workspace_id)
+        except BaseException:
+            self._closed = True
+            raise
+
     def bind_mailbox(self, box):
         _, args, _ = command_info(self.packet)
         if (box.used or box.root != args.pid_mailbox or

@@ -33,7 +33,7 @@ class SessionsTest(core.ReentryTest):
                         'body':{k:before[k] for k in ('name','sourceType','cwd','isPrimary','runtimeConfig')},
                         'requires_board_registration':True,'approval_verified':False,'starts_service':False}
                     record=synthetic(packet);path=self.archive(record,f'{kind}-{fee}-{drift}')
-                    entry=m.Reentry(packet,[path]);f.kw['reentry']=entry
+                    entry=m.Reentry(packet,[path]);f.kw['reentry']=entry;f.kw['final_authorize']=lambda:None
                     prior=record['stop_response']['workspace'];final_read=copy.deepcopy(prior)
                     if drift:final_read['runtimeServices'][0]['status']='running'
                     f.client.read_workspaces.side_effect=[[prior],[prior],[final_read],[after]]
@@ -58,10 +58,54 @@ class SessionsTest(core.ReentryTest):
             f=test_managed_session.SessionTest();f.setup_case(fee)
             packet=prepare(sys.executable,'/candidate',f.argv,fee_bps=fee)
             record=synthetic(packet);path=self.archive(record,'worker'+str(fee));f.workspace=record['stop_response']['workspace']
-            f.kw['reentry']=m.Reentry(packet,[path])
+            f.kw['reentry']=m.Reentry(packet,[path]);f.kw['final_authorize']=lambda:None
             with patch.object(m,'fresh_resources',side_effect=probe):
                 with f.run_session():pass
             self.assertEqual(f.events,['broker-open','read','audit','audit','read','read','start','stop','broker-close'])
+
+    def test_authenticated_roles_wire_fresh_final_authority(self):
+        import authenticated_session as worker
+        import authenticated_web_session as web
+        import authenticated_chain_session as chain
+        from test_authenticated_session import AuthenticatedSessionTest
+        from test_authenticated_web_session import AuthenticatedWebTest
+        from test_authenticated_chain_session import AuthenticatedChainTest
+        import approval_gate
+        for fee in (0,25):
+            for kind in ('keys','web','worker','chain'):
+                entry=object()
+                @contextmanager
+                def sink(*args,**kw):
+                    self.assertIs(kw['reentry'],entry)
+                    kw['final_authorize']()
+                    yield {}
+                if kind=='worker':
+                    f=AuthenticatedSessionTest();self.addCleanup(f.doCleanups);helper,prepared=f.fixture(fee)
+                    context=worker.session(prepared,helper.f.client._workspace_id,reentry=entry)
+                    patcher=patch.object(prepared,'session',side_effect=sink)
+                elif kind in ('web','chain'):
+                    f=(AuthenticatedWebTest if kind=='web' else AuthenticatedChainTest)()
+                    self.addCleanup(f.doCleanups);helper=f.fixture(fee)
+                    module=web if kind=='web' else chain
+                    extra={} if kind=='web' else {'validator_index':2}
+                    context=module.session(sys.executable,'/candidate',helper.argv,helper.client._workspace_id,
+                        fee_bps=fee,mailbox=helper.mailbox,reentry=entry,**extra)
+                    patcher=patch.object(module.web_session if kind=='web' else module.chain_session,
+                        'session',side_effect=sink)
+                else:
+                    spec,_=fixture();packet=key_packets(spec)[int(bool(fee))];a=m.command_info(packet)[1]
+                    import shlex,web_session
+                    words=shlex.split(packet['body']['runtimeConfig']['workspaceRuntime']['commands'][0]['command'])
+                    patch.object(approval_gate,'inspect',return_value={'fresh':True}).start()
+                    patch.object(cli.RuntimeClient,'from_environment').start()
+                    context=cli.key_session(words[1],packet['body']['cwd'],words[5:],core.WID,packet,
+                        object(),fee,entry,lambda:False)
+                    patcher=patch.object(web_session,'session',side_effect=sink)
+                try:
+                    with patcher,patch.object(approval_gate,'recheck') as recheck:
+                        with context:pass
+                        recheck.assert_called_once_with({'fresh':True})
+                finally:patch.stopall()
 
     def test_cli_all_four_modes_archive_before_same_path_next_nonce(self):
         spec,reports=fixture()

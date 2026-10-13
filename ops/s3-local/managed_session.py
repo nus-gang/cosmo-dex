@@ -16,7 +16,7 @@ CLEANUP_ERROR = 'MANAGED_SESSION_STOP_UNCONFIRMED'
 
 @contextmanager
 def _session(python, candidate, argv, *, fee_bps, broker_root,
-             broker, read_workspaces, request, audit, reentry=None):
+             broker, read_workspaces, request, audit, reentry=None, final_authorize=None):
     """Internal seam: one targeted start, unconditional targeted stop once sent.
 
     A stop response is retained as evidence, not asserted to prove process exit.
@@ -34,6 +34,10 @@ def _session(python, candidate, argv, *, fee_bps, broker_root,
                 args.approval_socket != root / 's'):
             raise ValueError()
         # Scope the broker around both control requests, including error cleanup.
+        if reentry is not None:
+            reentry.begin()
+            if not callable(final_authorize):
+                raise ValueError()
         with broker(root) as endpoint:
             if Path(endpoint) != args.approval_socket:
                 raise ValueError()
@@ -48,7 +52,7 @@ def _session(python, candidate, argv, *, fee_bps, broker_root,
             if current != target:
                 raise ValueError()
             if reentry is not None:
-                reentry.confirm(packet, read_workspaces(f'/api/projects/{PROJECT}/workspaces'), target['workspace_id'])
+                reentry.final_check(packet, read_workspaces(f'/api/projects/{PROJECT}/workspaces'), target['workspace_id'], final_authorize)
             evidence = {'start_attempted': False, 'stop_attempted': False,
                         'stop_acknowledged': False, 'process_exit_verified': False,
                         'approval_verified': False, 'DEV': 'NOT_RUN'}

@@ -58,7 +58,8 @@ def key_session(python,candidate,argv,workspace,packet,box,fee,reentry,stop):
     with web.session(python,candidate,argv,fee_bps=fee,mailbox=box,
             broker_root=a.approval_socket.parent,broker=broker_at,
             client=RuntimeClient.from_environment(workspace,'s3-web-fee'+str(fee)),
-            audit=audit,reentry=reentry,key_packet=packet) as evidence:
+            audit=audit,reentry=reentry,key_packet=packet,
+            final_authorize=approval_gate.final_authorizer(before,stop)) as evidence:
         yield evidence
 
 

@@ -74,7 +74,7 @@ def session(python, candidate, argv, workspace_id, *, fee_bps, validator_index,
             with chain_session.session(python, candidate, argv, fee_bps=fee_bps,
                     validator_index=validator_index, mailbox=mailbox,
                     broker_root=a.approval_socket.parent, broker=broker_at,
-                    client=client, audit=audit, **({} if reentry is None else {'reentry':reentry})) as evidence:
+                    client=client, audit=audit, **({} if reentry is None else {'reentry':reentry, 'final_authorize':approval_gate.final_authorizer(before, stop)})) as evidence:
                 yield evidence
     except (KeyboardInterrupt, SystemExit):
         raise

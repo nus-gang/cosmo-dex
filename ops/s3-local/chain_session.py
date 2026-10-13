@@ -29,7 +29,7 @@ def session(python, candidate, argv, **kwargs):
 
 @contextmanager
 def _session(python, candidate, argv, *, fee_bps, mailbox, broker_root,
-             broker, client, audit, process, port, writer, validator_index, reentry=None):
+             broker, client, audit, process, port, writer, validator_index, reentry=None, final_authorize=None):
     try:
         argv = tuple(argv)
         args = parse(['serve-chain-reviewed', *argv])
@@ -51,6 +51,10 @@ def _session(python, candidate, argv, *, fee_bps, mailbox, broker_root,
             cleanup_complete_verified=False, approval_verified=False, DEV='NOT_RUN')
         if reentry is not None:
             reentry.bind_mailbox(mailbox)
+        if reentry is not None:
+            reentry.begin()
+            if not callable(final_authorize):
+                raise ValueError()
         with broker(root) as actual:
             if Path(actual) != endpoint:
                 raise ValueError()
@@ -66,7 +70,7 @@ def _session(python, candidate, argv, *, fee_bps, mailbox, broker_root,
             if registered(packet, client.read_workspaces(path), reentry=reentry) != target:
                 raise ValueError()
             if reentry is not None:
-                reentry.confirm(packet, client.read_workspaces(path), client._workspace_id)
+                reentry.final_check(packet, client.read_workspaces(path), client._workspace_id, final_authorize)
             yielded = False
             try:
                 evidence['start_attempted'] = True

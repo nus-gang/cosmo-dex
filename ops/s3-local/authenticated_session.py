@@ -59,7 +59,7 @@ def session(prepared, workspace_id, *, stop=lambda: False, reentry=None):
         with prepared.session(client=client, broker_root=a.approval_socket.parent,
                 broker=broker_at, audit=audit, raw=raw, artifacts=a.artifacts,
                 arguments=arguments, scratch=a.scratch,
-                validator_sha256=digest, **({} if reentry is None else {'reentry':reentry})) as evidence:
+                validator_sha256=digest, **({} if reentry is None else {'reentry':reentry, 'final_authorize':approval_gate.final_authorizer(before, stop)})) as evidence:
             yield evidence
     except (KeyboardInterrupt, SystemExit):
         raise

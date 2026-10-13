@@ -71,4 +71,32 @@ class ApprovalGateTest(fixtures.ReviewSubjectTest):
         factory.assert_called_once_with()
         self.assertTrue(result['approval_prerequisites_match'])
 
+    def test_final_authority_uses_fresh_documents_without_candidate_io(self):
+        before=self.inspect();self.calls=[]
+        with patch.object(gate.review_subject,'subject',side_effect=AssertionError('no candidate IO')):
+            with patch.object(gate.Reader,'from_environment',return_value=self.reader):
+                check=gate.final_authorizer(before,lambda:False)
+                check()
+                self.assertEqual(len(self.calls),9)
+                self.rows[1]['body']=self.rows[1]['body'].replace('approved','revoked')
+                with self.assertRaises(ValueError):check()
+        self.assertFalse(before['reusable_permit'])
+
+    def test_final_authority_changed_subject_revision_native_io_and_stop(self):
+        for mode in ('subject','revision','native','io','stop'):
+            self.setUp()
+            before=self.inspect()
+            if mode=='subject':
+                value=gate.decode(self.rows[0]['body'].encode())
+                value['subject']['manifest_sha256']='e'*64
+                self.rows[0]['body']=gate.encode(value).decode()
+            if mode=='revision':self.rows[1]['latestRevisionId']=uid(99)
+            if mode=='native':self.issue['status']='in_progress'
+            def read(path):
+                if mode=='io':raise OSError()
+                return self.reader(path)
+            with patch.object(gate.Reader,'from_environment',return_value=read):
+                with self.assertRaises((ValueError,OSError)):
+                    gate.final_authorizer(before,lambda:mode=='stop')()
+
 if __name__=='__main__': unittest.main()

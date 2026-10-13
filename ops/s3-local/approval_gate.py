@@ -69,3 +69,48 @@ def inspect(bundle, artifacts, pin, profile, acknowledge, decision_id, revisions
         reader = Reader.from_environment()
     return _inspect(reader, bundle, artifacts, pin, profile,
                     acknowledge, decision_id, revisions)
+
+
+def _recheck(reader, audit):
+    """Fresh authorization only; the prior audit supplies an identity, not authority.
+
+    Re-read native state and both canonical documents. Reconstruct the exact
+    subject from a fresh document and compare its digest to the byte audit.
+    No candidate hashing, saved approval body, local permit, or reader cache.
+    The caller checks the resource deadline AFTER these authenticated reads.
+    """
+    if (audit.get('format') != 's3-local-approval-audit/1' or
+            audit.get('approval_prerequisites_match') is not True or
+            audit.get('reusable_permit') is not False):
+        raise ValueError('APPROVAL_CHANGED')
+    decision = audit['native_decision_id']
+    before = native_review.inspect(reader, decision)
+    row = reader('/api/issues/' + native_review.ISSUE + '/documents/' + review_documents.KEYS['ceo'])
+    subject = encode(decode(row['body'].encode())['subject'])
+    if hashlib.sha256(subject).hexdigest() != audit['review_subject_sha256']:
+        raise ValueError('APPROVAL_CHANGED')
+    review_documents.inspect(reader, subject, dict(audit['independent_revisions']))
+    if native_review.inspect(reader, decision) != before:
+        raise ValueError('APPROVAL_CHANGED')
+
+
+def recheck(audit):
+    """Use fresh current-run authentication, including scoped private transport."""
+    reader = _PRIVATE_READER.get()
+    if reader is None:
+        reader = Reader.from_environment()
+    _recheck(reader, audit)
+
+
+def final_authorizer(audit, stop):
+    # Private callback wiring; every invocation does authenticated IO. No result
+    # of this closure is a permit. Copy the subject identity across callbacks.
+    import copy
+    expected = copy.deepcopy(audit)
+    def authorize():
+        if stop():
+            raise ValueError('APPROVAL_CHANGED')
+        recheck(expected)
+        if stop():
+            raise ValueError('APPROVAL_CHANGED')
+    return authorize
