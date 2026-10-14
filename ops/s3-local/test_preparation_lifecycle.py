@@ -174,5 +174,27 @@ with patch.object(c.approval_gate,'private_transport',return_value=nullcontext()
         self.assertEqual(timings[0],('start',0.));self.assertAlmostEqual(timings[-1][1],125.4)
         self.assertTrue(Path(result['receipt']).is_file())
 
+    def test_readiness_failure_or_stop_error_preserves_no_normal_receipt(self):
+        for stop_error in (False,True):
+            spec,_=fixture();spec['control_root']=str(self.root/str(stop_error));packet=key_packets(spec)[0]
+            a=workspace_reentry.command_info(packet)[1];a.pid_mailbox.parent.mkdir(parents=True,mode=0o700)
+            params=dict(packet=packet,workspace_id='11111111-1111-4111-8111-111111111111',duration_seconds=120,receipts=[],transition=None)
+            calls=[]
+            @contextmanager
+            def session(*args,**kw):
+                box=args[5];evidence={'start_attempted':True};box.session_evidence=evidence
+                calls.append('start')
+                try:yield evidence
+                finally:
+                    calls.append('stop');evidence['stop_attempted']=True
+                    if stop_error:raise ValueError('STOP_RESPONSE_LOST')
+            with patch.object(cli,'key_session',side_effect=session),patch.object(cli,'wait_ready',side_effect=ValueError('not ready')),patch.object(cli,'preserve') as preserve:
+                with self.assertRaises(ValueError):cli.run(params,lambda:False)
+                preserve.assert_not_called()
+            self.assertEqual(calls,['start','stop']);self.assertEqual({p.name for p in a.pid_mailbox.iterdir()},{'challenge'})
+            records=list(a.pid_mailbox.parent.glob('session-*/outcome.json'));self.assertEqual(len(records),1)
+            self.assertFalse(json.loads(records[0].read_text())['normal_receipt'])
+            self.assertFalse(list(a.pid_mailbox.parent.glob('completed-*')))
+
 
 if __name__=='__main__':unittest.main()

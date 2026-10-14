@@ -29,6 +29,7 @@ class FailureTest(unittest.TestCase):
             candidate='/fresh/rc9',control_root=str(self.root/'fresh'),bundle='/fresh/bundle',artifacts='/fresh/artifacts',runtime_pin='f'*64,
             native_decision_id='11111111-1111-4111-8111-111111111111',ceo_revision='22222222-2222-4222-8222-222222222222',cto_revision='33333333-3333-4333-8333-333333333333')
         self.packet=key_packets(spec)[0]
+        self.spec=spec
         previous=[r['packet'] for r in self.value['prior_receipts']]
         self.edges=[dict(previous=previous[0],next=previous[1]),dict(previous=previous[1],next=previous[2]),dict(previous=self.old,next=self.packet)]
         self.paths=[]
@@ -120,6 +121,22 @@ class FailureTest(unittest.TestCase):
             with patch('process_release.check',side_effect=cause) as process,patch('port_release.check') as port:
                 with self.assertRaises(type(cause)):failure.probe()
                 process.assert_called_once_with([15632,47145]);port.assert_not_called()
+
+    def test_four_exact_edges_reach_final_web_without_dropping_failed_history(self):
+        from test_registration_render import fixture
+        from registration_render import render
+        spec,reports=fixture();spec.update(self.spec)
+        spec['control_root']='/private/rc9-test-control'  # Command bytes only; no directory or socket.
+        for value in reports.values():value['runtime_pin']=spec['runtime_pin']
+        preparation=key_packets(spec)[0]
+        final=render(spec,reports)['packets'][1]
+        transitions=self.edges[:-1]+[dict(previous=self.old,next=preparation),dict(previous=preparation,next=final)]
+        entry=m.Reentry(final,self.paths,transition=transitions,failed_preparations=[self.failure])
+        workspace=copy.deepcopy(self.workspace);workspace.update(copy.deepcopy(final['body']))
+        with patch.object(m,'fresh_resources',side_effect=probe),self.probes():
+            registered(final,[workspace],reentry=entry)
+        self.assertEqual(len(entry.prior_services()),3)
+        with self.assertRaises(ValueError):m.Reentry(final,self.paths,transition=transitions)
 
 
 if __name__=='__main__':unittest.main()
