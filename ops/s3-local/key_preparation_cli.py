@@ -9,6 +9,7 @@ from launcher_signal import stop_latch
 from web_pid_mailbox import reporter
 import native_review
 from key_preparation import run
+from preparation_status import Trace
 
 
 def parse(argv):
@@ -34,15 +35,23 @@ def parse(argv):
 
 
 def main(argv=None):
+    trace=None
+    stop=lambda:False
     try:
         a=parse(sys.argv[1:] if argv is None else argv)
         record=reporter(a.pid_mailbox)
-        with stop_latch() as stop,approval_gate.private_transport(a.approval_socket):
-            result=run(a.bundle,a.artifacts,a.runtime_pin,a.web_origin,a.native_decision_id,
-                {'ceo':a.ceo_revision,'cto':a.cto_revision},stop,record)
+        with stop_latch() as stop:
+            record()  # Process existence only; before all expensive approval IO.
+            trace=Trace(a.pid_mailbox)
+            with approval_gate.private_transport(a.approval_socket):
+                result=run(a.bundle,a.artifacts,a.runtime_pin,a.web_origin,a.native_decision_id,
+                    {'ceo':a.ceo_revision,'cto':a.cto_revision},stop,None,trace=trace)
         if result.get('listener_closed') is not True:raise ValueError('RELEASE')
         return 0
     except (ValueError,OSError,KeyError,TypeError,KeyboardInterrupt):
+        if trace is not None and trace.phase not in ('failed','closed'):
+            try:trace.emit('failed',cause='operator_stop' if stop() else 'internal')
+            except (Exception,KeyboardInterrupt):pass
         print('LOCAL_KEY_PREPARATION_REJECTED',file=sys.stderr);return 2
 
 

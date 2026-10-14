@@ -174,12 +174,15 @@ def fresh_resources(record):
 
 
 class Reentry:
-    def __init__(self, packet, receipt_paths, *, transition=None):
+    def __init__(self, packet, receipt_paths, *, transition=None, failed_preparations=()):
         try:
             self.packet = copy.deepcopy(packet); command_info(self.packet)
             self.paths = tuple(Path(p) for p in receipt_paths)
             if not 1 <= len(self.paths) <= 32 or len(set(self.paths)) != len(self.paths): raise ValueError()
             self.records = [read_receipt(p) for p in self.paths]
+            from failed_preparation import Failure
+            if not isinstance(failed_preparations,(list,tuple)) or len(failed_preparations)>1:raise ValueError()
+            self.failures = [Failure(p) for p in failed_preparations]
             self.transition = copy.deepcopy(transition)
             self._checks = 0; self._closed = False; self.observations = []
             services = [service_record(r)[0]['id'] for r, _ in self.records]
@@ -187,7 +190,7 @@ class Reentry:
             transitions = [] if transition is None else transition if isinstance(transition,list) else [transition]
             # Preserve the actual RC4 + RC6 stopped rows through RC7 preparation
             # and the final web command. Every edge still binds exact packets.
-            if len(transitions)>3: raise ValueError()
+            if len(transitions) > (4 if self.failures else 3): raise ValueError()
             self.transitions=copy.deepcopy(transitions)
             for edge in self.transitions: self._edge(edge)
             if self.transitions:
@@ -195,6 +198,7 @@ class Reentry:
                     if left['next'] != right['previous']: raise ValueError()
                 if self.transitions[-1]['next'] != self.packet: raise ValueError()
             for r, _ in self.records: self._allowed(r['packet'])
+            for failure in self.failures: failure.check(self.records,self.transitions)
         except Exception: raise ValueError(ERROR) from None
 
     def _edge(self, edge):
@@ -237,6 +241,10 @@ class Reentry:
             service, wid, *_ = service_record(record)
             if workspace['id'] != wid: raise ValueError(ERROR)
             expected[service['id']] = service
+        for failure in self.failures:
+            failure.check(self.records,self.transitions)
+            if workspace['id'] != failure.value['workspace_id']:raise ValueError(ERROR)
+            expected[failure.row['id']] = failure.row
         rows = workspace['runtimeServices']
         if len(rows) != len(expected) or {r['id']:r for r in rows} != expected: raise ValueError(ERROR)
 
@@ -263,6 +271,8 @@ class Reentry:
                         r['writer'].get('home') != str(a.home)): raise ValueError()
                 if kind == 'worker' and r['writer'].get('writer_reopen_verified') is not True: raise ValueError()
                 observed.append(copy.deepcopy(r))
+            for failure in self.failures:
+                observed.append(failure.probe())
             finished = clock()
             if not (type(started) is int and type(finished) is int and 0 <= started <= finished <= started+60_000_000_000): raise ValueError()
             self._snapshot(packet,workspace)
@@ -310,11 +320,14 @@ class Reentry:
         if (box.used or box.root != args.pid_mailbox or
                 _nonce(_read(_root(box.root),'challenge')) != box.nonce or
                 box.nonce in [r['challenge'] for r,_ in self.records] or
+                box.nonce in [f.value['challenge'] for f in self.failures] or
                 set(p.name for p in box.root.iterdir()) != {'challenge'}):
             raise ValueError(ERROR)
 
     def prior_services(self):
-        return {service_record(r)[0]['id']:service_record(r)[0] for r,_ in self.records}
+        result={service_record(r)[0]['id']:service_record(r)[0] for r,_ in self.records}
+        for failure in self.failures:result[failure.row['id']]=copy.deepcopy(failure.row)
+        return result
 
 
 def preserve(mailbox, packet, evidence):

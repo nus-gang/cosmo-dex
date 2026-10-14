@@ -9,6 +9,7 @@ from offline_cli import parse
 from approval_gate import private_transport
 from launcher_signal import stop_latch
 from managed_web import run
+from preparation_status import Trace
 
 
 def parse_web(argv):
@@ -77,15 +78,19 @@ def parse_web(argv):
 
 
 def main(argv=None):
+    trace=None
+    stop=lambda:False
     try:
         a, arguments, endpoint, origin, port, values, decision, revisions = parse_web(argv)
         record = reporter(a.pid_mailbox)
-        with stop_latch() as stop, private_transport(endpoint):
-            result = run(a.bundle, a.artifacts, a.runtime_pin, a.local_demo_profile,
-                a.acknowledge_unproven_space, decision, revisions,
-                a.input_set.parent, a.input_set.name, arguments, a.scratch,
-                origin, port, max_requests=values[1], lifetime_seconds=values[0], stop=stop, on_ready=record,
-                response_loss_sha256=a.response_loss_sha256, fault_evidence_root=a.fault_evidence_root)
+        with stop_latch() as stop:
+            record();trace=Trace(a.pid_mailbox)
+            with private_transport(endpoint):
+                result = run(a.bundle, a.artifacts, a.runtime_pin, a.local_demo_profile,
+                    a.acknowledge_unproven_space, decision, revisions,
+                    a.input_set.parent, a.input_set.name, arguments, a.scratch,
+                    origin, port, max_requests=values[1], lifetime_seconds=values[0], stop=stop, on_ready=None,
+                    response_loss_sha256=a.response_loss_sha256, fault_evidence_root=a.fault_evidence_root,trace=trace)
         if (type(result) is not dict or result.get('listener_closed') is not True or
             result.get('approval_verified') is not False or result.get('reusable_permit') is not False or
             type(result.get('handled_connections')) is not int or
@@ -95,6 +100,12 @@ def main(argv=None):
             raise ValueError('RESULT')
         return 0
     except (ValueError, OSError, KeyError, TypeError, KeyboardInterrupt):
+        if trace is not None and trace.phase not in ('failed','closed'):
+            try:
+                cause={'audit_first':'approval','audit_final':'approval','assets':'files','bind':'port',
+                       'http_listening':'transport'}.get(trace.phase,'internal')
+                trace.emit('failed',cause='operator_stop' if stop() else cause)
+            except (Exception,KeyboardInterrupt):pass  # Partial evidence is retained.
         print('LOCAL_MANAGED_WEB_REJECTED', file=sys.stderr)
         return 2
 

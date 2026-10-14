@@ -11,6 +11,7 @@ import test_reviewed_cli as fixtures
 class WebCliTest(unittest.TestCase):
     def setUp(self):
         self.reporter = patch.object(web_cli, "reporter", return_value=lambda: None).start()
+        patch.object(web_cli,'Trace').start()
         self.addCleanup(patch.stopall)
 
     def args(self):
@@ -36,7 +37,8 @@ class WebCliTest(unittest.TestCase):
             self.assertEqual(self.invoke(self.args()), (0, '', ''))
         self.assertEqual(events, ['reader', 'reader-close'])
         self.assertNotIn('--pid-mailbox', run.call_args.args[9])
-        self.assertTrue(callable(run.call_args.kwargs['on_ready']))
+        self.assertIsNone(run.call_args.kwargs['on_ready'])
+        self.assertIsNotNone(run.call_args.kwargs['trace'])
         self.assertNotIn('--web-origin', run.call_args.args[9])
         self.assertNotIn('--approval-socket', run.call_args.args[9])
         self.assertFalse(run.call_args.kwargs['stop']())

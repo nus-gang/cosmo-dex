@@ -130,7 +130,7 @@ class SessionsTest(core.ReentryTest):
                     stop_response=record['stop_response'])
             name={'keys':'key_session','web':'web_session','worker':'worker_session','chain':'chain_session'}[kind]
             for j in range(2):
-                with patch.object(cli,name,side_effect=session),patch.object(cli.time,'monotonic',side_effect=[1,3]):
+                with patch.object(cli,name,side_effect=session),patch.object(cli,'wait_ready',return_value={'http_status':200}),patch.object(cli.time,'monotonic',side_effect=[1,3]):
                     result=cli.run(params,lambda:False)
                 record,_=m.read_receipt(result['receipt']);self.assertEqual(record['packet'],packet)
                 params['receipts']=[result['receipt']]

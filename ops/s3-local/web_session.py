@@ -57,6 +57,7 @@ def _session(python, candidate, argv, *, fee_bps, mailbox, broker_root,
             host_release_observations_complete=False, pid_handoff_collected=False,
             pid_evidence_retained=True, inventory_complete_verified=False,
             cleanup_complete_verified=False, approval_verified=False, DEV='NOT_RUN')
+        mailbox.session_evidence = evidence
         if reentry is not None:
             reentry.bind_mailbox(mailbox)
         if reentry is not None:
@@ -83,6 +84,7 @@ def _session(python, candidate, argv, *, fee_bps, mailbox, broker_root,
             try:
                 evidence['start_attempted'] = True
                 response = client.request(copy.deepcopy(target['requests']['start']))
+                evidence['start_response'] = copy.deepcopy(response)
                 operation(response, 'start', client._workspace_id, command)
                 yielded = True
                 yield evidence

@@ -8,6 +8,7 @@ from pathlib import Path
 from fault_evidence import record
 import socket
 import time
+import hashlib
 import approval_gate
 import reviewed_web
 from web_proxy import WebProxy
@@ -18,7 +19,8 @@ from web_connection import serve_listener
 def run(bundle, artifacts, pin, profile, acknowledge, decision_id, revisions,
         inputs, input_name, arguments, scratch, origin, worker_port, *,
         max_requests, lifetime_seconds, stop, timeout=60,
-        socket_factory=socket.socket, clock=time.monotonic, on_ready=None, response_loss_sha256=None, fault_evidence_root=None):
+        socket_factory=socket.socket, clock=time.monotonic, on_ready=None, response_loss_sha256=None, fault_evidence_root=None,
+        trace=None):
     if (type(max_requests) is not int or not 1 <= max_requests <= 10000 or
         type(lifetime_seconds) is not int or not 1 <= lifetime_seconds <= 3600 or
         type(worker_port) is not int or not 1024 <= worker_port <= 65535 or
@@ -45,9 +47,12 @@ def run(bundle, artifacts, pin, profile, acknowledge, decision_id, revisions,
         if stop():
             raise InterruptedError('WEB_STOPPED')
 
-    check_stop()
+    def phase(name, **kw):
+        if trace is not None:trace.emit(name, **kw)
+    check_stop();phase('audit_first')
     before = approval_gate.inspect(bundle, artifacts, pin, profile, acknowledge,
                                    decision_id, revisions)
+    phase('assets')
     prepared = reviewed_web.prepare(bundle, artifacts, pin, profile, acknowledge,
         decision_id, revisions, inputs, input_name, arguments, scratch, origin, timeout)
     proxy = WebProxy(origin=origin, worker_port=worker_port,
@@ -58,6 +63,7 @@ def run(bundle, artifacts, pin, profile, acknowledge, decision_id, revisions,
             body_sha256=response_loss_sha256, enable_local_demo=profile == 's3-dev-local/1',
             allow_unproven_host_space=acknowledge)
     check_stop()
+    phase('audit_final')
     after = approval_gate.inspect(bundle, artifacts, pin, profile, acknowledge,
                                   decision_id, revisions)
     if before != after:
@@ -67,7 +73,7 @@ def run(bundle, artifacts, pin, profile, acknowledge, decision_id, revisions,
         if on_ready is not None:
             on_ready()
         check_stop()
-        listener = socket_factory(socket.AF_INET, socket.SOCK_STREAM)
+        phase('bind');listener = socket_factory(socket.AF_INET, socket.SOCK_STREAM)
         owned = True
         try:
             check_stop()
@@ -76,10 +82,12 @@ def run(bundle, artifacts, pin, profile, acknowledge, decision_id, revisions,
             check_stop()
             listener.listen(1)
             check_stop()
+            phase('http_listening',html_sha256=hashlib.sha256(proxy.static._routes['/'][1]).hexdigest())
             owned = False  # serve_listener owns close on every path.
             result = serve_listener(listener, proxy, exchange,
                 max_requests=max_requests, lifetime_seconds=lifetime_seconds,
                 stop=stop, clock=clock)
+            phase('closed')
             if response_loss_sha256 is not None:
                 result = dict(result, response_loss=exchange.report())
             return dict(result, capture_sha256=prepared.capture_sha256,

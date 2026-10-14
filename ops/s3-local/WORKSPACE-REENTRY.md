@@ -1,5 +1,7 @@
 # 종료한 관리 workspace의 재시작과 웹 전환
 
+RC9의 준비/HTTP readiness·120초 유지 분리와 실제 RC8 challenge-only 실패의 명시적 인수는 [PREPARATION-RECOVERY.md](PREPARATION-RECOVERY.md)를 따른다. 아래 RC4~RC8은 기존 동작과 당시 조사 기록이다. RC8 실패에 과거 정상 receipt만 사용해 재진입할 수 없으며 새 실패 archive를 정상 v2 receipt로 표시하지 않는다.
+
 L-T-RC4-01 수정. `runtimeServices` 원문을 유지한다. `registered()`의 기본값은 여전히 새 빈 workspace만 받으며, 종료 이력은 `Reentry`와 실제 STOP/PID/nonce 근거가 있어야 인수한다. 이 변경의 사용은 새 manifest의 CTO→Security·CEO/CTO 독립 승인 이후 L-T에 한정된다. RC4 pin과 RC4 증거용 fee0 home은 새 실행에 사용하지 않는다.
 
 `restart_session_cli.py run-reentry-reviewed --request /절대경로/request.json`은 이미 등록된 정확한 command를 한 번 START하고 반드시 대상 STOP을 시도한다. 새 등록이나 설정 변경 API를 호출하지 않는다. request는 다음 필드만 가진다.

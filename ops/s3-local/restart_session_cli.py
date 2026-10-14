@@ -24,6 +24,7 @@ from private_reader import broker_at
 from runtime_client import RuntimeClient
 from web_pid_mailbox import WebMailbox
 from workspace_reentry import command_info, Reentry, preserve, import_evidence
+from preparation_status import wait_ready
 
 ERROR = 'LOCAL_REENTRY_SESSION_REJECTED'
 
@@ -34,11 +35,15 @@ def load(path):
     path=Path(path)
     raw=preflight.bounded(preflight.checked_root(path.parent),path.name,1024*1024)
     spec=decode(raw)
-    if (set(spec) != {'schema','packet','workspace_id','duration_seconds','receipts','transition'} or
-            spec['schema'] != 's3-local-reentry-session/1' or
+    fields={'schema','packet','workspace_id','duration_seconds','receipts','transition'}
+    if spec.get('schema')=='s3-local-reentry-session/2':fields.add('failed_preparations')
+    if (set(spec) != fields or
+            spec['schema'] not in ('s3-local-reentry-session/1','s3-local-reentry-session/2') or
             type(spec['duration_seconds']) is not int or not 1 <= spec['duration_seconds'] <= 240 or
             not isinstance(spec['receipts'],list) or len(spec['receipts'])>32): raise ValueError(ERROR)
     _uuid(spec['workspace_id']);command_info(spec['packet'])
+    failures=spec.get('failed_preparations',[])
+    if not isinstance(failures,list) or len(failures)>1 or (failures and not spec['receipts']):raise ValueError(ERROR)
     if not spec['receipts'] and spec['transition'] is not None: raise ValueError(ERROR)
     return spec
 
@@ -68,7 +73,8 @@ def run(spec, stop):
     command,=packet['body']['runtimeConfig']['workspaceRuntime']['commands']
     words=shlex.split(command['command']);python=words[1];candidate=packet['body']['cwd'];argv=words[5:]
     fee=int(command['id'].split('-fee')[1].split('-v')[0])
-    reentry=(Reentry(packet,spec['receipts'],transition=spec['transition']) if spec['receipts'] else None)
+    reentry=(Reentry(packet,spec['receipts'],transition=spec['transition'],
+        failed_preparations=spec.get('failed_preparations',())) if spec['receipts'] else None)
     if stop():raise ValueError(ERROR)
     if kind=='worker':
         prepared=PreparedSession(python,candidate,argv,fee_bps=fee);box=prepared._mailbox
@@ -83,13 +89,36 @@ def run(spec, stop):
                 mailbox=box,stop=stop,reentry=reentry)
         else:
             ctx=key_session(python,candidate,argv,spec['workspace_id'],packet,box,fee,reentry,stop)
-    with ctx as evidence:
-        previous=time.monotonic();deadline=previous+spec['duration_seconds']
-        while not stop():
-            now=time.monotonic()
-            if now<previous:raise ValueError(ERROR)
-            if now>=deadline:break
-            previous=now;time.sleep(min(0.1,deadline-now))
+    outcome='preparing'
+    destination=None
+    if kind in ('keys','web'):
+        from pid_mailbox import _write, _root
+        from workspace_reentry import encode
+        destination=box.root.parent/('session-'+box.nonce)
+        destination.mkdir(mode=0o700)
+    try:
+        with ctx as evidence:
+            if kind in ('keys','web'):
+                evidence['http_readiness']=wait_ready(box,a.web_origin,stop,60)
+                _write(_root(destination),'readiness.json',encode(evidence['http_readiness']))
+            outcome='holding'
+            previous=time.monotonic();deadline=previous+spec['duration_seconds']
+            while not stop():
+                now=time.monotonic()
+                if not previous <= now < float('inf'):raise ValueError(ERROR)
+                if now>=deadline:break
+                previous=now;time.sleep(min(0.1,deadline-now))
+            if stop():outcome='operator_stop'
+            else:outcome='hold_completed'
+    finally:
+        # A failed run remains a failed run, even if STOP/release succeeded.
+        # Preserve exact control responses separately; never manufacture a v2 receipt.
+        if kind in ('keys','web'):
+            _write(_root(destination),'outcome.json',encode(dict(
+                schema='s3-local-session-observation/1',phase=outcome,nonce=box.nonce,
+                packet=packet,workspace_id=spec['workspace_id'],
+                evidence=getattr(box,'session_evidence',{}),
+                normal_receipt=False,cleanup_complete_verified=False)))
     receipt=preserve(box,packet,evidence)
     return dict(schema='s3-local-reentry-result/1',receipt=str(receipt),
         service_id=evidence['service_id'],approval_verified=False,
@@ -99,6 +128,11 @@ def run(spec, stop):
 def main(argv=None):
     try:
         argv=list(sys.argv[1:] if argv is None else argv)
+        if len(argv)==3 and argv[:2]==['preserve-reviewed-preparation-failure','--destination']:
+            from failed_preparation import preserve as preserve_failure
+            path=preserve_failure(Path(argv[2]))
+            print(json.dumps(dict(failure=str(path),normal_receipt=False,
+                approval_verified=False,service_started=False),sort_keys=True));return 0
         if len(argv)==3 and argv[:2]==['import-stopped-evidence','--request']:
             import preflight
             from manifest import decode

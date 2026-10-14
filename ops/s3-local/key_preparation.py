@@ -36,15 +36,29 @@ def prepare(bundle,artifacts,pin,origin):
                            html=files['web/index.html'],javascript=files['web/page.js']))
 
 
-def run(bundle,artifacts,pin,origin,decision,revisions,stop,on_ready,*,socket_factory=socket.socket):
+def run(bundle,artifacts,pin,origin,decision,revisions,stop,on_ready,*,socket_factory=socket.socket,trace=None):
     def audit():return approval_gate.inspect(bundle,artifacts,pin,'s3-dev-local/1',True,decision,revisions)
-    if stop():raise ValueError('STOPPED')
-    before=audit();proxy=prepare(bundle,artifacts,pin,origin)
-    if audit()!=before or stop():raise ValueError('APPROVAL_CHANGED')
+    def phase(name, **kw):
+        if trace is not None: trace.emit(name, **kw)
+    def check_stop():
+        if stop(): raise ValueError('STOPPED')
+    cause='approval';listener=None
     def no_upstream(*args,**kwargs):raise AssertionError('KEY_PREPARATION_HAS_NO_UPSTREAM')
-    listener=socket_factory(socket.AF_INET,socket.SOCK_STREAM)
     try:
-        if stop():raise ValueError('STOPPED')
-        on_ready();listener.bind(('127.0.0.1',5173));listener.listen(1)
-        return serve_listener(listener,proxy,no_upstream,max_requests=100,lifetime_seconds=300,stop=stop)
-    finally:listener.close()
+        check_stop();phase('audit_first');before=audit();check_stop()
+        cause='files';phase('assets');proxy=prepare(bundle,artifacts,pin,origin);check_stop()
+        cause='approval';phase('audit_final')
+        if audit()!=before:raise ValueError('APPROVAL_CHANGED')
+        check_stop()
+        if on_ready is not None:on_ready()  # Legacy seam; CLI publishes its PID earlier.
+        cause='port';phase('bind');listener=socket_factory(socket.AF_INET,socket.SOCK_STREAM)
+        check_stop();listener.bind(('127.0.0.1',5173));check_stop();listener.listen(1);check_stop()
+        phase('http_listening',html_sha256=hashlib.sha256(proxy.static._routes['/'][1]).hexdigest())
+        cause='transport'
+        result=serve_listener(listener,proxy,no_upstream,max_requests=100,lifetime_seconds=300,stop=stop)
+        phase('closed');return result
+    except BaseException:
+        phase('failed',cause='operator_stop' if stop() else cause)
+        raise
+    finally:
+        if listener is not None:listener.close()
