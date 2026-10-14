@@ -1,0 +1,10 @@
+{
+  "transactions": 0,
+  "user_signatures": 0,
+  "profile": "fee0",
+  "bootstrap_exit": 2,
+  "error": "AUTHENTICATED_CHAIN_SESSION_REJECTED",
+  "error_type": "ValueError",
+  "normal_stop": false,
+  "elapsed_seconds": 107.28636754199397
+}

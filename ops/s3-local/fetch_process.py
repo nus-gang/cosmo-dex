@@ -2,6 +2,7 @@
 import hashlib
 import ipaddress
 import math
+import json
 import os
 import selectors
 import signal
@@ -22,7 +23,7 @@ class FetchFailure(ValueError):
 
 
 def fetch_captured(executable, address, pin, profile, acknowledge, raw,
-                   timeout=10, stopped=lambda: False):
+                   timeout=10, stopped=lambda: False, trace=None):
     """No shell, ambient credentials, retries, parsing, or home creation.
 
     The caller must stage exact reviewed executable bytes and freshly audit
@@ -55,16 +56,58 @@ def fetch_captured(executable, address, pin, profile, acknowledge, raw,
             '--local-demo-profile', str(profile), '--acknowledge-unproven-space']
     output = bytearray()
     errors = bytearray()
-    child = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE, start_new_session=True, close_fds=True,
-        env={'LANG': 'C', 'LC_ALL': 'C'})
-    offset = 0
+    pipes = []
+    diagnostics = bytearray(); diagnostic_total = 0; wire_total = 0
+    transport_complete = False; last_elapsed = 0; received_bytes=0
+    def evidence(name, data):
+        nonlocal diagnostic_total, wire_total, transport_complete, last_elapsed, received_bytes
+        if name == 'wire':
+            wire_total += len(data)
+            trace.wire(data)
+            return
+        diagnostic_total += len(data)
+        if diagnostic_total > 1048576: raise FetchFailure('FETCH_OUTPUT_LIMIT', output)
+        diagnostics.extend(data)
+        while b'\n' in diagnostics:
+            line, _, rest = diagnostics.partition(b'\n'); diagnostics[:] = rest
+            try:
+                value = json.loads(line)
+                if set(value) != {'stage','code','sent_bytes','received_bytes','child_elapsed_ns'}:
+                    raise ValueError()
+                if value['stage'] not in ('child_capture','request_start','connected','sent','received','entity_complete','failed'):
+                    raise ValueError()
+                if value['child_elapsed_ns'] < last_elapsed: raise ValueError()
+                trace.emit(**value)
+                last_elapsed = value['child_elapsed_ns']
+                received_bytes = value['received_bytes']
+                transport_complete = value['stage'] == 'entity_complete'
+            except (ValueError, TypeError, KeyError):
+                raise FetchFailure('FETCH_REJECTED', output) from None
+    child = None
     try:
+        if trace is not None:
+            pipes.append(os.pipe());pipes.append(os.pipe())
+            argv[4:4] = ['--diagnostic-fd', str(pipes[0][1]), '--wire-fd', str(pipes[1][1])]
+        child = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, start_new_session=True, close_fds=True,
+            pass_fds=tuple(p[1] for p in pipes), env={'LANG': 'C', 'LC_ALL': 'C'})
+    finally:
+        for _, fd in pipes: os.close(fd)
+        if child is None:
+            for fd, _ in pipes: os.close(fd)
+    offset = 0
+    extra_streams = [os.fdopen(fd, 'rb', buffering=0) for fd, _ in pipes]
+    primary=None
+    try:
+        if trace is not None: trace.emit('child_spawn', pid=child.pid)
         with selectors.DefaultSelector() as selector:
             for stream, name, event in ((child.stdin, 'in', selectors.EVENT_WRITE),
                     (child.stdout, 'out', selectors.EVENT_READ), (child.stderr, 'err', selectors.EVENT_READ)):
                 os.set_blocking(stream.fileno(), False)
                 selector.register(stream, event, name)
+            for stream, name in zip(extra_streams, ('diagnostic','wire')):
+                os.set_blocking(stream.fileno(), False)
+                selector.register(stream, selectors.EVENT_READ, name)
             while selector.get_map():
                 if stopped():
                     raise FetchFailure('FETCH_STOPPED', output)
@@ -81,6 +124,11 @@ def fetch_captured(executable, address, pin, profile, acknowledge, raw,
                         if offset == len(raw):
                             selector.unregister(stream)
                             stream.close()
+                    elif name in ('diagnostic','wire'):
+                        data = os.read(stream.fileno(), 65536)
+                        if not data:
+                            selector.unregister(stream); stream.close()
+                        else: evidence(name, data)
                     else:
                         target, cap = (output, MAX_RPC) if name == 'out' else (errors, MAX_ERROR)
                         data = os.read(stream.fileno(), min(65536, cap - len(target) + 1))
@@ -100,14 +148,33 @@ def fetch_captured(executable, address, pin, profile, acknowledge, raw,
                 time.sleep(.01)
         if stopped():
             raise FetchFailure('FETCH_STOPPED', output)
-        if child.returncode != 0 or offset != len(raw) or errors or not output:
+        if child.returncode != 0 or offset != len(raw) or errors or not output or (trace is not None and (diagnostics or not transport_complete or received_bytes!=wire_total)):
             raise FetchFailure('FETCH_REJECTED', output)
         return bytes(output)
+    except BaseException as error:
+        primary=error
+        error.partial_raw = bytes(output)
+        raise
     finally:
-        try:
-            os.killpg(child.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
-        child.wait()
-        for stream in (child.stdin, child.stdout, child.stderr):
-            stream.close()
+        if child.poll() is None:
+            try:os.killpg(child.pid, signal.SIGKILL)
+            except ProcessLookupError:pass
+        child.wait(timeout=3)
+        # Drain already received pipe bytes after kill/reap; do not wait/retry
+        # the RPC, interpret stderr, or promote incomplete wire to an entity.
+        for stream, name in zip(extra_streams, ('diagnostic','wire')):
+            if not stream.closed:
+                try:
+                    while True:
+                        data = os.read(stream.fileno(), 65536)
+                        if not data: break
+                        evidence(name, data)
+                except (OSError, ValueError): pass
+                finally: stream.close()
+        for stream in (child.stdin, child.stdout, child.stderr): stream.close()
+        if trace is not None:
+            try:trace.emit('child_exit', pid=child.pid, exit_code=child.returncode)
+            except BaseException as error:
+                if primary is None:
+                    error.partial_raw=bytes(output)
+                    raise

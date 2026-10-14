@@ -10,7 +10,7 @@ import chain_preflight
 import chain_session
 import chain_stage
 import preflight
-from chain_cli import parse
+from chain_cli import parse, resolve_peers
 from pid_mailbox import Mailbox
 from private_reader import broker_at
 from runtime_client import RuntimeClient
@@ -20,7 +20,7 @@ ERROR = 'AUTHENTICATED_CHAIN_SESSION_REJECTED'
 
 @contextmanager
 def session(python, candidate, argv, workspace_id, *, fee_bps, validator_index,
-            mailbox, stop=lambda: False, reentry=None):
+            mailbox, stop=lambda: False, reentry=None, coordinator=None):
     if (type(mailbox) is not Mailbox or mailbox.used or
             getattr(mailbox, '_authenticated_attempted', False)):
         raise ValueError(ERROR)
@@ -32,6 +32,7 @@ def session(python, candidate, argv, workspace_id, *, fee_bps, validator_index,
                 type(validator_index) is not int or validator_index not in range(4) or
                 a.pid_mailbox != mailbox.root):
             raise ValueError()
+        resolve_peers(a)
         client = RuntimeClient.from_environment(workspace_id,
             f's3-chain-fee{fee_bps}-v{validator_index}')
 
@@ -74,7 +75,7 @@ def session(python, candidate, argv, workspace_id, *, fee_bps, validator_index,
             with chain_session.session(python, candidate, argv, fee_bps=fee_bps,
                     validator_index=validator_index, mailbox=mailbox,
                     broker_root=a.approval_socket.parent, broker=broker_at,
-                    client=client, audit=audit, **({} if reentry is None else {'reentry':reentry, 'final_authorize':approval_gate.final_authorizer(before, stop)})) as evidence:
+                    client=client, audit=audit, **({} if coordinator is None else {'coordinator':coordinator}), **({} if reentry is None else {'reentry':reentry, 'final_authorize':approval_gate.final_authorizer(before, stop)})) as evidence:
                 yield evidence
     except (KeyboardInterrupt, SystemExit):
         raise

@@ -108,7 +108,7 @@ def handle_connection(stream, peer, proxy, exchange, *, clock=time.monotonic,
 
 
 def serve_listener(listener, proxy, exchange, *, max_requests, lifetime_seconds,
-                   stop, clock=time.monotonic):
+                   stop, clock=time.monotonic, between_requests=None):
     """Own a pre-bound listener; caller must first pass managed approval gates.
 
     Sequential connections only. At most one request per accepted socket. An IO
@@ -139,6 +139,9 @@ def serve_listener(listener, proxy, exchange, *, max_requests, lifetime_seconds,
         while handled < max_requests:
             if ended():
                 break
+            if between_requests is not None:
+                between_requests()
+                if ended():break
             listener.settimeout(min(0.2, deadline-previous))
             try:
                 stream, address = listener.accept()

@@ -1,6 +1,6 @@
 # L-R 사전 빌드 입력 도구
 
-이 디렉터리는 [NUS-73](/NUS/issues/NUS-73)의 진행 중 산출물이다. **실행 launcher·최종 runtime manifest·pin은 아직 완성되지 않았다.** 서비스 시작 명령이 아니며 DEV01~14는 NOT_RUN이다.
+이 디렉터리는 [NUS-73](/NUS/issues/NUS-73)의 기동 전 실행 후보다. **RC9 실패 이후의 최신 순서는 [RECOVERY-LIFECYCLE.md](RECOVERY-LIFECYCLE.md)를 따른다.** 아래 단계별 부분 구현 기록은 이력으로 보존한다. 변경된 source/build/manifest는 새 CTO→Security와 독립 runtime 승인 전까지 실행하지 않는다. 실제 DEV01~14는 NOT_RUN이다.
 
 **주의:** `manifest.py`는 공개 계정 영수증 A와 승인 B/C/D/E의 고정 참조를 사용한다. D가 승인한 `exchange/` adapter bytes와 C ancestry를 별도로 기록한다. 최신 판정/revision 확인과 독립 runtime 심사 출처 결합은 별도로 필요하다. 현재 component 또는 계약 소스 불일치는 봉인을 거절하며 자동 승인 예외를 두지 않는다.
 

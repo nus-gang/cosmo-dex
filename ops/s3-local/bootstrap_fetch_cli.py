@@ -13,6 +13,7 @@ from fetch_process import FetchFailure, MAX_RPC
 from launcher_signal import stop_latch
 from offline_cli import Parser
 from preflight import checked_root
+from bootstrap_diagnostic import diagnostic, error_code
 
 
 def parse(argv):
@@ -33,7 +34,14 @@ def parse(argv):
     return args, decision, revisions, extra
 
 
-def execute_raw(args, decision, revisions, extra, stopped):
+def execute_raw(args, decision, revisions, extra, stopped, trace=None):
+    if trace is None:
+        with diagnostic(extra.evidence_root) as trace:
+            return execute_raw(args, decision, revisions, extra, stopped, trace)
+    return _execute_raw(args, decision, revisions, extra, stopped, trace)
+
+
+def _execute_raw(args, decision, revisions, extra, stopped, trace):
     """Preserve first, then return exact received bytes to an internal caller."""
     root = checked_root(extra.evidence_root)
     directory = os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
@@ -42,10 +50,12 @@ def execute_raw(args, decision, revisions, extra, stopped):
         if stat.S_IMODE(original.st_mode) != 0o700 or original.st_uid != os.getuid():
             raise ValueError('EVIDENCE_ROOT')
         # Reserve before IO. Every outcome retains this file; never retry it.
+        trace.emit('reserve_entity')
         fd = os.open('snapshot-fetch.raw', os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
                      0o600, dir_fd=directory)
         with os.fdopen(fd, 'wb') as evidence:
             os.fchmod(evidence.fileno(), 0o600)
+            trace.emit('reserve_sync')
             evidence.flush()
             os.fsync(evidence.fileno())
             os.fsync(directory)
@@ -59,24 +69,34 @@ def execute_raw(args, decision, revisions, extra, stopped):
                     raise ValueError('EVIDENCE_FILE_CHANGED')
             root_matches()
             failure = None
+            failed_phase = None
             try:
                 raw = fetch(args.bundle, args.artifacts, args.runtime_pin,
                     args.local_demo_profile, args.acknowledge_unproven_space,
                     decision, revisions, args.input_set.parent, args.input_set.name,
-                    args.effective_profile, extra.chain_rpc, args.scratch, stopped=stopped)
-            except FetchFailure as error:
-                raw, failure = error.partial_raw, error
+                    args.effective_profile, extra.chain_rpc, args.scratch, stopped=stopped, trace=trace)
+            except BaseException as error:
+                raw, failure = getattr(error, 'partial_raw', b''), error
+                failed_phase = trace.phase
+                try: trace.emit('failed', code=error_code(error))
+                except BaseException: pass
             if not isinstance(raw, bytes) or len(raw) > MAX_RPC or (not raw and failure is None):
                 raise ValueError('FETCH_REPORT')
+            trace_error = None
+            try: trace.emit('persist_entity', entity_sha256=hashlib.sha256(raw).hexdigest(), entity_bytes=len(raw))
+            except BaseException as error: trace_error = error
             evidence.write(raw)
             evidence.flush()
             os.fsync(evidence.fileno())
             os.fsync(directory)
+            if trace_error is not None: raise trace_error
             root_matches()
             if failure is not None:
+                trace.phase = failed_phase
                 raise failure
             if stopped():
                 raise ValueError('STOPPED')
+            trace.verify()
             return {'transport_completed': True, 'raw_sha256': hashlib.sha256(raw).hexdigest(),
                     'raw_bytes': len(raw), 'snapshot_verified': False,
                     'home_created': False, 'reusable_permit': False}, raw

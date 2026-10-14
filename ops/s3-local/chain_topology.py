@@ -1,6 +1,6 @@
 """Pure four-validator command consistency; no key/home inspection or service IO."""
 import re
-from chain_cli import parse
+from chain_cli import parse, resolve_peers
 from workspace_registration import prepare_chain
 
 ERROR = 'CHAIN_TOPOLOGY_REJECTED'
@@ -27,6 +27,9 @@ def prepare(python, candidate, nodes, *, fee_bps):
         if len({n[0] for n in copied}) != 4:
             raise ValueError()
         args = [parse(['serve-chain-reviewed', *argv]) for _, argv in copied]
+        for a in args:
+            if a.topology_root is not None and resolve_peers(a)!=[n[0] for n in copied]:
+                raise ValueError()
         common = ('bundle', 'artifacts', 'input_set', 'effective_profile',
                   'runtime_pin', 'local_demo_profile', 'decision', 'revisions',
                   'lifetime_seconds')
@@ -75,6 +78,7 @@ def preflight_payload(python, candidate, nodes, packet, staged, *, fee_bps):
         if packet != expected:
             raise ValueError()
         parsed = [parse(['serve-chain-reviewed', *n['argv']]) for n in nodes]
+        for a in parsed:resolve_peers(a)
         staged.verify()
         from preflight import bounded, checked_root
         input_raw = bounded(checked_root(staged.input_set.parent), staged.input_set.name, 48*1024*1024)

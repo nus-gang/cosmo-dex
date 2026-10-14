@@ -105,49 +105,65 @@ impl QueryRpc {
     pub fn broadcast_direct(&self, raw: &[u8]) -> Result<Vec<u8>> {
         self.send_body(direct_body(raw)?)
     }
+    pub fn fetch_observed(&self, query: Query<'_>, mut observe: impl FnMut(&'static str, usize, usize, &[u8]) -> Result<()>) -> Result<Vec<u8>> {
+        self.send_observed(query.body()?, &mut observe)
+    }
     fn send_body(&self, body: Vec<u8>) -> Result<Vec<u8>> {
+        self.send_observed(body, &mut |_,_,_,_| Ok(()))
+    }
+    fn send_observed(&self, body: Vec<u8>, observe: &mut impl FnMut(&'static str, usize, usize, &[u8]) -> Result<()>) -> Result<Vec<u8>> {
         let end = Instant::now() + Duration::from_secs(2);
-        let mut socket =
-            TcpStream::connect_timeout(&self.addr, remaining(end)?).map_err(|_| "QUERY_CONNECT")?;
-        let mut request = format!("POST / HTTP/1.1\r\nHost: {}\r\nContent-Type: application/json\r\nAccept-Encoding: identity\r\nConnection: close\r\nContent-Length: {}\r\n\r\n", self.addr, body.len()).into_bytes();
-        request.extend(body);
-        let mut sent = 0;
-        while sent < request.len() {
-            socket
-                .set_write_timeout(Some(remaining(end)?))
-                .map_err(|_| "QUERY_IO")?;
-            let n = socket.write(&request[sent..]).map_err(|_| "QUERY_IO")?;
-            if n == 0 {
-                return Err("QUERY_EOF");
-            }
-            sent += n;
-        }
-        let mut wire = Vec::new();
-        let mut header_complete = false;
-        let mut buf = [0u8; 8192];
-        loop {
-            socket
-                .set_read_timeout(Some(remaining(end)?))
-                .map_err(|_| "QUERY_IO")?;
-            let n = socket.read(&mut buf).map_err(|_| "QUERY_IO")?;
-            if n == 0 {
-                break;
-            }
-            if wire.len() + n > WIRE_LIMIT {
-                return Err("QUERY_SIZE");
-            }
-            wire.extend_from_slice(&buf[..n]);
-            if !header_complete {
-                header_complete = wire.windows(4).any(|w| w == b"\r\n\r\n");
-            }
-            if !header_complete && wire.len() > HEADER_LIMIT {
-                return Err("QUERY_HEADER");
-            }
-        }
-        remaining(end)?;
-        decode_http(&wire)
+        let mut sent=0; let mut received=0;
+        let result=(|| {
+            observe("request_start",0,0,&[])?;
+            let mut socket=TcpStream::connect_timeout(&self.addr, remaining(end)?)
+                .map_err(|_| "QUERY_CONNECT")?;
+            observe("connected",0,0,&[])?;
+            let mut request=format!("POST / HTTP/1.1\r\nHost: {}\r\nContent-Type: application/json\r\nAccept-Encoding: identity\r\nConnection: close\r\nContent-Length: {}\r\n\r\n",self.addr,body.len()).into_bytes();
+            request.extend(body);
+            exchange(&mut socket,&request,end,observe,&mut sent,&mut received)
+        })();
+        if let Err(code)=result { observe(code,sent,received,&[])?; }
+        result
     }
 }
+trait TimedIo: Read + Write {
+    fn read_timeout(&mut self, duration: Duration) -> std::io::Result<()>;
+    fn write_timeout(&mut self, duration: Duration) -> std::io::Result<()>;
+}
+impl TimedIo for TcpStream {
+    fn read_timeout(&mut self,d:Duration)->std::io::Result<()> { self.set_read_timeout(Some(d)) }
+    fn write_timeout(&mut self,d:Duration)->std::io::Result<()> { self.set_write_timeout(Some(d)) }
+}
+fn exchange(socket:&mut impl TimedIo,request:&[u8],end:Instant,
+    observe:&mut impl FnMut(&'static str,usize,usize,&[u8])->Result<()>,
+    sent:&mut usize,received:&mut usize)->Result<Vec<u8>> {
+    while *sent<request.len() {
+        socket.write_timeout(remaining(end)?).map_err(|_|"QUERY_IO")?;
+        let n=socket.write(&request[*sent..]).map_err(|_|"QUERY_IO")?;
+        if n==0 {return Err("QUERY_EOF");}
+        *sent+=n;observe("sent",*sent,*received,&[])?;
+    }
+    let mut wire=Vec::new();let mut header_complete=false;let mut buf=[0u8;8192];
+    loop {
+        socket.read_timeout(remaining(end)?).map_err(|_|"QUERY_IO")?;
+        let n=socket.read(&mut buf).map_err(|_|"QUERY_IO")?;
+        if n==0 {break;}
+        let retained=n.min(WIRE_LIMIT-wire.len());
+        wire.extend_from_slice(&buf[..retained]);*received+=n;
+        // Preserve available bytes BEFORE framing/status interpretation. The
+        // counter includes the cap-crossing read; retention never exceeds cap.
+        observe("received",*sent,*received,&buf[..retained])?;
+        if retained<n {return Err("QUERY_SIZE");}
+        if !header_complete {header_complete=wire.windows(4).any(|w|w==b"\r\n\r\n");}
+        if !header_complete && wire.len()>HEADER_LIMIT {return Err("QUERY_HEADER");}
+    }
+    remaining(end)?;
+    let raw=decode_http(&wire)?;
+    observe("entity_complete",*sent,*received,&[])?;
+    Ok(raw)
+}
+
 fn direct_body(raw: &[u8]) -> Result<Vec<u8>> {
     if raw.is_empty() || raw.len() > 139264 {
         return Err("TX_LIMIT");
@@ -428,5 +444,34 @@ mod direct_transport_tests {
         );
         assert!(direct_body(&[]).is_err());
         assert!(direct_body(&vec![0; 139265]).is_err());
+    }
+}
+
+#[cfg(test)] mod transport_evidence_tests {
+    use super::*;
+    struct Fake { read:std::io::Cursor<Vec<u8>>, fail_after:bool, sent:Vec<u8> }
+    impl Read for Fake { fn read(&mut self,b:&mut [u8])->std::io::Result<usize> {
+        let n=self.read.read(b)?;
+        if n==0 && self.fail_after {return Err(std::io::ErrorKind::ConnectionReset.into());} Ok(n)
+    }}
+    impl Write for Fake {fn write(&mut self,b:&[u8])->std::io::Result<usize> {self.sent.extend(b);Ok(b.len())} fn flush(&mut self)->std::io::Result<()> {Ok(())}}
+    impl TimedIo for Fake {fn read_timeout(&mut self,_:Duration)->std::io::Result<()> {Ok(())} fn write_timeout(&mut self,_:Duration)->std::io::Result<()> {Ok(())}}
+    #[test] fn partial_read_and_bad_framing_preserve_exact_wire_without_entity() {
+        for fail in [true,false] {
+            let raw=b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 8\r\n\r\npart";
+            let mut socket=Fake {read:std::io::Cursor::new(raw.to_vec()),fail_after:fail,sent:vec![]};
+            let mut saved:Vec<u8>=vec![];let mut events=vec![];let mut sent=0;let mut received=0;
+            let result=exchange(&mut socket,b"request",Instant::now()+Duration::from_secs(2),&mut |stage,s,r,bytes|{
+                saved.extend(bytes);events.push((stage,s,r));Ok(())
+            },&mut sent,&mut received);
+            assert_eq!(result,Err(if fail {"QUERY_IO"} else {"QUERY_LENGTH"}));
+            assert_eq!(saved,raw);assert_eq!(socket.sent,b"request");
+            assert_eq!((sent,received),(7,raw.len()));assert!(!events.iter().any(|e|e.0=="entity_complete"));
+        }
+    }
+    #[test] fn evidence_failure_closes_without_retry_or_more_io() {
+        let mut socket=Fake {read:std::io::Cursor::new(vec![]),fail_after:false,sent:vec![]};let mut sent=0;let mut received=0;let mut calls=0;
+        let result=exchange(&mut socket,b"request",Instant::now()+Duration::from_secs(2),&mut |_,_,_,_|{calls+=1;Err("QUERY_EVIDENCE")},&mut sent,&mut received);
+        assert_eq!(result,Err("QUERY_EVIDENCE"));assert_eq!(calls,1);assert_eq!(socket.sent,b"request");assert_eq!(received,0);
     }
 }

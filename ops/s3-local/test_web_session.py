@@ -62,6 +62,18 @@ class WebSessionTest(unittest.TestCase):
             if failure: raise failure
         return result
 
+    def test_original_body_error_survives_stop_or_probe_failure(self):
+        for mode in ('stop-io','probe'):
+            self.setup_case(mode=mode)
+            if mode=='probe':self.kw['port'].side_effect=PermissionError('private shutdown')
+            primary=RuntimeError('original bootstrap')
+            with self.assertRaises(RuntimeError) as caught:self.run_case(primary)
+            self.assertIs(caught.exception,primary)
+            self.assertEqual(self.result['body_error'],'BODY_FAILED')
+            self.assertIn('stop_error' if mode=='stop-io' else 'release_error',self.result)
+            self.assertEqual(self.client.request.call_count,2)
+            self.assertTrue((self.mailbox.root/'pids.json').exists())
+
     def test_exact_fee_profiles_and_retained_one_shot_evidence(self):
         for fee in (0,25):
             self.setup_case(fee); r=self.run_case()

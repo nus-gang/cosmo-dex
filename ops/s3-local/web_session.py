@@ -29,6 +29,7 @@ def session(python, candidate, argv, **kwargs):
 @contextmanager
 def _session(python, candidate, argv, *, fee_bps, mailbox, broker_root,
              broker, client, audit, process, port, reentry=None, final_authorize=None, key_packet=None):
+    primary=None
     try:
         argv = tuple(argv)
         if key_packet is None:
@@ -40,7 +41,7 @@ def _session(python, candidate, argv, *, fee_bps, mailbox, broker_root,
             packet = copy.deepcopy(key_packet)
             kind, args, _ = command_info(packet)
             words = shlex.split(packet['body']['runtimeConfig']['workspaceRuntime']['commands'][0]['command'])
-            if (kind != 'keys' or words[1] != str(python) or packet['body']['cwd'] != str(candidate)
+            if (kind not in ('keys','browser') or words[1] != str(python) or packet['body']['cwd'] != str(candidate)
                     or words[5:] != list(argv) or packet['body']['name'] != f'nus-s3-local-web-fee{fee_bps}'):
                 raise ValueError()
             endpoint = args.approval_socket
@@ -87,7 +88,11 @@ def _session(python, candidate, argv, *, fee_bps, mailbox, broker_root,
                 evidence['start_response'] = copy.deepcopy(response)
                 operation(response, 'start', client._workspace_id, command)
                 yielded = True
-                yield evidence
+                try:yield evidence
+                except BaseException as error:
+                    primary=error
+                    evidence['body_error']='INTERRUPTED' if isinstance(error,(KeyboardInterrupt,SystemExit)) else 'BODY_FAILED'
+                    raise
             finally:
                 evidence['stop_attempted'] = True
                 try:
@@ -96,10 +101,17 @@ def _session(python, candidate, argv, *, fee_bps, mailbox, broker_root,
                     evidence.update(stopped(response, client.read_workspaces(path),
                                             client._workspace_id, config, history=reentry))
                 except BaseException:
-                    raise ValueError(STOP_ERROR) from None
-                if yielded:
+                    evidence['stop_error']=STOP_ERROR
+                    if primary is None:raise ValueError(STOP_ERROR) from None
+                if yielded and evidence['control_plane_stop_verified']:
                     try:
                         pids = mailbox.collect()
+                        if getattr(args,'browser_control',None) is not None:
+                            from browser_inventory import read
+                            inventory=read(args.browser_control)
+                            if inventory['pids'][0]!=pids[0]:raise ValueError()
+                            pids=tuple(inventory['pids'])
+                            evidence['browser_inventory']=inventory
                         evidence['pid_handoff_collected'] = True
                         evidence['listed_pids'] = list(pids)
                         for name, probe, inputs, schema, success, field in (
@@ -114,13 +126,15 @@ def _session(python, candidate, argv, *, fee_bps, mailbox, broker_root,
                                 raise ValueError()
                             evidence['host_release_observations'][name] = copy.deepcopy(report)
                         evidence['host_release_observations_complete'] = True
-                    except (KeyboardInterrupt, SystemExit):
-                        raise
-                    except Exception:
-                        raise ValueError(RELEASE_ERROR) from None
+                    except BaseException as error:
+                        evidence['release_error']='INTERRUPTED' if isinstance(error,(KeyboardInterrupt,SystemExit)) else RELEASE_ERROR
+                        if primary is None:
+                            if isinstance(error,(KeyboardInterrupt,SystemExit)):raise
+                            raise ValueError(RELEASE_ERROR) from None
     except (KeyboardInterrupt, SystemExit):
         raise
     except Exception as exc:
+        if exc is primary:raise
         if isinstance(exc, ValueError) and str(exc) in (STOP_ERROR, RELEASE_ERROR):
             raise
         raise ValueError(ERROR) from None

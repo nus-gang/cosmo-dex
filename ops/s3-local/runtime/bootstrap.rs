@@ -13,11 +13,16 @@ use std::{net::SocketAddr, path::Path};
 /// One bounded trusted loopback query. Raw response remains caller-owned even
 /// when later semantic validation or home publication fails. L-T only.
 pub fn fetch(config: &Validated, addr: SocketAddr) -> Result<Vec<u8>> {
+    fetch_observed(config, addr, |_,_,_,_| Ok(()))
+}
+
+pub fn fetch_observed(config: &Validated, addr: SocketAddr,
+    observe: impl FnMut(&'static str,usize,usize,&[u8])->std::result::Result<(), &'static str>) -> Result<Vec<u8>> {
     let rpc = query::QueryRpc::new(addr)?;
     let data = hex::encode(canonical(&json!({"context":config.context(),"height":"0"}))?);
-    Ok(rpc.fetch(query::Query::Abci {
+    Ok(rpc.fetch_observed(query::Query::Abci {
         path: "/nus.exchange.s3.v1.Query/Snapshot", data_hex: &data, height: 0,
-    })?)
+    }, observe)?)
 }
 
 /// Transport checks precede all home writes. C retains authority over registered

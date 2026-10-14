@@ -16,21 +16,25 @@ FETCHER = 'bin/s3-local-bootstrap-fetch'
 
 def fetch(bundle, artifacts, pin, profile, acknowledge, decision_id, revisions,
           inputs, input_name, effective_profile, address, scratch, timeout=10,
-          stopped=lambda: False):
+          stopped=lambda: False, trace=None):
     """Authenticate, capture, check, re-audit, fetch once, re-audit.
 
     Returned RPC bytes must still be durably preserved and checked by C before
     separately authorized create. Post-fetch rejection retains received bytes
     in FetchFailure.partial_raw, never as a successful Snapshot. No retry.
     """
+    def phase(name, **kw):
+        if trace is not None: trace.emit(name, **kw)
     effective_profile = Path(effective_profile)
     if not effective_profile.is_absolute() or '..' in effective_profile.parts:
         raise ValueError('INPUT_PATH')
     revisions = dict(revisions)
     if stopped():
         raise FetchFailure('FETCH_STOPPED')
+    phase('fetch_audit')
     before = approval_gate.inspect(bundle, artifacts, pin, profile, acknowledge,
                                    decision_id, revisions)
+    phase('fetch_capture')
     raw, _ = verify_input_set(bundle, artifacts, pin, profile, acknowledge,
                              inputs, input_name)
     descriptor = decode(base64.b64decode(decode(raw)['files'][DESCRIPTOR], validate=True))
@@ -38,14 +42,17 @@ def fetch(bundle, artifacts, pin, profile, acknowledge, decision_id, revisions,
     digest = inventory.get(FETCHER)
     if not isinstance(digest, str):
         raise ValueError('FETCHER_NOT_IN_SRE_DESCRIPTOR')
+    phase('fetch_binary')
     binary = bounded(checked_root(artifacts), FETCHER, MAX_BINARY)
     if not binary or hashlib.sha256(binary).hexdigest() != digest:
         raise ValueError('FETCHER_BYTES_CHANGED')
+    phase('fetch_binary', binary_sha256=digest, capture_sha256=hashlib.sha256(raw).hexdigest(), checker_sha256=inventory[CHECKER])
     with tempfile.TemporaryDirectory(prefix='bootstrap-fetch-', dir=checked_root(scratch)) as directory:
         executable = Path(directory) / 's3-local-bootstrap-fetch'
         _write(executable, binary, 0o500)
         arguments = ['--runtime-pin', pin, '--local-demo-profile',
                      str(effective_profile), '--acknowledge-unproven-space']
+        phase('checker')
         _validate_snapshot(raw, artifacts, arguments, scratch, timeout, CHECKER)
 
         def recheck():
@@ -58,11 +65,13 @@ def fetch(bundle, artifacts, pin, profile, acknowledge, decision_id, revisions,
             if stopped():
                 raise ValueError('FETCH_STOPPED')
 
+        phase('prefetch_audit')
         recheck()
         received = fetch_captured(executable, address, pin, effective_profile,
-                                  acknowledge, raw, timeout, stopped)
+                                  acknowledge, raw, timeout, stopped, **({} if trace is None else {'trace': trace}))
         try:
+            phase('postfetch_audit')
             recheck()
-        except Exception:
+        except BaseException:
             raise FetchFailure('FETCH_POSTCHECK_REJECTED', received) from None
         return received

@@ -45,6 +45,8 @@ class FetchCliTest(unittest.TestCase):
                 target=self.root/'snapshot-fetch.raw'
                 self.assertEqual(target.read_bytes(),expected)
                 target.unlink()
+                for name in ('bootstrap-diagnostic.jsonl','snapshot-fetch.wire'):
+                    (self.root/name).rename(self.root/(str(type(error).__name__)+'-'+name))
 
     def test_invalid_inputs_never_fetch(self):
         cases=[[],self.args[:-1],self.args+['--create'],self.args+['--chain-rpc','127.0.0.1:26658'],
@@ -64,7 +66,10 @@ class FetchCliTest(unittest.TestCase):
         with patch.object(cli.os,'fsync',side_effect=OSError('SECRET')),patch.object(cli,'fetch') as fetch:
             self.assertEqual(self.invoke()[0],2)
             fetch.assert_not_called()
-        (self.root/'snapshot-fetch.raw').unlink()
+        # Diagnostic reservation can fail before the entity reservation.
+        if (self.root/'snapshot-fetch.raw').exists(): (self.root/'snapshot-fetch.raw').unlink()
+        for name in ('bootstrap-diagnostic.jsonl','snapshot-fetch.wire'):
+            if (self.root/name).exists(): (self.root/name).rename(self.root/('failed-'+name))
         moved=self.root/'saved'
         def swap(*args,**kwargs):
             moved.mkdir()

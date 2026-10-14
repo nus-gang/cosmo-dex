@@ -34,10 +34,10 @@ def main():
     shutil.copyfile(fetcher, artifacts / bootstrap_fetch.FETCHER)
     pin = hashlib.sha256(manifest).hexdigest()
 
-    def run():
+    def run(trace=None):
         return bootstrap_fetch.fetch(bundle, artifacts, pin, 's3-dev-local/1', True,
             'synthetic', {}, root, 'input.json', root / 'profile',
-            '127.0.0.1:26657', scratch, timeout=30)
+            '127.0.0.1:26657', scratch, timeout=30, trace=trace)
 
     # The real C checker runs; revoked approval must prevent fetch child spawn.
     with patch('approval_gate.inspect', side_effect=[{}, {'revoked': True}]), \
@@ -62,7 +62,7 @@ def main():
         process = popen(*args, **kwargs)
         children.append(process)
         return process
-    def corrupt(executable, address, pin, profile, ack, raw, timeout, stopped):
+    def corrupt(executable, address, pin, profile, ack, raw, timeout, stopped, trace=None):
         assert raw == original
         assert executable.read_bytes() == fetcher.read_bytes()
         assert executable.stat().st_mode & 0o777 == 0o500
@@ -72,17 +72,26 @@ def main():
         calls.append(1)
         with patch.object(fetch_process.subprocess, 'Popen', side_effect=spawn):
             return real_fetch(executable, address, pin, profile, ack,
-                              json.dumps(changed).encode(), timeout, stopped)
+                              json.dumps(changed).encode(), timeout, stopped, trace=trace)
     with patch('approval_gate.inspect', return_value={}) as audit, \
          patch.object(bootstrap_fetch, 'fetch_captured', side_effect=corrupt):
+        from bootstrap_diagnostic import Diagnostic
+        diagnostic_root=root/'diagnostic';diagnostic_root.mkdir(mode=0o700)
+        trace=Diagnostic(diagnostic_root)
         try:
-            run()
+            run(trace)
         except fetch_process.FetchFailure as error:
             assert str(error) == 'FETCH_REJECTED', str(error)
             assert error.partial_raw == b''
         else:
             raise AssertionError('invalid guard accepted by real fetch child')
+        finally:trace.close()
         assert audit.call_count == 2
+    events=[json.loads(line) for line in (diagnostic_root/'bootstrap-diagnostic.jsonl').read_bytes().splitlines()]
+    assert 'child_capture' in [e['stage'] for e in events]
+    assert 'request_start' not in [e['stage'] for e in events]
+    assert events[-1]['stage']=='child_exit' and events[-1]['exit_code']==2
+    assert (diagnostic_root/'snapshot-fetch.wire').read_bytes()==b''
     assert calls == [1] and len(children) == 1
     assert children[0].returncode == 2
     try:

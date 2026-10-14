@@ -7,7 +7,7 @@
 use nus_exchange_contract::s3::{dev_local::{Error, Result, Validated}, evidence};
 use std::{io::{Read, Write}, net::SocketAddr, sync::atomic::Ordering};
 
-struct Inputs { address: SocketAddr, check: check::Inputs }
+struct Inputs { address: SocketAddr, check: check::Inputs, diagnostic: Option<(i32,i32)> }
 impl Inputs {
     fn parse(args: impl IntoIterator<Item=String>) -> Result<Self> {
         let mut args=args.into_iter();
@@ -20,8 +20,17 @@ impl Inputs {
         if !address.ip().is_loopback() || address.port()<1024 || address.to_string()!=raw {
             return Err(Error::Invalid("FETCH_ADDRESS"));
         }
+        let mut args=args.peekable();
+        let diagnostic=if args.peek().map(String::as_str)==Some("--diagnostic-fd") {
+            args.next();
+            let a=args.next().ok_or(Error::Invalid("TRACE_FD"))?.parse::<i32>().map_err(|_|Error::Invalid("TRACE_FD"))?;
+            if args.next().as_deref()!=Some("--wire-fd") {return Err(Error::Invalid("TRACE_FD"));}
+            let b=args.next().ok_or(Error::Invalid("TRACE_FD"))?.parse::<i32>().map_err(|_|Error::Invalid("TRACE_FD"))?;
+            if a<3 || b<3 || a==b {return Err(Error::Invalid("TRACE_FD"));}
+            Some((a,b))
+        } else {None};
         let check=check::Inputs::parse(std::iter::once("validate-captured".to_string()).chain(args))?;
-        Ok(Self {address,check})
+        Ok(Self {address,check,diagnostic})
     }
 }
 
@@ -41,12 +50,45 @@ fn fetch_with(inputs: Inputs, input: impl Read, mut output: impl Write,
     Ok(())
 }
 
+struct Trace { files:Option<(std::fs::File,std::fs::File)>, start:std::time::Instant }
+impl Trace {
+    fn open(fds:Option<(i32,i32)>)->Result<Self> {
+        use std::os::fd::FromRawFd;
+        if let Some((a,b))=fds {
+            for fd in [a,b] {
+                let mut st=std::mem::MaybeUninit::<libc::stat>::uninit();
+                if unsafe {libc::fstat(fd,st.as_mut_ptr())}!=0 ||
+                    unsafe {st.assume_init()}.st_mode & libc::S_IFMT != libc::S_IFIFO {
+                    return Err(Error::Invalid("TRACE_PIPE"));
+                }
+            }
+            return Ok(Self { files:Some(unsafe {(std::fs::File::from_raw_fd(a),std::fs::File::from_raw_fd(b))}),start:std::time::Instant::now() });
+        }
+        Ok(Self {files:None,start:std::time::Instant::now()})
+    }
+    fn event(&mut self,stage:&'static str,sent:usize,received:usize,raw:&[u8])->std::result::Result<(),&'static str> {
+        if let Some((events,wire))=&mut self.files {
+            wire.write_all(raw).map_err(|_|"QUERY_EVIDENCE")?;
+            let (stage,code)=if stage.starts_with("QUERY_") {("failed",stage)} else {(stage,"OK")};
+            let value=serde_json::json!({"stage":stage,"code":code,"sent_bytes":sent,"received_bytes":received,
+                "child_elapsed_ns":self.start.elapsed().as_nanos() as u64});
+            serde_json::to_writer(&mut *events,&value).map_err(|_|"QUERY_EVIDENCE")?;
+            events.write_all(b"\n").map_err(|_|"QUERY_EVIDENCE")?;
+        }
+        Ok(())
+    }
+}
+
 fn run()->Result<()> {
     // Reject malformed CLI before waiting for stdin or creating a socket.
     let inputs=Inputs::parse(std::env::args().skip(1))?;
+    let mut trace=Trace::open(inputs.diagnostic)?;
     let signals=signals::Signals::install().map_err(Error::Invalid)?;
+    trace.event("child_capture",0,0,&[]).map_err(Error::Invalid)?;
     fetch_with(inputs,std::io::stdin().lock(),std::io::stdout().lock(),
-        ||signals.stop().load(Ordering::Relaxed),bootstrap::fetch)
+        ||signals.stop().load(Ordering::Relaxed),|config,addr| {
+            bootstrap::fetch_observed(config,addr,|stage,sent,received,wire|trace.event(stage,sent,received,wire))
+        })
 }
 fn main()->std::process::ExitCode {
     std::panic::set_hook(Box::new(|_|{}));

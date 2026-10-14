@@ -29,7 +29,7 @@ def session(python, candidate, argv, **kwargs):
 
 @contextmanager
 def _session(python, candidate, argv, *, fee_bps, mailbox, broker_root,
-             broker, client, audit, process, port, writer, validator_index, reentry=None, final_authorize=None):
+             broker, client, audit, process, port, writer, validator_index, reentry=None, final_authorize=None, coordinator=None):
     try:
         argv = tuple(argv)
         args = parse(['serve-chain-reviewed', *argv])
@@ -72,12 +72,19 @@ def _session(python, candidate, argv, *, fee_bps, mailbox, broker_root,
             if reentry is not None:
                 reentry.final_check(packet, client.read_workspaces(path), client._workspace_id, final_authorize)
             yielded = False
+            if coordinator is not None:
+                coordinator.add(validator_index, evidence, mailbox, packet, args, endpoints,
+                                process, writer)
             try:
                 evidence['start_attempted'] = True
                 response = client.request(copy.deepcopy(target['requests']['start']))
                 operation(response, 'start', client._workspace_id, command)
                 yielded = True
-                yield evidence
+                try:
+                    yield evidence
+                except BaseException as error:
+                    evidence['body_error'] = 'INTERRUPTED' if isinstance(error,(KeyboardInterrupt,SystemExit)) else 'BODY_FAILED'
+                    raise
             finally:
                 evidence['stop_attempted'] = True
                 try:
@@ -85,9 +92,10 @@ def _session(python, candidate, argv, *, fee_bps, mailbox, broker_root,
                     evidence['stop_response'] = copy.deepcopy(response)
                     evidence.update(stopped(response, client.read_workspaces(path),
                                             client._workspace_id, config, history=reentry))
-                except BaseException:
-                    raise ValueError(STOP_ERROR) from None
-                if yielded:
+                except BaseException as error:
+                    evidence['stop_error'] = 'INTERRUPTED' if isinstance(error,(KeyboardInterrupt,SystemExit)) else STOP_ERROR
+                    if coordinator is None: raise ValueError(STOP_ERROR) from None
+                if yielded and coordinator is None:
                     try:
                         pids = mailbox.collect()
                         evidence['pid_handoff_collected'] = True

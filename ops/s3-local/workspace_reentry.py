@@ -49,6 +49,11 @@ def command_info(packet):
             spec.update(python=python, candidate=candidate, control_root=str(control))
             expected = key_packets(spec)[int(fee == 25)]
             kind = 'keys'
+        elif words[3:5] == [script+'/browser_web_cli.py','serve-browser-reviewed']:
+            from browser_web_cli import parse
+            from planned_registration import browser_packet
+            a,*_=parse(words[4:]);expected=browser_packet(python,candidate,args,fee)
+            kind='browser'
         else:
             from web_cli import parse_web
             a, _, endpoint, origin, *_ = parse_web(words[4:])
@@ -98,7 +103,7 @@ def service_record(record):
         raise ValueError(ERROR)
     nonce = _nonce(record['challenge'].encode('ascii'))
     raw = record['pid_raw'].encode('ascii'); p = json.loads(raw)
-    if kind in ('keys','web'):
+    if kind in ('keys','web','browser'):
         pids = (p['web_pid'],)
         if raw != _report(nonce, pids[0]): raise ValueError(ERROR)
     else:
@@ -110,6 +115,11 @@ def service_record(record):
             len(set(pids)) != len(pids) or str(pids[0]) != service['providerRef'] or
             str(args.pid_mailbox) != record['mailbox_root']):
         raise ValueError(ERROR)
+    if kind=='browser':
+        from browser_inventory import read
+        inventory=read(args.browser_control)
+        if record.get('browser_trace_sha256')!=inventory['trace_sha256'] or pids[0]!=inventory['pids'][0]:raise ValueError(ERROR)
+        pids=tuple(inventory['pids'])
     return service, wid, kind, args, endpoints, pids
 
 
@@ -174,15 +184,21 @@ def fresh_resources(record):
 
 
 class Reentry:
-    def __init__(self, packet, receipt_paths, *, transition=None, failed_preparations=()):
+    def __init__(self, packet, receipt_paths, *, transition=None, failed_preparations=(), failed_chains=()):
         try:
             self.packet = copy.deepcopy(packet); command_info(self.packet)
             self.paths = tuple(Path(p) for p in receipt_paths)
-            if not 1 <= len(self.paths) <= 32 or len(set(self.paths)) != len(self.paths): raise ValueError()
+            if not 0 <= len(self.paths) <= 32 or len(set(self.paths)) != len(self.paths): raise ValueError()
             self.records = [read_receipt(p) for p in self.paths]
             from failed_preparation import Failure
             if not isinstance(failed_preparations,(list,tuple)) or len(failed_preparations)>1:raise ValueError()
             self.failures = [Failure(p) for p in failed_preparations]
+            from failed_chain import Failure as ChainFailure
+            if not isinstance(failed_chains,(list,tuple)) or len(failed_chains)>1 or (failed_chains and (self.paths or failed_preparations)):
+                raise ValueError()
+            self.chain_failures=[ChainFailure(p,self.packet) for p in failed_chains]
+            self.failures.extend(self.chain_failures)
+            if not self.paths and not self.chain_failures:raise ValueError()
             self.transition = copy.deepcopy(transition)
             self._checks = 0; self._closed = False; self.observations = []
             services = [service_record(r)[0]['id'] for r, _ in self.records]
@@ -190,7 +206,7 @@ class Reentry:
             transitions = [] if transition is None else transition if isinstance(transition,list) else [transition]
             # Preserve the actual RC4 + RC6 stopped rows through RC7 preparation
             # and the final web command. Every edge still binds exact packets.
-            if len(transitions) > (4 if self.failures else 3): raise ValueError()
+            if len(transitions) > (5 if command_info(self.packet)[0]=='browser' else 4 if self.failures else 3): raise ValueError()
             self.transitions=copy.deepcopy(transitions)
             for edge in self.transitions: self._edge(edge)
             if self.transitions:
@@ -205,7 +221,18 @@ class Reentry:
         if set(edge) != {'previous','next'}: raise ValueError(ERROR)
         previous,following=edge['previous'],edge['next']
         oldkind, old, _ = command_info(previous); kind, new, _ = command_info(following)
-        if oldkind != 'keys' or kind not in ('keys','web'): raise ValueError(ERROR)
+        if oldkind=='chain' and kind=='chain' and self.chain_failures:
+            if previous!=self.chain_failures[0].value['packet']:raise ValueError(ERROR)
+            for key in ('name','sourceType','isPrimary'):
+                if previous['body'][key]!=following['body'][key]:raise ValueError(ERROR)
+            for key in ('rpc','p2p','local_demo_profile','acknowledge_unproven_space'):
+                if getattr(old,key)!=getattr(new,key):raise ValueError(ERROR)
+            for key in ('bundle','artifacts','runtime_pin','native_decision_id','ceo_revision','cto_revision',
+                        'approval_socket','pid_mailbox','home','input_set','effective_profile'):
+                if getattr(old,key)==getattr(new,key):raise ValueError(ERROR)
+            if previous['body']['cwd']==following['body']['cwd']:raise ValueError(ERROR)
+            return
+        if oldkind != 'keys' or kind not in ('keys','web','browser'): raise ValueError(ERROR)
         for key in ('name','sourceType','isPrimary'):
             if previous['body'][key] != following['body'][key]: raise ValueError(ERROR)
         for key in ('web_origin','local_demo_profile','acknowledge_unproven_space'):
@@ -346,6 +373,11 @@ def preserve(mailbox, packet, evidence):
             stop_response=copy.deepcopy(evidence['stop_response']),mailbox_root=str(root),
             challenge=_read(root,'challenge').decode(),pid_raw=_read(root,'pids.json').decode())
         if record['challenge'] != mailbox.nonce: raise ValueError()
+        if command_info(packet)[0]=='browser':
+            from browser_inventory import read
+            inventory=read(command_info(packet)[1].browser_control)
+            if inventory['normal_session'] is not True:raise ValueError()
+            record['browser_trace_sha256']=inventory['trace_sha256']
         service,_,_,_,_,pids = service_record(record)
         if list(pids) != evidence['listed_pids'] or service['id'] != evidence['service_id']: raise ValueError()
         archive = _root(root.parent)/('completed-'+mailbox.nonce)

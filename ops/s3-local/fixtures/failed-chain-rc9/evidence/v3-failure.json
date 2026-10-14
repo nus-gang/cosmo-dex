@@ -1,0 +1,208 @@
+{
+  "error": "AUTHENTICATED_CHAIN_SESSION_REJECTED",
+  "type": "ValueError",
+  "evidence": {
+    "start_attempted": true,
+    "stop_attempted": true,
+    "control_plane_stop_verified": true,
+    "host_release_observations": {
+      "process": {
+        "schema": "s3-local-process-probe/1",
+        "pids": [
+          31603,
+          33403
+        ],
+        "started_monotonic_ns": 180733549879041,
+        "finished_monotonic_ns": 180733549896541,
+        "listed_pids_absent": true,
+        "inventory_complete_verified": false,
+        "process_tree_exit_verified": false,
+        "writer_release_verified": false,
+        "port_release_verified": false
+      },
+      "port": {
+        "schema": "s3-local-port-probe/1",
+        "endpoints": [
+          [
+            "127.0.0.1",
+            26663
+          ],
+          [
+            "127.0.0.1",
+            26662
+          ]
+        ],
+        "started_monotonic_ns": 180733549912458,
+        "finished_monotonic_ns": 180733549964000,
+        "simultaneous_bind_verified": true,
+        "reservation_retained": false,
+        "process_exit_verified": false,
+        "writer_release_verified": false
+      },
+      "writer": {
+        "schema": "s3-local-chain-writer-probe/1",
+        "home": "/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source/deliverables/NUS-74-rc9-run-963697b5/profiles/fee0/validator-3",
+        "lock_device": 16777233,
+        "lock_inode": 190275595,
+        "started_monotonic_ns": 180733550180916,
+        "finished_monotonic_ns": 180733550259833,
+        "writer_lock_reacquired": true,
+        "continuous_exclusion_verified": false,
+        "cleanup_complete_verified": false
+      }
+    },
+    "host_release_observations_complete": true,
+    "pid_handoff_collected": true,
+    "pid_evidence_retained": true,
+    "inventory_complete_verified": false,
+    "cleanup_complete_verified": false,
+    "approval_verified": false,
+    "DEV": "NOT_RUN",
+    "stop_response": {
+      "workspace": {
+        "id": "ceeb183b-4c63-4cf6-9728-156c0bd351b6",
+        "companyId": "a479c266-538c-4ed6-bbf0-1f96e1f67b3e",
+        "projectId": "b29572d7-fa92-4e4c-8370-a08aa50ee11a",
+        "name": "nus-s3-local-chain-fee0-v3",
+        "sourceType": "local_path",
+        "cwd": "/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source",
+        "repoUrl": null,
+        "repoRef": null,
+        "defaultRef": null,
+        "visibility": "default",
+        "setupCommand": null,
+        "cleanupCommand": null,
+        "remoteProvider": null,
+        "remoteWorkspaceRef": null,
+        "sharedWorkspaceKey": null,
+        "metadata": {
+          "runtimeConfig": {
+            "desiredState": "manual",
+            "serviceStates": {
+              "0": "manual"
+            },
+            "workspaceRuntime": {
+              "commands": [
+                {
+                  "id": "s3-chain-fee0-v3",
+                  "cwd": "/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source",
+                  "kind": "service",
+                  "name": "s3-chain-fee0-v3",
+                  "port": 26663,
+                  "command": "exec /opt/homebrew/opt/python@3.14/bin/python3.14 -B /Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source/ops/s3-local/chain_cli.py serve-chain-reviewed --bundle /Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/candidate --artifacts /Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/runtime/artifacts --runtime-pin 2cd0d53bfdedaa7e8c1e29cf22861676d2a5a44c7c86582989ec83341256293d --native-decision-id f6a88bdb-e81d-43ab-8527-71c106fd942d --ceo-revision 8461efe2-e84b-48b2-99df-da56bc1bb341 --cto-revision 19dce991-84c1-4b9e-ac4d-3b8129cce876 --local-demo-profile s3-dev-local/1 --acknowledge-unproven-space --lifetime-seconds 300 --input-set /Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source/deliverables/NUS-74-rc9-run-963697b5/profiles/fee0/input.json --effective-profile /Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source/deliverables/NUS-74-rc9-run-963697b5/profiles/fee0/effective-profile.json --scratch /private/tmp/paperclip-nus74-rc9-073975bf/fee0/v3/scratch --approval-socket /private/tmp/paperclip-nus74-rc9-073975bf/fee0/v3/b/s --pid-mailbox /private/tmp/paperclip-nus74-rc9-073975bf/fee0/v3/mail --home /Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source/deliverables/NUS-74-rc9-run-963697b5/profiles/fee0/validator-3 --rpc 127.0.0.1:26663 --p2p 127.0.0.1:26662 --peers 13b2b40363208441a4c8c959aea0e4a6363fb197@127.0.0.1:26656,917b474ffc44eac59809137e62a1b5b06bcfc02c@127.0.0.1:26658,1ea5d5c728be9d8dad1d2a98b381dd9c54277f74@127.0.0.1:26660",
+                  "lifecycle": "shared",
+                  "reuseScope": "project_workspace"
+                }
+              ]
+            }
+          }
+        },
+        "runtimeConfig": {
+          "workspaceRuntime": {
+            "commands": [
+              {
+                "id": "s3-chain-fee0-v3",
+                "cwd": "/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source",
+                "kind": "service",
+                "name": "s3-chain-fee0-v3",
+                "port": 26663,
+                "command": "exec /opt/homebrew/opt/python@3.14/bin/python3.14 -B /Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source/ops/s3-local/chain_cli.py serve-chain-reviewed --bundle /Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/candidate --artifacts /Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/runtime/artifacts --runtime-pin 2cd0d53bfdedaa7e8c1e29cf22861676d2a5a44c7c86582989ec83341256293d --native-decision-id f6a88bdb-e81d-43ab-8527-71c106fd942d --ceo-revision 8461efe2-e84b-48b2-99df-da56bc1bb341 --cto-revision 19dce991-84c1-4b9e-ac4d-3b8129cce876 --local-demo-profile s3-dev-local/1 --acknowledge-unproven-space --lifetime-seconds 300 --input-set /Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source/deliverables/NUS-74-rc9-run-963697b5/profiles/fee0/input.json --effective-profile /Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source/deliverables/NUS-74-rc9-run-963697b5/profiles/fee0/effective-profile.json --scratch /private/tmp/paperclip-nus74-rc9-073975bf/fee0/v3/scratch --approval-socket /private/tmp/paperclip-nus74-rc9-073975bf/fee0/v3/b/s --pid-mailbox /private/tmp/paperclip-nus74-rc9-073975bf/fee0/v3/mail --home /Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source/deliverables/NUS-74-rc9-run-963697b5/profiles/fee0/validator-3 --rpc 127.0.0.1:26663 --p2p 127.0.0.1:26662 --peers 13b2b40363208441a4c8c959aea0e4a6363fb197@127.0.0.1:26656,917b474ffc44eac59809137e62a1b5b06bcfc02c@127.0.0.1:26658,1ea5d5c728be9d8dad1d2a98b381dd9c54277f74@127.0.0.1:26660",
+                "lifecycle": "shared",
+                "reuseScope": "project_workspace"
+              }
+            ]
+          },
+          "desiredState": "manual",
+          "serviceStates": {
+            "0": "manual"
+          }
+        },
+        "isPrimary": false,
+        "runtimeServices": [
+          {
+            "id": "f8dfc36d-c153-4084-8f92-4cb2f5cc089c",
+            "companyId": "a479c266-538c-4ed6-bbf0-1f96e1f67b3e",
+            "projectId": "b29572d7-fa92-4e4c-8370-a08aa50ee11a",
+            "projectWorkspaceId": "ceeb183b-4c63-4cf6-9728-156c0bd351b6",
+            "executionWorkspaceId": null,
+            "issueId": null,
+            "scopeType": "project_workspace",
+            "scopeId": "ceeb183b-4c63-4cf6-9728-156c0bd351b6",
+            "serviceName": "s3-chain-fee0-v3",
+            "status": "stopped",
+            "lifecycle": "shared",
+            "reuseKey": "96fa26bcd034e0d5beca26295065a5ace118da4295562fec93db89606bf5bce9",
+            "command": "exec /opt/homebrew/opt/python@3.14/bin/python3.14 -B /Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source/ops/s3-local/chain_cli.py serve-chain-reviewed --bundle /Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/candidate --artifacts /Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/runtime/artifacts --runtime-pin 2cd0d53bfdedaa7e8c1e29cf22861676d2a5a44c7c86582989ec83341256293d --native-decision-id f6a88bdb-e81d-43ab-8527-71c106fd942d --ceo-revision 8461efe2-e84b-48b2-99df-da56bc1bb341 --cto-revision 19dce991-84c1-4b9e-ac4d-3b8129cce876 --local-demo-profile s3-dev-local/1 --acknowledge-unproven-space --lifetime-seconds 300 --input-set /Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source/deliverables/NUS-74-rc9-run-963697b5/profiles/fee0/input.json --effective-profile /Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source/deliverables/NUS-74-rc9-run-963697b5/profiles/fee0/effective-profile.json --scratch /private/tmp/paperclip-nus74-rc9-073975bf/fee0/v3/scratch --approval-socket /private/tmp/paperclip-nus74-rc9-073975bf/fee0/v3/b/s --pid-mailbox /private/tmp/paperclip-nus74-rc9-073975bf/fee0/v3/mail --home /Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source/deliverables/NUS-74-rc9-run-963697b5/profiles/fee0/validator-3 --rpc 127.0.0.1:26663 --p2p 127.0.0.1:26662 --peers 13b2b40363208441a4c8c959aea0e4a6363fb197@127.0.0.1:26656,917b474ffc44eac59809137e62a1b5b06bcfc02c@127.0.0.1:26658,1ea5d5c728be9d8dad1d2a98b381dd9c54277f74@127.0.0.1:26660",
+            "cwd": "/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source",
+            "port": 26663,
+            "url": null,
+            "provider": "local_process",
+            "providerRef": "31603",
+            "ownerAgentId": "073c4baa-97d5-4f5e-bb47-68ea26fe7732",
+            "startedByRunId": null,
+            "lastUsedAt": "2026-10-14T18:25:08.281Z",
+            "startedAt": "2026-10-14T18:24:36.831Z",
+            "stoppedAt": "2026-10-14T18:25:08.281Z",
+            "stopPolicy": {},
+            "healthStatus": "unknown",
+            "createdAt": "2026-10-14T18:24:36.600Z",
+            "updatedAt": "2026-10-14T18:25:08.281Z"
+          }
+        ],
+        "createdAt": "2026-10-14T18:17:07.302Z",
+        "updatedAt": "2026-10-14T18:25:08.283Z"
+      },
+      "operation": {
+        "id": "b4ea9cda-9f62-439c-8828-4f2522bcd269",
+        "companyId": "a479c266-538c-4ed6-bbf0-1f96e1f67b3e",
+        "executionWorkspaceId": null,
+        "heartbeatRunId": null,
+        "issueId": null,
+        "phase": "workspace_teardown",
+        "command": "exec /opt/homebrew/opt/python@3.14/bin/python3.14 -B /Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source/ops/s3-local/chain_cli.py serve-chain-reviewed --bundle /Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/candidate --artifacts /Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/runtime/artifacts --runtime-pin 2cd0d53bfdedaa7e8c1e29cf22861676d2a5a44c7c86582989ec83341256293d --native-decision-id f6a88bdb-e81d-43ab-8527-71c106fd942d --ceo-revision 8461efe2-e84b-48b2-99df-da56bc1bb341 --cto-revision 19dce991-84c1-4b9e-ac4d-3b8129cce876 --local-demo-profile s3-dev-local/1 --acknowledge-unproven-space --lifetime-seconds 300 --input-set /Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source/deliverables/NUS-74-rc9-run-963697b5/profiles/fee0/input.json --effective-profile /Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source/deliverables/NUS-74-rc9-run-963697b5/profiles/fee0/effective-profile.json --scratch /private/tmp/paperclip-nus74-rc9-073975bf/fee0/v3/scratch --approval-socket /private/tmp/paperclip-nus74-rc9-073975bf/fee0/v3/b/s --pid-mailbox /private/tmp/paperclip-nus74-rc9-073975bf/fee0/v3/mail --home /Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source/deliverables/NUS-74-rc9-run-963697b5/profiles/fee0/validator-3 --rpc 127.0.0.1:26663 --p2p 127.0.0.1:26662 --peers 13b2b40363208441a4c8c959aea0e4a6363fb197@127.0.0.1:26656,917b474ffc44eac59809137e62a1b5b06bcfc02c@127.0.0.1:26658,1ea5d5c728be9d8dad1d2a98b381dd9c54277f74@127.0.0.1:26660",
+        "cwd": "/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source",
+        "status": "succeeded",
+        "exitCode": null,
+        "logStore": "local_file",
+        "logRef": "a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b4ea9cda-9f62-439c-8828-4f2522bcd269.ndjson",
+        "logBytes": 163,
+        "logSha256": "422883c3c14228da010c8dd1049274dcfd7afae92d1729515a9220dbcdb08974",
+        "logCompressed": false,
+        "stdoutExcerpt": null,
+        "stderrExcerpt": null,
+        "metadata": {
+          "action": "stop",
+          "projectId": "b29572d7-fa92-4e4c-8370-a08aa50ee11a",
+          "serviceIndex": 0,
+          "runtimeServiceId": "f8dfc36d-c153-4084-8f92-4cb2f5cc089c",
+          "projectWorkspaceId": "ceeb183b-4c63-4cf6-9728-156c0bd351b6",
+          "workspaceCommandId": "s3-chain-fee0-v3",
+          "runtimeControlOwner": {
+            "pid": 9794,
+            "action": "stop",
+            "ownerId": "bc14cc90-a7c1-47c1-b83e-5207383d6caa",
+            "heartbeatAt": "2026-10-14T18:25:08.074Z"
+          },
+          "runtimeServiceCount": 0,
+          "workspaceCommandKind": "service",
+          "workspaceCommandName": "s3-chain-fee0-v3"
+        },
+        "startedAt": "2026-10-14T18:25:08.074Z",
+        "finishedAt": "2026-10-14T18:25:08.285Z",
+        "createdAt": "2026-10-14T18:25:08.074Z",
+        "updatedAt": "2026-10-14T18:25:08.285Z"
+      }
+    },
+    "stop_operation_id": "b4ea9cda-9f62-439c-8828-4f2522bcd269",
+    "service_id": "f8dfc36d-c153-4084-8f92-4cb2f5cc089c",
+    "process_exit_verified": false,
+    "port_release_verified": false,
+    "writer_release_verified": true,
+    "listed_pids": [
+      31603,
+      33403
+    ]
+  },
+  "mailbox": "/private/tmp/paperclip-nus74-rc9-073975bf/fee0/v3/mail",
+  "nonce": "9a971bda6456855813f27ccd6b273741625c35a61c85eb545d6644d916302dac"
+}

@@ -55,6 +55,11 @@ class InitializeTest(unittest.TestCase):
         return {'child_reported_home_created':True,'service_started':False,'replay_verified':False}
 
     def call(self):
+        # Every attempted initialization owns a new evidence directory. Keep
+        # earlier attempt bytes instead of reusing an immutable diagnostic.
+        extra=self.args[3]
+        target=self.root/('attempt-'+str(len(list(self.root.glob('attempt-*')))))
+        target.mkdir(mode=0o700);extra.evidence_root=target
         return init.initialize(*self.args,stopped=lambda:self.stop)
 
     def test_exact_bytes_order_and_no_file_reread(self):
@@ -110,4 +115,4 @@ class InitializeTest(unittest.TestCase):
         self.fetch.assert_not_called()
         with patch.object(cli,'initialize',return_value={'service_started':False}) as runner:
             with redirect_stdout(io.StringIO()): self.assertEqual(cli.main(self.argv),0)
-            self.assertEqual(runner.call_args.args,self.args)
+            self.assertEqual(runner.call_args.args,cli.parse(self.argv))

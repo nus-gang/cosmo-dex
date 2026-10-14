@@ -25,8 +25,11 @@ def parse(argv):
     for name in paths:
         p.add_argument('--'+name, required=True, type=Path)
     for name in ('runtime-pin', 'local-demo-profile', 'native-decision-id',
-                 'ceo-revision', 'cto-revision', 'rpc', 'p2p', 'peers', 'lifetime-seconds'):
+                 'ceo-revision', 'cto-revision', 'rpc', 'p2p', 'lifetime-seconds'):
         p.add_argument('--'+name, required=True)
+    topology=p.add_mutually_exclusive_group(required=True)
+    topology.add_argument('--peers')
+    topology.add_argument('--topology-root',type=Path)
     p.add_argument('--acknowledge-unproven-space', action='store_true')
     a = p.parse_args(argv)
     for name in paths:
@@ -41,6 +44,16 @@ def parse(argv):
     a.revisions = {r: native_review._uuid(getattr(a, r+'_revision')) for r in ('ceo', 'cto')}
     if re.fullmatch('[1-9][0-9]{0,2}', a.lifetime_seconds) is None or int(a.lifetime_seconds) > 300:
         raise ValueError('LIFETIME')
+    if a.topology_root is not None:
+        if (not a.topology_root.is_absolute() or '..' in a.topology_root.parts or
+                a.home.parent!=a.topology_root or a.home.name not in [f'validator-{i}' for i in range(4)] or
+                a.input_set!=a.topology_root/'input.json' or a.effective_profile!=a.topology_root/'effective-profile.json'):
+            raise ValueError('TOPOLOGY_ROOT')
+        for addr in (a.rpc,a.p2p):
+            if re.fullmatch(r'127\.0\.0\.1:[1-9][0-9]{3,4}',addr) is None or not 1024<=int(addr.split(':')[1])<=65535:
+                raise ValueError('LOOPBACK')
+        if a.rpc==a.p2p:raise ValueError('TOPOLOGY')
+        return a
     # The managed topology deliberately uses literal IPv4 loopback only.
     addresses, ids = {a.rpc, a.p2p}, set()
     if len(addresses) != 2 or len(a.peers.split(',')) != 3:
@@ -56,9 +69,27 @@ def parse(argv):
     return a
 
 
+def resolve_peers(a):
+    """Read public node IDs only after approved initialization; B still checks
+    the real topology/home before any START. No key-dependent host command."""
+    if a.topology_root is None:return
+    from manifest import decode
+    from preflight import bounded,checked_root
+    r=decode(bounded(checked_root(a.topology_root),'launch-topology.json',16384))
+    if set(r)!={'schema','root','runtime_pin','fee_bps','node_ids'} or r['schema']!='s3-local-launch-topology/1' or r['root']!=str(a.topology_root) or r['runtime_pin']!=a.runtime_pin or r['fee_bps'] not in (0,25):
+        raise ValueError('TOPOLOGY_REPORT')
+    ids=r['node_ids'];i=int(a.home.name[-1]);base=26656 if r['fee_bps']==0 else 26756
+    if (not isinstance(ids,list) or len(ids)!=4 or len(set(ids))!=4 or any(not isinstance(x,str) or not re.fullmatch('[0-9a-f]{40}',x) for x in ids) or
+            a.rpc!=f'127.0.0.1:{base+2*i+1}' or a.p2p!=f'127.0.0.1:{base+2*i}'):
+        raise ValueError('TOPOLOGY_REPORT')
+    a.peers=','.join(f'{node}@127.0.0.1:{base+2*j}' for j,node in enumerate(ids) if j!=i)
+    return ids
+
+
 def main(argv=None):
     try:
         a = parse(sys.argv[1:] if argv is None else argv)
+        resolve_peers(a)
         record = reporter(a.pid_mailbox)
         def audit():
             return approval_gate.inspect(a.bundle, a.artifacts, a.runtime_pin,
