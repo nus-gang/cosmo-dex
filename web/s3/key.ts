@@ -1,5 +1,5 @@
-import { ml_dsa65, owner, address, sign, sha256 } from '../src/wallet.ts';
-import { decode, uint } from '../src/codec.ts';
+import { ml_dsa65, owner, address, sign, sha256, domains, type Signable } from '../src/wallet.ts';
+import { decode, uint, frame, type Message } from '../src/codec.ts';
 import { base64, envelope, join, bytes, hex, type Input } from './direct-codec.ts';
 import type { Context } from './state.ts';
 export class LocalKey {
@@ -20,6 +20,15 @@ export class LocalKey {
     const s=sign('WalletChallengeV1',m,this.#secret);
     if(base64.encode(s.body)!==wire)throw Error('NON_CANONICAL');
     return {wire_base64:wire,signature_base64:base64.encode(s.signature)};
+  }
+  command(name: Extract<Signable,'OrderV1'|'CancelV1'>, message: Message) {
+    if(this.#closed)throw Error('KEY_CLOSED');
+    const signed=sign(name,message,this.#secret);
+    return {
+      wire_base64:base64.encode(signed.body),
+      signature_base64:base64.encode(signed.signature),
+      request_hash:hex(sha256(frame(domains[name],signed.body))),
+    };
   }
   direct(input: Input) {
     if(this.#closed)throw Error('KEY_CLOSED');

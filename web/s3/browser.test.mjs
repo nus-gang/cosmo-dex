@@ -14,6 +14,14 @@ try {
   await login.click();await page.waitForFunction(()=>fixture.client.canWithdraw());
   assert.match(await page.locator('body').textContent(),/durable_ack=false/);
   assert.match(await page.locator('body').textContent(),/공개 s3-dev-local-account\/1 .* trusted s3-dev-local\/1 분리/);
+  assert.equal(await page.getByLabel('예치 금액').inputValue(),'10');assert.equal(await page.getByLabel('주문 수량 lots').inputValue(),'2');assert.equal(await page.getByLabel('지정가 ticks').inputValue(),'10');assert.equal(await page.getByLabel('최대 수수료 bps').inputValue(),'0');
+  await page.getByRole('button',{name:'주문 서명·제출'}).click();await page.waitForFunction(()=>fixture.client.commands.length===1);
+  assert.match(await page.locator('body').textContent(),/ORDER · SUBMISSION_UNKNOWN/);assert.equal(await withdraw.isDisabled(),true);
+  await page.getByRole('button',{name:'주문·취소 원 결과 조회'}).click();await page.waitForFunction(()=>fixture.client.commands[0].state==='LOCAL_ACCEPTED');
+  assert.match(await page.locator('body').textContent(),/ORDER · LOCAL_ACCEPTED · OK · receipt seq/);assert.equal(await page.getByLabel('취소 주문').locator('option').count(),1);
+  await page.getByRole('button',{name:'잔량 취소 서명·제출'}).click();await page.waitForFunction(()=>fixture.client.commands.length===2&&fixture.client.commands[1].state==='LOCAL_ACCEPTED');
+  assert.match(await page.locator('body').textContent(),/CANCEL · LOCAL_ACCEPTED · OK · receipt seq/);
+  assert.deepEqual(await page.evaluate(()=>fixture.commandRoutes),['/dev-local/v1/orders','/dev-local/v1/receipts/orders','/dev-local/v1/cancels']);
   await page.getByRole('button',{name:'출금 준비 (주문 동결·잔량 취소)'}).click();await page.waitForFunction(()=>fixture.client.receipt.includes('공개 계정 영수증'));
   assert.match(await page.locator('body').textContent(),/LOCAL_ACCEPTED .* 체인 COMMITTED·durable ACK 아님/);
   assert.deepEqual(await page.evaluate(()=>fixture.receiptMismatch()),{error:'CLIENT_RECEIPT_MISMATCH',canWithdraw:false,queryMismatches:1});
@@ -35,14 +43,14 @@ try {
   assert.equal(await withdraw.isDisabled(),true);
   await page.getByRole('button',{name:'출금 결과 조회'}).click();
   assert.equal(await page.evaluate(()=>fixture.posts()),1);
-  assert.deepEqual(await page.evaluate(()=>fixture.chainRoutes),['/dev-local/v1/chain/account','/dev-local/v1/chain/broadcast','/dev-local/v1/chain/result']);
+  assert.deepEqual(await page.evaluate(()=>fixture.chainRoutes),['/dev-local/v1/chain/account','/dev-local/v1/chain/account','/dev-local/v1/chain/account','/dev-local/v1/chain/broadcast','/dev-local/v1/chain/result']);
   await page.getByLabel('계정',{exact:true}).selectOption('1');
   assert.equal(await page.locator('tbody tr').count(),0);assert.equal(await withdraw.isDisabled(),true);
   assert.doesNotMatch(await page.locator('body').textContent(),/SUBMISSION_UNKNOWN/);
   await page.evaluate(()=>fixture.held());await login.click();await page.waitForFunction(()=>fixture.client.projection.view!==undefined);
   assert.equal(await withdraw.isDisabled(),true);assert.match(await page.locator('body').textContent(),/제출 결과 불명/);
   await page.screenshot({path:out+'/component.png',fullPage:true});
-  await writeFile(out+'/browser.json',JSON.stringify({scope:'BROWSER_COMPONENT_SYNTHETIC_NO_SERVICE',browser:browser.version(),checks:['initial-disabled','guarantee-label','public-trusted-version-split','public-receipt-not-committed','receipt-query-mismatch-held','direct-click-one-TX','unknown-query-no-retry','account-switch-empty','DP-held','recovery-delayed-OPEN-disabled','503-delayed-OPEN-disabled','disconnect-delayed-OPEN-disabled','earlier-request-latest-recovery-disabled','OPEN-abort-held','OPEN-DP-held','authenticated-chain-three-routes'],pass:16,fail:0,DEV12:'NOT_RUN'},null,2)+'\n');
+  await writeFile(out+'/browser.json',JSON.stringify({scope:'BROWSER_COMPONENT_SYNTHETIC_NO_SERVICE',browser:browser.version(),checks:['initial-disabled','guarantee-label','public-trusted-version-split','deposit-order-inputs','same-tab-order-signing','lost-order-original-result-query','cancel-selected-remainder','public-receipt-not-committed','receipt-query-mismatch-held','direct-click-one-TX','unknown-query-no-retry','account-switch-empty','DP-held','recovery-delayed-OPEN-disabled','503-delayed-OPEN-disabled','disconnect-delayed-OPEN-disabled','earlier-request-latest-recovery-disabled','OPEN-abort-held','OPEN-DP-held','authenticated-chain-three-routes'],pass:20,fail:0,DEV12:'NOT_RUN'},null,2)+'\n');
   await page.evaluate(()=>fixture.component.destroy());assert.equal(await page.locator('#app').textContent(),'');
-  console.log('browser component: 16 PASS / 0 FAIL; DEV12 NOT_RUN');
+  console.log('browser component: 20 PASS / 0 FAIL; DEV12 NOT_RUN');
 }finally{await browser.close();}

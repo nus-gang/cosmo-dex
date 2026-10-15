@@ -16,9 +16,15 @@ export interface ChainPort {
   result(tx_hash: string): Promise<{context: Context; tx_bytes: string; tx_hash: string; height: string; code: string; state: string}>;
 }
 export interface Entry {owner: string; input: Input; tx_bytes: string; tx_hash: string; state: 'SUBMISSION_UNKNOWN'|'COMMITTED'|'REJECTED_FINAL'; height?: string}
+export interface OrderInput {side:'BUY'|'SELL';limit_price_ticks:string;max_qty_lots:string;max_fee_bps:string}
+export interface SignedBody {context:Context;wire_base64:string;signature_base64:string}
+export interface CommandEntry {
+  owner:string;kind:'ORDER'|'CANCEL';request_hash:string;body:SignedBody;
+  state:'SUBMISSION_UNKNOWN'|'LOCAL_ACCEPTED'|'REJECTED';command_seq?:string;code?:string;
+}
 const id=()=>hex(crypto.getRandomValues(new Uint8Array(32)));
 export class LocalClient {
-  readonly projection: Projection; readonly history: Entry[]=[];readonly publicReceipts=new ReceiptLedger();
+  readonly projection: Projection; readonly history: Entry[]=[];readonly commands:CommandEntry[]=[];readonly publicReceipts=new ReceiptLedger();
   #token=''; #key?: LocalKey; #busy=new Set<string>(); #capable=false;
   #chain?: ChainPort; #requests=new Set<AbortController>();
   receipt='';
@@ -109,7 +115,7 @@ export class LocalClient {
   }
   async prepare(abort=false) {
     const key=this.#key,g=this.projection.generation;
-    if(!key||!this.#capable||!this.projection.open()||this.#busy.has(key.owner)||this.history.some(e=>e.owner===key.owner&&e.state==='SUBMISSION_UNKNOWN'))throw Error('WITHDRAW_HELD');
+    if(!key||!this.#capable||!this.projection.open()||this.#busy.has(key.owner)||this.#unknown(key.owner))throw Error('WITHDRAW_HELD');
     this.#busy.add(key.owner);
     try {
       const request_id=id(),kind=abort?'WITHDRAW_ABORT':'WITHDRAW_PREPARE';
@@ -129,30 +135,81 @@ export class LocalClient {
       return this.#acceptReceipt(bytes,key.owner,{commandSeq});
     }catch(e){if(g===this.projection.generation&&this.projection.reason!=='CLIENT_RECEIPT_MISMATCH')this.projection.close((e as Error).message);throw e;}
   }
-  canWithdraw() {const k=this.#key;return !!k&&!!this.#chain&&this.#capable&&this.projection.ready()&&this.history.filter(e=>e.owner===k.owner&&e.height).every(e=>integer(this.projection.view!.observed_height)>=integer(e.height!))&&!this.#busy.has(k.owner)&&!this.history.some(e=>e.owner===k.owner&&e.state==='SUBMISSION_UNKNOWN');}
-  async withdraw(denom: Input['denom'], amount: string) {
+  #unknown(owner:string) {return this.history.some(e=>e.owner===owner&&e.state==='SUBMISSION_UNKNOWN')||this.commands.some(e=>e.owner===owner&&e.state==='SUBMISSION_UNKNOWN');}
+  canDeposit() {const k=this.#key;return !!k&&!!this.#chain&&this.#capable&&this.projection.open()&&!this.#busy.has(k.owner)&&!this.#unknown(k.owner);}
+  canTrade() {return this.canDeposit();}
+  canWithdraw() {const k=this.#key;return !!k&&this.canDeposit()&&this.projection.ready()&&this.history.filter(e=>e.owner===k.owner&&e.height).every(e=>integer(this.projection.view!.observed_height)>=integer(e.height!));}
+  async #account(key:LocalKey,g:number) {
+    const started=performance.now();
+    const a=await this.#chain!.account(key.address);
+    if(performance.now()-started>2000)throw Error('DIRECT_ACCOUNT_STALE');
+    if(g!==this.projection.generation||!this.projection.open())throw Error('ACCOUNT_CHANGED_OR_STALE');
+    context(a.context,this.ctx);
+    if(a.owner!==key.address||a.public_key_base64!==base64.encode(key.publicKey))throw Error('ACCOUNT_KEY_MISMATCH');
+    for(const field of ['account_number','sequence','owner_epoch','observed_height','received_at_unix_ms','gas_atoms'] as const)integer(a[field]);
+    const age=BigInt(Date.now())-integer(a.received_at_unix_ms);
+    if(age<0n||age>2000n||a.observed_height!==this.projection.view!.observed_height||integer(a.gas_atoms)<1000n)throw Error('DIRECT_ACCOUNT_STALE');
+    return a;
+  }
+  async #direct(operation:Input['operation'],denom:Input['denom'],amount:string) {
     const key=this.#key,g=this.projection.generation;
-    if(!key||!this.canWithdraw())throw Error('WITHDRAW_HELD');
+    if(!key||(operation==='WITHDRAW'?!this.canWithdraw():!this.canDeposit()))throw Error(operation==='WITHDRAW'?'WITHDRAW_HELD':'DEPOSIT_HELD');
     this.#busy.add(key.owner);
     try {
-      const started=performance.now();
-      const a=await this.#chain!.account(key.address);
-      if(performance.now()-started>2000)throw Error('DIRECT_ACCOUNT_STALE');
-      if(g!==this.projection.generation||!this.projection.ready())throw Error('ACCOUNT_CHANGED_OR_STALE');
-      context(a.context,this.ctx);
-      if(a.owner!==key.address||a.public_key_base64!==base64.encode(key.publicKey))throw Error('ACCOUNT_KEY_MISMATCH');
-      for(const field of ['account_number','sequence','owner_epoch','observed_height','received_at_unix_ms','gas_atoms'] as const)integer(a[field]);
-      const age=BigInt(Date.now())-integer(a.received_at_unix_ms);
-      if(age<0n||age>2000n||a.observed_height!==this.projection.view!.observed_height||integer(a.gas_atoms)<1000n)throw Error('DIRECT_ACCOUNT_STALE');
+      const a=await this.#account(key,g),value=integer(amount,1000000000000n);
       const row=this.projection.view!.ledger.find(r=>r.denom===denom);
-      if(!row||integer(amount,1000000000000n)<1n||integer(amount)>integer(row.C,(1n<<128n)-1n))throw Error('INSUFFICIENT_BALANCE');
-      const input: Input={operation:'WITHDRAW',denom,amount_atoms:amount,owner:key.address,request_id:id(),expected_epoch:a.owner_epoch,expiry_height:(integer(a.observed_height)+100n).toString(),genesis_hash:this.ctx.genesis_hash,chain_id:this.ctx.chain_id,account_number:a.account_number,sequence:a.sequence,fee_atoms:'1000',gas_limit:'500000'};
+      if(!row||value<1n||(operation==='WITHDRAW'&&value>integer(row.C,(1n<<128n)-1n)))throw Error('INSUFFICIENT_BALANCE');
+      const input: Input={operation,denom,amount_atoms:amount,owner:key.address,request_id:id(),expected_epoch:a.owner_epoch,expiry_height:(integer(a.observed_height)+100n).toString(),genesis_hash:this.ctx.genesis_hash,chain_id:this.ctx.chain_id,account_number:a.account_number,sequence:a.sequence,fee_atoms:'1000',gas_limit:'500000'};
       const entry: Entry={owner:key.owner,input,...key.direct(input),state:'SUBMISSION_UNKNOWN'};
       this.history.push(entry); // Latch UNKNOWN before any network effect.
       this.projection.close('SUBMISSION_UNKNOWN');
       try {await this.#chain!.broadcast(entry.tx_bytes);}catch{/* Query only. Never generate another TX. */}
       return entry;
     }finally{this.#busy.delete(key.owner);}
+  }
+  async deposit(denom:Input['denom'],amount:string) {return this.#direct('DEPOSIT',denom,amount);}
+  async withdraw(denom:Input['denom'],amount:string) {return this.#direct('WITHDRAW',denom,amount);}
+  async #submit(kind:'ORDER'|'CANCEL',message:(account:DirectAccount,key:LocalKey)=>Record<string,unknown>) {
+    const key=this.#key,g=this.projection.generation;
+    if(!key||!this.canTrade())throw Error('COMMAND_HELD');
+    this.#busy.add(key.owner);let entry:CommandEntry|undefined;
+    try {
+      const account=await this.#account(key,g);
+      if(g!==this.projection.generation||!this.projection.open())throw Error('ACCOUNT_CHANGED_OR_STALE');
+      const signed=key.command(kind==='ORDER'?'OrderV1':'CancelV1',message(account,key));
+      const body:SignedBody={context:this.ctx,wire_base64:signed.wire_base64,signature_base64:signed.signature_base64};
+      entry={owner:key.owner,kind,request_hash:signed.request_hash,body,state:'SUBMISSION_UNKNOWN'};
+      this.commands.push(entry);this.projection.close('SUBMISSION_UNKNOWN');
+      const bytes=await this.#request(kind==='ORDER'?'orders':'cancels',body,this.#token,true) as Uint8Array;
+      if(g!==this.projection.generation)return entry;
+      const receipt=this.#acceptReceipt(bytes,key.owner,{kind,requestHash:entry.request_hash});
+      entry.state=receipt.account_result.state;entry.command_seq=receipt.source.command_seq;entry.code=receipt.account_result.code;
+      await this.refresh();return entry;
+    }catch(e){if(g===this.projection.generation&&this.projection.reason!=='CLIENT_RECEIPT_MISMATCH')this.projection.close(entry?'SUBMISSION_UNKNOWN':(e as Error).message);throw e;}
+    finally{this.#busy.delete(key.owner);}
+  }
+  async order(input:OrderInput) {
+    const key=this.#key;if(!key||!this.canTrade())throw Error('COMMAND_HELD');
+    const quantity=integer(input.max_qty_lots,1000000n),price=integer(input.limit_price_ticks,1000000n),fee=integer(input.max_fee_bps,10000n);
+    if(quantity<1n||price<1n||quantity*price>1000000000000n||!['BUY','SELL'].includes(input.side))throw Error('MARKET_LIMIT');
+    return this.#submit('ORDER',(a,current)=>({protocol_version:'1',chain_id:this.ctx.chain_id,genesis_hash:this.ctx.genesis_hash,exchange_module_id:'x/exchange',market_id:this.ctx.market_id,market_config_version:this.ctx.market_config_version,owner:current.owner,owner_pubkey:base64.encode(current.publicKey),order_id:id(),owner_epoch:a.owner_epoch,side:input.side==='BUY'?'1':'2',limit_price_ticks:price.toString(),max_qty_lots:quantity.toString(),max_fee_bps:fee.toString(),fee_asset_policy_id:'RECEIVE_ASSET_V1',expiry_height:(integer(a.observed_height)+100n).toString(),order_type:'1'}));
+  }
+  async cancel(order_id:string,order_hash:string) {
+    const key=this.#key;if(!key||!this.canTrade()||!this.projection.view!.orders.some(o=>o.order_id===order_id&&o.order_hash===order_hash&&o.remaining_qty_lots!=='0'))throw Error('COMMAND_HELD');
+    if(!/^[0-9a-f]{64}$/.test(order_id)||!/^[0-9a-f]{64}$/.test(order_hash))throw Error('NON_CANONICAL_WIRE');
+    return this.#submit('CANCEL',(a,current)=>({protocol_version:'1',chain_id:this.ctx.chain_id,genesis_hash:this.ctx.genesis_hash,market_id:this.ctx.market_id,owner:current.owner,owner_epoch:a.owner_epoch,order_id,order_hash,cancel_nonce:id(),expiry_height:(integer(a.observed_height)+100n).toString(),exchange_module_id:'x/exchange'}));
+  }
+  async querySigned(entry:CommandEntry) {
+    const key=this.#key,g=this.projection.generation;
+    if(!key||!this.#capable||entry.owner!==key.owner||!this.commands.includes(entry))throw Error('COMMAND_NOT_FOUND');
+    try {
+      const path=entry.kind==='ORDER'?'receipts/orders':'receipts/cancels';
+      const bytes=await this.#request(path,entry.body,this.#token,true) as Uint8Array;
+      if(g!==this.projection.generation)return;
+      const receipt=this.#acceptReceipt(bytes,key.owner,{kind:entry.kind,requestHash:entry.request_hash});
+      entry.state=receipt.account_result.state;entry.command_seq=receipt.source.command_seq;entry.code=receipt.account_result.code;
+      await this.refresh();return receipt;
+    }catch(e){if(g===this.projection.generation&&this.projection.reason!=='CLIENT_RECEIPT_MISMATCH')this.projection.close('SUBMISSION_UNKNOWN');throw e;}
   }
   async resolve(entry: Entry) {
     const g=this.projection.generation,owner=this.#key?.owner;

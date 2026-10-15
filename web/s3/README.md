@@ -4,15 +4,15 @@
 
 ## 실행 경계
 
-`LocalClient.authenticated(context, transport, enabled=false, acknowledge=false)`가 L-R의 고정 Chain HTTP 경로와 같은 private 세션을 연결한다. 기존 constructor 주입 경로도 component 검증용으로 유지한다. 두 생성 경로 모두 기본 비활성이다. 두 opt-in 없이는 인증 요청도 실행하지 않는다. `mount(root, client, tabKeys, origin)`가 정산·출금 화면을 만든다. 운영자 키를 받지 않는다. LocalKey는 탭 메모리의 합성 사용자 키만 생성하고 직접 ML-DSA 서명한다. pagehide/destroy 때 키를 지운다. 영속 키 복구·키 내보내기는 없다. caller는 이 키의 공개키만 별도 새 S3 genesis 계정 등록에 사용한다. 공개 fixture seed를 실제 서비스에 쓰지 않는다.
+`LocalClient.authenticated(context, transport, enabled=false, acknowledge=false)`가 L-R의 고정 Chain HTTP 경로와 L-D 주문/취소 경로를 같은 private 세션에 연결한다. 기존 constructor 주입 경로도 component 검증용으로 유지한다. 두 생성 경로 모두 기본 비활성이다. 두 opt-in 없이는 인증 요청도 실행하지 않는다. `mount(root, client, tabKeys, origin)`가 예치·주문·취소·정산·출금 화면을 만든다. 운영자 키를 받지 않는다. LocalKey는 탭 메모리의 합성 사용자 키만 생성하고 challenge, DIRECT, `OrderV1`, `CancelV1`을 직접 ML-DSA 서명한다. pagehide/destroy 때 키를 지운다. 영속 키 복구·키 내보내기는 없다. caller는 이 키의 공개키만 별도 새 S3 genesis 계정 등록에 사용한다. 공개 fixture seed를 실제 서비스에 쓰지 않는다.
 
 L-R은 승인 context와 두 opt-in을 공급하고 아래 transport를 배선한다. 이 업무의 build는 실행 가능한 browser ES modules이며 독립 서버/launcher는 L-R 범위다. build manifest는 runtime 승인 pin이 아니다.
 
 - REST transport: 정확히 `/dev-local/v1/` 상대 경로, 승인 loopback listener와 Origin, no-store, redirect error, 2초 deadline. 인증 challenge/session 뒤 capabilities를 검사한다. bearer는 private 탭 메모리다. owner는 로그인 challenge에만 제공하며 account/prepare는 서버 session owner를 사용한다. Origin 헤더는 브라우저가 만들며 client가 위조하지 않는다.
 - ChainPort는 새 REST schema가 아닌 L-R **신뢰 로컬 Chain adapter의 TypeScript 배선 interface**다. `account(address)`는 동일 Context/확정 H의 account_number/sequence/owner_epoch/등록 공개키/gas, 원 관측 시각을 제공한다. stale 응답의 시각을 새로 찍으면 안 된다. client는 계정 공개키·height 일치와 2초 freshness, C 금액을 재검증한다.
-- `broadcast(tx_bytes)`는 사용자 서명 원 TxRaw를 bounded loopback RPC에 한 번 전달한다. HTTP/CheckTx 성공도 UNKNOWN으로 유지한다. signer/private key를 adapter에 넘기지 않는다.
+- `broadcast(tx_bytes)`는 사용자 서명 원 DIRECT 예치/출금 TxRaw를 bounded loopback RPC에 한 번 전달한다. HTTP/CheckTx 성공도 UNKNOWN으로 유지한다. signer/private key를 adapter에 넘기지 않는다.
 - `result(tx_hash)`는 B의 trusted RPC block+block_results에서 해당 TX index, 원 TxRaw, Context/chain/genesis/확정 높이와 code를 검증한 **확정 결과만** 반환한다. NOT_FOUND/CheckTx/mempool/timeout은 throw한다. 임의 `/tx` 성공을 확정으로 매핑하지 않는다. client도 원 TX bytes/hash·code/state·서명 당시 H보다 큰 확정 H를 확인한다. 결과 조회는 생성/방송을 하지 않는다.
-- 직접 계정·방송·조회 HTTP route는 L-D가 제공하지 않는다. 기존 `/s1` 또는 `/s2` URL을 S3에 재사용하지 않았다. 새 authenticated factory가 L-R의 고정 chain/account GET, chain/broadcast POST, chain/result POST를 같은 private bearer로 호출한다. L-R에서 이 세 route를 실제 B adapter에 연결하고 기동 전 검토한다. ChainPort가 없으면 출금 버튼이 닫힌다. 실제 end-to-end API/브라우저·4검증인 DEV12는 L-T에서 검증한다.
+- 직접 계정·방송·조회 HTTP route는 L-D가 제공하지 않는다. 기존 `/s1` 또는 `/s2` URL을 S3에 재사용하지 않았다. 새 authenticated factory가 L-R의 고정 chain/account GET, chain/broadcast POST, chain/result POST를 같은 private bearer로 호출한다. L-R에서 이 세 route를 실제 B adapter에 연결하고 기동 전 검토한다. ChainPort가 없으면 DIRECT 예치/출금과 주문/취소의 fresh epoch/expiry 확인이 닫힌다. 실제 end-to-end API/브라우저·4검증인 DEV12는 L-T에서 검증한다.
 
 ## 공개 계정 영수증
 
@@ -28,7 +28,11 @@ C/R/D/P/A는 하나의 account revision으로 교체한다. atoms는 canonical �
 
 계정 전환은 generation을 증가시키고 view/session/capability/접수 안내를 즉시 비운다. 이전 generation 응답은 폐기한다. 동일 revision은 economic content 동일일 때 무효과, 충돌·역행은 닫힘, gap은 닫은 뒤 새로운 full account 조회에서 재동기화한다. 5초 원 관측 age, 2초 전달/query, monotonic 경과와 wall-clock 역행을 확인한다. 조회 시작 시 generation·단조 요청 번호·보류 barrier를 기록한다. 서비스 OPEN과 직접 출금 가능을 구분한다. 전체 검증을 통과한 fresh OPEN 중 withdraw_ready/withdraw_frozen, R=D=P=0, 미해소 batch/fill 없음까지 충족한 재개 응답만 요청 순서 필터를 적용한다. 이미 처리한 요청보다 오래되었거나 보류 전 시작했다면 폐기한다. 요청 시작 순서가 서버 관측 순서는 아니므로 닫힘 응답은 요청 번호·기존 barrier로 버리지 않고 Context/계정/원 관측 시각/원장 검증을 거친다. Context/계정/경제·revision/gap·관측 시각 검증은 요청 순서 필터보다 먼저 실행하며 오류는 보류한다. 출금 준비 해제·R/D/P·미해소 batch/fill 관측도 barrier를 올린다. 서비스가 열린 동안 출금 보류는 준비/해제 API 사용을 막지 않지만, 이미 닫힌 서비스는 오래된 요청으로 열지 않는다. close 또는 recovery 응답은 barrier를 올려 당시 진행 중인 모든 재개 조회를 무효화한다. 보류 후 시작한 새 권위 조회만 다시 열 수 있으며 같은 revision을 포함한 원 관측 시각 역행도 거절한다. 단절·recovery는 새 출금을 닫는다. 화면 timer는 상태 표시만 갱신하고 TX를 만들지 않는다.
 
-출금 준비/명시적 해제는 승인 L-D endpoint만 호출한다. 개발 receipt는 ledger를 변경하지 않으며 다시 account를 읽는다. 준비 완료·fresh OPEN·R=D=P=0·불명/잠정 없음일 때만 직접 서명한다. 중복 클릭은 첫 await 전에 lock한다. 원 TxRaw/hash를 탭 history에 UNKNOWN으로 저장한 뒤 단 한 번 방송한다. 응답 유실/미발견에서는 조회만 허용하고 다른 TX 생성0. 확정 결과 이후에도 그 H 이상의 새 계정 projection을 받아야 다음 출금이 가능하다. 계정 전환 후에도 기존 키의 UNKNOWN latch를 유지한다.
+DIRECT 예치/출금은 같은 선택 tab key와 fresh `/chain/account`의 Context·등록 공개키·account number/sequence·owner epoch·높이·원 시각을 사용한다. 정수 atoms와 상한을 브라우저에서 먼저 검사하고 원 TxRaw/hash를 탭 history에 UNKNOWN으로 저장한 뒤 단 한 번 방송한다. 출금은 추가로 준비 완료·fresh OPEN·R=D=P=0·미해소 batch/fill/명령 없음과 C 상한을 요구한다. `/chain/account`가 은행 잔액을 공개하지 않으므로 예치의 실제 bank 부족 판정은 B가 서명 TX에 수행하며 Wallet은 성공을 선행 표시하지 않는다. 응답 유실/미발견에서는 조회만 허용하고 다른 TX 생성0이다.
+
+주문은 정수 lots/ticks와 cap을 검증하고 같은 fresh account의 epoch와 `H+100` expiry, 고정 Context/market/module/policy를 `OrderV1`에 넣는다. 화면은 대표 `SELL 2@10`, `BUY 1@12` 입력과 0/25bps cap을 제공한다. 취소는 current account projection의 본인 미체결 잔량 order_id/order_hash를 선택해 `CancelV1`에 결합한다. 제출 전에 owner lock을 잡고 서명 원 body/request_hash를 `SUBMISSION_UNKNOWN`으로 저장한다. 응답 유실 뒤 `/receipts/orders|cancels`에는 그 원 body만 보내며 새 ID·nonce·wire·서명·효과를 만들지 않는다. 공개 receipt kind/request_hash/source가 원 요청과 일치해야만 LOCAL_ACCEPTED/REJECTED 기록을 표시한다. 이 기록은 projection이나 chain COMMITTED를 직접 승격하지 않는다.
+
+출금 준비/명시적 해제는 승인 L-D endpoint만 호출한다. 개발 receipt는 ledger를 변경하지 않으며 다시 account를 읽는다. 중복 클릭은 첫 await 전에 lock한다. 확정 DIRECT 결과 이후에도 그 H 이상의 새 계정 projection을 받아야 다음 자산 동작이 가능하다. 계정 전환은 이전 owner의 DIRECT/명령 이력을 화면에서 숨기되 UNKNOWN 원 bytes를 삭제하지 않는다.
 
 ## 검증·재현
 
@@ -60,3 +64,11 @@ Node component 50 PASS, Chrome 합성 DOM 12 PASS. CTO 원문 재현 R1/R2 및 R
 과거 receipt 조회는 요청 command_seq와 수신 source를 수락 전에 대조한다. 같은 Context/principal/kind/request_hash의 최초 source를 보존하며 다른 seq/source로 이동한 응답은 기존 full-key 충돌과 동일하게 `CLIENT_RECEIPT_MISMATCH`로 닫는다. 직접 account 조회가 이미 진행 중이어도 projection 보류를 서명 전에 다시 확인하므로 서명0·방송0이다. receipt gap은 정렬한 실제 보유 순번의 인접 차이로 다시 계산하여 1·2·3 연속 수신과 1·3 뒤 2 backfill에 오표시하지 않는다.
 
 Node component/auth/receipt **122 PASS / 0 FAIL**, CTO 원 재현 원문 **6 PASS / 0 FAIL**, Chrome 네트워크 차단 합성 DOM **16 PASS / 0 FAIL**, typecheck/build PASS다. 실제 HTTP/B adapter·4검증인·AR01~AR14/DEV12는 계속 NOT_RUN이며 runtime pin은 미발급이다. 수정 후보는 같은 CTO→Security 경로의 새 exact 심사를 받아야 한다.
+
+## RC10 필수 입력·서명 연결
+
+- Added: 같은 tab-memory `LocalKey`로 DIRECT 예치, `OrderV1`, `CancelV1`을 서명하고 L-D의 주문/취소·signed-result 경로에 연결한다.
+- Fixed: 응답 유실 주문/취소를 새 서명으로 재시도하지 않고 원 body·request_hash의 공개 receipt 조회로만 해소하며, UNKNOWN 동안 다른 자산 동작을 닫는다.
+- UI: 예치 자산/금액, BUY/SELL·lots·ticks·0/25bps, 본인 잔량 취소, 원 receipt 상태를 제공한다. selector 전용 label wrapper나 SRE signer/key export는 추가하지 않았다.
+
+component/auth/receipt Node **128 PASS / 0 FAIL**, Chrome 네트워크 차단 합성 DOM **20 PASS / 0 FAIL**, typecheck/build PASS를 새 후보에서 요구한다. 실제 Chrome listener·서비스·거래·4검증인 DEV/AR는 [NUS-74](/NUS/issues/NUS-74)의 `NOT_RUN` 범위이며 이 component 결과와 합산하지 않는다.

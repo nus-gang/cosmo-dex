@@ -14,7 +14,8 @@ export function screen(client: LocalClient) {
     fills:v?.fills.map(f=>`${f.fill_id} · ${{PENDING:'잠정',SUBMISSION_UNKNOWN:'제출 결과 불명',COMMITTED:'체인 확정',CORRECTED:'정정'}[f.state as string]} · revision ${f.revision}`)??[],
     batches:v?.batches.map(b=>`${b.batch.batch_id} · seq ${b.batch.batch_seq} · hash ${b.batch.batch_hash} · ${b.state} · H ${b.receipt?.terminal_height??'—'} · TX ${b.receipt?.terminal_tx_hash??'—'}`)??[],
     history:client.history.filter(e=>e.owner===client.projection.owner),
-    disabled:!client.canWithdraw(), receipt:client.receipt,receiptConflicts:client.publicReceipts.conflicts.length+client.publicReceipts.queryMismatches.length,
+    commands:client.commands.filter(e=>e.owner===client.projection.owner),
+    depositDisabled:!client.canDeposit(),tradeDisabled:!client.canTrade(),disabled:!client.canWithdraw(), receipt:client.receipt,receiptConflicts:client.publicReceipts.conflicts.length+client.publicReceipts.queryMismatches.length,
   };
 }
 // Mount is inert until the launcher explicitly passes both opt-ins and pinned Context.
@@ -29,7 +30,15 @@ export function mount(root: HTMLElement, client: LocalClient, keys: LocalKey[], 
   const table=node('table'),head=node('tr');
   for(const label of ['자산','확정 C','예약 R','정산 보류 D','잠정 수취 P (사용 불가)','가용 A=C−R−D'])head.append(node('th',label));
   const rows=node('tbody');table.append(head,rows);
-  const orders=node('div'),fills=node('div'),batches=node('div'),history=node('div');
+  const orders=node('div'),fills=node('div'),batches=node('div'),commands=node('div'),history=node('div');
+  const depositAsset=d.createElement('select');depositAsset.setAttribute('aria-label','예치 자산');
+  for(const name of ['DEVBASE','DEVQUOTE']){const o=d.createElement('option');o.value=name;o.textContent=name;depositAsset.append(o);}
+  const depositAmount=d.createElement('input');depositAmount.type='text';depositAmount.inputMode='decimal';depositAmount.value='10';depositAmount.setAttribute('aria-label','예치 금액');
+  const side=d.createElement('select');side.setAttribute('aria-label','주문 방향');for(const [value,text] of [['SELL','매도'],['BUY','매수']]){const o=d.createElement('option');o.value=value;o.textContent=text;side.append(o);}
+  const quantity=d.createElement('input');quantity.type='text';quantity.inputMode='numeric';quantity.value='2';quantity.setAttribute('aria-label','주문 수량 lots');
+  const price=d.createElement('input');price.type='text';price.inputMode='numeric';price.value='10';price.setAttribute('aria-label','지정가 ticks');
+  const fee=d.createElement('select');fee.setAttribute('aria-label','최대 수수료 bps');for(const value of ['0','25']){const o=d.createElement('option');o.value=value;o.textContent=value;fee.append(o);}
+  const cancelOrder=d.createElement('select');cancelOrder.setAttribute('aria-label','취소 주문');
   const asset=d.createElement('select');asset.setAttribute('aria-label','출금 자산');
   for(const name of ['DEVBASE','DEVQUOTE']){const o=d.createElement('option');o.value=name;o.textContent=name;asset.append(o);}
   const amount=d.createElement('input');amount.type='text';amount.inputMode='decimal';amount.value='1';amount.setAttribute('aria-label','출금 금액');
@@ -39,17 +48,23 @@ export function mount(root: HTMLElement, client: LocalClient, keys: LocalKey[], 
     rows.replaceChildren(...s.ledger.map(r=>{const tr=node('tr');for(const c of r)tr.append(node('td',c));return tr;}));
     orders.replaceChildren(...s.orders.map(o=>node('p',o)));
     fills.replaceChildren(...s.fills.map(f=>node('p',f)));batches.replaceChildren(...s.batches.map(b=>node('p',b)));
+    const selected=cancelOrder.value;cancelOrder.replaceChildren(...(client.projection.view?.orders??[]).filter(o=>o.remaining_qty_lots!=='0').map(o=>{const option=d.createElement('option');option.value=`${o.order_id}:${o.order_hash}`;option.textContent=`${o.side} ${o.remaining_qty_lots}@${o.limit_price_ticks} · ${o.order_id.slice(0,12)}…`;return option;}));if(Array.from(cancelOrder.options).some(o=>o.value===selected))cancelOrder.value=selected;
+    commands.replaceChildren(...s.commands.map(e=>node('p',`${e.kind} · ${e.state} · ${e.code??'결과 미확인'} · receipt seq ${e.command_seq??'—'} · ${e.request_hash}`)));
     history.replaceChildren(...s.history.map(e=>node('p',`${e.tx_hash} · ${e.state} · ${e.height??'확정 높이 없음'}`)));
-    withdraw.disabled=s.disabled;
+    deposit.disabled=s.depositDisabled;submitOrder.disabled=s.tradeDisabled;cancel.disabled=s.tradeDisabled||cancelOrder.options.length===0;withdraw.disabled=s.disabled;
   };
   const button=(text:string,action:()=>Promise<unknown>)=>{const b=d.createElement('button');b.textContent=text;b.addEventListener('click',()=>{const g=client.projection.generation;const pending=action();render();void pending.catch(()=>{if(g===client.projection.generation)status.textContent='요청 실패 또는 보류 — 결과 조회 필요';}).finally(render);});return b;};
   const login=button('인증·조회',()=>client.login(origin)),refresh=button('상태 재조회',()=>client.refresh());
+  const deposit=button('직접 서명하여 예치',async()=>client.deposit(depositAsset.value as 'DEVBASE'|'DEVQUOTE',atoms(depositAmount.value)));
+  const submitOrder=button('주문 서명·제출',()=>client.order({side:side.value as 'BUY'|'SELL',max_qty_lots:quantity.value,limit_price_ticks:price.value,max_fee_bps:fee.value}));
+  const cancel=button('잔량 취소 서명·제출',()=>{const [order_id,order_hash]=cancelOrder.value.split(':');return client.cancel(order_id,order_hash);});
+  const querySigned=button('주문·취소 원 결과 조회',async()=>{for(const e of client.commands.filter(e=>e.owner===client.projection.owner&&e.state==='SUBMISSION_UNKNOWN'))await client.querySigned(e);});
   const prepare=button('출금 준비 (주문 동결·잔량 취소)',()=>client.prepare());
   const abort=button('출금 준비 명시적 해제',()=>client.prepare(true));
   const withdraw=button('직접 서명하여 출금',async()=>client.withdraw(asset.value as 'DEVBASE'|'DEVQUOTE',atoms(amount.value)));
   const resolve=button('출금 결과 조회',async()=>{for(const e of client.history.filter(e=>e.owner===client.projection.owner))await client.resolve(e);await client.refresh();});
   select.addEventListener('change',()=>{client.select(keys[Number(select.value)]);render();});
-  root.replaceChildren(title,notice,select,login,refresh,status,identity,table,node('h2','주문·체결·배치'),orders,fills,batches,receipt,node('p','D/P 또는 결과 불명이 남으면 출금 보류. 개발 접수는 확정 자산이 아닙니다.'),prepare,abort,asset,amount,withdraw,resolve,history);
+  root.replaceChildren(title,notice,select,login,refresh,status,identity,node('h2','DIRECT 예치'),depositAsset,depositAmount,deposit,table,node('h2','서명 주문·잔량 취소'),side,quantity,price,fee,submitOrder,cancelOrder,cancel,querySigned,commands,node('h2','주문·체결·배치'),orders,fills,batches,receipt,node('p','D/P 또는 결과 불명이 남으면 출금 보류. 개발 접수는 확정 자산이 아닙니다.'),prepare,abort,asset,amount,withdraw,resolve,history);
   client.select(keys[0]);render();
   const timer=setInterval(render,250);
   const destroy=()=>{disposed=true;clearInterval(timer);keys.forEach(k=>k.destroy());client.destroy();root.replaceChildren();};
