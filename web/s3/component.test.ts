@@ -5,10 +5,10 @@ import { Projection, capability, envelope, PREFIX, PUBLIC_RECEIPT_SCHEMA_SHA256,
 import { LocalClient, type ChainPort } from './client.ts';
 import { LocalKey } from './key.ts';
 import { screen } from './component.ts';
-import { ml_dsa65, sha256 } from '../src/wallet.ts';
+import { domains, ml_dsa65, sha256 } from '../src/wallet.ts';
 import { envelope as txEnvelope } from './direct-codec.ts';
 import { base64, hex, integer } from './direct-codec.ts';
-import { encode } from '../src/codec.ts';
+import { decode, encode, frame } from '../src/codec.ts';
 import { canonical } from '../s2/state.ts';
 const ctx=fixture.owner_projection.context;
 const caps={...fixture.receipt,api_prefix:PREFIX,public_receipt_version:PUBLIC_RECEIPT_VERSION,public_receipt_schema_sha256:PUBLIC_RECEIPT_SCHEMA_SHA256,trusted_receipt_version:TRUSTED_RECEIPT_VERSION,signed_result_query:true,automatic_withdraw:false,ws:false};
@@ -69,6 +69,34 @@ async function clientFixture() {
   const c=new LocalClient(ctx,transport,chain,true,true);c.select(key);await c.login('http://127.0.0.1:5173');
   return {c,key,chain,posts:()=>posts,prepare:()=>prepare,setWait:(p:Promise<void>)=>{directWait=p;},setView:(v:Account)=>{view=v;},setAccountReply:(reply:()=>Promise<Response>)=>{accountReply=reply;},setReceiptReply:(reply:(route:string,init?:RequestInit)=>Promise<Response>)=>{receiptReply=reply;}};
 }
+async function commandFixture(withOrder=false) {
+  const key=new LocalKey(),other=new LocalKey();let selected=key,seq=0,effects=0,signatures=0,lose=false,wait:Promise<void>|undefined;
+  const original=key.command.bind(key);key.command=(name,message)=>{signatures++;return original(name,message);};
+  const order_id='aa'.repeat(32),order_hash='bb'.repeat(32);
+  let view=account(key.owner);if(withOrder)view.orders=[{order_id,order_hash,side:'SELL',state:'OPEN',remaining_qty_lots:'1',limit_price_ticks:'10'}];
+  const calls:Array<{route:string;body:any}>=[],saved=new Map<string,{kind:'ORDER'|'CANCEL';hash:string;receipt:unknown;body:any}>();
+  const chain:ChainPort={account:async()=>{if(wait)await wait;return {context:ctx,owner:selected.address,public_key_base64:base64.encode(selected.publicKey),account_number:'1',sequence:'0',owner_epoch:'0',observed_height:'100',received_at_unix_ms:String(Date.now()),gas_atoms:'1000'};},broadcast:async()=>{},result:async()=>{throw Error('NOT_FOUND');}};
+  const transport:typeof fetch=async(path,init)=>{
+    const route=String(path).slice(PREFIX.length),body=init?.body===undefined?undefined:JSON.parse(String(init.body));calls.push({route,body});
+    if(route==='auth/challenge'){const now=Math.floor(Date.now()/1000);return new Response(JSON.stringify({wire_base64:base64.encode(encode('WalletChallengeV1',{protocol_version:'1',chain_id:ctx.chain_id,genesis_hash:ctx.genesis_hash,owner:selected.owner,server_origin:'http://127.0.0.1:5173',audience:'exchange-api',challenge_nonce:'aa'.repeat(32),issued_at:String(now),expiry_time:String(now+100)}))}));}
+    if(route==='auth/session')return new Response(JSON.stringify({token:'fixture-session'}));
+    assert.equal((init?.headers as any).Authorization,'Bearer fixture-session');
+    if(route==='capabilities')return new Response(JSON.stringify(caps));
+    if(route==='account')return new Response(JSON.stringify({...structuredClone(view),owner:selected.owner,received_at_unix_ms:String(Date.now())}));
+    if(route==='orders'||route==='cancels'){
+      const kind=route==='orders'?'ORDER':'CANCEL',name=kind==='ORDER'?'OrderV1':'CancelV1',wire=base64.decode(body.wire_base64),hash=hex(sha256(frame(domains[name],wire)));
+      const receipt=publicReceipt(selected.owner,String(++seq),kind,'OK','LOCAL_ACCEPTED',hash);saved.set(hash,{kind,hash,receipt,body});effects++;
+      if(lose){lose=false;throw Error('response lost');}return jsonReceipt(receipt);
+    }
+    if(route==='receipts/orders'||route==='receipts/cancels'){
+      const name=route.endsWith('orders')?'OrderV1':'CancelV1',hash=hex(sha256(frame(domains[name],base64.decode(body.wire_base64)))),savedReceipt=saved.get(hash);
+      if(!savedReceipt)return new Response('{}',{status:404});return jsonReceipt(savedReceipt.receipt);
+    }
+    throw Error('unexpected route '+route);
+  };
+  const c=new LocalClient(ctx,transport,chain,true,true);c.select(key);await c.login('http://127.0.0.1:5173');
+  return {c,key,other,order_id,order_hash,calls,effects:()=>effects,signatures:()=>signatures,lose:()=>{lose=true;},wait:(value:Promise<void>)=>{wait=value;},selectOther:()=>{selected=other;c.select(other);},destroy:()=>{c.destroy();other.destroy();}};
+}
 test('default disabled and missing second opt-in perform zero network requests',async()=>{
   for(const flags of [[false,false],[true,false],[false,true]]){let requests=0;const key=new LocalKey();const c=new LocalClient(ctx,async()=>{requests++;throw Error();},undefined,...flags as [boolean,boolean]);c.select(key);await assert.rejects(()=>c.login('http://127.0.0.1:5173'),/OPT_INS/);assert.equal(requests,0);c.destroy();}
 });
@@ -80,6 +108,59 @@ test('direct user ML-DSA signing, duplicate click, lost response, NOT_FOUND: one
     f.chain.result=async()=>({context:ctx,tx_bytes:entry.tx_bytes,tx_hash:entry.tx_hash,height:'101',code:'0',state:'COMMITTED'});
     await f.c.resolve(entry);assert.equal(entry.state,'COMMITTED');assert.equal(f.c.canWithdraw(),false);assert.equal(f.posts(),1);
   }finally{f.c.destroy();}
+});
+test('same tab key signs DIRECT deposit once and UNKNOWN prevents another asset effect',async()=>{
+  const f=await clientFixture();try{
+    const entry=await f.c.deposit('DEVBASE','10000000');
+    assert.equal(entry.input.operation,'DEPOSIT');assert.equal(entry.input.denom,'DEVBASE');assert.equal(entry.input.amount_atoms,'10000000');assert.equal(f.posts(),1);
+    assert.ok(ml_dsa65.verify(f.key.publicKey,txEnvelope(entry.input,f.key.publicKey).signDoc,base64.decode(entry.tx_bytes).slice(-3309)));
+    await assert.rejects(()=>f.c.deposit('DEVQUOTE','100000000'),/HELD/);await assert.rejects(()=>f.c.order({side:'SELL',order_type:'GTC',max_qty_lots:'2',limit_price_ticks:'10',max_fee_bps:'0'}),/HELD/);
+    assert.equal(f.posts(),1);assert.equal(f.c.history.length,1);assert.equal(f.c.commands.length,0);
+  }finally{f.c.destroy();}
+});
+test('same tab key signs SELL 2@10 GTC and BUY 1@12 IOC with exact OrderV1 bytes and 0/25bps caps',async()=>{
+  const f=await commandFixture();try{
+    const sell=await f.c.order({side:'SELL',order_type:'GTC',max_qty_lots:'2',limit_price_ticks:'10',max_fee_bps:'0'});
+    const buy=await f.c.order({side:'BUY',order_type:'IOC',max_qty_lots:'1',limit_price_ticks:'12',max_fee_bps:'25'});
+    for(const [entry,side,type,qty,price,fee] of [[sell,'2','1','2','10','0'],[buy,'1','2','1','12','25']] as const){
+      const wire=base64.decode(entry.body.wire_base64),message=decode('OrderV1',wire);
+      assert.equal(message.owner,f.key.owner);assert.equal(message.owner_pubkey,base64.encode(f.key.publicKey));assert.equal(message.side,side);assert.equal(message.order_type,type);assert.equal(message.max_qty_lots,qty);assert.equal(message.limit_price_ticks,price);assert.equal(message.max_fee_bps,fee);assert.equal(message.owner_epoch,'0');assert.equal(message.expiry_height,'200');
+      assert.equal(entry.request_hash,hex(sha256(frame(domains.OrderV1,wire))));assert.ok(ml_dsa65.verify(f.key.publicKey,frame(domains.OrderV1,wire),base64.decode(entry.body.signature_base64)));assert.equal(entry.state,'LOCAL_ACCEPTED');
+    }
+    assert.equal(f.signatures(),2);assert.equal(f.effects(),2);assert.equal(f.c.commands.length,2);assert.equal(f.c.history.length,0);
+  }finally{f.destroy();}
+});
+test('remainder cancel signs selected original order and observes public CANCEL receipt',async()=>{
+  const f=await commandFixture(true);try{
+    const entry=await f.c.cancel(f.order_id,f.order_hash),wire=base64.decode(entry.body.wire_base64),message=decode('CancelV1',wire);
+    assert.equal(message.owner,f.key.owner);assert.equal(message.order_id,f.order_id);assert.equal(message.order_hash,f.order_hash);assert.equal(message.owner_epoch,'0');assert.equal(message.expiry_height,'200');
+    assert.equal(entry.request_hash,hex(sha256(frame(domains.CancelV1,wire))));assert.ok(ml_dsa65.verify(f.key.publicKey,frame(domains.CancelV1,wire),base64.decode(entry.body.signature_base64)));
+    assert.equal(entry.kind,'CANCEL');assert.equal(entry.state,'LOCAL_ACCEPTED');assert.equal(entry.command_seq,'1');assert.equal(f.effects(),1);assert.match(screen(f.c).commands[0].request_hash,/^[0-9a-f]{64}$/);
+  }finally{f.destroy();}
+});
+test('lost order response preserves original bytes; signed-result query resolves without resign or replay',async()=>{
+  const f=await commandFixture();try{
+    f.lose();await assert.rejects(()=>f.c.order({side:'SELL',order_type:'GTC',max_qty_lots:'2',limit_price_ticks:'10',max_fee_bps:'0'}),/response lost/);
+    const entry=f.c.commands[0],original=canonical(entry.body);assert.equal(entry.state,'SUBMISSION_UNKNOWN');assert.equal(f.effects(),1);assert.equal(f.signatures(),1);assert.equal(f.c.canTrade(),false);assert.equal(f.c.canWithdraw(),false);await assert.rejects(()=>f.c.prepare(),/HELD/);
+    await f.c.querySigned(entry);assert.equal(entry.state,'LOCAL_ACCEPTED');assert.equal(f.effects(),1);assert.equal(f.signatures(),1);
+    const query=f.calls.find(call=>call.route==='receipts/orders')!;assert.equal(canonical(query.body),original);assert.equal(f.c.canTrade(),true);
+  }finally{f.destroy();}
+});
+test('duplicate order click and account switch during account lookup create zero extra signatures or effects',async()=>{
+  const f=await commandFixture();try{
+    let release!:()=>void;f.wait(new Promise<void>(resolve=>{release=resolve;}));
+    const first=f.c.order({side:'SELL',order_type:'GTC',max_qty_lots:'2',limit_price_ticks:'10',max_fee_bps:'0'});
+    await assert.rejects(()=>f.c.order({side:'SELL',order_type:'GTC',max_qty_lots:'2',limit_price_ticks:'10',max_fee_bps:'0'}),/HELD/);
+    f.selectOther();release();await assert.rejects(()=>first,/ACCOUNT_CHANGED/);
+    assert.equal(f.signatures(),0);assert.equal(f.effects(),0);assert.equal(f.c.commands.length,0);
+  }finally{f.destroy();}
+});
+test('order integer and enum drift fail before account lookup, signature, or mutation',async()=>{
+  const f=await commandFixture();try{
+    const before=f.calls.length;
+    for(const input of [{side:'SELL',order_type:'GTC',max_qty_lots:'0',limit_price_ticks:'10',max_fee_bps:'0'},{side:'SELL',order_type:'GTC',max_qty_lots:'2',limit_price_ticks:'01',max_fee_bps:'0'},{side:'BUY',order_type:'IOC',max_qty_lots:'1',limit_price_ticks:'12',max_fee_bps:'10001'},{side:'HOLD',order_type:'GTC',max_qty_lots:'1',limit_price_ticks:'12',max_fee_bps:'25'},{side:'BUY',order_type:'POST_ONLY',max_qty_lots:'1',limit_price_ticks:'12',max_fee_bps:'25'}] as any[])await assert.rejects(()=>f.c.order(input));
+    assert.equal(f.calls.length,before);assert.equal(f.signatures(),0);assert.equal(f.effects(),0);assert.equal(f.c.commands.length,0);
+  }finally{f.destroy();}
 });
 test('switch during direct account response generates no signature or broadcast',async()=>{
   const f=await clientFixture();try{let release!:()=>void;f.setWait(new Promise(r=>release=r));const pending=f.c.withdraw('DEVBASE','1');f.c.select();release();await assert.rejects(()=>pending,/ACCOUNT_CHANGED/);assert.equal(f.posts(),0);assert.equal(f.c.history.length,0);assert.equal(screen(f.c).ledger.length,0);}finally{f.key.destroy();}
@@ -269,6 +350,18 @@ const withdrawalHolds: Record<string,(v:Account)=>void>={
   'unknown-fill':v=>{v.fills=[{fill_id:'new',state:'SUBMISSION_UNKNOWN',revision:v.revision}];},
   'pending-batch':v=>{v.batches=[{state:'SUBMISSION_UNKNOWN',revision:v.revision,batch:{batch_id:'ab'.repeat(32),batch_hash:'cd'.repeat(32),batch_seq:'1'}}];},
 };
+const directSigningHolds: Record<string,(v:Account)=>void>={...withdrawalHolds,'recovery-control':v=>{v.gate='RECOVERY_REQUIRED';v.withdraw_ready=false;}};
+for(const [kind,hold] of Object.entries(directSigningHolds)) test(`pending direct account stops before signing after ${kind}`,async()=>{
+  const f=await clientFixture();let signatures=0;const direct=f.key.direct.bind(f.key);f.key.direct=input=>{signatures++;return direct(input);};
+  try {
+    let release!:()=>void;f.setWait(new Promise<void>(resolve=>{release=resolve;}));
+    const pending=f.c.withdraw('DEVBASE','1');
+    const held={...structuredClone(f.c.projection.view!),revision:'2',received_at_unix_ms:String(Date.now())};hold(held);f.setView(held);
+    assert.equal(await f.c.refresh(),true);assert.equal(f.c.canWithdraw(),false);
+    release();await assert.rejects(()=>pending,/ACCOUNT_CHANGED_OR_STALE/);
+    assert.equal(signatures,0);assert.equal(f.posts(),0);assert.equal(f.c.history.length,0);
+  }finally{f.c.destroy();}
+});
 for(const [kind,hold] of Object.entries(withdrawalHolds)) for(const first of [true,false]) {
   test(`OPEN/${kind} hold from ${first?'earlier':'later'} request blocks in-flight reopening and all signing`,async()=>{
     const f=await clientFixture();let signatures=0;const direct=f.key.direct.bind(f.key);
