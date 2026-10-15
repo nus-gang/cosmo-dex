@@ -22,7 +22,9 @@ class FailedBrowserTest(unittest.TestCase):
         for name,raw in [('challenge',self.record['challenge']),('pids.json',self.record['pid_raw'])]:_write(mail,name,raw.encode())
         browser=self.root/'original-browser';browser.mkdir(mode=0o700)
         for name in self.value['original_event_files']:_write(browser,name,(f.FIXTURE/'evidence/browser-events'/name).read_bytes())
-        for name in ('commands','results'):(browser/name).mkdir(mode=0o700)
+        for name in ('commands','results'):
+            (browser/name).mkdir(mode=0o700)
+            for file in self.value['original_'+name+'_files']:_write(browser/name,file,(f.FIXTURE/'evidence'/('browser-'+name)/file).read_bytes())
         self.mapping={self.record['mailbox_root']:mail,self.value['original_browser_root']:browser}
         original=f._root
         def mapped(p):return original(self.mapping.get(str(p),p))
@@ -38,6 +40,10 @@ class FailedBrowserTest(unittest.TestCase):
         self.assertEqual(set(p.name for p in self.mapping[self.record['mailbox_root']].iterdir()),{'challenge','pids.json'})
         changed=(f.FIXTURE/'incident.json').read_bytes()+b' '
         with self.assertRaises(ValueError):f.incident(changed)
+        finish=self.mapping[self.value['original_browser_root']]/'commands'/self.value['original_commands_files'][0]
+        raw=finish.read_bytes();finish.unlink()
+        with self.assertRaises(ValueError):f.load(self.path,self.path.parent)
+        _write(finish.parent,finish.name,raw)
 
     def test_original_and_copied_evidence_mutation_missing_extra_and_pending_rejected(self):
         for path in [self.mapping[self.record['mailbox_root']]/'challenge',self.mapping[self.value['original_browser_root']]/'00001.json',self.path.parent/'evidence/postflight.json']:

@@ -10,7 +10,7 @@ from manifest import decode, read_regular
 from preflight import bounded
 from pid_mailbox import _root, _read, _write, _archive_clear
 
-INCIDENT_SHA256='de759c7ae79884e2110741552d3153a9e61b095468d7f8f4e69aabaeaa2bc82d'
+INCIDENT_SHA256='9ab13f50a231472fe059863ecf62d829e5004c3cad40792f7857aeb0ed3daeff'
 ERROR='FAILED_BROWSER_RC10_REJECTED'
 FIXTURE=Path(__file__).parent/'fixtures/failed-browser-rc10'
 
@@ -34,7 +34,10 @@ def originals(value):
     browser=_root(value['original_browser_root'])
     if set(p.name for p in browser.iterdir())!=set(value['original_event_files'])|{'commands','results'}:raise ValueError(ERROR)
     for folder in ('commands','results'):
-        if list(_root(browser/folder).iterdir()):raise ValueError(ERROR)
+        path=_root(browser/folder)
+        if set(p.name for p in path.iterdir())!=set(value['original_'+folder+'_files']):raise ValueError(ERROR)
+        for name in value['original_'+folder+'_files']:
+            if hashlib.sha256(bounded(path,name,65536)).hexdigest()!=value['files_sha256']['browser-'+folder+'/'+name]:raise ValueError(ERROR)
     for name in value['original_event_files']:
         if hashlib.sha256(bounded(browser,name,65536)).hexdigest()!=value['files_sha256']['browser-events/'+name]:raise ValueError(ERROR)
 

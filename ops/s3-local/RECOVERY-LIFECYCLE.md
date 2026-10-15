@@ -98,7 +98,7 @@ L-T의 명시적 두 사용자 순서는 계정 선택·인증 → A DEVBASE10/B
 
 ### RC10 실패 archive와 새 후보 재진입
 
-`failed_browser.preserve(new_archive)`는 `failed-browser-rc10-de759c7ae79884e21` 이름의 새 디렉터리에만 원 사건을 복사한다. 원 `/private/tmp/paperclip-nus74-rc10-6108a4cb/fee0/web/mail`과 `browser`는 읽기만 하며 nonce 교체·이동·삭제·수리0이다. 원문 SHA, challenge/PID, spawned→failed→closed 및 부모 종료 기록을 대조한다. `normal_receipt=false / original_cause=UNPROVEN / cleanup_complete_verified=false`다.
+`failed_browser.preserve(new_archive)`는 `failed-browser-rc10-9ab13f50a231472f1` 이름의 새 디렉터리에만 원 사건을 복사한다. 원 `/private/tmp/paperclip-nus74-rc10-6108a4cb/fee0/web/mail`과 `browser`는 읽기만 하며 nonce 교체·이동·삭제·수리0이다. 원문 SHA, challenge/PID, spawned→failed→closed 및 부모 종료 기록을 대조한다. 원 browser/commands에 남은 미소비 finish 요청1개(결과0)도 원 nonce/bytes 그대로 복사·대조한다. 응답이 없으므로 정상 종료 receipt로 간주하지 않는다. `normal_receipt=false / original_cause=UNPROVEN / cleanup_complete_verified=false`다.
 
 NUS-74의 기존 history 입력·정상4영수증·RC8 failure와 기존 transition4개를 그대로 읽는다. 새 후보 packet을 만든 뒤 **기존 RC10 browser packet→새 browser packet** edge를 한 개 덧붙이고 `Reentry(..., failed_browsers=[archive/'failure.json'])`에 전달한다. 기존 RC9 chain failure4개와 다른 workspace 이력은 기존대로 유지한다. 새 browser 후보는 runtime pin/native decision/CEO·CTO revision, source/bundle/artifacts, home/input/key/mailbox/control을 모두 새로 고정해야 한다. 새 pin 없이 이 도구를 기동 허가로 쓰지 않는다.
 
