@@ -1,0 +1,101 @@
+{
+  "issue": "NUS-56",
+  "status": "PARTIAL_BLOCKED_ON_NUS_65",
+  "base_main_sha": "bd9e473196ac86fdedf655b2c93e6931f54faa83",
+  "prior_components_sha": "6aec6b17d93976eb09ed18c2e17affa9572a0003",
+  "approved_contract_head": "d45be33029705859b07a9516fd2229a56dc66f46",
+  "approved_contract_tree": "8e54fdd823e984e32dd6c44ad10ef4475b81aa7f",
+  "manifest_sha256": "7e0d39fe3131cffc8d4f9e0dfff8d0f6d87a178f9c1bf3965d8503560d57390d",
+  "contract_set_hash": "616a7cb1c3a1b0be847d5cdaf902bfd9274d248018bfa7949cc1b9ca26b5a2a0",
+  "config_hashes": {
+    "fee0": "f89bcad038cd6563ec282fd8a598d015703da715329fc58b88c5e392b3763744",
+    "fee25": "6ad0fa7a265893dd737897050012e893d8e3e25048a14b5f3f1e17faf1b912f8"
+  },
+  "vector_set_hash": "5e8c7162bfca3a4968c88d38859248c07ff9bc73530cd80171a2787a0e2b3bf6",
+  "lock_set_hash": "1f9845089c414732f33304d72dafc3e9b56366e9ac027c80f38a98eeae6acbb8",
+  "exchange_lock_sha256": "ab4f76dd87448219ade436d508822b423b036a5131cdc732150a59e2e764e894",
+  "environment": {
+    "rust": "1.92.0",
+    "python": "3.14.0",
+    "os": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+    "network": "offline dependencies",
+    "replicated": false
+  },
+  "actual_runtime_genesis": null,
+  "actual_chain_receipts": "NOT_RUN",
+  "durable_engine_ack": "NOT_IMPLEMENTED",
+  "semantic_engine_crash_replay": "NOT_RUN",
+  "S3_AT_acceptance": "NOT_CLAIMED",
+  "results": {
+    "s3_candidates": {
+      "passed": 6,
+      "scope": "private candidates; real public-fixture ML-DSA signatures; synthetic RPC",
+      "commit_variants_repetitions": "0/25bps x3",
+      "correction_repetitions": 3,
+      "absence_repetitions": 1
+    },
+    "s3_accounting": {
+      "passed": 7,
+      "scope": "synthetic accounting/graph, including 1000/1001 fills 200/201 orders"
+    },
+    "s3_journal": {
+      "passed": 16,
+      "includes_subprocess_helper": 1,
+      "scope": "storage only; 6 crash points x3 x2 replays; no integrated engine"
+    },
+    "s2_regression": {
+      "passed": 68,
+      "suites": {
+        "s2_ledger": 5,
+        "s2_journal": 14,
+        "s2_sequencer": 40,
+        "s2_snapshot": 9
+      },
+      "includes_subprocess_helper": 1
+    },
+    "clippy": "PASS all-targets/all-features -D warnings",
+    "inherited_contract_oracle": {
+      "checks": 13283,
+      "result": "PASS",
+      "scope": "inherited specification, not product"
+    },
+    "capacity_probe": {
+      "case": "raw-receipt-duplication",
+      "scope": "SCHEMA_AND_SERIALIZATION_ONLY_NOT_CHAIN_PROOF",
+      "approved_contract_head": "d45be33029705859b07a9516fd2229a56dc66f46",
+      "raw_response_bytes": 3145728,
+      "raw_response_sha256": "3a6bc3ad4851b52ca33f56f5fa632b23722ee6eaf066e4682cc7aac4978d31d2",
+      "raw_response_schema_base64_chars": 4194304,
+      "state_bytes": 8445916,
+      "result_bytes": 4199048,
+      "journal_payload_bytes": 16874108,
+      "payload_limit": 16777216,
+      "over_limit_bytes": 96892,
+      "schema_validation": "PASS",
+      "payload_fit": "FAIL",
+      "invariant": "Before ACK, reserve complete worst correction with all original evidence. Cannot substitute refs inside ResolutionReceipt fields under s3/2 schema."
+    }
+  },
+  "raw_candidate_files": [
+    {
+      "path": "exchange/evidence/s3-integration/raw/absence-proof.json",
+      "bytes": 43391,
+      "sha256": "3658aa987c807978df50fea5685de8eb6a0c2d988bd6f3fa269542196a5c2eb9"
+    },
+    {
+      "path": "exchange/evidence/s3-integration/raw/committed-0.json",
+      "bytes": 172670,
+      "sha256": "c439bf5b36969f9c287eb1c0576a22a827f52fb80eae4c2f96493e87f85b37c5"
+    },
+    {
+      "path": "exchange/evidence/s3-integration/raw/committed-25.json",
+      "bytes": 172676,
+      "sha256": "b8369eebc3206ace227371b6b3f4ea0e6612d1191a6974549024c4b3a34ae655"
+    },
+    {
+      "path": "exchange/evidence/s3-integration/raw/directed-correction.json",
+      "bytes": 484172,
+      "sha256": "2a902bb0880149c85985ae677d6f4335a497e345489aee93478b2716ef277269"
+    }
+  ]
+}

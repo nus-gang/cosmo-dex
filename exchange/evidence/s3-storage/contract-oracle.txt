@@ -1,0 +1,4 @@
+PASS S3 correction hash: 2 cumulative states, 4 replay steps, 14 field sensitivities, 17 rejected mutations; actual chain/WAL IO NOT_RUN
+PASS rc3 evidence/capacity: 3MiB raw -> 99671B WAL; 15 negatives; RPC and WAL 16MiB/+1; four cumulative histories; reservation boundaries; all-pending unsafe admission rejected; filesystem/chain IO NOT_RUN
+PASS SEC-65-01 Unicode capacity: 52 text cases, 4 full S/R/J/B shapes, 9 nested shapes; Text 3074B, B/B-1 and prior reservation boundaries; chain/allocator IO NOT_RUN
+PASS S3 specification oracle: 13248 checks; actual chain/IO/browser/main QA NOT_RUN

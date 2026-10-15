@@ -1,0 +1,155 @@
+{
+  "issue": "NUS-65",
+  "candidate_version": "s3-1.0.0-rc3",
+  "approved_parent_head": "d45be33029705859b07a9516fd2229a56dc66f46",
+  "scope": "공통 protocol/s3 계약·schema·명세 oracle만. 제품 구현·실제 chain/IO·main QA 아님.",
+  "environment": {
+    "python": "3.14.0 (main, Oct  7 2025, 09:34:52) [Clang 17.0.0 (clang-1700.0.13.3)]",
+    "platform": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+    "go": "go1.24.4 darwin/arm64"
+  },
+  "validation": {
+    "python_specification_checks": 13248,
+    "go_crypto_and_strict_codec_checks": 284,
+    "hash_replay_steps": 4,
+    "hash_mutations_rejected": 17,
+    "raw_mutations_rejected": 15,
+    "cumulative_capacity_profiles": 4,
+    "git_diff_check": "PASS"
+  },
+  "rc2_reproduced": {
+    "case": "raw-receipt-duplication",
+    "scope": "SCHEMA_AND_SERIALIZATION_ONLY_NOT_CHAIN_PROOF",
+    "approved_contract_head": "d45be33029705859b07a9516fd2229a56dc66f46",
+    "raw_response_bytes": 3145728,
+    "raw_response_sha256": "3a6bc3ad4851b52ca33f56f5fa632b23722ee6eaf066e4682cc7aac4978d31d2",
+    "raw_response_schema_base64_chars": 4194304,
+    "state_bytes": 8445916,
+    "result_bytes": 4199048,
+    "journal_payload_bytes": 16874108,
+    "payload_limit": 16777216,
+    "over_limit_bytes": 96892,
+    "schema_validation": "PASS",
+    "payload_fit": "FAIL",
+    "invariant": "Before ACK, reserve complete worst correction with all original evidence. Cannot substitute refs inside ResolutionReceipt fields under s3/2 schema."
+  },
+  "rc3": {
+    "scope": "SCHEMA/SERIALIZATION/RESERVATION MODEL ONLY; historical shapes are synthetic, not reachable signed engine traces; actual fsync/chain proof NOT_RUN",
+    "reported_rc2": {
+      "head": "d45be33029705859b07a9516fd2229a56dc66f46",
+      "journal_payload_bytes": 16874108,
+      "limit": 16777216
+    },
+    "large_raw_regression": {
+      "raw_response_bytes": 3145728,
+      "raw_response_sha256": "3a6bc3ad4851b52ca33f56f5fa632b23722ee6eaf066e4682cc7aac4978d31d2",
+      "state_bytes": 58230,
+      "result_bytes": 5205,
+      "journal_payload_bytes": 99671,
+      "after_state_hash": "7058a05f436f57d5d6a0309931fbe1b080ac309802482df96a920c595b324877",
+      "result_hash": "93053a5d178447faec90eba2ddcb46982b58e19138dca0e349bc286606ffeab5"
+    },
+    "cumulative_histories": [
+      {
+        "fills": 1000,
+        "orders": 200,
+        "bps": 0,
+        "certificate": {
+          "pending_fills": 2,
+          "orders": 200,
+          "max_state_bytes": 6948710,
+          "max_result_bytes": 112656,
+          "max_journal_payload_bytes": 9661903,
+          "max_drain_records": 282,
+          "max_new_evidence_objects": 564,
+          "evidence_reserved_bytes": 2793652224,
+          "reserved_bytes": 9521946624,
+          "admissible": true
+        }
+      },
+      {
+        "fills": 1001,
+        "orders": 201,
+        "bps": 0,
+        "certificate": {
+          "pending_fills": 2,
+          "orders": 201,
+          "max_state_bytes": 6962330,
+          "max_result_bytes": 112991,
+          "max_journal_payload_bytes": 9680736,
+          "max_drain_records": 283,
+          "max_new_evidence_objects": 565,
+          "evidence_reserved_bytes": 2793922560,
+          "reserved_bytes": 9558827008,
+          "admissible": true
+        }
+      },
+      {
+        "fills": 1000,
+        "orders": 200,
+        "bps": 25,
+        "certificate": {
+          "pending_fills": 2,
+          "orders": 200,
+          "max_state_bytes": 6948710,
+          "max_result_bytes": 112656,
+          "max_journal_payload_bytes": 9661903,
+          "max_drain_records": 282,
+          "max_new_evidence_objects": 564,
+          "evidence_reserved_bytes": 2793652224,
+          "reserved_bytes": 9521946624,
+          "admissible": true
+        }
+      },
+      {
+        "fills": 1001,
+        "orders": 201,
+        "bps": 25,
+        "certificate": {
+          "pending_fills": 2,
+          "orders": 201,
+          "max_state_bytes": 6962330,
+          "max_result_bytes": 112991,
+          "max_journal_payload_bytes": 9680736,
+          "max_drain_records": 283,
+          "max_new_evidence_objects": 565,
+          "evidence_reserved_bytes": 2793922560,
+          "reserved_bytes": 9558827008,
+          "admissible": true
+        }
+      }
+    ],
+    "rejected_mutations": 15,
+    "boundaries": {
+      "wal_16777216": "FIT",
+      "wal_16777217": "REJECT_BEFORE_DECODE",
+      "rpc_16777216": "ACCEPT_BYTES_ONLY",
+      "rpc_16777217": "EVIDENCE_SIZE_HOLD"
+    },
+    "all_pending_history": "1000/1001 conservative worst-case reservation exceeds WAL limit: reject new ACK; never truncate history",
+    "known_limit": "1000/1001 cumulative history is distinct from 1000/1001 simultaneously pending fills; dependency closure oracle remains separately required"
+  },
+  "failed_environment_attempts": [
+    {
+      "command": "go run with default GOMODCACHE",
+      "result": "ENVIRONMENT_FAILURE",
+      "reason": "sandbox prevented creation of runtime-owned module cache outside writable roots",
+      "resolution": "same locked dependencies with GOMODCACHE/GOCACHE/GOTMPDIR in run scratch; successful authorized network/cache retry"
+    }
+  ],
+  "not_run": [
+    "actual SDK/chain proof",
+    "Exchange engine/allocator implementation",
+    "fsync/preallocation/ENOSPC/crash IO",
+    "Rust/TS product integration",
+    "4 validators",
+    "browser",
+    "main CI/independent QA"
+  ],
+  "review": "Security then QA native executionPolicy; candidate is not approved yet; reviewers pin exact head/tree/manifest from issue handoff",
+  "limits": [
+    "raw RPC body 16MiB; unsupported/oversize evidence keeps D/P and enters RECOVERY_REQUIRED",
+    "1000/1001 cumulative history tests have two pending fills; all-pending worst-case budget is rejected before new ACK",
+    "large physical reservation is a conservative requirement, not an allocation performed or a budget promise; largest cumulative fixture needs 9558827008 bytes of modeled dedicated reservation"
+  ]
+}

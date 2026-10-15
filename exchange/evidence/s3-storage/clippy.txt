@@ -1,0 +1,2 @@
+    Checking nus-exchange-contract v0.1.0 (/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/worktrees/NUS-56/exchange)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.25s

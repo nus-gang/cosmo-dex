@@ -1,0 +1,56 @@
+{
+  "current_profiles_absent": {
+    "fee0": true,
+    "fee25": true
+  },
+  "registered_config_unchanged": true,
+  "old_service_rows_unchanged": 8,
+  "new_service_ids": [
+    "99e45ba4-df12-468f-ae99-4c9ce6c79b05"
+  ],
+  "all_rows_stopped": true,
+  "current_process": {
+    "schema": "s3-local-process-probe/1",
+    "pids": [
+      22228,
+      22324,
+      22325
+    ],
+    "started_monotonic_ns": 215716590145916,
+    "finished_monotonic_ns": 215716590164500,
+    "listed_pids_absent": true,
+    "inventory_complete_verified": false,
+    "process_tree_exit_verified": false,
+    "writer_release_verified": false,
+    "port_release_verified": false
+  },
+  "current_port": {
+    "schema": "s3-local-port-probe/1",
+    "endpoints": [
+      [
+        "127.0.0.1",
+        5173
+      ]
+    ],
+    "started_monotonic_ns": 215716590177208,
+    "finished_monotonic_ns": 215716590233875,
+    "simultaneous_bind_verified": true,
+    "reservation_retained": false,
+    "process_exit_verified": false,
+    "writer_release_verified": false
+  },
+  "browser_profile_process_matches": [],
+  "broker_socket_absent": true,
+  "normal_receipt": false,
+  "reentry": {
+    "accepted": false,
+    "code": "WORKSPACE_REGISTRATION_REJECTED",
+    "type": "ValueError"
+  },
+  "whole_process_tree_verified": false,
+  "writer_reacquisition": "NOT_APPLICABLE_NO_CHAIN_OR_WORKER_CREATED",
+  "current_tracked_source_clean": true,
+  "head": "e1be68e2d1c38a3f03a0a5883e7f76140dc609d4",
+  "failure_to_spawn_seconds": 0.730193,
+  "same_clock_note": "Only Node event timestamps compared; Python monotonic epoch is not compared to Node hrtime epoch."
+}

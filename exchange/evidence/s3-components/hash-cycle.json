@@ -1,0 +1,16 @@
+{
+  "source_head": "0915375cac360f83d62a70587a0e7cf9c89604a1",
+  "engine_corrections_schema": {
+    "type": "array",
+    "items": {
+      "$ref": "#/$defs/Correction"
+    }
+  },
+  "correction_after_state_hash_schema": {
+    "$ref": "#/$defs/Hash"
+  },
+  "equation": "H = SHA256(frame(NUS/S3/ENGINE_STATE/V1, EngineState(corrections[-1].after_state_hash=H)))",
+  "result": "BLOCKED_CONTRACT_UNDERSPECIFIED",
+  "unblock_issue": "NUS-64",
+  "note": "Static normative dependency cycle; no claim that a SHA256 fixed point search was executed. No protocol changes made."
+}

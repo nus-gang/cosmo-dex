@@ -1,0 +1,158 @@
+[
+  {
+    "id": "old-version",
+    "file": "negative-old-version.json",
+    "sha256": "35c19616799bacf8a0785120402062db891c235f1c20ca9f21e006d8068eceed",
+    "error": "RECEIPT_SCHEMA"
+  },
+  {
+    "id": "extra-global-result",
+    "file": "negative-extra-global-result.json",
+    "sha256": "4d63addea399b22019d264f949c169c8c2f601dc0bfd1406b4589a20976c9b6b",
+    "error": "RECEIPT_SCHEMA"
+  },
+  {
+    "id": "extra-correction",
+    "file": "negative-extra-correction.json",
+    "sha256": "b76a22083581a8d0172ea01e1a3e46eaecf9780692f36ac9a7e6b071e4e94883",
+    "error": "RECEIPT_SCHEMA"
+  },
+  {
+    "id": "foreign-ledger",
+    "file": "negative-foreign-ledger.json",
+    "sha256": "81cb9e117d77608ca9c869bfaf9b4daa413ece1bff4e687d03fc6bcdf4ca6c4a",
+    "error": "RECEIPT_PRINCIPAL"
+  },
+  {
+    "id": "wrong-principal",
+    "file": "negative-wrong-principal.json",
+    "sha256": "c21612c92a8b25549161be4b77ad90b9988832a59a4bf94deba477253c405d25",
+    "error": "RECEIPT_PRINCIPAL"
+  },
+  {
+    "id": "wrong-context",
+    "file": "negative-wrong-context.json",
+    "sha256": "68a19e8f2e216433b2850b91b84501a41fcb5551998e221eaac796c68cd3dc00",
+    "error": "RECEIPT_CONTEXT"
+  },
+  {
+    "id": "upper-hash",
+    "file": "negative-upper-hash.json",
+    "sha256": "3f98273936a46d1fa3d5f1dfa36d9b2d1dff530b6b99d56c7be94852d8e9b372",
+    "error": "RECEIPT_SCHEMA"
+  },
+  {
+    "id": "u64-overflow",
+    "file": "negative-u64-overflow.json",
+    "sha256": "d0915406e4c081ad6325a53ebe0093f3a797b42d0f1d33632c0e9a863cbc8398",
+    "error": "RECEIPT_SCHEMA"
+  },
+  {
+    "id": "u64-zero",
+    "file": "negative-u64-zero.json",
+    "sha256": "1ce9ddcfa2006cd2ca3f5560e851182e922a4500f027e722cde09ea12b0ff349",
+    "error": "RECEIPT_SCHEMA"
+  },
+  {
+    "id": "integer-number",
+    "file": "negative-integer-number.json",
+    "sha256": "172d3bfde922c1e1dcc6b10878d349416fa7a207b7c1e7f35e0a47e45798594c",
+    "error": "RECEIPT_CANONICAL"
+  },
+  {
+    "id": "integer-leading-zero",
+    "file": "negative-integer-leading-zero.json",
+    "sha256": "a008cb203e999f9b6f8bc0dbcba0232a5140438a650785a5502f9bf1b95e18bc",
+    "error": "RECEIPT_SCHEMA"
+  },
+  {
+    "id": "integer-negative",
+    "file": "negative-integer-negative.json",
+    "sha256": "b835b913f559198979f7f024c0b2063859b87004876720d346d390b41e51cf82",
+    "error": "RECEIPT_SCHEMA"
+  },
+  {
+    "id": "integer-float-string",
+    "file": "negative-integer-float-string.json",
+    "sha256": "81604cdcfd80874fa983a96433b15a8ac40f4e7b5597ddedff6673133d67bd24",
+    "error": "RECEIPT_SCHEMA"
+  },
+  {
+    "id": "integer-exponent",
+    "file": "negative-integer-exponent.json",
+    "sha256": "f048934500bbd21cd7ced51ff77774f6d959ffeca2f109de9d9f5f0b4c778568",
+    "error": "RECEIPT_SCHEMA"
+  },
+  {
+    "id": "integer-space",
+    "file": "negative-integer-space.json",
+    "sha256": "bf73328ae593e5d18f1e038d4459389f52be971d6af78f9f2ef826933287204f",
+    "error": "RECEIPT_SCHEMA"
+  },
+  {
+    "id": "u128-overflow",
+    "file": "negative-u128-overflow.json",
+    "sha256": "058f0c81d8818fc9111cde3835145e792870fee061c4b229ff733e828d18afd9",
+    "error": "RECEIPT_SCHEMA"
+  },
+  {
+    "id": "p-reused-in-A",
+    "file": "negative-p-reused-in-A.json",
+    "sha256": "5af92bbe376dfc2206f49962b8cf17584c55e3d9b37279e26bf39bb8262de4f1",
+    "error": "RECEIPT_SCHEMA"
+  },
+  {
+    "id": "true-ack",
+    "file": "negative-true-ack.json",
+    "sha256": "45dccdf31626e0b0763eef45c99a4a1d2300190cc26c801b4a21e6f4754f3474",
+    "error": "RECEIPT_SCHEMA"
+  },
+  {
+    "id": "null-list",
+    "file": "negative-null-list.json",
+    "sha256": "c9b52896a06df66a87710621827b126d064913cacb4edb0d5ea374c285691e54",
+    "error": "RECEIPT_SCHEMA"
+  },
+  {
+    "id": "duplicate-fill",
+    "file": "negative-duplicate-fill.json",
+    "sha256": "f950e18724e682267b86b571e1a04708947c980bfb2e042c5b4732f7623bf3bf",
+    "error": "RECEIPT_SCHEMA"
+  },
+  {
+    "id": "unknown-code-data",
+    "file": "negative-unknown-code-data.json",
+    "sha256": "61e575f2e36ee22e3e71523c5d7bf07692dac554e16e7600bb276327f6b7ef0c",
+    "error": "RECEIPT_SCHEMA"
+  },
+  {
+    "id": "invalid-owner-width",
+    "file": "negative-invalid-owner-width.json",
+    "sha256": "081185230e1f47440645552cc77977a3eca65f0d4a5f1276648e2f36f03bfeb4",
+    "error": "RECEIPT_SCHEMA"
+  },
+  {
+    "id": "accepted-error",
+    "file": "negative-accepted-error.json",
+    "sha256": "55c039489bf9355566955bd01231c547405d6707a85487dd22294815825b6f85",
+    "error": "RECEIPT_SCHEMA"
+  },
+  {
+    "id": "duplicate-key",
+    "file": "negative-duplicate-key.json",
+    "sha256": "7cab7170dc8977608cc13884abfa7b6524e25b8a14eb0ae1e75e5d9a4fa6855d",
+    "error": "RECEIPT_CANONICAL"
+  },
+  {
+    "id": "trailing-newline",
+    "file": "negative-trailing-newline.json",
+    "sha256": "86ddbb7423b757eb0916eefbb958472b3846a1508778de82880a8ce05ba652c7",
+    "error": "RECEIPT_CANONICAL"
+  },
+  {
+    "id": "utf8-bom",
+    "file": "negative-utf8-bom.json",
+    "sha256": "4ec3918c4d6f11a6ca74b019d5ee8055f6c2cf7f7e550d6349311955347af35a",
+    "error": "RECEIPT_CANONICAL"
+  }
+]

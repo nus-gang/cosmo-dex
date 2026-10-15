@@ -1,0 +1,29 @@
+S3-A 검증 기록 — 작성자 명세 검사, 독립 심사/제품 QA 아님
+2026-10-05T08:40:40.179345+00:00
+Python 3.14.0
+go version go1.24.4 darwin/arm64
+
+cwd=.
+command=python3 protocol/s3/tools/check.py
+exit_code=0
+PASS S3 specification oracle: 13260 checks; actual chain/IO/browser/main QA NOT_RUN
+
+expected_diff=none
+
+cwd=chain
+command=go run -mod=readonly ../protocol/s3/tools/crypto.go check ../protocol/s3
+exit_code=0
+PASS S3 crypto + inherited Go strict codec: 284 checks; SDK execution/Rust/TS product NOT_RUN
+
+expected_diff=none
+
+cwd=.
+command=git diff --name-only bd9e473196ac86fdedf655b2c93e6931f54faa83
+exit_code=0
+
+
+expected_diff=empty; inherited tracked files unchanged
+
+actual chain/IO/browser/main QA: NOT_RUN
+runtime genesis/height/TX inclusion/gas: null / NOT_RUN
+최종 candidate head/tree와 contract/config/vector/lock hash는 Paperclip s3-handoff 문서 참조.

@@ -1,0 +1,95 @@
+{
+  "scope": "LOCAL_DEVELOPMENT_PROFILE_ONLY",
+  "runtime_genesis_hash": null,
+  "standard_gate": {
+    "G00": "FAIL_UNPROVEN",
+    "allowlist": [],
+    "ACK": "CLOSED"
+  },
+  "cases": [
+    {
+      "id": "DEV01",
+      "requirement": "기본 binary/flag 없음/unknown profile 거절 및 표준 ACK=CLOSED",
+      "existing_owner_issue": "NUS-56",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "DEV02",
+      "requirement": "빈 전용 home/guard·hash·fee·genesis 일치, symlink·hardlink·S1/S2/S3W1 import 거절",
+      "existing_owner_issue": "NUS-56",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "DEV03",
+      "requirement": "Chain s3/3 query·원 schema/hash·fee0/25 Context 일치와 구 s3/1 명시 거절",
+      "existing_owner_issue": "NUS-55",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "DEV04",
+      "requirement": "엔진 single publisher/원장·book/FIFO·cursor·결과 원자 공개, 중간 candidate 노출0",
+      "existing_owner_issue": "NUS-56",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "DEV05",
+      "requirement": "worker TxRaw/attempt 방송 전 영속화, unknown 보류·동일 batch, 추가 지급0",
+      "existing_owner_issue": "NUS-57",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "DEV06",
+      "requirement": "2사용자 실제 로컬 4검증인 예치→체결→정산→수취 출금,0/25bps 보존",
+      "existing_owner_issue": "NUS-59",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "DEV07",
+      "requirement": "주문·양측 서명·C_start·정수·만료·전체 rollback/P 재사용0",
+      "existing_owner_issue": "NUS-60",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "DEV08",
+      "requirement": "출금→정산/정산→출금 두 순서·동일 H/index·불명 보류",
+      "existing_owner_issue": "NUS-60",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "DEV09",
+      "requirement": "frame/object/marker/방송/receipt/publish 종료 경계3회·2replay·독립 개발 receipt 대조",
+      "existing_owner_issue": "NUS-59",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "DEV10",
+      "requirement": "모의 ENOSPC/EDQUOT/EIO·부분 write·cap 거절·증거 보존/닫힘,host 증거로 합산0",
+      "existing_owner_issue": "NUS-59",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "DEV11",
+      "requirement": "writer2 거절·같은 home 재시작·lock/port 해제",
+      "existing_owner_issue": "NUS-59",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "DEV12",
+      "requirement": "실제 browser/자기 계정·개발 보장 표기·확정/잠정/불명·출금 보류",
+      "existing_owner_issue": "NUS-58",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "DEV13",
+      "requirement": "standard/dev 양방향 protocol·home·magic·manifest 혼입과 자동 fallback 거절",
+      "existing_owner_issue": "NUS-60",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "DEV14",
+      "requirement": "고정 candidate/새 checkout 독립 QA·실제 main 인수와 별도 보고",
+      "existing_owner_issue": "NUS-63",
+      "result": "NOT_RUN"
+    }
+  ]
+}

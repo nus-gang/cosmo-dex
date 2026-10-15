@@ -1,0 +1,52 @@
+{
+  "scope": "SYNTHETIC_EXPECTATION_NOT_CHAIN_PROOF",
+  "fields": [
+    [
+      1,
+      "u32",
+      "2"
+    ],
+    [
+      2,
+      "utf8",
+      "nus-s3-dev-1"
+    ],
+    [
+      3,
+      "hex",
+      "6f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d5"
+    ],
+    [
+      4,
+      "utf8",
+      "DEVBASE/DEVQUOTE"
+    ],
+    [
+      5,
+      "u64",
+      "1"
+    ],
+    [
+      6,
+      "hex",
+      "65d96a78a3dc77aa7fa87eca63f4ca313c7e43c0c08354bee90d8fd80474e7d0"
+    ],
+    [
+      7,
+      "hex",
+      "6a68571c6bb3af6c09f384227e35029270c4c31fd9652a5cf02e027a89048586"
+    ],
+    [
+      8,
+      "u64",
+      "101"
+    ],
+    [
+      9,
+      "hex",
+      "8a175fcc3a8de7c295d00941c8f6f91820f5673b1587d8e276637966a7ec0368"
+    ]
+  ],
+  "canonical_hex": "0802120c6e75732d73332d6465762d311a206f77332ec4a26f1dee0e45cd711b4c077b0e5e586d4fef0cab9b19e097c921d52210444556424153452f44455651554f54452801322065d96a78a3dc77aa7fa87eca63f4ca313c7e43c0c08354bee90d8fd80474e7d03a206a68571c6bb3af6c09f384227e35029270c4c31fd9652a5cf02e027a8904858640654a208a175fcc3a8de7c295d00941c8f6f91820f5673b1587d8e276637966a7ec0368",
+  "sha256": "87b7798678fa607dbf1f911f630e4b648e2594e315c7c3da2d4feebea6d92a72"
+}

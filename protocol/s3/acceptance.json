@@ -1,0 +1,222 @@
+{
+  "scenario_repetitions": "3",
+  "deterministic_replays": "2",
+  "mutation_detection_required": true,
+  "cases": [
+    {
+      "id": "S3-AT01",
+      "owners": "B/C/D/E/F/G/J",
+      "variants": [
+        "demo0",
+        "demo25",
+        "received_asset_withdraw"
+      ],
+      "legacy_trace": "T02,T03,T15(partial)",
+      "a_product_result": "NOT_RUN"
+    },
+    {
+      "id": "S3-AT02",
+      "owners": "B/C/G/J",
+      "variants": [
+        "signature_bitflip",
+        "wrong_key",
+        "wrong_key_type",
+        "unregistered",
+        "wrong_chain",
+        "wrong_genesis",
+        "wrong_domain",
+        "wrong_operator",
+        "old_operator_epoch",
+        "binding_conflict",
+        "cumulative_over",
+        "buy_limit",
+        "sell_limit",
+        "maker_price",
+        "overflow",
+        "h199",
+        "h200",
+        "h201",
+        "fee0",
+        "fee25",
+        "ceil",
+        "cap",
+        "fee_ge_receive",
+        "revoke",
+        "bump_epoch"
+      ],
+      "legacy_trace": "T01,T02",
+      "a_product_result": "NOT_RUN"
+    },
+    {
+      "id": "S3-AT03",
+      "owners": "B/G/J",
+      "variants": [
+        "valid_then_bad_signature",
+        "bad_signature_then_valid",
+        "valid_then_bad_quantity",
+        "bad_quantity_then_valid",
+        "valid_then_insufficient",
+        "insufficient_then_valid",
+        "gross_cycle_both_orders",
+        "dust1",
+        "deficit1",
+        "max8fills16orders",
+        "limit_plus1",
+        "out_of_gas_rollback"
+      ],
+      "legacy_trace": "T06,T15(partial)",
+      "a_product_result": "NOT_RUN"
+    },
+    {
+      "id": "S3-AT04",
+      "owners": "B/D/G/J",
+      "variants": [
+        "same_TxRaw",
+        "same_batch_new_TX",
+        "past_same",
+        "past_different",
+        "past_missing",
+        "fill_duplicate",
+        "seq_gap",
+        "prev_wrong",
+        "operator_rotation",
+        "close_then_late_settle",
+        "old_commit_after_rotation"
+      ],
+      "legacy_trace": "T07,T02,T10(partial)",
+      "a_product_result": "NOT_RUN"
+    },
+    {
+      "id": "S3-AT05",
+      "owners": "D/F/G/J",
+      "variants": [
+        "F05",
+        "F06",
+        "F07",
+        "F08",
+        "temporary_NOT_FOUND",
+        "query_failure",
+        "receipt_mismatch",
+        "expired_absence_scan_gap",
+        "budget_exhausted",
+        "worker_restart"
+      ],
+      "legacy_trace": "T09",
+      "a_product_result": "NOT_RUN"
+    },
+    {
+      "id": "S3-AT06",
+      "owners": "B/C/D/F/G/J",
+      "variants": [
+        "withdraw_full_then_settle",
+        "withdraw_atom_then_settle",
+        "settle_then_full_withdraw_failure",
+        "settle_then_atom",
+        "settle_then_remaining",
+        "same_block_both_tx_index_orders"
+      ],
+      "legacy_trace": "T04",
+      "a_product_result": "NOT_RUN"
+    },
+    {
+      "id": "S3-AT07",
+      "owners": "C/D/F/G/J",
+      "variants": [
+        "F13",
+        "F14",
+        "F15",
+        "F16",
+        "dependency_shared_order",
+        "dependency_shared_reservation",
+        "same_owner_independent_asset",
+        "committed_immutable",
+        "1000fills200orders_fee0",
+        "1001fills201orders_fee0",
+        "1000fills200orders_fee25",
+        "1001fills201orders_fee25"
+      ],
+      "legacy_trace": "T16",
+      "a_product_result": "NOT_RUN"
+    },
+    {
+      "id": "S3-AT08",
+      "owners": "C/D/F/G/J",
+      "variants": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F09",
+        "F10",
+        "F11",
+        "F12",
+        "F17",
+        "F18",
+        "HTTP12_new",
+        "HTTP12_identical_retry",
+        "cancel_then_match",
+        "match_then_cancel"
+      ],
+      "legacy_trace": "T03,T05(partial),T08(local only)",
+      "a_product_result": "NOT_RUN"
+    },
+    {
+      "id": "S3-AT09",
+      "owners": "E/H/I/J",
+      "variants": [
+        "fresh_main_checkout_CI",
+        "browser_guide_verbatim",
+        "stale",
+        "disconnect",
+        "height_regression",
+        "revision_duplicate",
+        "revision_conflict",
+        "revision_gap",
+        "account_switch",
+        "explicit_withdraw_abort",
+        "artifact_access"
+      ],
+      "legacy_trace": "T14(REST/UI only)",
+      "a_product_result": "NOT_RUN"
+    }
+  ],
+  "evidence_required": [
+    "code_sha",
+    "tree_sha",
+    "contract_hash",
+    "config_hash",
+    "vector_hash",
+    "lock_hashes",
+    "runtime_genesis_hash",
+    "versions",
+    "commands",
+    "height",
+    "tx_index",
+    "tx_hash",
+    "batch_seq",
+    "batch_id",
+    "batch_hash",
+    "fill_ids",
+    "raw_inputs",
+    "raw_outputs",
+    "expected_actual_diff",
+    "PASS_FAIL_NOT_RUN"
+  ],
+  "timings_separate": [
+    "request_to_headers_ms",
+    "request_to_complete_JSON_ms",
+    "request_to_chain_commit_ms",
+    "commit_to_engine_apply_ms"
+  ],
+  "legacy_full_pass_at_start": "0/16",
+  "excluded": [
+    "real_assets",
+    "distributed_ACK",
+    "AZ_loss",
+    "distributed_fencing",
+    "independent_emergency_RPC_gas",
+    "transfer_sponsorship",
+    "full_WS",
+    "TPS_SLA"
+  ]
+}

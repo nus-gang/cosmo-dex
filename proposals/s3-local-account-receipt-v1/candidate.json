@@ -1,0 +1,20 @@
+{
+  "candidate": "CTO-70-03/account-receipt-v1",
+  "status": "SECURITY_THEN_QA_INPUT",
+  "activated": false,
+  "runtime_implemented": false,
+  "base_A_head": "fd9aa6ca9093817e4ab09d2ae835197a84bbade6",
+  "base_A_tree": "88c0b19a89e32a246836e8a0119b3b8b76b11e49",
+  "source_C_head": "47204abad01cf0999877541c097dff2a26e4bd9d",
+  "source_C_tree": "a8dad9e44a5d136fceac0282087b63db38ed587f",
+  "cto_decision_revision": "53470bae-a7c6-465a-8f78-f2595be71f2e",
+  "public_receipt_version": "s3-dev-local-account/1",
+  "trusted_receipt_version": "s3-dev-local/1",
+  "economic_context_schema": "s3/3",
+  "G00": "FAIL_UNPROVEN",
+  "supported_backend_allowlist": [],
+  "standard_ACK": "CLOSED",
+  "durable_ack": false,
+  "cost_authorized_eur": "0",
+  "product_acceptance": "NOT_RUN"
+}

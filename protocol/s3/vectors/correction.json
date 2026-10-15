@@ -1,0 +1,25 @@
+{
+  "scope":"dependency oracle, not WAL IO or product execution",
+  "root_fill_ids":["F1"],
+  "fills":[
+    {"id":"F1","seq":"1","orders":["A-sell","B-buy"],"debits":["A:0:BASE","B:0:QUOTE"],"deps":[],"state":"PENDING","buyer":"B","seller":"A","q":"1","p":"10"},
+    {"id":"F2","seq":"2","orders":["A-sell","C-buy1"],"debits":["A:0:BASE","C:0:QUOTE"],"deps":["F1"],"state":"PENDING","buyer":"C","seller":"A","q":"1","p":"10"},
+    {"id":"F3","seq":"3","orders":["E-sell","C-buy2"],"debits":["E:0:BASE","C:0:QUOTE"],"deps":["F2"],"state":"PENDING","buyer":"C","seller":"E","q":"1","p":"10"},
+    {"id":"F4","seq":"4","orders":["B-sell","D-buy"],"debits":["B:0:BASE","D:0:QUOTE"],"deps":[],"state":"PENDING","buyer":"D","seller":"B","q":"1","p":"10"},
+    {"id":"F0","seq":"0","orders":["old-A","old-B"],"debits":["A:0:BASE","B:0:QUOTE"],"deps":[],"state":"COMMITTED","buyer":"B","seller":"A","q":"1","p":"10"}
+  ],
+  "expected_corrected":["F1","F2","F3"],
+  "expected_surviving_pending":["F4"],
+  "expected_committed_unchanged":["F0"],
+  "expected_affected_orders":["A-sell","B-buy","C-buy1","E-sell","C-buy2"],
+  "expected_remaining_D":{"B_BASE":"1000","D_QUOTE":"10"},
+  "expected_remaining_P":{"D_BASE":"1000","B_QUOTE":"10"},
+  "next_batch":{"after_void_seq":"1","next_seq":"2","previous_hash":"VOID_ORIGINAL_BATCH_HASH","preserve_fill_id":"F4"},
+  "capacity_regressions":[
+    {"fills":"1000","affected_orders":"200","bps":"0"},
+    {"fills":"1001","affected_orders":"201","bps":"0"},
+    {"fills":"1000","affected_orders":"200","bps":"25"},
+    {"fills":"1001","affected_orders":"201","bps":"25"}
+  ],
+  "expected_capacity_behavior":"INTERNAL_LISTS_COMPLETE; NO_PAGE_TRUNCATION; JOURNAL_CAP_CHECK_BEFORE_NEW_ACK"
+}

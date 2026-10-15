@@ -1,0 +1,193 @@
+{
+  "at": "2026-10-14T18:26:04.222474+00:00",
+  "nodes": [
+    {
+      "index": 0,
+      "process": {
+        "schema": "s3-local-process-probe/1",
+        "pids": [
+          20725,
+          20819
+        ],
+        "started_monotonic_ns": 180789455052750,
+        "finished_monotonic_ns": 180789455059750,
+        "listed_pids_absent": true,
+        "inventory_complete_verified": false,
+        "process_tree_exit_verified": false,
+        "writer_release_verified": false,
+        "port_release_verified": false
+      },
+      "port": {
+        "schema": "s3-local-port-probe/1",
+        "endpoints": [
+          [
+            "127.0.0.1",
+            26657
+          ],
+          [
+            "127.0.0.1",
+            26656
+          ]
+        ],
+        "started_monotonic_ns": 180789455065750,
+        "finished_monotonic_ns": 180789455259541,
+        "simultaneous_bind_verified": true,
+        "reservation_retained": false,
+        "process_exit_verified": false,
+        "writer_release_verified": false
+      },
+      "writer": {
+        "schema": "s3-local-chain-writer-probe/1",
+        "home": "/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source/deliverables/NUS-74-rc9-run-963697b5/profiles/fee0/validator-0",
+        "lock_device": 16777233,
+        "lock_inode": 190275094,
+        "started_monotonic_ns": 180789455470000,
+        "finished_monotonic_ns": 180789455553125,
+        "writer_lock_reacquired": true,
+        "continuous_exclusion_verified": false,
+        "cleanup_complete_verified": false
+      }
+    },
+    {
+      "index": 1,
+      "process": {
+        "schema": "s3-local-process-probe/1",
+        "pids": [
+          20872,
+          27017
+        ],
+        "started_monotonic_ns": 180789455655000,
+        "finished_monotonic_ns": 180789455657958,
+        "listed_pids_absent": true,
+        "inventory_complete_verified": false,
+        "process_tree_exit_verified": false,
+        "writer_release_verified": false,
+        "port_release_verified": false
+      },
+      "port": {
+        "schema": "s3-local-port-probe/1",
+        "endpoints": [
+          [
+            "127.0.0.1",
+            26659
+          ],
+          [
+            "127.0.0.1",
+            26658
+          ]
+        ],
+        "started_monotonic_ns": 180789455661000,
+        "finished_monotonic_ns": 180789455678833,
+        "simultaneous_bind_verified": true,
+        "reservation_retained": false,
+        "process_exit_verified": false,
+        "writer_release_verified": false
+      },
+      "writer": {
+        "schema": "s3-local-chain-writer-probe/1",
+        "home": "/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source/deliverables/NUS-74-rc9-run-963697b5/profiles/fee0/validator-1",
+        "lock_device": 16777233,
+        "lock_inode": 190275245,
+        "started_monotonic_ns": 180789455814541,
+        "finished_monotonic_ns": 180789455884833,
+        "writer_lock_reacquired": true,
+        "continuous_exclusion_verified": false,
+        "cleanup_complete_verified": false
+      }
+    },
+    {
+      "index": 2,
+      "process": {
+        "schema": "s3-local-process-probe/1",
+        "pids": [
+          27068,
+          27723
+        ],
+        "started_monotonic_ns": 180789455971125,
+        "finished_monotonic_ns": 180789455973250,
+        "listed_pids_absent": true,
+        "inventory_complete_verified": false,
+        "process_tree_exit_verified": false,
+        "writer_release_verified": false,
+        "port_release_verified": false
+      },
+      "port": {
+        "schema": "s3-local-port-probe/1",
+        "endpoints": [
+          [
+            "127.0.0.1",
+            26661
+          ],
+          [
+            "127.0.0.1",
+            26660
+          ]
+        ],
+        "started_monotonic_ns": 180789455975125,
+        "finished_monotonic_ns": 180789455986583,
+        "simultaneous_bind_verified": true,
+        "reservation_retained": false,
+        "process_exit_verified": false,
+        "writer_release_verified": false
+      },
+      "writer": {
+        "schema": "s3-local-chain-writer-probe/1",
+        "home": "/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source/deliverables/NUS-74-rc9-run-963697b5/profiles/fee0/validator-2",
+        "lock_device": 16777233,
+        "lock_inode": 190275386,
+        "started_monotonic_ns": 180789456113791,
+        "finished_monotonic_ns": 180789456185250,
+        "writer_lock_reacquired": true,
+        "continuous_exclusion_verified": false,
+        "cleanup_complete_verified": false
+      }
+    },
+    {
+      "index": 3,
+      "process": {
+        "schema": "s3-local-process-probe/1",
+        "pids": [
+          31603,
+          33403
+        ],
+        "started_monotonic_ns": 180789456272291,
+        "finished_monotonic_ns": 180789456274708,
+        "listed_pids_absent": true,
+        "inventory_complete_verified": false,
+        "process_tree_exit_verified": false,
+        "writer_release_verified": false,
+        "port_release_verified": false
+      },
+      "port": {
+        "schema": "s3-local-port-probe/1",
+        "endpoints": [
+          [
+            "127.0.0.1",
+            26663
+          ],
+          [
+            "127.0.0.1",
+            26662
+          ]
+        ],
+        "started_monotonic_ns": 180789456276625,
+        "finished_monotonic_ns": 180789456290458,
+        "simultaneous_bind_verified": true,
+        "reservation_retained": false,
+        "process_exit_verified": false,
+        "writer_release_verified": false
+      },
+      "writer": {
+        "schema": "s3-local-chain-writer-probe/1",
+        "home": "/Users/gangdongju/.paperclip/instances/default/projects/a479c266-538c-4ed6-bbf0-1f96e1f67b3e/b29572d7-fa92-4e4c-8370-a08aa50ee11a/cosmo-dex/deliverables/NUS-74-rc4-87713f64/checkout/deliverables/NUS-74-rc6-ceb63df6/source/deliverables/NUS-74-rc8-9da3cd1c/source/deliverables/NUS-74-rc9-073975bf/source/deliverables/NUS-74-rc9-run-963697b5/profiles/fee0/validator-3",
+        "lock_device": 16777233,
+        "lock_inode": 190275595,
+        "started_monotonic_ns": 180789456422958,
+        "finished_monotonic_ns": 180789456492583,
+        "writer_lock_reacquired": true,
+        "continuous_exclusion_verified": false,
+        "cleanup_complete_verified": false
+      }
+    }
+  ]
+}

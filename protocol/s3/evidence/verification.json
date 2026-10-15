@@ -1,0 +1,67 @@
+{
+  "scope": "AUTHOR_SPECIFICATION_CHECKS; not independent Security/QA or actual S3 product execution",
+  "executed_at_utc": "2026-10-05T08:40:40.179345+00:00",
+  "base_sha": "bd9e473196ac86fdedf655b2c93e6931f54faa83",
+  "base_tree": "31a0d1c65e9b71647cac6c4c45bf7e8d2dd9d7f3",
+  "candidate_binding": "Final manifest includes this evidence; exact candidate head/tree are in the Paperclip handoff. No recursive self-hash.",
+  "versions": {
+    "python": "3.14.0 (main, Oct  7 2025, 09:34:52) [Clang 17.0.0 (clang-1700.0.13.3)]",
+    "go": "go version go1.24.4 darwin/arm64",
+    "platform": "macOS-15.6.1-arm64-arm-64bit-Mach-O"
+  },
+  "cache_setup": "GOCACHE=$PAPERCLIP_RUN_SCRATCH_DIR/go-build; GOMODCACHE=/Users/gangdongju/go/pkg/mod; GOPROXY=off",
+  "checks": [
+    {
+      "cwd": ".",
+      "command": [
+        "python3",
+        "protocol/s3/tools/check.py"
+      ],
+      "exit_code": 0,
+      "stdout": "PASS S3 specification oracle: 13260 checks; actual chain/IO/browser/main QA NOT_RUN\n",
+      "stderr": "",
+      "result": "PASS",
+      "expected_diff": "none"
+    },
+    {
+      "cwd": "chain",
+      "command": [
+        "go",
+        "run",
+        "-mod=readonly",
+        "../protocol/s3/tools/crypto.go",
+        "check",
+        "../protocol/s3"
+      ],
+      "exit_code": 0,
+      "stdout": "PASS S3 crypto + inherited Go strict codec: 284 checks; SDK execution/Rust/TS product NOT_RUN\n",
+      "stderr": "",
+      "result": "PASS",
+      "expected_diff": "none"
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--name-only",
+        "bd9e473196ac86fdedf655b2c93e6931f54faa83"
+      ],
+      "stdout": "",
+      "exit_code": 0,
+      "result": "PASS",
+      "expected_diff": "empty; inherited tracked files unchanged"
+    }
+  ],
+  "runtime": {
+    "genesis_hash": null,
+    "height": null,
+    "tx_inclusion": null,
+    "actual_sdk_gas": null,
+    "S3-AT01_to_09": "NOT_RUN"
+  },
+  "notes": [
+    "The first Go invocation could not create the default cache under the sandbox. It did not execute tests. Re-ran with run-owned writable GOCACHE and existing read-only module cache.",
+    "Prior crypto benchmark samples are preserved; not remeasured during this continuation.",
+    "1000/1001 fill and 200/201 order histories remain synthetic capacity fixtures. All predecessor lists now obey latest-per-order storage; dense and compact graphs have identical ancestor sets."
+  ]
+}

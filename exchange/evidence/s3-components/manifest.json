@@ -1,0 +1,79 @@
+{
+  "scope": "NUS-56 S3 private components only; integrated engine NOT_RUN",
+  "base_main_sha": "bd9e473196ac86fdedf655b2c93e6931f54faa83",
+  "approved_a_head": "0915375cac360f83d62a70587a0e7cf9c89604a1",
+  "approved_a_tree": "ad98a57e149b861369f7d716aed8fd0325aef4f8",
+  "approved_a_review": "Security and QA completed; lastDecisionOutcome approved on 2026-10-05",
+  "contract_sha256": "6191a54e268a658e4105943f5d1b28a20c550215cfe51f22b80f1cf74cf4a632",
+  "config_profiles_sha256": {
+    "fee0": "eba02241192cd666104d8767e96203a97d089026b3025e2a3241c9638ebdcb9b",
+    "fee25": "f8ff238d7c49661f958db397855e951a483c5496dac0511b82b55fa3bd4e900d"
+  },
+  "vectors_sha256": "e680ab39da98424006a54edf8de374f78f128e2bda36ab3e6caf56e11dab4f9f",
+  "lock_sha256": "1f9845089c414732f33304d72dafc3e9b56366e9ac027c80f38a98eeae6acbb8",
+  "a_manifest_file_sha256": "6e4ad8251c318600212d0f4646267a11633ddc44f19d629f6b0c5ccd0ac418e4",
+  "runtime_genesis_hash": null,
+  "chain_height": null,
+  "tx_hash": null,
+  "batch_id": null,
+  "chain_receipt_result": "NOT_RUN",
+  "blocker": "NUS-64",
+  "files_sha256": {
+    "exchange/src/lib.rs": "b952380ffbcb70644981807ae2fd45f98e91b29ea61f6a2fc948b28113c8b5dc",
+    "exchange/src/s3/dependencies.rs": "b48101ecb7328c4cb52860362478d569802177534bbe5b9c823d86012adccb8e",
+    "exchange/src/s3/journal.rs": "d30a9b76dd61db29380f45eab891b3beb10affd2fa1bbcb52b51b49f4fd0149d",
+    "exchange/src/s3/ledger.rs": "c35fa36b99e92121f2bebd8604de0ca5d5f2f65ed1bc33030c1f72ddf26e7cb8",
+    "exchange/src/s3/mod.rs": "d8605eb1e1ccbde64937aec4c83c95e27f2fbb63fd14bd80623e8ae54820ef22",
+    "exchange/tests/s3_accounting.rs": "480c60bcb48180e4259b0f4b0330a9b44f31f987cbc97924fc9049e54228a057",
+    "exchange/tests/s3_journal.rs": "55a8efa927346aaf8480e20b608a56b42fa4fbafd4079fb9ca3a0430ec59c288"
+  },
+  "verification_logs_sha256": {
+    "exchange/evidence/s3-components/clippy.log": "b5c2c9e0e01923f5dda31b01a5d6a1b59857e5e504bef67d958c34c35a9d5997",
+    "exchange/evidence/s3-components/contract-check.log": "ce4c7ddf2cf488ba1a2874e3858e6461db4ecf9219f6532e3cb3b3c09237e1d2",
+    "exchange/evidence/s3-components/s2-regression.log": "cf697c98ba987a5382d134ca5aae17ba76e9800da84a67fb542b761c8e3ada7a",
+    "exchange/evidence/s3-components/tests.log": "8b2a951968d9827c713d391515977b0d1bb612bf2d428443fd200af0e59e8c0e"
+  },
+  "source_tree_sha": "In external candidate.json; generated after commit to avoid self-reference",
+  "versions": {
+    "rustc": "rustc 1.92.0 (ded5c06cf 2025-12-08)",
+    "cargo": "cargo 1.92.0 (344c4567c 2025-10-21)",
+    "python": "3.14.0",
+    "os": "Darwin",
+    "architecture": "arm64",
+    "orderbook_rs": "0.13.1 (inherited Cargo.lock, no dependency changes)"
+  },
+  "results": {
+    "s3_accounting": {
+      "result": "PASS",
+      "tests": 7
+    },
+    "s3_journal": {
+      "result": "PASS",
+      "tests": 16,
+      "subprocess_helper_tests_included": 1,
+      "crash_points": 6,
+      "repetitions_per_point": 3,
+      "replays_per_crash": 2
+    },
+    "s2_regression": {
+      "result": "PASS",
+      "tests": 19,
+      "subprocess_helper_tests_included": 1
+    },
+    "clippy_all_targets_all_features": "PASS",
+    "a_specification_oracle": {
+      "result": "PASS",
+      "checks": 13260,
+      "is_product_evidence": false
+    },
+    "integrated_engine_semantic_replay": "NOT_RUN",
+    "actual_receipt_and_4_validator": "NOT_RUN",
+    "independent_Security_QA": "NOT_RUN"
+  },
+  "commands": [
+    "cargo +1.92.0 test --manifest-path exchange/Cargo.toml --locked --offline --test s3_accounting --test s3_journal -- --nocapture --test-threads=1",
+    "cargo +1.92.0 test --manifest-path exchange/Cargo.toml --locked --offline --test s2_ledger --test s2_journal",
+    "cargo +1.92.0 clippy --manifest-path exchange/Cargo.toml --locked --offline --all-targets --all-features -- -D warnings",
+    "python3 protocol/s3/tools/check.py"
+  ]
+}

@@ -48,6 +48,21 @@ impl Auth {
             last_time: 0,
         }
     }
+    /// Reuse the same challenge/session verification with a validated S3 snapshot.
+    #[cfg(feature = "dev-local-settlement")]
+    pub fn from_s3(snapshot: &crate::s3::snapshot::Snapshot) -> Self {
+        Self {
+            context: snapshot.value()["context"].clone(),
+            keys: snapshot
+                .accounts()
+                .iter()
+                .map(|a| (a.owner.clone(), a.public_key.clone()))
+                .collect(),
+            challenges: BTreeMap::new(),
+            sessions: BTreeMap::new(),
+            last_time: 0,
+        }
+    }
     fn clock(&mut self, now: u64) -> Result<()> {
         if now < self.last_time {
             self.challenges.clear();

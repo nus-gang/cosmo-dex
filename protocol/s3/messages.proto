@@ -1,0 +1,43 @@
+syntax = "proto3";
+package nus.exchange.s3.v1;
+import "cosmos/msg/v1/msg.proto";
+
+// Additive SDK messages. User Order/Cancel/Wallet/FillIdentity V1 stay unchanged.
+// SDK protobuf: omitted scalar zero follows SIGN_MODE_DIRECT rules.
+// batch_wire is strict canonical nus.protocol.s3.BatchV2, NOT protobuf JSON.
+message MsgSettleBatch {
+  option (cosmos.msg.v1.signer) = "operator";
+  string operator = 1; // SDK signer: canonical nus address
+  bytes batch_wire = 2;
+}
+message MsgCloseBatch {
+  option (cosmos.msg.v1.signer) = "operator";
+  string operator = 1; // current operator; closure has no asset effects
+  bytes batch_wire = 2; // original immutable candidate, never a replacement
+  bytes failed_tx_hash = 3; // 32 bytes, audit reference; see CONTRACT section 5
+  bytes resolution_evidence_hash = 4; // 32-byte local proof-set commitment
+}
+message MsgRotateSettlementOperator {
+  option (cosmos.msg.v1.signer) = "authority";
+  string authority = 1; // separate genesis administrator, never an HTTP endpoint
+  uint64 expected_epoch = 2;
+  bytes new_operator_pubkey = 3; // registered ML-DSA-65 raw1952
+}
+message MsgRevokeOrder {
+  option (cosmos.msg.v1.signer) = "owner";
+  string owner = 1;
+  bytes order_hash = 2;
+  uint64 expected_epoch = 3;
+  bytes request_id = 4;
+  uint64 expiry_height = 5;
+  bytes genesis_hash = 6;
+  bytes order_wire = 7; // strict OrderV1, owner must be its signer
+}
+message MsgBumpOrderEpoch {
+  option (cosmos.msg.v1.signer) = "owner";
+  string owner = 1;
+  uint64 expected_epoch = 2;
+  bytes request_id = 3;
+  uint64 expiry_height = 4;
+  bytes genesis_hash = 5;
+}

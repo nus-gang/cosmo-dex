@@ -1,0 +1,324 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "S3 local account receipt v1 \u2014 proposed, inactive",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "envelope_version",
+    "profile_id",
+    "context",
+    "principal",
+    "development_receipt",
+    "durable_ack",
+    "storage_assurance",
+    "source",
+    "account_result"
+  ],
+  "properties": {
+    "envelope_version": {
+      "type": "string",
+      "const": "s3-dev-local-account/1"
+    },
+    "profile_id": {
+      "type": "string",
+      "const": "s3-dev-local-v1"
+    },
+    "context": {
+      "$ref": "#/$defs/Context"
+    },
+    "principal": {
+      "$ref": "#/$defs/Owner"
+    },
+    "development_receipt": {
+      "type": "string",
+      "const": "LOCAL_WRITE_COMPLETED_UNPROVEN_SPACE"
+    },
+    "durable_ack": {
+      "type": "boolean",
+      "const": false
+    },
+    "storage_assurance": {
+      "type": "string",
+      "const": "UNPROVEN_HOST_SPACE"
+    },
+    "source": {
+      "$ref": "#/$defs/Source"
+    },
+    "account_result": {
+      "$ref": "#/$defs/AccountResult"
+    }
+  },
+  "$defs": {
+    "Hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "U64": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$",
+      "maxLength": 20,
+      "description": "Additional mandatory semantic check: value <= 18446744073709551615; never float/Number."
+    },
+    "Atoms": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$",
+      "maxLength": 39,
+      "description": "Additional mandatory semantic check: value <= 340282366920938463463374607431768211455; never float/Number."
+    },
+    "Context": {
+      "type": "object",
+      "properties": {
+        "service_schema": {
+          "type": "string",
+          "enum": [
+            "s3/3"
+          ]
+        },
+        "chain_id": {
+          "type": "string",
+          "enum": [
+            "nus-s3-dev-1"
+          ]
+        },
+        "genesis_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "contract_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "config_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "market_id": {
+          "type": "string",
+          "enum": [
+            "DEVBASE/DEVQUOTE"
+          ]
+        },
+        "market_config_version": {
+          "$ref": "#/$defs/U64"
+        }
+      },
+      "required": [
+        "service_schema",
+        "chain_id",
+        "genesis_hash",
+        "contract_hash",
+        "config_hash",
+        "market_id",
+        "market_config_version"
+      ],
+      "additionalProperties": false
+    },
+    "LedgerRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "denom",
+        "C",
+        "R",
+        "D",
+        "P",
+        "A"
+      ],
+      "properties": {
+        "denom": {
+          "type": "string",
+          "enum": [
+            "DEVBASE",
+            "DEVQUOTE"
+          ]
+        },
+        "C": {
+          "$ref": "#/$defs/Atoms"
+        },
+        "R": {
+          "$ref": "#/$defs/Atoms"
+        },
+        "D": {
+          "$ref": "#/$defs/Atoms"
+        },
+        "P": {
+          "$ref": "#/$defs/Atoms"
+        },
+        "A": {
+          "$ref": "#/$defs/Atoms"
+        }
+      }
+    },
+    "LedgerChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner",
+        "before",
+        "after"
+      ],
+      "properties": {
+        "owner": {
+          "$ref": "#/$defs/Owner"
+        },
+        "before": {
+          "$ref": "#/$defs/LedgerRow"
+        },
+        "after": {
+          "$ref": "#/$defs/LedgerRow"
+        }
+      }
+    },
+    "Owner": {
+      "type": "string",
+      "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$",
+      "maxLength": 28,
+      "minLength": 28
+    },
+    "Kind": {
+      "type": "string",
+      "enum": [
+        "ORDER",
+        "CANCEL",
+        "SNAPSHOT",
+        "EXPIRY",
+        "WITHDRAW_PREPARE",
+        "WITHDRAW_ABORT",
+        "CORRECTION",
+        "SEAL_BATCH",
+        "ATTEMPT",
+        "RESOLVE_ATTEMPT",
+        "SETTLEMENT_APPLY",
+        "VOID_BATCH"
+      ]
+    },
+    "Code": {
+      "type": "string",
+      "enum": [
+        "OK",
+        "WITHDRAW_FROZEN",
+        "EPOCH_MISMATCH",
+        "ORDER_REVOKED",
+        "EXPIRED",
+        "EXPIRY_MARGIN",
+        "MARKET_LIMIT",
+        "FEE_CAP",
+        "FEE_GE_RECEIVE",
+        "STALE",
+        "CATCHING_UP",
+        "SNAPSHOT_CONFLICT",
+        "INSUFFICIENT_AVAILABLE",
+        "OPEN_ORDER_LIMIT",
+        "ORDER_NOT_FOUND",
+        "ID_CONFLICT",
+        "UNSETTLED_HOLD",
+        "WITHDRAW_NOT_PREPARED"
+      ]
+    },
+    "Source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command_seq",
+        "record_hash",
+        "command_result_hash",
+        "after_state_hash"
+      ],
+      "properties": {
+        "command_seq": {
+          "$ref": "#/$defs/U64"
+        },
+        "record_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "command_result_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "after_state_hash": {
+          "$ref": "#/$defs/Hash"
+        }
+      }
+    },
+    "AccountResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "request_hash",
+        "code",
+        "state",
+        "observed_height",
+        "snapshot_id",
+        "affected_order_hashes",
+        "created_fill_ids",
+        "corrected_fill_ids",
+        "committed_fill_ids",
+        "applied_batch_ids",
+        "ledger_changes"
+      ],
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/Kind"
+        },
+        "request_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "code": {
+          "$ref": "#/$defs/Code"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "LOCAL_ACCEPTED",
+            "REJECTED"
+          ]
+        },
+        "observed_height": {
+          "$ref": "#/$defs/U64"
+        },
+        "snapshot_id": {
+          "$ref": "#/$defs/Hash"
+        },
+        "affected_order_hashes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Hash"
+          },
+          "maxItems": 250406
+        },
+        "created_fill_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Hash"
+          },
+          "maxItems": 250406
+        },
+        "corrected_fill_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Hash"
+          },
+          "maxItems": 250406
+        },
+        "committed_fill_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Hash"
+          },
+          "maxItems": 250406
+        },
+        "applied_batch_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Hash"
+          },
+          "maxItems": 250406
+        },
+        "ledger_changes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/LedgerChange"
+          },
+          "maxItems": 2
+        }
+      }
+    }
+  }
+}

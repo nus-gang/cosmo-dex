@@ -72,8 +72,8 @@ func main() {
 	}
 	cmd := os.Args[1]
 	f := flag.NewFlagSet(cmd, flag.ExitOnError)
-	network := f.String("network", "s1", "s1 or s2; separate genesis and home")
-	denom := f.String("denom", ex.Quote, "DEVBASE or DEVQUOTE in S2")
+	network := f.String("network", "s1", "s1, s2 or s3; separate genesis and home")
+	denom := f.String("denom", ex.Quote, "DEVBASE or DEVQUOTE in S2/S3")
 	height := f.Int64("height", 0, "committed snapshot height; 0 latest")
 	home := f.String("home", ".nus-s1", "node directory")
 	rpc := f.String("rpc", "tcp://127.0.0.1:26657", "local RPC endpoint")
@@ -91,8 +91,11 @@ func main() {
 	hashFlag := f.String("genesis-hash", "", "required pinned genesis hash for start")
 	must(f.Parse(os.Args[2:]))
 	chainID := ex.ChainID
-	if *network == "s2" {
+	if *network == "s2" || *network == "s3" {
 		chainID = ex.S2ChainID
+		if *network == "s3" {
+			chainID = ex.S3ChainID
+		}
 		explicitHome := false
 		f.Visit(func(fl *flag.Flag) {
 			if fl.Name == "home" {
@@ -100,18 +103,24 @@ func main() {
 			}
 		})
 		if !explicitHome {
-			*home = ".runtime/s2/node"
+			*home = ".runtime/" + *network + "/node"
 		}
 	} else if *network != "s1" {
 		must(fmt.Errorf("unknown network"))
 	}
 	c, txcfg := app.Encoding()
 	if cmd == "version" {
-		emit(map[string]string{"app": app.Version, "sdk": "v0.55.0", "comet": "v0.40.0", "execution_sha": buildCommit})
+		emit(map[string]string{"app": map[string]string{"s1": app.Version, "s2": "s2-dev-1", "s3": "s3-dev-1"}[*network], "sdk": "v0.55.0", "comet": "v0.40.0", "execution_sha": buildCommit})
 		return
+	}
+	if *network == "s3" && (cmd == "tx" || cmd == "receipt") {
+		must(fmt.Errorf("S3 requires fresh user keys: use the SDK signer and S3 query API in chain/app/S3.md; broadcast accepts a prepared TxRaw"))
 	}
 	cfg := config(*home, *rpc, *p2paddr)
 	if cmd == "init" {
+		if *network == "s3" {
+			must(fmt.Errorf("S3 requires a fresh four-validator genesis with the S3 app_state; see chain/app/S3.md"))
+		}
 		operatorsRaw, e := os.ReadFile(*operatorsFile)
 		must(e)
 		var publicKeys [][]byte
@@ -188,7 +197,7 @@ func main() {
 		doc, e := cmttypes.GenesisDocFromJSON(raw)
 		must(e)
 		if doc.ChainID != chainID {
-			must(fmt.Errorf("network differs from genesis; use separate S2 home"))
+			must(fmt.Errorf("network differs from genesis; use a separate %s home", *network))
 		}
 		db, e := dbm.NewDB("application", dbm.GoLevelDBBackend, filepath.Join(*home, "data"))
 		must(e)

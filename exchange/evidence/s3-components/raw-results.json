@@ -1,0 +1,651 @@
+{
+  "scope": "Accounting/graph/storage component evidence; integrated engine and chain receipt NOT_RUN",
+  "rows": [
+    {
+      "case": "fills1000-orders200-fee0",
+      "corrected_count": "1000",
+      "expected_diff": [],
+      "fills": "1000",
+      "orders": "200",
+      "result": "PASS",
+      "source": "SYNTHETIC_INTERNAL_HISTORY_CAPACITY; not a reachable matching trace or valid signature fixture",
+      "survivors": []
+    },
+    {
+      "case": "fills1000-orders200-fee25",
+      "corrected_count": "1000",
+      "expected_diff": [],
+      "fills": "1000",
+      "orders": "200",
+      "result": "PASS",
+      "source": "SYNTHETIC_INTERNAL_HISTORY_CAPACITY; not a reachable matching trace or valid signature fixture",
+      "survivors": []
+    },
+    {
+      "case": "fills1001-orders201-fee0",
+      "corrected_count": "1001",
+      "expected_diff": [],
+      "fills": "1001",
+      "orders": "201",
+      "result": "PASS",
+      "source": "SYNTHETIC_INTERNAL_HISTORY_CAPACITY; not a reachable matching trace or valid signature fixture",
+      "survivors": []
+    },
+    {
+      "case": "fills1001-orders201-fee25",
+      "corrected_count": "1001",
+      "expected_diff": [],
+      "fills": "1001",
+      "orders": "201",
+      "result": "PASS",
+      "source": "SYNTHETIC_INTERNAL_HISTORY_CAPACITY; not a reachable matching trace or valid signature fixture",
+      "survivors": []
+    },
+    {
+      "actual_confirmed": [
+        {
+          "BASE": "9000000",
+          "QUOTE": "10000000",
+          "owner": "A"
+        },
+        {
+          "BASE": "1000000",
+          "QUOTE": "90000000",
+          "owner": "B"
+        }
+      ],
+      "bps": "0",
+      "buyer_quote_available": "90000000",
+      "buyer_quote_before": {
+        "A": "88000000",
+        "C": "100000000",
+        "D": "12000000"
+      },
+      "case": "demo-accounting",
+      "expected_confirmed": [
+        {
+          "BASE": "9000000",
+          "QUOTE": "10000000",
+          "owner": "A"
+        },
+        {
+          "BASE": "1000000",
+          "QUOTE": "90000000",
+          "owner": "B"
+        }
+      ],
+      "expected_diff": [],
+      "fill_id": "F1",
+      "genesis_hash": null,
+      "height": null,
+      "result": "PASS",
+      "source": "SYNTHETIC_COMPONENT_TEST",
+      "tx_hash": null
+    },
+    {
+      "actual_confirmed": [
+        {
+          "BASE": "9000000",
+          "QUOTE": "9975000",
+          "owner": "A"
+        },
+        {
+          "BASE": "997500",
+          "QUOTE": "90000000",
+          "owner": "B"
+        }
+      ],
+      "bps": "25",
+      "buyer_quote_available": "90000000",
+      "buyer_quote_before": {
+        "A": "88000000",
+        "C": "100000000",
+        "D": "12000000"
+      },
+      "case": "demo-accounting",
+      "expected_confirmed": [
+        {
+          "BASE": "9000000",
+          "QUOTE": "9975000",
+          "owner": "A"
+        },
+        {
+          "BASE": "997500",
+          "QUOTE": "90000000",
+          "owner": "B"
+        }
+      ],
+      "expected_diff": [],
+      "fill_id": "F1",
+      "genesis_hash": null,
+      "height": null,
+      "result": "PASS",
+      "source": "SYNTHETIC_COMPONENT_TEST",
+      "tx_hash": null
+    },
+    {
+      "actual_confirmed": [
+        {
+          "BASE": "9000000",
+          "QUOTE": "10000000",
+          "owner": "A"
+        },
+        {
+          "BASE": "1000000",
+          "QUOTE": "90000000",
+          "owner": "B"
+        }
+      ],
+      "bps": "0",
+      "buyer_quote_available": "90000000",
+      "buyer_quote_before": {
+        "A": "88000000",
+        "C": "100000000",
+        "D": "12000000"
+      },
+      "case": "demo-accounting",
+      "expected_confirmed": [
+        {
+          "BASE": "9000000",
+          "QUOTE": "10000000",
+          "owner": "A"
+        },
+        {
+          "BASE": "1000000",
+          "QUOTE": "90000000",
+          "owner": "B"
+        }
+      ],
+      "expected_diff": [],
+      "fill_id": "F1",
+      "genesis_hash": null,
+      "height": null,
+      "result": "PASS",
+      "source": "SYNTHETIC_COMPONENT_TEST",
+      "tx_hash": null
+    },
+    {
+      "actual_confirmed": [
+        {
+          "BASE": "9000000",
+          "QUOTE": "9975000",
+          "owner": "A"
+        },
+        {
+          "BASE": "997500",
+          "QUOTE": "90000000",
+          "owner": "B"
+        }
+      ],
+      "bps": "25",
+      "buyer_quote_available": "90000000",
+      "buyer_quote_before": {
+        "A": "88000000",
+        "C": "100000000",
+        "D": "12000000"
+      },
+      "case": "demo-accounting",
+      "expected_confirmed": [
+        {
+          "BASE": "9000000",
+          "QUOTE": "9975000",
+          "owner": "A"
+        },
+        {
+          "BASE": "997500",
+          "QUOTE": "90000000",
+          "owner": "B"
+        }
+      ],
+      "expected_diff": [],
+      "fill_id": "F1",
+      "genesis_hash": null,
+      "height": null,
+      "result": "PASS",
+      "source": "SYNTHETIC_COMPONENT_TEST",
+      "tx_hash": null
+    },
+    {
+      "actual_confirmed": [
+        {
+          "BASE": "9000000",
+          "QUOTE": "10000000",
+          "owner": "A"
+        },
+        {
+          "BASE": "1000000",
+          "QUOTE": "90000000",
+          "owner": "B"
+        }
+      ],
+      "bps": "0",
+      "buyer_quote_available": "90000000",
+      "buyer_quote_before": {
+        "A": "88000000",
+        "C": "100000000",
+        "D": "12000000"
+      },
+      "case": "demo-accounting",
+      "expected_confirmed": [
+        {
+          "BASE": "9000000",
+          "QUOTE": "10000000",
+          "owner": "A"
+        },
+        {
+          "BASE": "1000000",
+          "QUOTE": "90000000",
+          "owner": "B"
+        }
+      ],
+      "expected_diff": [],
+      "fill_id": "F1",
+      "genesis_hash": null,
+      "height": null,
+      "result": "PASS",
+      "source": "SYNTHETIC_COMPONENT_TEST",
+      "tx_hash": null
+    },
+    {
+      "actual_confirmed": [
+        {
+          "BASE": "9000000",
+          "QUOTE": "9975000",
+          "owner": "A"
+        },
+        {
+          "BASE": "997500",
+          "QUOTE": "90000000",
+          "owner": "B"
+        }
+      ],
+      "bps": "25",
+      "buyer_quote_available": "90000000",
+      "buyer_quote_before": {
+        "A": "88000000",
+        "C": "100000000",
+        "D": "12000000"
+      },
+      "case": "demo-accounting",
+      "expected_confirmed": [
+        {
+          "BASE": "9000000",
+          "QUOTE": "9975000",
+          "owner": "A"
+        },
+        {
+          "BASE": "997500",
+          "QUOTE": "90000000",
+          "owner": "B"
+        }
+      ],
+      "expected_diff": [],
+      "fill_id": "F1",
+      "genesis_hash": null,
+      "height": null,
+      "result": "PASS",
+      "source": "SYNTHETIC_COMPONENT_TEST",
+      "tx_hash": null
+    },
+    {
+      "case": "storage-crash",
+      "expected": "ZERO_COMMIT",
+      "expected_diff": [],
+      "point": "before",
+      "repetition": "0",
+      "replay": "0",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "ZERO_COMMIT",
+      "expected_diff": [],
+      "point": "before",
+      "repetition": "0",
+      "replay": "1",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "RECOVERY_REQUIRED_EVIDENCE_PRESERVED",
+      "expected_diff": [],
+      "point": "partial",
+      "repetition": "0",
+      "replay": "0",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "RECOVERY_REQUIRED_EVIDENCE_PRESERVED",
+      "expected_diff": [],
+      "point": "partial",
+      "repetition": "0",
+      "replay": "1",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "RECOVERY_REQUIRED_EVIDENCE_PRESERVED",
+      "expected_diff": [],
+      "point": "wal",
+      "repetition": "0",
+      "replay": "0",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "RECOVERY_REQUIRED_EVIDENCE_PRESERVED",
+      "expected_diff": [],
+      "point": "wal",
+      "repetition": "0",
+      "replay": "1",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "RECOVERY_REQUIRED_EVIDENCE_PRESERVED",
+      "expected_diff": [],
+      "point": "marker",
+      "repetition": "0",
+      "replay": "0",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "RECOVERY_REQUIRED_EVIDENCE_PRESERVED",
+      "expected_diff": [],
+      "point": "marker",
+      "repetition": "0",
+      "replay": "1",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "ONE_COMMIT",
+      "expected_diff": [],
+      "point": "rename",
+      "repetition": "0",
+      "replay": "0",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "ONE_COMMIT",
+      "expected_diff": [],
+      "point": "rename",
+      "repetition": "0",
+      "replay": "1",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "ONE_COMMIT",
+      "expected_diff": [],
+      "point": "commit",
+      "repetition": "0",
+      "replay": "0",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "ONE_COMMIT",
+      "expected_diff": [],
+      "point": "commit",
+      "repetition": "0",
+      "replay": "1",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "ZERO_COMMIT",
+      "expected_diff": [],
+      "point": "before",
+      "repetition": "1",
+      "replay": "0",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "ZERO_COMMIT",
+      "expected_diff": [],
+      "point": "before",
+      "repetition": "1",
+      "replay": "1",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "RECOVERY_REQUIRED_EVIDENCE_PRESERVED",
+      "expected_diff": [],
+      "point": "partial",
+      "repetition": "1",
+      "replay": "0",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "RECOVERY_REQUIRED_EVIDENCE_PRESERVED",
+      "expected_diff": [],
+      "point": "partial",
+      "repetition": "1",
+      "replay": "1",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "RECOVERY_REQUIRED_EVIDENCE_PRESERVED",
+      "expected_diff": [],
+      "point": "wal",
+      "repetition": "1",
+      "replay": "0",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "RECOVERY_REQUIRED_EVIDENCE_PRESERVED",
+      "expected_diff": [],
+      "point": "wal",
+      "repetition": "1",
+      "replay": "1",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "RECOVERY_REQUIRED_EVIDENCE_PRESERVED",
+      "expected_diff": [],
+      "point": "marker",
+      "repetition": "1",
+      "replay": "0",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "RECOVERY_REQUIRED_EVIDENCE_PRESERVED",
+      "expected_diff": [],
+      "point": "marker",
+      "repetition": "1",
+      "replay": "1",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "ONE_COMMIT",
+      "expected_diff": [],
+      "point": "rename",
+      "repetition": "1",
+      "replay": "0",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "ONE_COMMIT",
+      "expected_diff": [],
+      "point": "rename",
+      "repetition": "1",
+      "replay": "1",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "ONE_COMMIT",
+      "expected_diff": [],
+      "point": "commit",
+      "repetition": "1",
+      "replay": "0",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "ONE_COMMIT",
+      "expected_diff": [],
+      "point": "commit",
+      "repetition": "1",
+      "replay": "1",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "ZERO_COMMIT",
+      "expected_diff": [],
+      "point": "before",
+      "repetition": "2",
+      "replay": "0",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "ZERO_COMMIT",
+      "expected_diff": [],
+      "point": "before",
+      "repetition": "2",
+      "replay": "1",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "RECOVERY_REQUIRED_EVIDENCE_PRESERVED",
+      "expected_diff": [],
+      "point": "partial",
+      "repetition": "2",
+      "replay": "0",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "RECOVERY_REQUIRED_EVIDENCE_PRESERVED",
+      "expected_diff": [],
+      "point": "partial",
+      "repetition": "2",
+      "replay": "1",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "RECOVERY_REQUIRED_EVIDENCE_PRESERVED",
+      "expected_diff": [],
+      "point": "wal",
+      "repetition": "2",
+      "replay": "0",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "RECOVERY_REQUIRED_EVIDENCE_PRESERVED",
+      "expected_diff": [],
+      "point": "wal",
+      "repetition": "2",
+      "replay": "1",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "RECOVERY_REQUIRED_EVIDENCE_PRESERVED",
+      "expected_diff": [],
+      "point": "marker",
+      "repetition": "2",
+      "replay": "0",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "RECOVERY_REQUIRED_EVIDENCE_PRESERVED",
+      "expected_diff": [],
+      "point": "marker",
+      "repetition": "2",
+      "replay": "1",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "ONE_COMMIT",
+      "expected_diff": [],
+      "point": "rename",
+      "repetition": "2",
+      "replay": "0",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "ONE_COMMIT",
+      "expected_diff": [],
+      "point": "rename",
+      "repetition": "2",
+      "replay": "1",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "ONE_COMMIT",
+      "expected_diff": [],
+      "point": "commit",
+      "repetition": "2",
+      "replay": "0",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    },
+    {
+      "case": "storage-crash",
+      "expected": "ONE_COMMIT",
+      "expected_diff": [],
+      "point": "commit",
+      "repetition": "2",
+      "replay": "1",
+      "result": "PASS",
+      "source": "REAL_FILESYSTEM_PROCESS_EXIT_NOT_POWER_LOSS"
+    }
+  ]
+}

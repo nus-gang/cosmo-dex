@@ -1,0 +1,26 @@
+{
+  "scope":"SYNTHETIC_EXPECTATIONS; C/R/D/P/A atoms; A is account name and availability column",
+  "columns":["C","R","D","P","A"],
+  "demo0":[
+    {"id":"deposit","A_BASE":["10000000","0","0","0","10000000"],"A_QUOTE":["0","0","0","0","0"],"B_BASE":["0","0","0","0","0"],"B_QUOTE":["100000000","0","0","0","100000000"]},
+    {"id":"sell2","A_BASE":["10000000","2000000","0","0","8000000"],"A_QUOTE":["0","0","0","0","0"],"B_BASE":["0","0","0","0","0"],"B_QUOTE":["100000000","0","0","0","100000000"]},
+    {"id":"fill1","A_BASE":["10000000","1000000","1000000","0","8000000"],"A_QUOTE":["0","0","0","10000000","0"],"B_BASE":["0","0","0","1000000","0"],"B_QUOTE":["100000000","0","12000000","0","88000000"]},
+    {"id":"cancel-remainder","A_BASE":["10000000","0","1000000","0","9000000"],"A_QUOTE":["0","0","0","10000000","0"],"B_BASE":["0","0","0","1000000","0"],"B_QUOTE":["100000000","0","12000000","0","88000000"]},
+    {"id":"submission-unknown","A_BASE":["10000000","0","1000000","0","9000000"],"A_QUOTE":["0","0","0","10000000","0"],"B_BASE":["0","0","0","1000000","0"],"B_QUOTE":["100000000","0","12000000","0","88000000"]},
+    {"id":"committed","A_BASE":["9000000","0","0","0","9000000"],"A_QUOTE":["10000000","0","0","0","10000000"],"B_BASE":["1000000","0","0","0","1000000"],"B_QUOTE":["90000000","0","0","0","90000000"]},
+    {"id":"withdraw-received","A_BASE":["9000000","0","0","0","9000000"],"A_QUOTE":["0","0","0","0","0"],"B_BASE":["0","0","0","0","0"],"B_QUOTE":["90000000","0","0","0","90000000"]}
+  ],
+  "demo25_committed":{"A_BASE":"9000000","A_QUOTE":"9975000","B_BASE":"997500","B_QUOTE":"90000000","T_BASE":"2500","T_QUOTE":"25000","U_BASE":"0","U_QUOTE":"0","module_BASE":"10000000","module_QUOTE":"100000000"},
+  "withdraw_order":[
+    {"id":"withdraw-full-first","order":["WITHDRAW","SETTLE"],"withdraw_atoms":"100000000","expected_withdraw":"OK","expected_settle":"EPOCH_MISMATCH","B_QUOTE":"0","B_BASE":"0","A_BASE":"10000000","A_QUOTE":"0","B_epoch":"1","fill":"CORRECTED_AFTER_PROOF_CLOSE"},
+    {"id":"withdraw-atom-first","order":["WITHDRAW","SETTLE"],"withdraw_atoms":"1","expected_withdraw":"OK","expected_settle":"EPOCH_MISMATCH","B_QUOTE":"99999999","B_BASE":"0","A_BASE":"10000000","A_QUOTE":"0","B_epoch":"1","fill":"CORRECTED_AFTER_PROOF_CLOSE"},
+    {"id":"settle-first-full-fails","order":["SETTLE","WITHDRAW"],"withdraw_atoms":"100000000","expected_withdraw":"INSUFFICIENT_CONFIRMED_BALANCE","expected_settle":"OK","B_QUOTE":"90000000","B_BASE":"1000000","A_BASE":"9000000","A_QUOTE":"10000000","B_epoch":"0","fill":"COMMITTED"},
+    {"id":"settle-first-atom","order":["SETTLE","WITHDRAW"],"withdraw_atoms":"1","expected_withdraw":"OK","expected_settle":"OK","B_QUOTE":"89999999","B_BASE":"1000000","A_BASE":"9000000","A_QUOTE":"10000000","B_epoch":"1","fill":"COMMITTED"},
+    {"id":"settle-first-remaining","order":["SETTLE","WITHDRAW"],"withdraw_atoms":"90000000","expected_withdraw":"OK","expected_settle":"OK","B_QUOTE":"0","B_BASE":"1000000","A_BASE":"9000000","A_QUOTE":"10000000","B_epoch":"1","fill":"COMMITTED"}
+  ],
+  "conservation":[
+    {"id":"exact","bank":"10000000","sum_C":"9997500","T":"2500","U":"0","expected":"OK"},
+    {"id":"dust","bank":"10000001","sum_C":"9997500","T":"2500","U":"0","expected":"QUARANTINE_EXCESS_1_ALLOW_VALID_WITHDRAW"},
+    {"id":"deficit","bank":"9999999","sum_C":"9997500","T":"2500","U":"0","expected":"ASSET_DEFICIT_HALT_SETTLEMENT"}
+  ]
+}
