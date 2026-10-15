@@ -37,7 +37,7 @@ const transport: typeof fetch=async(path,init)=>{
   else if(String(path)===PREFIX+'orders'||String(path)===PREFIX+'cancels') {
     const kind=String(path)===PREFIX+'orders'?'ORDER':'CANCEL',name=kind==='ORDER'?'OrderV1':'CancelV1',body=String(init!.body),parsed=JSON.parse(body),wire=base64.decode(parsed.wire_base64),request_hash=hex(sha256(frame(domains[name],wire)));
     commandRoutes.push(String(path));const receipt=publicReceipt(request_hash,kind);savedCommands.set(request_hash,{kind,body,receipt});
-    if(kind==='ORDER'){const message=decode('OrderV1',wire);orderTypes.push(message.order_type);activeOrders.push({order_id:message.order_id,order_hash:request_hash,side:message.side==='1'?'BUY':'SELL',state:'OPEN',remaining_qty_lots:message.max_qty_lots,limit_price_ticks:message.limit_price_ticks});revision++;if(loseOrder){loseOrder=false;throw Error('lost order response');}}
+    if(kind==='ORDER'){const message=decode('OrderV1',wire),orderType=message.order_type;if(typeof orderType!=='string')throw Error('NON_CANONICAL_ORDER_TYPE');orderTypes.push(orderType);activeOrders.push({order_id:message.order_id,order_hash:request_hash,side:message.side==='1'?'BUY':'SELL',state:'OPEN',remaining_qty_lots:message.max_qty_lots,limit_price_ticks:message.limit_price_ticks});revision++;if(loseOrder){loseOrder=false;throw Error('lost order response');}}
     else {const message=decode('CancelV1',wire),order=activeOrders.find(o=>o.order_id===message.order_id&&o.order_hash===message.order_hash);if(order)order.remaining_qty_lots='0';revision++;}
     return new Response(canonical(receipt),{headers:{'Content-Type':'application/json','Content-Encoding':'identity'}});
   }
