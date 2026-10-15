@@ -37,6 +37,7 @@ test('approved mount is inert, single-use and pagehide closes registration',()=>
   const win={location:{origin},addEventListener:(name:string,fn:()=>void)=>{(events[name]??=[]).push(fn);}};
   const doc:any={defaultView:win};
   const element=(tag:string):any=>({tag,ownerDocument:doc,children:[],textContent:'',
+    get options(){return this.children;},
     append(...nodes:any[]){this.children.push(...nodes);},
     replaceChildren(...nodes:any[]){this.children=nodes;},setAttribute(){},addEventListener(){}});
   doc.createElement=element;const root=element('main');

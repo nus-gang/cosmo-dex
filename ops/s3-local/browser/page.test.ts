@@ -8,6 +8,7 @@ function fixture(transport:typeof fetch){
   const doc:any={defaultView:win};
   const node=():any=>({ownerDocument:doc,checked:false,disabled:false,textContent:'',children:[],
     events:{} as Record<string,()=>unknown>,addEventListener(n:string,f:()=>unknown){this.events[n]=f;},
+    get options(){return this.children;},
     append(...v:any[]){this.children.push(...v);},replaceChildren(...v:any[]){this.children=v;},setAttribute(){}});
   const nodes:any=Object.fromEntries(['enabled','acknowledge','prepare','activate','registration','status','wallet'].map(k=>[k,node()]));
   nodes.activate.disabled=true;doc.getElementById=(id:string)=>nodes[id];doc.createElement=node;

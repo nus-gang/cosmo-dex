@@ -84,13 +84,16 @@ def run(a,arguments,origin,port,values,decision,revisions,stop):
         publish(control,'active-context.json',encode(context))
         return WebProxy(origin=origin,worker_port=port,static=prepared.response_boundary)
     proxy=SwitchingWeb(preparation,activate)
-    child=None;listener=None;started=time.monotonic();primary=None
+    child=None;listener=None;started=time.monotonic();primary=None;phase='private_stage'
     with tempfile.TemporaryDirectory(prefix='managed-browser-',dir=checked_root(a.scratch)) as temp:
         temp=Path(temp);staged=temp/'browser-supervisor.mjs';_write(staged,script,0o500)
         try:
+            phase='approval_recheck'
             if audit()!=baseline:raise ValueError('BROWSER_APPROVAL_CHANGED')
+            phase='loopback_bind'
             listener=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
             listener.bind(('127.0.0.1',5173));listener.listen(1)
+            phase='node_spawn'
             child=subprocess.Popen([runtime['node']['path'],str(staged),str(control),runtime['chrome']['path'],
                 str(temp/'chrome-profile'),str(os.getpid()),str(values[0])],stdin=subprocess.DEVNULL,
                 stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,close_fds=True,start_new_session=True,
@@ -114,6 +117,7 @@ def run(a,arguments,origin,port,values,decision,revisions,stop):
                             raise ValueError('BROWSER_TRANSITION')
                         proxy.transition()
             if ended():raise ValueError('STOPPED')
+            phase='http_serve'
             return serve_listener(listener,proxy,Upstream(),max_requests=values[1],
                 lifetime_seconds=values[0],stop=ended,between_requests=transition)
         except BaseException as error:
@@ -133,4 +137,6 @@ def run(a,arguments,origin,port,values,decision,revisions,stop):
                         except ProcessLookupError:pass
                         child.wait(timeout=3)
                 write_record(control,'parent-closed.json',encode(dict(node_pid=child.pid,exit_code=child.returncode,
-                    parent_error=primary is not None,whole_process_tree_verified=False,cleanup_complete_verified=False)))
+                    parent_error=primary is not None,parent_failed_phase=phase if primary is not None else None,
+                    parent_error_code='BROWSER_PARENT_FAILED' if primary is not None else None,
+                    whole_process_tree_verified=False,cleanup_complete_verified=False)))

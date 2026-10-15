@@ -28,7 +28,7 @@ while True:
   line,_,buf=buf.partition(b'\0');r=json.loads(line);m=r['method'];value={}
   if m=='Target.createTarget':value={'targetId':'synthetic-tab'}
   elif m=='Target.attachToTarget':value={'sessionId':'synthetic-session'}
-  elif m=='Page.getFrameTree':value={'frameTree':{'frame':{'loaderId':'same-document'}}}
+  elif m=='Page.getFrameTree':value={'frameTree':{'frame':{'id':'same-frame','loaderId':'same-document'}}}
   elif m=='Browser.close':os._exit(0)
   elif m=='Runtime.evaluate':
    e=r['params']['expression'];v=None
@@ -39,7 +39,7 @@ while True:
    elif "getElementById('prepare').click" in e:
     reg=json.dumps([{'public_key_base64':'public-a'},{'public_key_base64':'public-b'}]);v={'registration':reg}
    elif e=="document.getElementById('registration').textContent":v=reg
-   elif e.startswith('fetch('):v={'chain_id':'synthetic','genesis_hash':'a'*64}
+   elif "fetch('/runtime-context.json'" in e:v={'status':200,'ok':True,'context':{'chain_id':'synthetic','genesis_hash':'a'*64}}
    elif "getElementById('activate').click" in e:active=True
    elif "querySelectorAll('button').length" in e:v=active
    value={'result':{'type':'boolean' if isinstance(v,bool) else 'object','value':v}}
@@ -102,6 +102,83 @@ class BrowserRuntimeTest(unittest.TestCase):
                 r=self.close_record();self.assertFalse(r['normal_session']);self.assertEqual(self.child.returncode,2)
                 for pid in r['pids'][2:]:
                     with self.assertRaises(ProcessLookupError):os.kill(pid,0)
+
+    def test_actual_main_first_failure_phase_and_method_no_secret_or_cleanup_overwrite(self):
+        cases=[('Target.createTarget','target_create','CDP_RESPONSE'),
+               ('Target.attachToTarget','target_attach','CDP_RESPONSE'),
+               ('Page.enable','page_enable','CDP_RESPONSE'),
+               ('Runtime.evaluate','page_readiness','CDP_RESPONSE'),
+               ('Page.getFrameTree','frame_identity','CDP_RESPONSE')]
+        for i,(method,phase,code) in enumerate(cases):
+            with self.subTest(method=method):
+                self.control=self.root/f'fault{i}';self.control.mkdir(mode=0o700)
+                profile=self.root/'profile'
+                if profile.exists():profile.rename(self.root/f'profile-{i}')
+                injected=FAKE.replace("m=r['method'];value={}","m=r['method'];value={}\n  if m=="+repr(method)+":\n   os.write(4,(json.dumps({'id':r['id'],'error':{'code':-32000,'message':'SECRET-DO-NOT-LOG','data':'private body'}})+'\\0').encode());continue")
+                self.chrome.chmod(0o700);self.chrome.write_text('#!'+sys.executable+'\n'+injected);self.chrome.chmod(0o500)
+                self.start();result=self.close_record();self.assertFalse(result['normal_session'])
+                events=[json.loads(p.read_text()) for p in sorted(self.control.glob('[0-9]*.json'))]
+                failures=[e for e in events if e['phase']=='failed'];self.assertEqual(len(failures),1)
+                self.assertEqual((failures[0]['failed_phase'],failures[0]['method'],failures[0]['code']),(phase,method,code))
+                self.assertEqual(failures[0]['cdp_error_code'],-32000);self.assertNotIn('SECRET',json.dumps(events));self.assertNotIn('private body',json.dumps(events))
+                self.assertEqual(events[-1]['phase'],'closed');self.assertIn('browser_signal',events[-1])
+                self.assertFalse(any(e['phase'] in ('keys_held','active') for e in events))
+                with self.assertRaises(ProcessLookupError):os.kill(result['pids'][2],0)
+
+    def test_bad_cdp_framing_and_evaluation_are_distinct_and_reaped(self):
+        for i,(payload,code) in enumerate([("b'null\\0'",'CDP_FORMAT'),("b'{bad\\0'",'CDP_JSON'),("b'x'*2097153",'CDP_SIZE'),
+              ("(json.dumps({'id':r['id'],'result':{'exceptionDetails':{'text':'SECRET'}}})+'\\0').encode()",'CDP_EVALUATION')]):
+            with self.subTest(code=code):
+                self.control=self.root/f'frame{i}';self.control.mkdir(mode=0o700)
+                profile=self.root/'profile'
+                if profile.exists():profile.rename(self.root/f'old-frame-{i}')
+                injected=FAKE.replace("m=r['method'];value={}","m=r['method'];value={}\n  if m=='Runtime.evaluate':\n   os.write(4,"+payload+");continue")
+                self.chrome.chmod(0o700);self.chrome.write_text('#!'+sys.executable+'\n'+injected);self.chrome.chmod(0o500)
+                self.start();self.close_record()
+                events=[json.loads(p.read_text()) for p in sorted(self.control.glob('[0-9]*.json'))]
+                first=next(e for e in events if e['phase']=='failed')
+                self.assertEqual(first['code'],code);self.assertEqual(first['failed_phase'],'page_readiness')
+                self.assertNotIn('SECRET',json.dumps(events));self.assertEqual(self.child.returncode,2)
+
+    def test_context_http_status_is_diagnostic_and_first_failure_survives_close(self):
+        modified=FAKE.replace("'status':200,'ok':True", "'status':503,'ok':False")
+        self.chrome.chmod(0o700);self.chrome.write_text('#!'+sys.executable+'\n'+modified);self.chrome.chmod(0o500)
+        self.start();browser_control.wait_ready(self.control);browser_control.command(self.control,'prepare')
+        browser_control.publish(self.control,'active-context.json',encode(dict(chain_id='synthetic',genesis_hash='a'*64)))
+        with self.assertRaises(ValueError):browser_control.command(self.control,'activate',seconds=1)
+        self.close_record()
+        events=[json.loads(p.read_text()) for p in sorted(self.control.glob('[0-9]*.json'))]
+        first=next(e for e in events if e['phase']=='failed')
+        self.assertEqual((first['failed_phase'],first['code'],first['http_status']),('ui_context','CONTEXT_HTTP',503))
+        self.assertFalse(any(e['phase']=='active' for e in events))
+
+    def test_active_screenshot_has_bounded_owned_path_and_no_caller_script(self):
+        modified=FAKE.replace("elif m=='Browser.close':os._exit(0)","elif m=='Page.captureScreenshot':value={'data':'iVBORw0KGgo='}\n  elif m=='Browser.close':os._exit(0)")
+        self.chrome.chmod(0o700);self.chrome.write_text('#!'+sys.executable+'\n'+modified);self.chrome.chmod(0o500)
+        self.start();browser_control.wait_ready(self.control);browser_control.command(self.control,'prepare')
+        browser_control.publish(self.control,'active-context.json',encode(dict(chain_id='synthetic',genesis_hash='a'*64)))
+        browser_control.command(self.control,'activate')
+        result=browser_control.command(self.control,'screenshot')['result'];path=self.control/result['file']
+        self.assertEqual(path.parent,self.control/'screenshots');self.assertEqual(path.stat().st_mode&0o777,0o600)
+        self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),result['sha256']);self.assertEqual(result['bytes'],8)
+        with self.assertRaises(ValueError):browser_control.command(self.control,'screenshot',{'path':'/external'})
+        for _ in range(15):browser_control.command(self.control,'screenshot')
+        with self.assertRaises(ValueError):browser_control.command(self.control,'screenshot',seconds=1)
+        self.assertFalse(self.close_record()['normal_session'])
+        self.assertEqual(len(list((self.control/'screenshots').iterdir())),16)
+        events=[json.loads(p.read_text()) for p in self.control.glob('[0-9]*.json')]
+        self.assertEqual(next(e for e in events if e['phase']=='failed')['code'],'SCREENSHOT_LIMIT')
+
+    def test_screen_wait_only_observes_fixed_owner_and_bounded_public_fields(self):
+        base=dict(schema='s3-local-browser-screen/1',identity='계정 alice · revision 1',status='보류')
+        done=dict(base,identity='계정 alice · revision 2',status='조회 정상')
+        with patch.object(browser_control,'command',side_effect=[{'result':base},{'result':done}]) as call,patch.object(browser_control.time,'sleep'):
+            self.assertEqual(browser_control.wait_screen(self.control,'status','조회 정상'),done)
+            self.assertEqual([x.args[1] for x in call.call_args_list],['snapshot','snapshot'])
+        with patch.object(browser_control,'command',side_effect=[{'result':base},{'result':dict(done,identity='계정 bob · revision 2')}]),patch.object(browser_control.time,'sleep'),self.assertRaisesRegex(ValueError,'IDENTITY'):
+            browser_control.wait_screen(self.control,'status','조회 정상')
+        with patch.object(browser_control,'command') as call,self.assertRaises(ValueError):browser_control.wait_screen(self.control,'key','secret')
+        call.assert_not_called()
 
     def test_switch_only_once_same_assets_and_error_preserves_preparation(self):
         from web_proxy import WebProxy

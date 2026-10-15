@@ -184,7 +184,7 @@ def fresh_resources(record):
 
 
 class Reentry:
-    def __init__(self, packet, receipt_paths, *, transition=None, failed_preparations=(), failed_chains=()):
+    def __init__(self, packet, receipt_paths, *, transition=None, failed_preparations=(), failed_chains=(), failed_browsers=()):
         try:
             self.packet = copy.deepcopy(packet); command_info(self.packet)
             self.paths = tuple(Path(p) for p in receipt_paths)
@@ -198,6 +198,11 @@ class Reentry:
                 raise ValueError()
             self.chain_failures=[ChainFailure(p,self.packet) for p in failed_chains]
             self.failures.extend(self.chain_failures)
+            from failed_browser import Failure as BrowserFailure
+            if not isinstance(failed_browsers,(list,tuple)) or len(failed_browsers)>1 or (failed_browsers and (failed_chains or not self.paths)):
+                raise ValueError()
+            self.browser_failures=[BrowserFailure(p) for p in failed_browsers]
+            self.failures.extend(self.browser_failures)
             if not self.paths and not self.chain_failures:raise ValueError()
             self.transition = copy.deepcopy(transition)
             self._checks = 0; self._closed = False; self.observations = []
@@ -206,7 +211,7 @@ class Reentry:
             transitions = [] if transition is None else transition if isinstance(transition,list) else [transition]
             # Preserve the actual RC4 + RC6 stopped rows through RC7 preparation
             # and the final web command. Every edge still binds exact packets.
-            if len(transitions) > (5 if command_info(self.packet)[0]=='browser' else 4 if self.failures else 3): raise ValueError()
+            if len(transitions) > (6 if self.browser_failures else 5 if command_info(self.packet)[0]=='browser' else 4 if self.failures else 3): raise ValueError()
             self.transitions=copy.deepcopy(transitions)
             for edge in self.transitions: self._edge(edge)
             if self.transitions:
@@ -221,6 +226,17 @@ class Reentry:
         if set(edge) != {'previous','next'}: raise ValueError(ERROR)
         previous,following=edge['previous'],edge['next']
         oldkind, old, _ = command_info(previous); kind, new, _ = command_info(following)
+        if oldkind=='browser' and kind=='browser' and self.browser_failures:
+            if previous!=self.browser_failures[0].value['packet']:raise ValueError(ERROR)
+            for key in ('name','sourceType','isPrimary'):
+                if previous['body'][key]!=following['body'][key]:raise ValueError(ERROR)
+            for key in ('web_origin','local_demo_profile','acknowledge_unproven_space','bind','rpc'):
+                if getattr(old,key)!=getattr(new,key):raise ValueError(ERROR)
+            for key in ('bundle','artifacts','runtime_pin','native_decision_id','ceo_revision','cto_revision',
+                        'approval_socket','pid_mailbox','browser_control','home','input_set','effective_profile','key_directory'):
+                if getattr(old,key)==getattr(new,key):raise ValueError(ERROR)
+            if previous['body']['cwd']==following['body']['cwd']:raise ValueError(ERROR)
+            return
         if oldkind=='chain' and kind=='chain' and self.chain_failures:
             if previous!=self.chain_failures[0].value['packet']:raise ValueError(ERROR)
             for key in ('name','sourceType','isPrimary'):
@@ -271,6 +287,7 @@ class Reentry:
         for failure in self.failures:
             failure.check(self.records,self.transitions)
             if workspace['id'] != failure.value['workspace_id']:raise ValueError(ERROR)
+            if failure in self.browser_failures:failure.prior(expected)
             expected[failure.row['id']] = failure.row
         rows = workspace['runtimeServices']
         if len(rows) != len(expected) or {r['id']:r for r in rows} != expected: raise ValueError(ERROR)

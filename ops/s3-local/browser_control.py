@@ -34,10 +34,10 @@ def wait_ready(control,stop=lambda:False):
 
 
 def command(control, action, arguments=None, *, stop=lambda:False, seconds=10):
-    if action not in ('prepare','inspect','activate','click','select','amount','finish') or type(seconds)is not int or not 1<=seconds<=10:
+    if action not in ('prepare','inspect','activate','click','select','amount','input','snapshot','screenshot','finish') or type(seconds)is not int or not 1<=seconds<=10:
         raise ValueError('BROWSER_COMMAND')
     arguments={} if arguments is None else dict(arguments)
-    allowed={'click':{'name'},'select':{'name','value'},'amount':{'value'}}.get(action,set())
+    allowed={'click':{'name'},'select':{'name','value'},'amount':{'value'},'input':{'name','value'}}.get(action,set())
     if set(arguments)!=allowed:raise ValueError('BROWSER_COMMAND')
     root=_root(control);pending=_root(root/'commands');results=_root(root/'results')
     nonce=secrets.token_hex(32);name=nonce+'.json';started=previous=time.monotonic()
@@ -57,6 +57,31 @@ def command(control, action, arguments=None, *, stop=lambda:False, seconds=10):
             raise ValueError('BROWSER_REPLY')
         if result['state'] not in ('WAIT_KEYS','KEYS_HELD','ACTIVE','CLOSED'):raise ValueError('BROWSER_CLOSED')
         return result
+
+
+def wait_screen(control, section, text, *, stop=lambda:False, seconds=10):
+    """Observe a bounded public screen condition. Never click/retry a signed effect.
+
+    Matching UI text is evidence about the screen, not a trusted chain receipt.
+    The selected identity must remain fixed throughout this wait.
+    """
+    if (section not in ('status','identity','ledger','commands','orders','fills','batches','history','receipts') or
+            not isinstance(text,str) or not 1<=len(text)<=256 or type(seconds)is not int or not 1<=seconds<=10):
+        raise ValueError('BROWSER_WAIT')
+    started=previous=time.monotonic();identity=None
+    while True:
+        now=time.monotonic()
+        if stop() or not previous<=now<started+seconds:raise ValueError('BROWSER_SCREEN_TIMEOUT')
+        previous=now
+        result=command(control,'snapshot',stop=lambda:stop() or time.monotonic()>=started+seconds,seconds=1)['result']
+        if not isinstance(result,dict) or result.get('schema')!='s3-local-browser-screen/1':raise ValueError('BROWSER_SCREEN')
+        # revision may advance while owner is fixed.
+        current=result.get('identity','').split(' · revision ')[0]
+        if identity is not None and identity!=current:raise ValueError('BROWSER_IDENTITY_CHANGED')
+        identity=current
+        value=result.get(section)
+        if text in (value if isinstance(value,str) else encode(value).decode()):return result
+        time.sleep(.1)
 
 
 def activate(control,pin,stop=lambda:False):

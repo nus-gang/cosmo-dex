@@ -18,7 +18,7 @@ def read(root):
     for e in events:
         at=e.get('monotonic_ns')
         if (e.get('schema')!='s3-local-browser-lifetime/1' or e.get('phase') not in
-            ('spawned','tab_ready','observed','keys_held','active','failed','closed') or
+            ('spawned','tab_ready','observed','http','keys_held','active','failed','closed') or
             not isinstance(at,str) or not at.isdecimal() or int(at)<previous or
             e.get('keys_exported') is not False or e.get('private_key_storage') is not False):raise ValueError('BROWSER_EVENT')
         previous=int(at)

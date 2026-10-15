@@ -84,4 +84,26 @@ command(control, 'finish')                   # Chrome 정상 종료와 공개 PI
 
 순수 Python 회귀는 `ops/s3-local`에서 `python3 -B -m unittest test_recovery_rc10 test_browser_runtime test_bootstrap_diagnostic`로 시작한다. `browser_supervisor.test.mjs`는 고정 Node24.21.0의 `--test`로 실행한다. Rust bootstrap-fetch 시험은 release의 정확한 extern/feature와 실제 checker/create/fetch binary를 사용하며 `NUS_TEST_TMPDIR`를 run scratch로 지정한다. 실제 네트워크/서비스에 연결되는 테스트로 바꾸지 않는다.
 
+## RC11: RC10 브라우저 실패 반환
+
+Wallet `04fa4108aa4b02e2677f287e8bff06cf5ece9364`의 CTO→Security 완료를 인수했다. 기존 public/trusted 계약·서명·경제 로직을 변경하지 않는다. 새 실행 후보와 독립 pin을 받기 전 NUS-74 START는 금지다. 원 RC10의 0.730193초 실패 원인은 `UNPROVEN`으로 보존하며 이번 합성 재현으로 실제 원인을 확정하지 않는다.
+
+`browser_supervisor.mjs`는 target create/attach, Page.enable, viewport, readiness, frame/loader, 문서 nonce, context HTTP 및 UI 단계의 최초 실패와 마지막 완료를 남긴다. 원 CDP 메시지·본문·임의 JS·키/token은 저장하지 않는다. `closed`의 exit/signal/close 오류는 최초 실패와 별개다. 준비 전/ACTIVE 이후 단계와 300초 단조 수명·부모 연결·nonce/origin·등록/Context 검사는 유지된다. 실제 Chrome 300초·모든 자손 종료는 L-T에서 검증하며 현재 미입증이다.
+
+고정 UI 명령은 실제 Wallet `aria-label` 대상의 유일성·disabled·option/value를 확인한다. `input`의 이름은 `예치 금액`, `출금 금액`, `주문 수량 lots`, `지정가 ticks`다. 금액은 6자리 소수까지의 표시 단위이며 Wallet이 atoms로 바꾼다. 주문은 계약의 정수 lots/ticks다. `select`는 `계정`(0/1), `예치 자산`/`출금 자산`(DEVBASE/DEVQUOTE), `주문 방향`(BUY/SELL), `주문 유형`(GTC/IOC), `최대 수수료 bps`(0/25), `취소 주문`(화면에 존재하는 order_id:order_hash)만 허용한다.
+
+`click`은 인증·상태 조회, 직접 예치, 주문·잔량 취소, 원 결과 조회, 출금 준비/해제, 직접 출금 및 결과 조회의 실제 버튼명만 허용한다. 자동 재서명·재전송·임의 eval·키/client export API는 없다. 동작 응답의 `dispatched`는 클릭 전달만 뜻한다. 완료 판정은 별도 `snapshot`과 승인 체인 증거를 대조한다. `wait_screen(control, section, text, seconds=10)`은 최대10초의 화면 조회만 수행하고 계정이 바뀌면 거절한다. `snapshot`은 공개 status/identity/ledger/orders/fills/batches/commands/history/receipt와 버튼/선택 목록을 최대48,000 UTF-8 bytes까지 반환한다. `screenshot`은 ACTIVE에서만 고정1280×900 화면을 최대1MiB PNG(세션당16개·총16MiB 상한)로 전용 `screenshots/`에 no-replace 저장하고 SHA/길이만 응답한다. 페이지나 스크린샷을 trusted receipt로 취급하지 않는다.
+
+L-T의 명시적 두 사용자 순서는 계정 선택·인증 → A DEVBASE10/B DEVQUOTE100 예치 → 각 결과 조회·최신 C 확인 → A SELL GTC2@10 → B BUY GTC1@12 → A의 화면 주문 ID/hash로 잔량 취소 → 정산 COMMITTED 및 최신 C/R/D/P 대조 → A QUOTE10/B BASE1(25bps는9.975/0.9975) 직접 출금이다. `주문·취소 원 결과 조회`는 UNKNOWN 원 요청만 조회한다. `출금 결과 조회`는 예치/출금 DIRECT 이력의 확정 조회도 수행한다. 버튼이 보류되거나 UNKNOWN이면 다음 자산 동작으로 넘어가지 않는다. 체인·자산 보존/서명·영수증 최종 판정은 NUS-74에 남는다.
+
+### RC10 실패 archive와 새 후보 재진입
+
+`failed_browser.preserve(new_archive)`는 `failed-browser-rc10-de759c7ae79884e21` 이름의 새 디렉터리에만 원 사건을 복사한다. 원 `/private/tmp/paperclip-nus74-rc10-6108a4cb/fee0/web/mail`과 `browser`는 읽기만 하며 nonce 교체·이동·삭제·수리0이다. 원문 SHA, challenge/PID, spawned→failed→closed 및 부모 종료 기록을 대조한다. `normal_receipt=false / original_cause=UNPROVEN / cleanup_complete_verified=false`다.
+
+NUS-74의 기존 history 입력·정상4영수증·RC8 failure와 기존 transition4개를 그대로 읽는다. 새 후보 packet을 만든 뒤 **기존 RC10 browser packet→새 browser packet** edge를 한 개 덧붙이고 `Reentry(..., failed_browsers=[archive/'failure.json'])`에 전달한다. 기존 RC9 chain failure4개와 다른 workspace 이력은 기존대로 유지한다. 새 browser 후보는 runtime pin/native decision/CEO·CTO revision, source/bundle/artifacts, home/input/key/mailbox/control을 모두 새로 고정해야 한다. 새 pin 없이 이 도구를 기동 허가로 쓰지 않는다.
+
+현재 웹 workspace의 과거4행+실패 service `99e45ba4-df12-468f-ae99-4c9ce6c79b05`를 전부 대조하며 누락·중복·새 행·변조·running을 거절한다. 모든12 workspace의 최신 등록/행 확인과 해당 재진입의 두 번 자원 관측·최종 GET→새 승인 audit 순서를 유지한다. PID22228/22324/22325와5173의 새 부재/가용 관측이 필요하다. 실제 모든 Chrome 자손 종료는 이 목록으로 보장하지 않는다. 과거 실패를 정상 종료로 승격하지 않는다.
+
+기동 없는 최소 회귀는 `python3 -B -m unittest test_browser_runtime test_failed_browser`와 Node24의 `--experimental-strip-types --test browser_supervisor.test.mjs browser_dom.test.mjs browser/page.test.ts browser/entry.test.ts`다. 실제 main/CDP pipe·child reap은 합성 child, DOM은 기존 설치 jsdom+승인 Wallet mount다. 새 네트워크 서비스·Chrome는 시작하지 않는다. 기존 workspace 등록12개는 반복 요청하지 않으며 새 후보의 명령 bytes 차이는 최종 pin 이후 기존 권한 경로로만 인계한다.
+
 CTO→Security의 새 네이티브 cycle이 동일 후보를 승인한 다음 NUS-75의 canonical 승인·composed gate를 거쳐 NUS-74를 재시험한다. 과거 승인 문서는 역사다. 남은 보안 요구와 표준 부모 blocker는 유지한다.

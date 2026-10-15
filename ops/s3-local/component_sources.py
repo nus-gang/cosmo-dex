@@ -14,7 +14,7 @@ CANDIDATES = {
     # a mandatory ancestor in manifest.py and is never replaced as provenance.
     'exchange': ('ccabc5ae15b4a5246a85d568a22910d3e17b4851', 'exchange/'),
     'settlement': ('ccabc5ae15b4a5246a85d568a22910d3e17b4851', 'settlement/'),
-    'wallet': ('4062facbb0039ff2d2a6e6d126dcba2836c63ded', 'web/'),
+    'wallet': ('04fa4108aa4b02e2677f287e8bff06cf5ece9364', 'web/'),
 }
 
 # C's later five-file public-manifest correction is independent of the three
