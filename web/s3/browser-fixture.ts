@@ -12,6 +12,7 @@ const keys=[new LocalKey(),new LocalKey()],ctx=raw.owner_projection.context;
 let selected=0,posts=0,mode='ready',revision=1;
 const chainRoutes:string[]=[];
 const commandRoutes:string[]=[];
+const orderTypes:string[]=[];
 let accountReply: (()=>Promise<Response>)|undefined;
 let receiptSeq=0;
 let receiptMismatch=false;
@@ -36,7 +37,7 @@ const transport: typeof fetch=async(path,init)=>{
   else if(String(path)===PREFIX+'orders'||String(path)===PREFIX+'cancels') {
     const kind=String(path)===PREFIX+'orders'?'ORDER':'CANCEL',name=kind==='ORDER'?'OrderV1':'CancelV1',body=String(init!.body),parsed=JSON.parse(body),wire=base64.decode(parsed.wire_base64),request_hash=hex(sha256(frame(domains[name],wire)));
     commandRoutes.push(String(path));const receipt=publicReceipt(request_hash,kind);savedCommands.set(request_hash,{kind,body,receipt});
-    if(kind==='ORDER'){const message=decode('OrderV1',wire);activeOrders.push({order_id:message.order_id,order_hash:request_hash,side:message.side==='1'?'BUY':'SELL',state:'OPEN',remaining_qty_lots:message.max_qty_lots,limit_price_ticks:message.limit_price_ticks});revision++;if(loseOrder){loseOrder=false;throw Error('lost order response');}}
+    if(kind==='ORDER'){const message=decode('OrderV1',wire);orderTypes.push(message.order_type);activeOrders.push({order_id:message.order_id,order_hash:request_hash,side:message.side==='1'?'BUY':'SELL',state:'OPEN',remaining_qty_lots:message.max_qty_lots,limit_price_ticks:message.limit_price_ticks});revision++;if(loseOrder){loseOrder=false;throw Error('lost order response');}}
     else {const message=decode('CancelV1',wire),order=activeOrders.find(o=>o.order_id===message.order_id&&o.order_hash===message.order_hash);if(order)order.remaining_qty_lots='0';revision++;}
     return new Response(canonical(receipt),{headers:{'Content-Type':'application/json','Content-Encoding':'identity'}});
   }
@@ -80,4 +81,4 @@ async function reorder(fault: string) {
   if(fault==='late-abort'||fault==='late-DP')revision++;
   accountReply=undefined;component.render();
 }
-Object.assign(globalThis,{fixture:{client,component,reorder,chainRoutes,commandRoutes,posts:()=>posts,receiptMismatch:async()=>{receiptMismatch=true;let error='';try{await client.queryReceipt('7');}catch(e){error=(e as Error).message;}finally{receiptMismatch=false;component.render();}return {error,canWithdraw:client.canWithdraw(),queryMismatches:client.publicReceipts.queryMismatches.length};},held:()=>{mode='held';selected=keys.findIndex(k=>k.owner===client.projection.owner);client.select(keys[selected]);},owners:keys.map(k=>k.owner)}});
+Object.assign(globalThis,{fixture:{client,component,reorder,chainRoutes,commandRoutes,orderTypes,posts:()=>posts,receiptMismatch:async()=>{receiptMismatch=true;let error='';try{await client.queryReceipt('7');}catch(e){error=(e as Error).message;}finally{receiptMismatch=false;component.render();}return {error,canWithdraw:client.canWithdraw(),queryMismatches:client.publicReceipts.queryMismatches.length};},held:()=>{mode='held';selected=keys.findIndex(k=>k.owner===client.projection.owner);client.select(keys[selected]);},owners:keys.map(k=>k.owner)}});

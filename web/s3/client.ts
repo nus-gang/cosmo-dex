@@ -16,7 +16,7 @@ export interface ChainPort {
   result(tx_hash: string): Promise<{context: Context; tx_bytes: string; tx_hash: string; height: string; code: string; state: string}>;
 }
 export interface Entry {owner: string; input: Input; tx_bytes: string; tx_hash: string; state: 'SUBMISSION_UNKNOWN'|'COMMITTED'|'REJECTED_FINAL'; height?: string}
-export interface OrderInput {side:'BUY'|'SELL';limit_price_ticks:string;max_qty_lots:string;max_fee_bps:string}
+export interface OrderInput {side:'BUY'|'SELL';order_type:'GTC'|'IOC';limit_price_ticks:string;max_qty_lots:string;max_fee_bps:string}
 export interface SignedBody {context:Context;wire_base64:string;signature_base64:string}
 export interface CommandEntry {
   owner:string;kind:'ORDER'|'CANCEL';request_hash:string;body:SignedBody;
@@ -136,9 +136,12 @@ export class LocalClient {
     }catch(e){if(g===this.projection.generation&&this.projection.reason!=='CLIENT_RECEIPT_MISMATCH')this.projection.close((e as Error).message);throw e;}
   }
   #unknown(owner:string) {return this.history.some(e=>e.owner===owner&&e.state==='SUBMISSION_UNKNOWN')||this.commands.some(e=>e.owner===owner&&e.state==='SUBMISSION_UNKNOWN');}
-  canDeposit() {const k=this.#key;return !!k&&!!this.#chain&&this.#capable&&this.projection.open()&&!this.#busy.has(k.owner)&&!this.#unknown(k.owner);}
+  #assetReady(key:LocalKey,g:number,withdraw=false) {
+    return this.#key===key&&g===this.projection.generation&&!!this.#chain&&this.#capable&&this.projection.open()&&!this.#unknown(key.owner)&&(!withdraw||(this.projection.ready()&&this.history.filter(e=>e.owner===key.owner&&e.height).every(e=>integer(this.projection.view!.observed_height)>=integer(e.height!))));
+  }
+  canDeposit() {const k=this.#key;return !!k&&this.#assetReady(k,this.projection.generation)&&!this.#busy.has(k.owner);}
   canTrade() {return this.canDeposit();}
-  canWithdraw() {const k=this.#key;return !!k&&this.canDeposit()&&this.projection.ready()&&this.history.filter(e=>e.owner===k.owner&&e.height).every(e=>integer(this.projection.view!.observed_height)>=integer(e.height!));}
+  canWithdraw() {const k=this.#key;return !!k&&this.#assetReady(k,this.projection.generation,true)&&!this.#busy.has(k.owner);}
   async #account(key:LocalKey,g:number) {
     const started=performance.now();
     const a=await this.#chain!.account(key.address);
@@ -157,6 +160,7 @@ export class LocalClient {
     this.#busy.add(key.owner);
     try {
       const a=await this.#account(key,g),value=integer(amount,1000000000000n);
+      if(!this.#assetReady(key,g,operation==='WITHDRAW'))throw Error('ACCOUNT_CHANGED_OR_STALE');
       const row=this.projection.view!.ledger.find(r=>r.denom===denom);
       if(!row||value<1n||(operation==='WITHDRAW'&&value>integer(row.C,(1n<<128n)-1n)))throw Error('INSUFFICIENT_BALANCE');
       const input: Input={operation,denom,amount_atoms:amount,owner:key.address,request_id:id(),expected_epoch:a.owner_epoch,expiry_height:(integer(a.observed_height)+100n).toString(),genesis_hash:this.ctx.genesis_hash,chain_id:this.ctx.chain_id,account_number:a.account_number,sequence:a.sequence,fee_atoms:'1000',gas_limit:'500000'};
@@ -191,8 +195,8 @@ export class LocalClient {
   async order(input:OrderInput) {
     const key=this.#key;if(!key||!this.canTrade())throw Error('COMMAND_HELD');
     const quantity=integer(input.max_qty_lots,1000000n),price=integer(input.limit_price_ticks,1000000n),fee=integer(input.max_fee_bps,10000n);
-    if(quantity<1n||price<1n||quantity*price>1000000000000n||!['BUY','SELL'].includes(input.side))throw Error('MARKET_LIMIT');
-    return this.#submit('ORDER',(a,current)=>({protocol_version:'1',chain_id:this.ctx.chain_id,genesis_hash:this.ctx.genesis_hash,exchange_module_id:'x/exchange',market_id:this.ctx.market_id,market_config_version:this.ctx.market_config_version,owner:current.owner,owner_pubkey:base64.encode(current.publicKey),order_id:id(),owner_epoch:a.owner_epoch,side:input.side==='BUY'?'1':'2',limit_price_ticks:price.toString(),max_qty_lots:quantity.toString(),max_fee_bps:fee.toString(),fee_asset_policy_id:'RECEIVE_ASSET_V1',expiry_height:(integer(a.observed_height)+100n).toString(),order_type:'1'}));
+    if(quantity<1n||price<1n||quantity*price>1000000000000n||!['BUY','SELL'].includes(input.side)||!['GTC','IOC'].includes(input.order_type))throw Error('MARKET_LIMIT');
+    return this.#submit('ORDER',(a,current)=>({protocol_version:'1',chain_id:this.ctx.chain_id,genesis_hash:this.ctx.genesis_hash,exchange_module_id:'x/exchange',market_id:this.ctx.market_id,market_config_version:this.ctx.market_config_version,owner:current.owner,owner_pubkey:base64.encode(current.publicKey),order_id:id(),owner_epoch:a.owner_epoch,side:input.side==='BUY'?'1':'2',limit_price_ticks:price.toString(),max_qty_lots:quantity.toString(),max_fee_bps:fee.toString(),fee_asset_policy_id:'RECEIVE_ASSET_V1',expiry_height:(integer(a.observed_height)+100n).toString(),order_type:input.order_type==='GTC'?'1':'2'}));
   }
   async cancel(order_id:string,order_hash:string) {
     const key=this.#key;if(!key||!this.canTrade()||!this.projection.view!.orders.some(o=>o.order_id===order_id&&o.order_hash===order_hash&&o.remaining_qty_lots!=='0'))throw Error('COMMAND_HELD');

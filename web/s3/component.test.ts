@@ -114,17 +114,17 @@ test('same tab key signs DIRECT deposit once and UNKNOWN prevents another asset 
     const entry=await f.c.deposit('DEVBASE','10000000');
     assert.equal(entry.input.operation,'DEPOSIT');assert.equal(entry.input.denom,'DEVBASE');assert.equal(entry.input.amount_atoms,'10000000');assert.equal(f.posts(),1);
     assert.ok(ml_dsa65.verify(f.key.publicKey,txEnvelope(entry.input,f.key.publicKey).signDoc,base64.decode(entry.tx_bytes).slice(-3309)));
-    await assert.rejects(()=>f.c.deposit('DEVQUOTE','100000000'),/HELD/);await assert.rejects(()=>f.c.order({side:'SELL',max_qty_lots:'2',limit_price_ticks:'10',max_fee_bps:'0'}),/HELD/);
+    await assert.rejects(()=>f.c.deposit('DEVQUOTE','100000000'),/HELD/);await assert.rejects(()=>f.c.order({side:'SELL',order_type:'GTC',max_qty_lots:'2',limit_price_ticks:'10',max_fee_bps:'0'}),/HELD/);
     assert.equal(f.posts(),1);assert.equal(f.c.history.length,1);assert.equal(f.c.commands.length,0);
   }finally{f.c.destroy();}
 });
-test('same tab key signs SELL 2@10 and BUY 1@12 with exact OrderV1 bytes and 0/25bps caps',async()=>{
+test('same tab key signs SELL 2@10 GTC and BUY 1@12 IOC with exact OrderV1 bytes and 0/25bps caps',async()=>{
   const f=await commandFixture();try{
-    const sell=await f.c.order({side:'SELL',max_qty_lots:'2',limit_price_ticks:'10',max_fee_bps:'0'});
-    const buy=await f.c.order({side:'BUY',max_qty_lots:'1',limit_price_ticks:'12',max_fee_bps:'25'});
-    for(const [entry,side,qty,price,fee] of [[sell,'2','2','10','0'],[buy,'1','1','12','25']] as const){
+    const sell=await f.c.order({side:'SELL',order_type:'GTC',max_qty_lots:'2',limit_price_ticks:'10',max_fee_bps:'0'});
+    const buy=await f.c.order({side:'BUY',order_type:'IOC',max_qty_lots:'1',limit_price_ticks:'12',max_fee_bps:'25'});
+    for(const [entry,side,type,qty,price,fee] of [[sell,'2','1','2','10','0'],[buy,'1','2','1','12','25']] as const){
       const wire=base64.decode(entry.body.wire_base64),message=decode('OrderV1',wire);
-      assert.equal(message.owner,f.key.owner);assert.equal(message.owner_pubkey,base64.encode(f.key.publicKey));assert.equal(message.side,side);assert.equal(message.max_qty_lots,qty);assert.equal(message.limit_price_ticks,price);assert.equal(message.max_fee_bps,fee);assert.equal(message.owner_epoch,'0');assert.equal(message.expiry_height,'200');
+      assert.equal(message.owner,f.key.owner);assert.equal(message.owner_pubkey,base64.encode(f.key.publicKey));assert.equal(message.side,side);assert.equal(message.order_type,type);assert.equal(message.max_qty_lots,qty);assert.equal(message.limit_price_ticks,price);assert.equal(message.max_fee_bps,fee);assert.equal(message.owner_epoch,'0');assert.equal(message.expiry_height,'200');
       assert.equal(entry.request_hash,hex(sha256(frame(domains.OrderV1,wire))));assert.ok(ml_dsa65.verify(f.key.publicKey,frame(domains.OrderV1,wire),base64.decode(entry.body.signature_base64)));assert.equal(entry.state,'LOCAL_ACCEPTED');
     }
     assert.equal(f.signatures(),2);assert.equal(f.effects(),2);assert.equal(f.c.commands.length,2);assert.equal(f.c.history.length,0);
@@ -140,7 +140,7 @@ test('remainder cancel signs selected original order and observes public CANCEL 
 });
 test('lost order response preserves original bytes; signed-result query resolves without resign or replay',async()=>{
   const f=await commandFixture();try{
-    f.lose();await assert.rejects(()=>f.c.order({side:'SELL',max_qty_lots:'2',limit_price_ticks:'10',max_fee_bps:'0'}),/response lost/);
+    f.lose();await assert.rejects(()=>f.c.order({side:'SELL',order_type:'GTC',max_qty_lots:'2',limit_price_ticks:'10',max_fee_bps:'0'}),/response lost/);
     const entry=f.c.commands[0],original=canonical(entry.body);assert.equal(entry.state,'SUBMISSION_UNKNOWN');assert.equal(f.effects(),1);assert.equal(f.signatures(),1);assert.equal(f.c.canTrade(),false);assert.equal(f.c.canWithdraw(),false);await assert.rejects(()=>f.c.prepare(),/HELD/);
     await f.c.querySigned(entry);assert.equal(entry.state,'LOCAL_ACCEPTED');assert.equal(f.effects(),1);assert.equal(f.signatures(),1);
     const query=f.calls.find(call=>call.route==='receipts/orders')!;assert.equal(canonical(query.body),original);assert.equal(f.c.canTrade(),true);
@@ -149,8 +149,8 @@ test('lost order response preserves original bytes; signed-result query resolves
 test('duplicate order click and account switch during account lookup create zero extra signatures or effects',async()=>{
   const f=await commandFixture();try{
     let release!:()=>void;f.wait(new Promise<void>(resolve=>{release=resolve;}));
-    const first=f.c.order({side:'SELL',max_qty_lots:'2',limit_price_ticks:'10',max_fee_bps:'0'});
-    await assert.rejects(()=>f.c.order({side:'SELL',max_qty_lots:'2',limit_price_ticks:'10',max_fee_bps:'0'}),/HELD/);
+    const first=f.c.order({side:'SELL',order_type:'GTC',max_qty_lots:'2',limit_price_ticks:'10',max_fee_bps:'0'});
+    await assert.rejects(()=>f.c.order({side:'SELL',order_type:'GTC',max_qty_lots:'2',limit_price_ticks:'10',max_fee_bps:'0'}),/HELD/);
     f.selectOther();release();await assert.rejects(()=>first,/ACCOUNT_CHANGED/);
     assert.equal(f.signatures(),0);assert.equal(f.effects(),0);assert.equal(f.c.commands.length,0);
   }finally{f.destroy();}
@@ -158,7 +158,7 @@ test('duplicate order click and account switch during account lookup create zero
 test('order integer and enum drift fail before account lookup, signature, or mutation',async()=>{
   const f=await commandFixture();try{
     const before=f.calls.length;
-    for(const input of [{side:'SELL',max_qty_lots:'0',limit_price_ticks:'10',max_fee_bps:'0'},{side:'SELL',max_qty_lots:'2',limit_price_ticks:'01',max_fee_bps:'0'},{side:'BUY',max_qty_lots:'1',limit_price_ticks:'12',max_fee_bps:'10001'},{side:'HOLD',max_qty_lots:'1',limit_price_ticks:'12',max_fee_bps:'25'}] as any[])await assert.rejects(()=>f.c.order(input));
+    for(const input of [{side:'SELL',order_type:'GTC',max_qty_lots:'0',limit_price_ticks:'10',max_fee_bps:'0'},{side:'SELL',order_type:'GTC',max_qty_lots:'2',limit_price_ticks:'01',max_fee_bps:'0'},{side:'BUY',order_type:'IOC',max_qty_lots:'1',limit_price_ticks:'12',max_fee_bps:'10001'},{side:'HOLD',order_type:'GTC',max_qty_lots:'1',limit_price_ticks:'12',max_fee_bps:'25'},{side:'BUY',order_type:'POST_ONLY',max_qty_lots:'1',limit_price_ticks:'12',max_fee_bps:'25'}] as any[])await assert.rejects(()=>f.c.order(input));
     assert.equal(f.calls.length,before);assert.equal(f.signatures(),0);assert.equal(f.effects(),0);assert.equal(f.c.commands.length,0);
   }finally{f.destroy();}
 });
@@ -350,6 +350,18 @@ const withdrawalHolds: Record<string,(v:Account)=>void>={
   'unknown-fill':v=>{v.fills=[{fill_id:'new',state:'SUBMISSION_UNKNOWN',revision:v.revision}];},
   'pending-batch':v=>{v.batches=[{state:'SUBMISSION_UNKNOWN',revision:v.revision,batch:{batch_id:'ab'.repeat(32),batch_hash:'cd'.repeat(32),batch_seq:'1'}}];},
 };
+const directSigningHolds: Record<string,(v:Account)=>void>={...withdrawalHolds,'recovery-control':v=>{v.gate='RECOVERY_REQUIRED';v.withdraw_ready=false;}};
+for(const [kind,hold] of Object.entries(directSigningHolds)) test(`pending direct account stops before signing after ${kind}`,async()=>{
+  const f=await clientFixture();let signatures=0;const direct=f.key.direct.bind(f.key);f.key.direct=input=>{signatures++;return direct(input);};
+  try {
+    let release!:()=>void;f.setWait(new Promise<void>(resolve=>{release=resolve;}));
+    const pending=f.c.withdraw('DEVBASE','1');
+    const held={...structuredClone(f.c.projection.view!),revision:'2',received_at_unix_ms:String(Date.now())};hold(held);f.setView(held);
+    assert.equal(await f.c.refresh(),true);assert.equal(f.c.canWithdraw(),false);
+    release();await assert.rejects(()=>pending,/ACCOUNT_CHANGED_OR_STALE/);
+    assert.equal(signatures,0);assert.equal(f.posts(),0);assert.equal(f.c.history.length,0);
+  }finally{f.c.destroy();}
+});
 for(const [kind,hold] of Object.entries(withdrawalHolds)) for(const first of [true,false]) {
   test(`OPEN/${kind} hold from ${first?'earlier':'later'} request blocks in-flight reopening and all signing`,async()=>{
     const f=await clientFixture();let signatures=0;const direct=f.key.direct.bind(f.key);

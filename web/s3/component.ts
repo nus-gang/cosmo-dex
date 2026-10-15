@@ -35,6 +35,7 @@ export function mount(root: HTMLElement, client: LocalClient, keys: LocalKey[], 
   for(const name of ['DEVBASE','DEVQUOTE']){const o=d.createElement('option');o.value=name;o.textContent=name;depositAsset.append(o);}
   const depositAmount=d.createElement('input');depositAmount.type='text';depositAmount.inputMode='decimal';depositAmount.value='10';depositAmount.setAttribute('aria-label','예치 금액');
   const side=d.createElement('select');side.setAttribute('aria-label','주문 방향');for(const [value,text] of [['SELL','매도'],['BUY','매수']]){const o=d.createElement('option');o.value=value;o.textContent=text;side.append(o);}
+  const orderType=d.createElement('select');orderType.setAttribute('aria-label','주문 유형');for(const [value,text] of [['GTC','GTC (잔량 유지)'],['IOC','IOC (즉시 체결 후 잔량 취소)']]){const o=d.createElement('option');o.value=value;o.textContent=text;orderType.append(o);}
   const quantity=d.createElement('input');quantity.type='text';quantity.inputMode='numeric';quantity.value='2';quantity.setAttribute('aria-label','주문 수량 lots');
   const price=d.createElement('input');price.type='text';price.inputMode='numeric';price.value='10';price.setAttribute('aria-label','지정가 ticks');
   const fee=d.createElement('select');fee.setAttribute('aria-label','최대 수수료 bps');for(const value of ['0','25']){const o=d.createElement('option');o.value=value;o.textContent=value;fee.append(o);}
@@ -56,7 +57,7 @@ export function mount(root: HTMLElement, client: LocalClient, keys: LocalKey[], 
   const button=(text:string,action:()=>Promise<unknown>)=>{const b=d.createElement('button');b.textContent=text;b.addEventListener('click',()=>{const g=client.projection.generation;const pending=action();render();void pending.catch(()=>{if(g===client.projection.generation)status.textContent='요청 실패 또는 보류 — 결과 조회 필요';}).finally(render);});return b;};
   const login=button('인증·조회',()=>client.login(origin)),refresh=button('상태 재조회',()=>client.refresh());
   const deposit=button('직접 서명하여 예치',async()=>client.deposit(depositAsset.value as 'DEVBASE'|'DEVQUOTE',atoms(depositAmount.value)));
-  const submitOrder=button('주문 서명·제출',()=>client.order({side:side.value as 'BUY'|'SELL',max_qty_lots:quantity.value,limit_price_ticks:price.value,max_fee_bps:fee.value}));
+  const submitOrder=button('주문 서명·제출',()=>client.order({side:side.value as 'BUY'|'SELL',order_type:orderType.value as 'GTC'|'IOC',max_qty_lots:quantity.value,limit_price_ticks:price.value,max_fee_bps:fee.value}));
   const cancel=button('잔량 취소 서명·제출',()=>{const [order_id,order_hash]=cancelOrder.value.split(':');return client.cancel(order_id,order_hash);});
   const querySigned=button('주문·취소 원 결과 조회',async()=>{for(const e of client.commands.filter(e=>e.owner===client.projection.owner&&e.state==='SUBMISSION_UNKNOWN'))await client.querySigned(e);});
   const prepare=button('출금 준비 (주문 동결·잔량 취소)',()=>client.prepare());
@@ -64,7 +65,7 @@ export function mount(root: HTMLElement, client: LocalClient, keys: LocalKey[], 
   const withdraw=button('직접 서명하여 출금',async()=>client.withdraw(asset.value as 'DEVBASE'|'DEVQUOTE',atoms(amount.value)));
   const resolve=button('출금 결과 조회',async()=>{for(const e of client.history.filter(e=>e.owner===client.projection.owner))await client.resolve(e);await client.refresh();});
   select.addEventListener('change',()=>{client.select(keys[Number(select.value)]);render();});
-  root.replaceChildren(title,notice,select,login,refresh,status,identity,node('h2','DIRECT 예치'),depositAsset,depositAmount,deposit,table,node('h2','서명 주문·잔량 취소'),side,quantity,price,fee,submitOrder,cancelOrder,cancel,querySigned,commands,node('h2','주문·체결·배치'),orders,fills,batches,receipt,node('p','D/P 또는 결과 불명이 남으면 출금 보류. 개발 접수는 확정 자산이 아닙니다.'),prepare,abort,asset,amount,withdraw,resolve,history);
+  root.replaceChildren(title,notice,select,login,refresh,status,identity,node('h2','DIRECT 예치'),depositAsset,depositAmount,deposit,table,node('h2','서명 주문·잔량 취소'),side,orderType,quantity,price,fee,submitOrder,cancelOrder,cancel,querySigned,commands,node('h2','주문·체결·배치'),orders,fills,batches,receipt,node('p','D/P 또는 결과 불명이 남으면 출금 보류. 개발 접수는 확정 자산이 아닙니다.'),prepare,abort,asset,amount,withdraw,resolve,history);
   client.select(keys[0]);render();
   const timer=setInterval(render,250);
   const destroy=()=>{disposed=true;clearInterval(timer);keys.forEach(k=>k.destroy());client.destroy();root.replaceChildren();};

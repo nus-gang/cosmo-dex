@@ -72,3 +72,10 @@ Node component/auth/receipt **122 PASS / 0 FAIL**, CTO 원 재현 원문 **6 PAS
 - UI: 예치 자산/금액, BUY/SELL·lots·ticks·0/25bps, 본인 잔량 취소, 원 receipt 상태를 제공한다. selector 전용 label wrapper나 SRE signer/key export는 추가하지 않았다.
 
 component/auth/receipt Node **128 PASS / 0 FAIL**, Chrome 네트워크 차단 합성 DOM **20 PASS / 0 FAIL**, typecheck/build PASS를 새 후보에서 요구한다. 실제 Chrome listener·서비스·거래·4검증인 DEV/AR는 [NUS-74](/NUS/issues/NUS-74)의 `NOT_RUN` 범위이며 이 component 결과와 합산하지 않는다.
+
+### CTO-LE-RC10-01/02 수정
+
+- DIRECT 출금은 `/chain/account` 응답 뒤 서명 직전에 같은 key/session generation, service OPEN, `withdraw_ready`/`withdraw_frozen`, R/D/P, 미해소 fill/batch, UNKNOWN, 확정 결과 높이를 다시 검사한다. 계정 조회 중 들어온 준비 해제·R/D/P·fill/batch·recovery 보류는 새 서명·history·방송 없이 `ACCOUNT_CHANGED_OR_STALE`로 닫힌다.
+- 주문 입력은 폐쇄 enum `GTC|IOC`를 요구한다. UI의 주문 유형 선택이 기존 `OrderV1.order_type`의 GTC=`1`, IOC=`2`로 연결되며 다른 enum은 계정 조회와 서명 전에 거절한다.
+
+수정 후보 검증은 component/auth/receipt Node **137 PASS / 0 FAIL**, CTO 원문 재현 **12 PASS / 0 FAIL**, Chrome 네트워크 차단 합성 DOM **21 PASS / 0 FAIL**, typecheck/build PASS다. 원 CTO 재현의 경쟁 9종은 source와 exact build 모두 서명0·방송0·history0이며, jsdom exact build에서 GTC/IOC selector와 네트워크0을 확인했다. 실제 Chrome listener·HTTP 서비스·체인 거래·4검증인 DEV/AR는 계속 `NOT_RUN`이고 runtime pin은 미발급이다.

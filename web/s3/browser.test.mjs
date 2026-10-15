@@ -15,7 +15,9 @@ try {
   assert.match(await page.locator('body').textContent(),/durable_ack=false/);
   assert.match(await page.locator('body').textContent(),/공개 s3-dev-local-account\/1 .* trusted s3-dev-local\/1 분리/);
   assert.equal(await page.getByLabel('예치 금액').inputValue(),'10');assert.equal(await page.getByLabel('주문 수량 lots').inputValue(),'2');assert.equal(await page.getByLabel('지정가 ticks').inputValue(),'10');assert.equal(await page.getByLabel('최대 수수료 bps').inputValue(),'0');
+  assert.deepEqual(await page.getByLabel('주문 유형').locator('option').allTextContents(),['GTC (잔량 유지)','IOC (즉시 체결 후 잔량 취소)']);await page.getByLabel('주문 유형').selectOption('IOC');
   await page.getByRole('button',{name:'주문 서명·제출'}).click();await page.waitForFunction(()=>fixture.client.commands.length===1);
+  assert.deepEqual(await page.evaluate(()=>fixture.orderTypes),['2']);
   assert.match(await page.locator('body').textContent(),/ORDER · SUBMISSION_UNKNOWN/);assert.equal(await withdraw.isDisabled(),true);
   await page.getByRole('button',{name:'주문·취소 원 결과 조회'}).click();await page.waitForFunction(()=>fixture.client.commands[0].state==='LOCAL_ACCEPTED');
   assert.match(await page.locator('body').textContent(),/ORDER · LOCAL_ACCEPTED · OK · receipt seq/);assert.equal(await page.getByLabel('취소 주문').locator('option').count(),1);
@@ -50,7 +52,7 @@ try {
   await page.evaluate(()=>fixture.held());await login.click();await page.waitForFunction(()=>fixture.client.projection.view!==undefined);
   assert.equal(await withdraw.isDisabled(),true);assert.match(await page.locator('body').textContent(),/제출 결과 불명/);
   await page.screenshot({path:out+'/component.png',fullPage:true});
-  await writeFile(out+'/browser.json',JSON.stringify({scope:'BROWSER_COMPONENT_SYNTHETIC_NO_SERVICE',browser:browser.version(),checks:['initial-disabled','guarantee-label','public-trusted-version-split','deposit-order-inputs','same-tab-order-signing','lost-order-original-result-query','cancel-selected-remainder','public-receipt-not-committed','receipt-query-mismatch-held','direct-click-one-TX','unknown-query-no-retry','account-switch-empty','DP-held','recovery-delayed-OPEN-disabled','503-delayed-OPEN-disabled','disconnect-delayed-OPEN-disabled','earlier-request-latest-recovery-disabled','OPEN-abort-held','OPEN-DP-held','authenticated-chain-three-routes'],pass:20,fail:0,DEV12:'NOT_RUN'},null,2)+'\n');
+  await writeFile(out+'/browser.json',JSON.stringify({scope:'BROWSER_COMPONENT_SYNTHETIC_NO_SERVICE',browser:browser.version(),checks:['initial-disabled','guarantee-label','public-trusted-version-split','deposit-order-inputs','GTC-IOC-ui-to-signed-wire','same-tab-order-signing','lost-order-original-result-query','cancel-selected-remainder','public-receipt-not-committed','receipt-query-mismatch-held','direct-click-one-TX','unknown-query-no-retry','account-switch-empty','DP-held','recovery-delayed-OPEN-disabled','503-delayed-OPEN-disabled','disconnect-delayed-OPEN-disabled','earlier-request-latest-recovery-disabled','OPEN-abort-held','OPEN-DP-held','authenticated-chain-three-routes'],pass:21,fail:0,DEV12:'NOT_RUN'},null,2)+'\n');
   await page.evaluate(()=>fixture.component.destroy());assert.equal(await page.locator('#app').textContent(),'');
-  console.log('browser component: 20 PASS / 0 FAIL; DEV12 NOT_RUN');
+  console.log('browser component: 21 PASS / 0 FAIL; DEV12 NOT_RUN');
 }finally{await browser.close();}
